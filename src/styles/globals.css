@@ -6,7 +6,10 @@
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-alt: var(--background-alt);
   --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
+  --color-canvas-dotted: var(--canvas-dotted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -47,7 +50,10 @@
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
+  --background-alt: oklch(0.985 0 0);
   --foreground: oklch(0.145 0 0);
+  --canvas: oklch(98.5% 0.002 247.839);
+  --canvas-dotted: oklch(86.9% 0.022 252.894);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -81,7 +87,10 @@
 
 .dark {
   --background: oklch(0.145 0 0);
+  --background-alt: oklch(0.205 0 0);
   --foreground: oklch(0.985 0 0);
+  --canvas: oklch(0.22 0 0);
+  --canvas-dotted: oklch(0.4 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
