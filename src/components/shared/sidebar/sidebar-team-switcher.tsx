@@ -17,7 +17,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@components/ui/sidebar"
-import { CreateTeamDialog } from "./create-team-dialog"
+import { CreateTeamDialog } from "@features/teams"
 import { TeamAvatar } from "./sidebar-team-avatar"
 import { MOCK_TEAMS, getPlanDisplayName, type Team } from "./type"
 

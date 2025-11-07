@@ -12,9 +12,8 @@ export { NavProjects } from './sidebar-project'
 export { NavUser } from './sidebar-user'
 
 // Team management components
-export { TeamSwitcher } from './team-switcher'
+export { TeamSwitcher } from './sidebar-team-switcher'
 export { TeamAvatar, generateTeamInitials } from './sidebar-team-avatar'
-export { CreateTeamDialog } from './create-team-dialog'
 
 // Types and mock data
 export type { Team, Project, NavItem, NavSubItem, User } from './type'
