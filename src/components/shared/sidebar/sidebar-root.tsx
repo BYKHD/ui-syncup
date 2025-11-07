@@ -2,7 +2,6 @@
 
 import { RiArrowRightSLine } from '@remixicon/react';
 
-import { RemixiconComponentType } from '@remixicon/react';
 import {
   SidebarGroup,
   SidebarMenu,
@@ -13,21 +12,12 @@ import {
   SidebarMenuSubItem,
 } from '@components/ui/sidebar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@components/ui/collapsible';
+import type { NavItem } from './type';
 
 export function NavMain({
   items,
 }: {
-  items: {
-    title: string;
-    url: string;
-    icon?: RemixiconComponentType;
-    isActive?: boolean;
-    items?: {
-      title: string;
-      url: string;
-      isActive?: boolean;
-    }[];
-  }[];
+  items: NavItem[];
 }) {
   return (
     <SidebarGroup>
@@ -36,20 +26,18 @@ export function NavMain({
         {items.map((item) => {
           const hasSubItems = !!item.items?.length;
           const ItemIcon = item.icon;
-          const defaultOpen =
-            item.isActive || item.items?.some((subItem) => subItem.isActive);
 
           if (hasSubItems) {
             return (
               <Collapsible
                 key={item.title}
                 asChild
-                defaultOpen={Boolean(defaultOpen)}
+                defaultOpen={false}
                 className="group/collapsible"
               >
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title} isActive={item.isActive}>
+                    <SidebarMenuButton tooltip={item.title}>
                       {ItemIcon ? <ItemIcon className="size-4 shrink-0" /> : null}
                       <span>{item.title}</span>
                       <RiArrowRightSLine className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -59,10 +47,7 @@ export function NavMain({
                     <SidebarMenuSub>
                       {item.items?.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={subItem.isActive}
-                          >
+                          <SidebarMenuSubButton asChild>
                             <a href={subItem.url}>
                               <span>{subItem.title}</span>
                             </a>
@@ -81,7 +66,6 @@ export function NavMain({
               <SidebarMenuButton
                 asChild
                 tooltip={item.title}
-                isActive={item.isActive}
               >
                 <a href={item.url}>
                   {ItemIcon ? <ItemIcon className="size-4 shrink-0" /> : null}

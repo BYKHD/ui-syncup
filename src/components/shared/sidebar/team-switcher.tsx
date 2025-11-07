@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useState } from "react"
 import { RiExpandUpDownLine, RiAddLine } from "@remixicon/react"
 
 import {
@@ -9,113 +9,47 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu"
+} from "@components/ui/dropdown-menu"
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/src/components/ui/sidebar"
-import { useTeam, type TeamUpdateEvent } from "@/src/hooks/use-team"
-import { useSettingsContext } from "@/src/hooks/use-settings-context"
-import { getPlanDisplayName } from "@/src/config/billing"
+} from "@components/ui/sidebar"
 import { CreateTeamDialog } from "./create-team-dialog"
-import { TeamAvatar } from "./team-avatar"
+import { TeamAvatar } from "./sidebar-team-avatar"
+import { MOCK_TEAMS, getPlanDisplayName, type Team } from "./type"
 
 // ============================================================================
 // TEAM SWITCHER DESIGN CONSTANTS
 // ============================================================================
 
 const TEAM_SWITCHER_DESIGN = {
-  // Visual distinction from platform logo
   backgroundColor: 'bg-sidebar-accent',
   borderRadius: 'rounded-lg',
   padding: 'p-2.5',
-  
-  // Hover and active states
   hoverState: 'hover:bg-sidebar-accent/80',
   activeState: 'data-[state=open]:bg-sidebar-accent',
-  
-  // Enhanced visual separation
   border: 'border border-sidebar-border/50',
 } as const;
 
 export function TeamSwitcher() {
   const { isMobile, state } = useSidebar()
-  const { currentTeam, teams, switchTeam, isLoading } = useTeam()
-  const { handleTeamSwitchFromSettings, isTeamSettingsPath, isGlobalSettingsPath } = useSettingsContext()
+  const [currentTeam, setCurrentTeam] = useState<Team>(MOCK_TEAMS[0])
+  const [teams] = useState<Team[]>(MOCK_TEAMS)
   const isCollapsed = state === "collapsed"
 
-  // Use settings-aware team switching if we're in settings context
-  const handleTeamSwitch = async (teamId: string) => {
-    try {
-      if (isTeamSettingsPath || isGlobalSettingsPath) {
-        await handleTeamSwitchFromSettings(teamId);
-      } else {
-        // Default team switching for non-settings pages
-        await switchTeam(teamId);
-      }
-    } catch (error) {
-      console.error('Failed to switch team:', error);
-      // The useTeam hook will handle error state
+  const handleTeamSwitch = (teamId: string) => {
+    const team = teams.find(t => t.id === teamId)
+    if (team) {
+      setCurrentTeam(team)
+      console.log('Switched to team:', team.name)
     }
   }
 
-  // Handle team creation completion - automatically switch to new team
-  const handleTeamCreated = async (newTeam: any) => {
-    try {
-      // The team creation already handles switching in the CreateTeamDialog
-      // This is just for additional handling if needed
-      console.log('New team created:', newTeam.name);
-    } catch (error) {
-      console.error('Error handling team creation:', error);
-    }
-  }
-
-  // Listen for team update events to ensure real-time updates
-  useEffect(() => {
-    const handleTeamUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent<TeamUpdateEvent>;
-      const { type, teamId } = customEvent.detail;
-      
-      // Log team updates for debugging
-      console.log(`Team update: ${type} for team ${teamId}`);
-      
-      // The useTeam hook already handles the state updates
-      // This is just for any additional UI-specific handling
-    };
-    
-    if (typeof window !== 'undefined') {
-      window.addEventListener('teamUpdate', handleTeamUpdate);
-      return () => window.removeEventListener('teamUpdate', handleTeamUpdate);
-    }
-  }, [])
-
-  if (isLoading) {
-    return (
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton 
-            size="sm" 
-            className={`animate-pulse ${TEAM_SWITCHER_DESIGN.backgroundColor} ${TEAM_SWITCHER_DESIGN.borderRadius} ${TEAM_SWITCHER_DESIGN.padding} ${TEAM_SWITCHER_DESIGN.border}`}
-          >
-            <div className="bg-muted flex size-6 items-center justify-center rounded-full" />
-            {!isCollapsed && (
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <div className="bg-muted h-4 w-20 rounded" />
-                <div className="bg-muted h-3 w-12 rounded mt-1" />
-              </div>
-            )}
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </SidebarMenu>
-    )
-  }
-
-  if (!currentTeam) {
-    return null
+  const handleTeamCreated = () => {
+    console.log('New team created')
   }
 
   return (
@@ -162,7 +96,7 @@ export function TeamSwitcher() {
             <DropdownMenuLabel className="text-muted-foreground text-xs font-medium px-3 py-2">
               Teams
             </DropdownMenuLabel>
-            {teams.map((team, index) => (
+            {teams.map((team) => (
               <DropdownMenuItem
                 key={team.id}
                 onClick={() => handleTeamSwitch(team.id)}
@@ -179,16 +113,11 @@ export function TeamSwitcher() {
                     {getPlanDisplayName(team.plan)}
                   </span>
                 </div>
-                {index < 9 && (
-                  <DropdownMenuShortcut className="text-xs">
-                    ⌘{index + 1}
-                  </DropdownMenuShortcut>
-                )}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator className="my-1" />
             <CreateTeamDialog onTeamCreated={handleTeamCreated}>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className={`
                   gap-3 p-3 cursor-pointer transition-colors
                   hover:bg-sidebar-accent/50 focus:bg-sidebar-accent/50

@@ -1,7 +1,7 @@
 "use client"
 
-import { cn } from "@/src/lib/utils"
-import type { Team } from "@/src/hooks/use-team"
+import { cn } from "@lib/utils"
+import type { Team } from "./type"
 
 // ============================================================================
 // TYPES AND CONSTANTS
