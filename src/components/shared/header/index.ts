@@ -12,6 +12,8 @@ export type { AppHeaderProps, BreadcrumbItem } from './app-header'
 
 // Sub-components
 export { ThemeToggle } from './header-theme-toggle'
+export { HeaderUserMenu } from './header-user-menu'
+export type { HeaderUserMenuProps } from './header-user-menu'
 
 // Notification components
 export { NotificationPanel } from '../notifications/notification-panel'
@@ -21,10 +23,10 @@ export { NotificationPanel } from '../notifications/notification-panel'
 // ============================================================================
 //
 // Import header components:
-// import { AppHeader, ThemeToggle, NotificationPanel } from '@components/shared/header'
+// import { AppHeader, ThemeToggle, HeaderUserMenu, NotificationPanel } from '@components/shared/header'
 //
 // Import types:
-// import type { AppHeaderProps, BreadcrumbItem } from '@components/shared/header'
+// import type { AppHeaderProps, BreadcrumbItem, HeaderUserMenuProps } from '@components/shared/header'
 //
 // Example usage:
 // <AppHeader
@@ -33,5 +35,10 @@ export { NotificationPanel } from '../notifications/notification-panel'
 //     { label: 'Home', href: '/' },
 //     { label: 'Dashboard' }
 //   ]}
+// />
+//
+// <HeaderUserMenu
+//   onLogout={() => console.log('Logging out...')}
+//   onSettingsClick={() => router.push('/settings')}
 // />
 //

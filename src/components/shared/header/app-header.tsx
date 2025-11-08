@@ -12,8 +12,8 @@ import {
 } from '@components/ui/breadcrumb'
 import { Separator } from '@components/ui/separator'
 import { Skeleton } from '@components/ui/skeleton'
-import { ThemeToggle } from './header-theme-toggle'
 import { NotificationPanel } from '../notifications/notification-panel'
+import { HeaderUserMenu } from './header-user-menu'
 
 // ============================================================================
 // TYPES
@@ -95,7 +95,7 @@ export function AppHeader({
       <div className="flex items-center gap-2">
         {actions}
         <NotificationPanel />
-        <ThemeToggle />
+        <HeaderUserMenu />
       </div>
     </header>
   )

@@ -23,7 +23,6 @@ import {
   TeamSwitcher,
   NavMain,
   NavProjects,
-  NavUser,
   MOCK_PROJECTS,
 } from '@components/shared/sidebar';
 import type { NavItem } from '@components/shared/sidebar';
@@ -106,7 +105,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={MOCK_PROJECTS} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

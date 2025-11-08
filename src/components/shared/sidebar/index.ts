@@ -7,9 +7,8 @@
 //
 
 // Main navigation components
-export { NavMain } from './sidebar-root'
+export { NavMain } from './sidebar-main'
 export { NavProjects } from './sidebar-project'
-export { NavUser } from './sidebar-user'
 
 // Team management components
 export { TeamSwitcher } from './sidebar-team-switcher'
