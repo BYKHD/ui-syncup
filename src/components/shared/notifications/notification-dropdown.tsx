@@ -4,12 +4,10 @@ import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { NotificationItem } from './notification-item'
 import { NotificationLoadMore } from './notification-load-more'
-import { NotificationBatchCard } from './notification-batch-card'
 import { Button } from '@components/ui/button'
 import { Separator } from '@components/ui/separator'
 import { Badge } from '@components/ui/badge'
 import { MOCK_NOTIFICATIONS } from './mock-data'
-import { shouldBatchNotifications } from './utils'
 
 // ============================================================================
 // NOTIFICATION DROPDOWN COMPONENT (MOCKUP UI)
@@ -31,7 +29,6 @@ export function NotificationDropdown({ teamId }: NotificationDropdownProps) {
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS)
 
   const visibleNotifications = notifications
-  const batchInfo = shouldBatchNotifications(visibleNotifications)
 
   const handleLoadMore = () => {
     console.log('Load more notifications (mockup - no more data)')
@@ -73,9 +70,6 @@ export function NotificationDropdown({ teamId }: NotificationDropdownProps) {
           </div>
         </div>
       </div>
-      {batchInfo.shouldBatch && (
-        <NotificationBatchCard notifications={batchInfo.batchNotifications} />
-      )}
       <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto"

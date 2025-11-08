@@ -23,7 +23,7 @@ export function ThemeToggle() {
   return (
     <Button
       variant="ghost"
-      size="icon-sm"
+      size="icon"
       onClick={handleToggle}
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >

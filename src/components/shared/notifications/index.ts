@@ -10,11 +10,10 @@
 export { NotificationPanel } from './notification-panel'
 
 // Sub-components
-export { NotificationBell } from './notification-bell'
+export { NotificationBell } from './notification-bell-button'
 export { NotificationDropdown } from './notification-dropdown'
 export { NotificationItem } from './notification-item'
 export { NotificationActions } from './notification-actions'
-export { NotificationBatchCard } from './notification-batch-card'
 export { NotificationLoadMore } from './notification-load-more'
 
 // Types and mock data
@@ -30,7 +29,6 @@ export {
 export {
   formatTimestamp,
   getNotificationMessage,
-  shouldBatchNotifications,
   getInitials,
 } from './utils'
 
