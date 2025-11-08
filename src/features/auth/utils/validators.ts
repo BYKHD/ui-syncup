@@ -1,5 +1,16 @@
 import { z } from "zod";
 
+// Sign-in validation schema
+export const signInSchema = z.object({
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Enter a valid email address"),
+  password: z.string().min(8, "Use at least 8 characters"),
+});
+
+export type SignInSchema = z.infer<typeof signInSchema>;
+
 // Sign-up validation schema with password confirmation
 export const signUpSchema = z
   .object({

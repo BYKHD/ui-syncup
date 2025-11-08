@@ -91,6 +91,23 @@ src/
 ├─ styles/                               # globals.css, tailwind.css
 └─ tests/                                # Unit/integration/e2e (see §8)
 ```
+### tsconfig path
+```json
+"paths": {
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@features/*": ["./src/features/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@services/*": ["./src/services/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@styles/*": ["./src/styles/*"],
+      "@assets/*": ["./src/assets/*"],
+      "@types/*": ["./src/types/*"],
+      "@config/*": ["./src/config/*"],
+      "@providers/*": ["./src/providers/*"]
+    }
+```
 
 ### Vite / SPA Variant
 
