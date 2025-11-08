@@ -1,58 +1,22 @@
-"use client";
-
-import { useSearchParams } from "next/navigation";
-
-import { AuthCard, SignInForm } from "@features/auth/components";
-import { useSignIn } from "@features/auth/hooks";
+import SignInScreen from "@features/auth/screens/sign-in-screen";
 
 const invitationCopy = {
   default: "Sign in to your account to continue",
   invited: "Sign in to accept your team invitation",
 };
 
-export default function SignInPage() {
-  const searchParams = useSearchParams();
-  const invitationToken = searchParams.get("token");
-  const invitedEmail = searchParams.get("email") ?? "";
+type SignInPageProps = {
+  searchParams: Record<string, string | string[] | undefined>;
+};
+
+export default function SignInPage({ searchParams }: SignInPageProps) {
+  const invitationToken = searchParams.token;
+  const invitedEmail =
+    typeof searchParams.email === "string" ? searchParams.email : "";
 
   const description = invitationToken
     ? invitationCopy.invited
     : invitationCopy.default;
 
-  const {
-    form,
-    status,
-    message,
-    oauthStatus,
-    oauthError,
-    handleSubmit,
-    handleOAuthSignIn,
-  } = useSignIn({
-    defaultEmail: invitedEmail,
-  });
-
-  return (
-    <AuthCard
-      footer={
-        <>
-          <p>Don&apos;t have an account?</p>
-          <a href="/sign-up" className="font-medium text-primary hover:underline">
-            Sign up
-          </a>
-        </>
-      }
-    >
-      <SignInForm
-        form={form}
-        status={status}
-        message={message}
-        onSubmit={handleSubmit}
-        onOAuthSignIn={handleOAuthSignIn}
-        oauthStatus={oauthStatus}
-        oauthError={oauthError}
-        description={description}
-        invitedEmail={invitedEmail}
-      />
-    </AuthCard>
-  );
+  return <SignInScreen description={description} invitedEmail={invitedEmail} />;
 }
