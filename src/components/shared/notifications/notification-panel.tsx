@@ -1,49 +1,25 @@
 'use client'
 
-import { Button } from '@components/ui/button'
-import { Badge } from '@components/ui/badge'
-import { RiBellLine } from '@remixicon/react'
+import React from 'react'
+import { NotificationBell } from './notification-bell'
+import { MOCK_TEAM_ID } from './mock-data'
 
 // ============================================================================
-// MOCK DATA
-// ============================================================================
-
-const MOCK_NOTIFICATION_COUNT = 3
-
-// ============================================================================
-// NOTIFICATION PANEL COMPONENT (MOCKUP)
+// NOTIFICATION PANEL (MOCKUP UI)
 // ============================================================================
 
 /**
- * NotificationPanel - Mockup notification bell with badge
+ * NotificationPanel - Main entry point for notifications
  *
- * This is a mockup component for UI prototyping.
- * No real notification data or hooks - just static display.
+ * This is the mockup version that uses hardcoded team ID.
+ * No data-fetching hooks - just passes mock teamId to NotificationBell.
  */
-export function NotificationPanel() {
-  const handleClick = () => {
-    console.log('Notifications clicked - mockup only')
-  }
+interface NotificationPanelProps {
+  className?: string
+}
 
-  return (
-    <Button
-      variant="ghost"
-      size="icon-sm"
-      className="relative"
-      onClick={handleClick}
-      aria-label="View notifications"
-    >
-      <RiBellLine className="size-4" />
-      {MOCK_NOTIFICATION_COUNT > 0 && (
-        <Badge
-          variant="destructive"
-          className="absolute -top-1 -right-1 size-5 flex items-center justify-center p-0 text-[10px]"
-        >
-          {MOCK_NOTIFICATION_COUNT}
-        </Badge>
-      )}
-    </Button>
-  )
+export function NotificationPanel({ className = '' }: NotificationPanelProps) {
+  return <NotificationBell teamId={MOCK_TEAM_ID} className={className} />
 }
 
 export default NotificationPanel

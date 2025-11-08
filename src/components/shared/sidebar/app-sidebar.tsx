@@ -27,6 +27,7 @@ import {
   MOCK_PROJECTS,
 } from '@components/shared/sidebar';
 import type { NavItem } from '@components/shared/sidebar';
+import { Separator } from '@components/ui/separator';
 
 // Mock navigation data for mockup UI
 const MOCK_NAV_ITEMS: NavItem[] = [
@@ -90,7 +91,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <RiDragDropFill className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">SyncUP</span>
+                  <span className="truncate font-semibold">SyncUP</span>
                   <span className="truncate text-xs">Design Feedback Tracker</span>
                 </div>
               </a>
@@ -99,6 +100,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
         <TeamSwitcher />
       </SidebarHeader>
+      <Separator/>
       <SidebarContent>
         <NavMain items={MOCK_NAV_ITEMS} />
         <NavProjects projects={MOCK_PROJECTS} />

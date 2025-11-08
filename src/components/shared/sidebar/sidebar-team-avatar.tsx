@@ -42,7 +42,7 @@ export function generateTeamInitials(teamName: string): string {
     .split(' ')
     .filter(word => word.length > 0)
     .map(word => word.charAt(0).toUpperCase())
-    .slice(0, 2) // Take only first 2 initials
+    .slice(0, 1) // Take only first initial
     .join('');
 }
 

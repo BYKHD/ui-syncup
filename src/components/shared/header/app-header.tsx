@@ -12,8 +12,8 @@ import {
 } from '@components/ui/breadcrumb'
 import { Separator } from '@components/ui/separator'
 import { Skeleton } from '@components/ui/skeleton'
+import { ThemeToggle } from './header-theme-toggle'
 import { NotificationPanel } from '../notifications/notification-panel'
-import { ThemeToggle } from './theme-toggle'
 
 // ============================================================================
 // TYPES

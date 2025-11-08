@@ -11,7 +11,7 @@ export { AppHeader } from './app-header'
 export type { AppHeaderProps, BreadcrumbItem } from './app-header'
 
 // Sub-components
-export { ThemeToggle } from './theme-toggle'
+export { ThemeToggle } from './header-theme-toggle'
 
 // Notification components
 export { NotificationPanel } from '../notifications/notification-panel'
