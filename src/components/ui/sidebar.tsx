@@ -3,27 +3,27 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, VariantProps } from "class-variance-authority"
-import { PanelLeftIcon } from "lucide-react"
+import { RiSidebarFoldLine, RiSidebarUnfoldLine } from "@remixicon/react"
 
-import { useIsMobile } from "@/src/hooks/use-mobile"
-import { cn } from "@/src/lib/utils"
-import { Button } from "@/src/components/ui/button"
-import { Input } from "@/src/components/ui/input"
-import { Separator } from "@/src/components/ui/separator"
+import { useIsMobile } from "@hooks/use-mobile"
+import { cn } from "@lib/utils"
+import { Button } from "@components/ui/button"
+import { Input } from "@components/ui/input"
+import { Separator } from "@components/ui/separator"
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/src/components/ui/sheet"
-import { Skeleton } from "@/src/components/ui/skeleton"
+} from "@components/ui/sheet"
+import { Skeleton } from "@components/ui/skeleton"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/src/components/ui/tooltip"
+} from "@components/ui/tooltip"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -258,7 +258,10 @@ function SidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, state, isMobile, openMobile } = useSidebar()
+
+  // On mobile, use openMobile state; on desktop, use state
+  const isOpen = isMobile ? openMobile : state === "expanded"
 
   return (
     <Button
@@ -266,14 +269,18 @@ function SidebarTrigger({
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      className={cn("size-7", className)}
+      className={cn("", className)}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
       }}
       {...props}
     >
-      <PanelLeftIcon />
+      {isOpen ? (
+        <RiSidebarFoldLine />
+      ) : (
+        <RiSidebarUnfoldLine/>
+      )}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )

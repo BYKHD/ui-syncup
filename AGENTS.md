@@ -22,8 +22,8 @@ This guide defines a scalable, team-friendly scaffold for a React + TypeScript a
 src/
 ├─ app/                                 # Routing & screens (server-first)
 │  ├─ (public)/
-│  │  ├─ login/page.tsx
-│  │  └─ register/page.tsx
+│  │  ├─ sign-in/page.tsx
+│  │  └─ sig-up/page.tsx
 │  ├─ (protected)/
 │  │  ├─ layout.tsx                     # Server gate: requires session
 │  │  └─ dashboard/page.tsx
@@ -34,13 +34,29 @@ src/
 │        ├─ refresh/route.ts
 │        └─ me/route.ts
 ├─ features/                             # Product features (mini-packages)
-│  └─ issues/
-│     ├─ api/                            # Fetchers + DTO schemas (no React)
-│     ├─ hooks/                          # React Query/SWR wrappers
-│     ├─ components/                     # Feature UI only
-│     ├─ types/                          # Domain models
-│     ├─ utils/                          # Feature-pure helpers
-│     └─ index.ts                        # Barrel: the feature's public surface
+│  ├─ issues/
+│  │  ├─ api/                            # Fetchers + DTO schemas (no React)
+│  │  ├─ hooks/                          # React Query/SWR wrappers
+│  │  ├─ components/                     # Feature UI only
+│  │  ├─ types/                          # Domain models
+│  │  ├─ utils/                          # Feature-pure helpers
+│  │  └─ index.ts                        # Barrel: the feature's public surface
+│  └─ auth/
+│     ├─ components/
+│     │  ├─ auth-card.tsx
+│     │  ├─ sign-in-form.tsx
+│     │  ├─ sign-up-form.tsx
+│     │  ├─ role-gate.tsx         # <RoleGate roles={["admin"]}>{children}</RoleGate>
+│     │  └─ index.ts
+│     ├─ hooks/
+│     │  ├─ use-session.ts        # client cache of /api/auth/me (React Query)
+│     │  └─ use-sign-in.ts        # calls /api/auth/login
+│     ├─ utils/
+│     │  ├─ validators.ts         # zod schemas for credentials, profile, etc.
+│     │  └─ constants.ts          # cookie names, query keys
+│     ├─ types/
+│     │  └─ index.ts              # Session, User, Role, Permission
+│     └─ index.ts
 ├─ components/
 │  ├─ ui/                                # shadcn primitives (Button, Dialog...)
 │  └─ shared/                            # Cross-feature widgets (e.g., Sidebar/)

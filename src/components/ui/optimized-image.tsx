@@ -14,7 +14,7 @@
  * 
  * @example
  * ```tsx
- * import { OptimizedImage } from '@/src/components/ui/optimized-image';
+ * import { OptimizedImage } from '@components/ui/optimized-image';
  * 
  * // Basic usage
  * <OptimizedImage
@@ -40,8 +40,8 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@/src/lib/utils';
-import { useImageLazyLoading } from '@/src/lib/performance';
+import { cn } from '@lib/utils';
+import { useImageLazyLoading } from '@lib/performance';
 
 interface OptimizedImageProps {
   src: string;
