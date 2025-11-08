@@ -14,7 +14,7 @@ import { fetcher } from '@/src/lib/utils';
 import {
   EMAIL_GATE_ENABLED,
   type NotificationPreference,
-} from '@features/setting';
+} from '@/features/team-settings';
 
 export default function NotificationPreferencesPage() {
   const { currentTeam } = useTeam();

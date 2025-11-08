@@ -11,8 +11,6 @@ export { SettingsNavigation } from "./settings-navigation";
 // Team components
 export { TeamInformationForm } from "./team-information-form";
 export type { TeamInformationFormProps } from "./team-information-form";
-export { TeamInformationReadOnly } from "./team-information-read-only";
-export type { TeamInformationReadOnlyProps } from "./team-information-read-only";
 export { TeamDeletionDialog } from "./team-deletion-dialog";
 
 // Permission & access components

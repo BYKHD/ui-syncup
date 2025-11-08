@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "UI Feedback Tracker",
-  description: "Capture and triage UI fidelity issues",
+  title: "Team Settings",
+  description: "Manage team settings, account preferences, billing, and integrations",
 };
 
 export default function RootLayout({
@@ -30,16 +30,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-        >
-          <AppShell
-            variant="blank"
-          >
-            {children}
-          </AppShell>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <AppShell>{children}</AppShell>
           <Toaster />
         </ThemeProvider>
       </body>

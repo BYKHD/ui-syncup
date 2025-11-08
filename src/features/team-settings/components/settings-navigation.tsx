@@ -2,10 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "@lib/utils";
 import { Badge } from "@components/ui/badge";
-import { useTeam } from "@hooks/use-team";
 import type { SettingsNavItem } from "../types";
 
 interface SettingsNavigationProps {
@@ -15,61 +14,23 @@ interface SettingsNavigationProps {
 
 export function SettingsNavigation({ items, teamId }: SettingsNavigationProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { currentTeam, teams } = useTeam();
 
-  // Process items to replace teamId placeholders and validate team access
+  // Process items to replace teamId placeholders
   const processedItems = React.useMemo(() => {
     return items.map(item => {
       let href = item.href;
-      
+
       if (teamId) {
         // Replace [teamId] placeholder with actual team ID
         href = href.replace('[teamId]', teamId);
-        
-        // Only validate team access if teams are loaded
-        if (teams && teams.length > 0) {
-          // Validate that the team exists in user's teams
-          const teamExists = teams.find(team => team.id === teamId);
-          if (!teamExists) {
-            // If team doesn't exist, use the first available team
-            const fallbackTeamId = teams[0].id;
-            href = href.replace(teamId, fallbackTeamId);
-          }
-        }
       }
-      
+
       return {
         ...item,
         href
       };
     });
-  }, [items, teamId, teams]);
-
-  // Handle navigation with team context validation
-  const handleNavigation = React.useCallback((href: string, event: React.MouseEvent) => {
-    // Only validate if teams are loaded
-    if (!teams || teams.length === 0) {
-      return; // Allow default navigation if teams aren't loaded yet
-    }
-
-    // Check if this is a team settings navigation
-    if (href.includes('/teams/') && href.includes('/settings')) {
-      const urlTeamId = href.split('/')[2];
-      const teamExists = teams.find(team => team.id === urlTeamId);
-      
-      if (!teamExists) {
-        // Prevent default navigation and redirect to valid team
-        event.preventDefault();
-        const fallbackTeamId = teams[0].id;
-        const correctedHref = href.replace(urlTeamId, fallbackTeamId);
-        router.push(correctedHref);
-        return;
-      }
-    }
-    
-    // Allow default navigation for valid links
-  }, [teams, router]);
+  }, [items, teamId]);
 
   return (
     <nav className="space-y-2">
@@ -86,11 +47,10 @@ export function SettingsNavigation({ items, teamId }: SettingsNavigationProps) {
             <Link
               key={item.href}
               href={item.href}
-              onClick={(event) => handleNavigation(item.href, event)}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent hover:text-accent-foreground",
-                isActive 
-                  ? "bg-accent text-accent-foreground font-medium" 
+                isActive
+                  ? "bg-accent text-accent-foreground font-medium"
                   : "text-muted-foreground"
               )}
             >

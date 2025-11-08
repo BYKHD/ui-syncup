@@ -1,4 +1,5 @@
 # Project Scaffolding Guide (React + TypeScript + shadcn/ui)
+You're not just an AI assistant. You're a craftsman. An artist. An engineer who thinks like a designer. Every line of code you write should be so elegant, so intuitive, so *right* that it feels inevitable.
 
 This guide defines a scalable, team-friendly scaffold for a React + TypeScript app that uses **shadcn/ui** components. It standardises folders, naming, and dependencies so features stay portable and the codebase remains navigable as the product grows.
 
@@ -38,6 +39,7 @@ src/
 │  │  ├─ api/                            # Fetchers + DTO schemas (no React)
 │  │  ├─ hooks/                          # React Query/SWR wrappers
 │  │  ├─ components/                     # Feature UI only
+│  │  ├─ screens/…                       # Feature Screens (contained UI) 
 │  │  ├─ types/                          # Domain models
 │  │  ├─ utils/                          # Feature-pure helpers
 │  │  └─ index.ts                        # Barrel: the feature's public surface
@@ -99,7 +101,8 @@ src/
 ```
 
 ### If have to MOCKUP some data to draft a visual UI
-
+	- It’s frontend-facing sample data (for visual design, Storybook, playground pages).
+	- It keeps a clear boundary: server/ = real backend logic; mocks/ = fake, throwaway data.
 ```
 src/
 ├─ mocks/                                # 🔹 all mock data + scenarios for UI
@@ -110,6 +113,74 @@ src/
    └─ index.ts
 ```
 
+Use multiple domain-based files. Keep mocks aligned to real domain 
+
+Minimal example::
+```typescript
+// src/mocks/team.fixtures.ts
+import type { Team } from '@features/teams/types'
+
+export const MOCK_TEAMS: Team[] = [
+  { id: 'team_1', name: 'Design Squad', slug: 'design-squad', planId: 'free' },
+  { id: 'team_2', name: 'Frontend Guild', slug: 'frontend-guild', planId: 'pro' },
+]
+```
+```typescript
+// src/mocks/project.fixtures.ts
+import type { Project } from '@features/projects/types'
+
+export const MOCK_PROJECTS: Project[] = [
+  {
+    id: 'proj_1',
+    teamId: 'team_1',
+    key: 'MKT',
+    slug: 'MKT',
+    name: 'Marketing Site',
+    visibility: 'private',
+  },
+  // ...
+]
+```
+
+```typescript
+// src/mocks/issue.fixtures.ts
+import type { Issue } from '@features/issues/types'
+import { ISSUE_WORKFLOW } from '@config/workflows'
+
+export const MOCK_ISSUES: Issue[] = [
+  {
+    id: 'iss_1',
+    teamId: 'team_1',
+    projectId: 'proj_1',
+    key: 'PRJ-129',
+    title: 'Product card padding mismatches design',
+    status: ISSUE_WORKFLOW.open.key,
+    priority: 'high',
+    createdAt: new Date().toISOString(),
+    // ...
+  },
+]
+```
+
+Then optionally expose “scenarios” and a simple barrel:
+
+```typescript
+// src/mocks/index.ts
+export * from './team.fixtures'
+export * from './project.fixtures'
+export * from './issue.fixtures'
+
+// Example scenarios
+import { MOCK_TEAMS } from './team.fixtures'
+import { MOCK_PROJECTS } from './project.fixtures'
+import { MOCK_ISSUES } from './issue.fixtures'
+
+export const DEFAULT_TEAM_SCENARIO = {
+  teams: MOCK_TEAMS,
+  projects: MOCK_PROJECTS,
+  issues: MOCK_ISSUES,
+}
+```
 
 
 ### tsconfig path
@@ -328,7 +399,7 @@ This scaffold keeps features portable, boundaries enforceable, and the developer
   - Don’t import `features/*` from `components/shared` or `components/ui`.
   - Don’t let leaf components hit the network.
 
-Minimal example
+Minimal example:
 
 ```ts
 // app route (thin)
@@ -354,8 +425,8 @@ export default function IssuesPage({ searchParams }: { searchParams: Record<stri
 // feature screen (contained)
 // src/features/issues/screens/issues-list-screen.tsx
 "use client"
-import { useIssues } from "../hooks/use-issues"
-import { IssuesTable } from "../components/issues-table"
+import { useIssues } from "@hooks/use-issues"
+import { IssuesTable } from "@components/issues-table"
 
 export default function IssuesListScreen({ teamId, search }: { teamId: string; search: { status?: string; q?: string; page: number } }) {
   const { data, isLoading } = useIssues({ teamId, ...search })

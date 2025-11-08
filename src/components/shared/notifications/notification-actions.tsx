@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@components/ui/tooltip'
-import type { Notification } from './mock-data'
+import type { Notification } from '@/mocks'
 import { formatTimestamp } from './utils'
 import { cn } from '@lib/utils'
 

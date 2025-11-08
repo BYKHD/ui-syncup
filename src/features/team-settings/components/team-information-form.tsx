@@ -19,7 +19,7 @@ export interface TeamInformationFormProps {
   onImageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: () => void;
   onCancel: () => void;
-  onSubmit: (data: TeamGeneralFormData) => Promise<void>;
+  onSubmit: () => void;
 }
 
 export function TeamInformationForm({
@@ -34,7 +34,6 @@ export function TeamInformationForm({
 }: TeamInformationFormProps) {
   const {
     register,
-    handleSubmit,
     formState: { errors, isDirty },
     watch,
   } = form;
@@ -42,7 +41,7 @@ export function TeamInformationForm({
   const watchedImage = watch("image");
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={onSubmit}>
       <SettingsCard
         title="Team Information"
         description="Update your team's name and profile image"

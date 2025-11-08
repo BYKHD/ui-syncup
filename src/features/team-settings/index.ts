@@ -3,11 +3,17 @@
  *
  * This barrel export exposes the public surface of the settings feature.
  * Follow the layer contracts defined in AGENTS.md:
- * - Components for UI composition
+ * - Screens for feature UI composition
+ * - Hooks for state management
+ * - Components for presentational UI
  * - Types for domain models
- *
- * Note: This is a mockup UI implementation without real API/hooks layers
  */
+
+// Export all screens
+export * from "./screens";
+
+// Export all hooks
+export * from "./hooks";
 
 // Export all components
 export * from "./components";
