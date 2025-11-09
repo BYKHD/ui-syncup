@@ -184,6 +184,7 @@ export const DEFAULT_TEAM_SCENARIO = {
 
 
 ### tsconfig path
+This project is custom a parts for import in tsconfig.json:
 ```json
 "paths": {
       "@/*": ["./src/*"],
