@@ -3,13 +3,21 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@lib/utils'
-import type { SettingsNavItem } from '@config/settings-nav'
+import { SETTINGS_NAV, type SettingsNavItem, type SettingsNavIcon } from '@config/settings-nav'
+import { RiNotification2Line, RiEqualizer3Line, RiPuzzle2Line, RiMoreLine, RemixiconComponentType } from '@remixicon/react'
 
-interface SettingsSidebarProps {
-  items: SettingsNavItem[]
+const ICON_MAP: Record<SettingsNavIcon, RemixiconComponentType> = {
+  notifications: RiNotification2Line,
+  preferences: RiEqualizer3Line,
+  integrations: RiPuzzle2Line,
+  other: RiMoreLine,
 }
 
-export function SettingsSidebar({ items }: SettingsSidebarProps) {
+interface SettingsSidebarProps {
+  items?: SettingsNavItem[]
+}
+
+export function SettingsSidebar({ items = SETTINGS_NAV }: SettingsSidebarProps) {
   const pathname = usePathname()
 
   return (
@@ -17,7 +25,7 @@ export function SettingsSidebar({ items }: SettingsSidebarProps) {
       <nav className="space-y-1">
         {items.map((item) => {
           const isActive = pathname === item.href
-          const Icon = item.icon
+          const Icon = ICON_MAP[item.icon]
 
           return (
             <Link

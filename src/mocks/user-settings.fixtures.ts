@@ -60,28 +60,14 @@ export const MOCK_USER_PREFERENCES: UserPreferences = {
 export const MOCK_INTEGRATIONS: Integration[] = [
   {
     id: 'int_1',
-    name: 'GitHub',
-    description: 'Connect your GitHub account to sync issues and PRs',
-    icon: 'github',
-    connected: true,
+    name: 'Jira',
+    description: 'Connect your Jira account to automatic create tickets',
+    icon: 'jira',
+    connected: false,
     lastSync: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
   },
   {
     id: 'int_2',
-    name: 'Slack',
-    description: 'Get notifications and updates in your Slack workspace',
-    icon: 'slack',
-    connected: false,
-  },
-  {
-    id: 'int_3',
-    name: 'Linear',
-    description: 'Sync issues between Linear and your workspace',
-    icon: 'linear',
-    connected: false,
-  },
-  {
-    id: 'int_4',
     name: 'Figma',
     description: 'Attach Figma designs to your issues and projects',
     icon: 'figma',

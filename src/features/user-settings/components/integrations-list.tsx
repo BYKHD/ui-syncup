@@ -10,19 +10,17 @@ import {
 } from '@components/ui/card'
 import { Button } from '@components/ui/button'
 import { Badge } from '@components/ui/badge'
-import { Github, MessageSquare, Figma, ArrowUpRight } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Integration } from '../types'
+import { RiFigmaLine, RiTentFill } from '@remixicon/react'
 
 interface IntegrationsListProps {
   integrations: Integration[]
 }
 
 const iconMap = {
-  github: Github,
-  slack: MessageSquare,
-  linear: ArrowUpRight,
-  figma: Figma,
+  figma: RiFigmaLine,
+  jira: RiTentFill
 }
 
 function formatLastSync(lastSync: string | undefined): string {
