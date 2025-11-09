@@ -34,7 +34,7 @@ A deliverable is **ready‑to‑wire** when all of the following are true:
 - **State coverage:** Loading, empty, error, and ready/success are represented with appropriate UI affordances.  
 - **Accessibility:** Keyboard paths exist; focus is managed (especially for dialogs/drawers); interactive elements are labeled; contrast meets project standards.  
 - **Responsiveness:** Desktop and mobile behavior is defined; list–detail “inbox” patterns follow project layout expectations.  
-- **Mocks:** If visualization needs data, consume fixtures from `src/mocks` and keep them aligned with real domain models. Do not invent endpoints.  
+- **Mocks:** If visualization needs data, consume fixtures from `src/mocks` and keep them aligned with real domain models. Do not invent endpoints.If you must hint, use a comment only when AGENTS.md already defines the route: `// wire: GET /api/projects/:id/issues`..  
 - **Naming & imports:** Kebab‑case files, PascalCase components, `useX` hooks, `verb‑noun` API callers, path aliases per tsconfig, and barrels for public surfaces only.
 
 ## Engineering Guards

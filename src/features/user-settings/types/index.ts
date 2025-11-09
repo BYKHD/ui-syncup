@@ -33,4 +33,10 @@ export interface Integration {
   lastSync?: string
 }
 
-export type SettingSection = 'notifications' | 'preferences' | 'integrations'
+export type SettingSection = 'notifications' | 'preferences' | 'integrations' | 'other'
+
+export interface AccountDeletionConfirmation {
+  email: string
+  confirmText: string
+  understood: boolean
+}

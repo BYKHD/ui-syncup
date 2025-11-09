@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { Bell, Settings2, Plug } from 'lucide-react'
+import { Bell, Settings2, Plug, MoreHorizontal } from 'lucide-react'
 import { cn } from '@lib/utils'
 
 interface UserSettingsScreenProps {
@@ -27,6 +27,12 @@ const settingsNav = [
     label: 'Integrations',
     description: 'Connect third-party services',
     icon: Plug,
+  },
+  {
+    href: '/setting/other',
+    label: 'Other',
+    description: 'Advanced settings and account management',
+    icon: MoreHorizontal,
   },
 ]
 
