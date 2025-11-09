@@ -7,7 +7,7 @@ import { Button } from '@components/ui/button'
 import { Spinner } from '@components/ui/spinner'
 import { RiCloseLine, RiInformationLine } from '@remixicon/react'
 import { formatTimestamp, getNotificationMessage } from './utils'
-import type { Notification } from './mock-data'
+import type { Notification } from '@/mocks'
 import { cn } from '@lib/utils'
 import { NotificationActions } from './notification-actions'
 

@@ -16,14 +16,14 @@ export { NotificationItem } from './notification-item'
 export { NotificationActions } from './notification-actions'
 export { NotificationLoadMore } from './notification-load-more'
 
-// Types and mock data
-export type { Notification } from './mock-data'
+// Types and mock data (re-exported from centralized mocks)
+export type { Notification } from '@/mocks'
 export {
   MOCK_NOTIFICATIONS,
   MOCK_UNREAD_COUNT,
   MOCK_TEAM_ID,
   MOCK_MEMBER_ROLE
-} from './mock-data'
+} from '@/mocks'
 
 // Utility functions
 export {

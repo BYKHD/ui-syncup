@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { NotificationBell } from './notification-bell-button'
-import { MOCK_TEAM_ID } from './mock-data'
+import { MOCK_TEAM_ID } from '@/mocks'
 
 // ============================================================================
 // NOTIFICATION PANEL (MOCKUP UI)

@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@components/ui/dropdown-menu'
 import { NotificationDropdown } from './notification-dropdown'
-import { MOCK_UNREAD_COUNT } from './mock-data'
+import { MOCK_UNREAD_COUNT } from '@/mocks'
 
 // ============================================================================
 // NOTIFICATION BELL COMPONENT (MOCKUP UI)

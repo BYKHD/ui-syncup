@@ -1,4 +1,5 @@
 # Project Scaffolding Guide (React + TypeScript + shadcn/ui)
+You're not just an AI assistant. You're a craftsman. An artist. An engineer who thinks like a designer. Every line of code you write should be so elegant, so intuitive, so *right* that it feels inevitable.
 
 This guide defines a scalable, team-friendly scaffold for a React + TypeScript app that uses **shadcn/ui** components. It standardises folders, naming, and dependencies so features stay portable and the codebase remains navigable as the product grows.
 
@@ -21,7 +22,9 @@ This guide defines a scalable, team-friendly scaffold for a React + TypeScript a
 ```
 src/
 ├─ app/                                 # Routing & screens (server-first)
+│  ├─ layout.tsx                        # root: <html>, <body>, truly global providers
 │  ├─ (public)/
+│  │  ├─ layout.tsx                     # public shell (no auth)
 │  │  ├─ sign-in/page.tsx
 │  │  └─ sig-up/page.tsx
 │  ├─ (protected)/
@@ -38,6 +41,7 @@ src/
 │  │  ├─ api/                            # Fetchers + DTO schemas (no React)
 │  │  ├─ hooks/                          # React Query/SWR wrappers
 │  │  ├─ components/                     # Feature UI only
+│  │  ├─ screens/…                       # Feature Screens (contained UI) 
 │  │  ├─ types/                          # Domain models
 │  │  ├─ utils/                          # Feature-pure helpers
 │  │  └─ index.ts                        # Barrel: the feature's public surface
@@ -88,8 +92,116 @@ src/
 ├─ utils/                                # Pure helpers (dates, currency)
 ├─ types/                                # Global types (User, Pagination)
 ├─ config/                               # Constants, route maps, query keys
+├─ config/                               # 🔸 single sources of truth (imported everywhere)
+│  ├─ tiers.ts                           # plans/limits/features
+│  ├─ roles.ts                           # TEAM_* / PROJECT_* + PERMISSIONS map
+│  ├─ workflows.ts                       # issue status model (open→archived)
+│  ├─ nav.ts                             # main/sidebar nav
+│  └─ settings-nav.ts                    # team settings tabs
 ├─ styles/                               # globals.css, tailwind.css
 └─ tests/                                # Unit/integration/e2e (see §8)
+```
+
+### If have to MOCKUP some data to draft a visual UI
+	- It’s frontend-facing sample data (for visual design, Storybook, playground pages).
+	- It keeps a clear boundary: server/ = real backend logic; mocks/ = fake, throwaway data.
+```
+src/
+├─ mocks/                                # 🔹 all mock data + scenarios for UI
+   ├─ team.fixtures.ts
+   ├─ project.fixtures.ts
+   ├─ issue.fixtures.ts
+   ├─ user.fixtures.ts
+   └─ index.ts
+```
+
+Use multiple domain-based files. Keep mocks aligned to real domain 
+
+Minimal example::
+```typescript
+// src/mocks/team.fixtures.ts
+import type { Team } from '@features/teams/types'
+
+export const MOCK_TEAMS: Team[] = [
+  { id: 'team_1', name: 'Design Squad', slug: 'design-squad', planId: 'free' },
+  { id: 'team_2', name: 'Frontend Guild', slug: 'frontend-guild', planId: 'pro' },
+]
+```
+```typescript
+// src/mocks/project.fixtures.ts
+import type { Project } from '@features/projects/types'
+
+export const MOCK_PROJECTS: Project[] = [
+  {
+    id: 'proj_1',
+    teamId: 'team_1',
+    key: 'MKT',
+    slug: 'MKT',
+    name: 'Marketing Site',
+    visibility: 'private',
+  },
+  // ...
+]
+```
+
+```typescript
+// src/mocks/issue.fixtures.ts
+import type { Issue } from '@features/issues/types'
+import { ISSUE_WORKFLOW } from '@config/workflows'
+
+export const MOCK_ISSUES: Issue[] = [
+  {
+    id: 'iss_1',
+    teamId: 'team_1',
+    projectId: 'proj_1',
+    key: 'PRJ-129',
+    title: 'Product card padding mismatches design',
+    status: ISSUE_WORKFLOW.open.key,
+    priority: 'high',
+    createdAt: new Date().toISOString(),
+    // ...
+  },
+]
+```
+
+Then optionally expose “scenarios” and a simple barrel:
+
+```typescript
+// src/mocks/index.ts
+export * from './team.fixtures'
+export * from './project.fixtures'
+export * from './issue.fixtures'
+
+// Example scenarios
+import { MOCK_TEAMS } from './team.fixtures'
+import { MOCK_PROJECTS } from './project.fixtures'
+import { MOCK_ISSUES } from './issue.fixtures'
+
+export const DEFAULT_TEAM_SCENARIO = {
+  teams: MOCK_TEAMS,
+  projects: MOCK_PROJECTS,
+  issues: MOCK_ISSUES,
+}
+```
+
+
+### tsconfig path
+This project is custom a parts for import in tsconfig.json:
+```json
+"paths": {
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@features/*": ["./src/features/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@services/*": ["./src/services/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@styles/*": ["./src/styles/*"],
+      "@assets/*": ["./src/assets/*"],
+      "@types/*": ["./src/types/*"],
+      "@config/*": ["./src/config/*"],
+      "@providers/*": ["./src/providers/*"]
+    }
 ```
 
 ### Vite / SPA Variant
@@ -182,14 +294,13 @@ features/issues/
 - **E2E**: Playwright/Cypress for critical flows (login, create issue)
 - **Coverage**: ≥ 80% lines for features that are business-critical
 - **CI**: `typecheck` → `lint` → `test` → `build` (fail fast)
-- **Storybook**: co-locate stories with components for shared UI and feature components
 
 ---
 
 ## 9) Environment & Commands
 
 - **Node**: v20 LTS; keep the version pinned in `.nvmrc`
-- **Package manager**: `bun` (or `pnpm`/`npm`, pick one and standardise)
+- **Package manager**: `bun`
 - **Common scripts**:
   ```jsonc
   {
@@ -210,45 +321,8 @@ features/issues/
 
 ---
 
-## 10) Scaffolding Command (optional helper)
 
-Add a small script to scaffold a new feature:
-
-```bash
-# scripts/scaffold-feature.sh
-set -euo pipefail
-NAME="$1" # e.g., issues
-ROOT="src/features/$NAME"
-mkdir -p "$ROOT"/{api,hooks,components,types,utils}
-
-cat > "$ROOT/index.ts" <<'TS'
-export * from "./components"
-export * from "./hooks/use-${NAME}"
-export * from "./types"
-TS
-
-cat > "$ROOT/components/index.ts" <<'TS'
-// export your public components here
-TS
-echo "Feature scaffolded at $ROOT/"
-```
-
-Run with: `bash scripts/scaffold-feature.sh issues`
-
----
-
-## 11) Definition of Done (per feature)
-
-- [ ] API layer validates with Zod
-- [ ] Queries/mutations use React Query with keys in `config/query-keys.ts`
-- [ ] UI composed from `components/ui/*` primitives
-- [ ] Barrel exports defined
-- [ ] Unit tests & Storybook stories added
-- [ ] Types and props documented via TSDoc/JSDoc
-
----
-
-## 12) Example Imports
+## 10) Example Imports
 
 tsconfig.json has path aliases like:
 
@@ -283,7 +357,7 @@ import { queryClient } from "@lib/query"
 
 ---
 
-## 13) Next.js `proxy.ts` (formerly Middleware)
+## 11) Next.js `proxy.ts` (formerly Middleware)
 
 - Next.js 16 deprecated the `middleware.ts` convention in favor of `proxy.ts` to clarify that the file sits in front of the app and should be used **only as a last-resort network proxy** (runs at the Edge by default).
 - If you still have `middleware.ts`, rename it to `proxy.ts` **and** rename the exported handler to `export function proxy()`; Next provides a codemod: `npx @next/codemod@canary middleware-to-proxy`.
@@ -295,3 +369,70 @@ import { queryClient } from "@lib/query"
 - If you need multiple behaviors, consolidate them inside `src/proxy.ts` with clear guards; avoid scattering cross-cutting logic throughout the app.
 
 This scaffold keeps features portable, boundaries enforceable, and the developer experience predictable as your app scales.
+
+---
+
+## 12) Thin Pages & Feature Screens
+
+- Page.tsx (route-only)
+  - Server component that reads `searchParams`, cookies, headers.
+  - Performs auth/tenant gating and light Zod validation.
+  - Renders a single feature "Screen" with minimal props.
+  - Owns `loading.tsx`, `error.tsx`, `not-found.tsx` for the route.
+
+- Feature Screens (contained UI)
+  - Live in `src/features/<feature>/screens/*-screen.tsx`.
+  - Client components that compose feature hooks + presentational components.
+  - All data flows through `features/<feature>/api` and `features/<feature>/hooks`.
+  - No cross-feature imports.
+
+- Feature components (presentational)
+  - Live in `src/features/<feature>/components/*` and stay small/pure.
+  - Do not fetch; receive state/data via props or feature hooks.
+  - Co-locate tests and stories with components.
+
+- Shared primitives
+  - `src/components/ui/*` (shadcn) and `src/components/shared/*` (cross-feature widgets).
+  - Must not import from `features/*`.
+
+- Do / Don’t
+  - Do keep `page.tsx` tiny; push UI into feature Screens.
+  - Do keep network calls in feature `api/` and `hooks/` layers.
+  - Do use shared components only for generic UI.
+  - Don’t import `features/*` from `components/shared` or `components/ui`.
+  - Don’t let leaf components hit the network.
+
+Minimal example:
+
+```ts
+// app route (thin)
+// src/app/(protected)/(team)/issues/page.tsx
+import IssuesListScreen from "@features/issues/screens/issues-list-screen"
+import { z } from "zod"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+
+const Search = z.object({
+  status: z.enum(["open","in_progress","in_review","resolved","archived"]).optional(),
+  q: z.string().optional(),
+  page: z.coerce.number().min(1).default(1),
+})
+
+export default function IssuesPage({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
+  const teamId = cookies().get("team_id")?.value
+  if (!teamId) redirect("/select-team")
+  const search = Search.safeParse(searchParams).success ? Search.parse(searchParams) : { page: 1 }
+  return <IssuesListScreen teamId={teamId} search={search} />
+}
+
+// feature screen (contained)
+// src/features/issues/screens/issues-list-screen.tsx
+"use client"
+import { useIssues } from "@hooks/use-issues"
+import { IssuesTable } from "@components/issues-table"
+
+export default function IssuesListScreen({ teamId, search }: { teamId: string; search: { status?: string; q?: string; page: number } }) {
+  const { data, isLoading } = useIssues({ teamId, ...search })
+  return <IssuesTable rows={data?.items ?? []} loading={isLoading} />
+}
+```

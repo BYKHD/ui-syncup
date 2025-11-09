@@ -7,7 +7,7 @@ import { NotificationLoadMore } from './notification-load-more'
 import { Button } from '@components/ui/button'
 import { Separator } from '@components/ui/separator'
 import { Badge } from '@components/ui/badge'
-import { MOCK_NOTIFICATIONS } from './mock-data'
+import { MOCK_NOTIFICATIONS } from '@/mocks'
 
 // ============================================================================
 // NOTIFICATION DROPDOWN COMPONENT (MOCKUP UI)

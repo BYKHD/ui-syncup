@@ -1,6 +1,6 @@
 // Sign-up types
-export type SignUpField = "name" | "email" | "password" | "company";
-export type PlanTier = "starter" | "team" | "enterprise";
+export type SignUpField = "name" | "email" | "password";
+export type PlanTier = "free" | "pro";
 
 export type SignUpForm = Record<SignUpField, string>;
 export type FormErrors = Partial<Record<SignUpField, string>>;

@@ -2,7 +2,7 @@
 // UTILITY FUNCTIONS FOR NOTIFICATIONS (MOCKUP UI)
 // ============================================================================
 
-import type { Notification } from './mock-data'
+import type { Notification } from '@/mocks'
 
 /**
  * Format timestamp to human-readable relative time
