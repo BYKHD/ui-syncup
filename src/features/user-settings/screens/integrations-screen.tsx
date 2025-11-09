@@ -1,9 +1,15 @@
 'use client'
 
 import { IntegrationsList } from '../components/integrations-list'
-import { MOCK_INTEGRATIONS } from '@/mocks/user-settings.fixtures'
+import type { Integration } from '../types'
 
-export default function IntegrationsScreen() {
+interface IntegrationsScreenProps {
+  integrations: Integration[]
+}
+
+export default function IntegrationsScreen({
+  integrations,
+}: IntegrationsScreenProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -12,7 +18,7 @@ export default function IntegrationsScreen() {
           Connect third-party services
         </p>
       </div>
-      <IntegrationsList integrations={MOCK_INTEGRATIONS} />
+      <IntegrationsList integrations={integrations} />
     </div>
   )
 }

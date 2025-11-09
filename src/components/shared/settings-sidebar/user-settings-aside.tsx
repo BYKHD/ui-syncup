@@ -1,31 +1,34 @@
 'use client'
 
+import type { ComponentType } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@lib/utils'
-import { SETTINGS_NAV, type SettingsNavItem, type SettingsNavIcon } from '@config/settings-nav'
-import { RiNotification2Line, RiEqualizer3Line, RiPuzzle2Line, RiMoreLine, RemixiconComponentType } from '@remixicon/react'
 
-const ICON_MAP: Record<SettingsNavIcon, RemixiconComponentType> = {
-  notifications: RiNotification2Line,
-  preferences: RiEqualizer3Line,
-  integrations: RiPuzzle2Line,
-  other: RiMoreLine,
+export interface UserSettingsNavItem {
+  href: string
+  label: string
+  description?: string
+  icon: ComponentType<{ className?: string }>
 }
 
-interface SettingsSidebarProps {
-  items?: SettingsNavItem[]
+interface UserSettingsAsideProps {
+  items: UserSettingsNavItem[]
+  heading?: string
 }
 
-export function SettingsSidebar({ items = SETTINGS_NAV }: SettingsSidebarProps) {
+export function UserSettingsAside({ items, heading = 'Settings' }: UserSettingsAsideProps) {
   const pathname = usePathname()
 
   return (
     <aside className="w-full md:w-64 shrink-0">
+      <div className="pb-2">
+        <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">{heading}</h2>
+      </div>
       <nav className="space-y-1">
         {items.map((item) => {
           const isActive = pathname === item.href
-          const Icon = ICON_MAP[item.icon]
+          const Icon = item.icon
 
           return (
             <Link
@@ -40,10 +43,12 @@ export function SettingsSidebar({ items = SETTINGS_NAV }: SettingsSidebarProps) 
             >
               <Icon className="h-5 w-5 mt-0.5 shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm">{item.label}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  {item.description}
-                </div>
+                <span className="font-medium text-sm">{item.label}</span>
+                {item.description && (
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {item.description}
+                  </div>
+                )}
               </div>
             </Link>
           )

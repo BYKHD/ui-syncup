@@ -3,18 +3,13 @@
 import { OtherSettings } from '../components/other-settings'
 import type { UserProfile } from '../types'
 
-// Mock data - will be replaced with real API calls
-const MOCK_USER_PROFILE: UserProfile = {
-  id: 'user_123',
-  name: 'John Doe',
-  email: 'john.doe@example.com',
-  avatar: null,
-  bio: 'Product designer and developer',
-  timezone: 'America/Los_Angeles',
-  language: 'en',
+interface OtherSettingsScreenProps {
+  userProfile: UserProfile
 }
 
-export default function OtherSettingsScreen() {
+export default function OtherSettingsScreen({
+  userProfile,
+}: OtherSettingsScreenProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -23,7 +18,7 @@ export default function OtherSettingsScreen() {
           Advanced settings and account management
         </p>
       </div>
-      <OtherSettings userProfile={MOCK_USER_PROFILE} />
+      <OtherSettings userProfile={userProfile} />
     </div>
   )
 }

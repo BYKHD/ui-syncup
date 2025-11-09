@@ -1,28 +1,26 @@
 import type { Metadata } from 'next'
-import { SettingsSidebar } from '@components/shared/settings-sidebar'
-import { SETTINGS_NAV } from '@config/settings-nav'
+
+import { UserSettingsScreen } from '@features/user-settings/screens'
 
 export const metadata: Metadata = {
   title: 'Settings',
   description: 'Manage your account settings and preferences',
 }
 
-export default function SettingLayout({
-  children,
-}: Readonly<{
+interface SettingsLayoutProps {
   children: React.ReactNode
-}>) {
+}
+
+export default function SettingsLayout({
+  children,
+}: SettingsLayoutProps) {
+  // Server component - thin layout that delegates to feature Screen
+  // In a real implementation, could fetch user data here
+  // const user = await getUser();
+
   return (
-    <div className="container mx-auto max-w-6xl px-6 py-8">
-      <div className="flex flex-col gap-8 lg:flex-row">
-        <div className="lg:w-64">
-          <div className="pb-2">
-            <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">Settings</h2>
-          </div>
-          <SettingsSidebar items={SETTINGS_NAV} />
-        </div>
-        <main className="flex-1 max-w-2xl">{children}</main>
-      </div>
-    </div>
+    <UserSettingsScreen>
+      {children}
+    </UserSettingsScreen>
   )
 }

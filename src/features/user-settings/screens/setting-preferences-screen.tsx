@@ -3,15 +3,13 @@
 import { UserPreferencesComponent } from '../components/user-preferences'
 import type { UserPreferences } from '../types'
 
-// Mock data - will be replaced with real API calls
-const MOCK_USER_PREFERENCES: UserPreferences = {
-  theme: 'system',
-  emailDigest: 'weekly',
-  soundEnabled: true,
-  compactMode: false,
+interface PreferencesScreenProps {
+  initialPreferences: UserPreferences
 }
 
-export default function PreferencesScreen() {
+export default function PreferencesScreen({
+  initialPreferences,
+}: PreferencesScreenProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -20,7 +18,7 @@ export default function PreferencesScreen() {
           Customize your experience
         </p>
       </div>
-      <UserPreferencesComponent initialPreferences={MOCK_USER_PREFERENCES} />
+      <UserPreferencesComponent initialPreferences={initialPreferences} />
     </div>
   )
 }

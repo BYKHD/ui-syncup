@@ -2,12 +2,15 @@
 
 import * as React from 'react';
 import {
+  RiCheckLine,
+  RiContrastLine,
+  RiEqualizer3Line,
   RiLogoutBoxRLine,
-  RiSettings4Line,
-  RiSunLine,
   RiMoonLine,
+  RiSunLine,
 } from '@remixicon/react';
 import { useTheme } from 'next-themes';
+import { useRouter } from 'next/navigation';
 
 import {
   Avatar,
@@ -22,6 +25,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@components/ui/dropdown-menu';
 import { MOCK_USER } from '../sidebar/type';
@@ -29,6 +35,8 @@ import { MOCK_USER } from '../sidebar/type';
 // ============================================================================
 // TYPES
 // ============================================================================
+
+type ThemeValue = 'light' | 'dark' | 'system';
 
 export interface HeaderUserMenuProps {
   /**
@@ -77,8 +85,10 @@ export function HeaderUserMenu({
   onSettingsClick,
   className = '',
 }: HeaderUserMenuProps = {}) {
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const user = userProp ?? MOCK_USER;
+  const currentTheme = (theme ?? 'system') as ThemeValue;
 
   const displayName = user.name;
   const displayEmail = user.email;
@@ -109,12 +119,12 @@ export function HeaderUserMenu({
     if (onSettingsClick) {
       onSettingsClick();
     } else {
-      console.log('Navigate to settings');
+      router.push('/settings');
     }
   };
 
-  const handleThemeToggle = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+  const handleThemeChange = (value: ThemeValue) => {
+    setTheme(value);
   };
 
   return (
@@ -162,22 +172,50 @@ export function HeaderUserMenu({
               handleSettingsClick();
             }}
           >
-            <RiSettings4Line className="mr-2 h-4 w-4" />
+            <RiEqualizer3Line className="mr-2 h-4 w-4" />
             Settings
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={(event) => {
-              event.preventDefault();
-              handleThemeToggle();
-            }}
-          >
-            {theme === 'dark' ? (
-              <RiSunLine className="mr-2 h-4 w-4" />
-            ) : (
-              <RiMoonLine className="mr-2 h-4 w-4" />
-            )}
-            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-          </DropdownMenuItem>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              {currentTheme === 'system' ? (
+                <RiContrastLine className="mr-2 h-4 w-4" />
+              ) : currentTheme === 'dark' ?(
+                <RiMoonLine className="mr-2 h-4 w-4" />
+              ) : (
+                <RiSunLine className="mr-2 h-4 w-4" />
+              )}
+              Theme
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="min-w-[12rem]">
+              {([
+                { value: 'light', label: 'Light', icon: RiSunLine },
+                { value: 'dark', label: 'Dark', icon: RiMoonLine },
+                { value: 'system', label: 'System', icon: RiContrastLine },
+              ] satisfies {
+                value: ThemeValue;
+                label: string;
+                icon: typeof RiSunLine;
+              }[]).map(({ value, label, icon: Icon }) => {
+                const isActive = currentTheme === value;
+
+                return (
+                  <DropdownMenuItem
+                    key={value}
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      handleThemeChange(value);
+                    }}
+                  >
+                    <Icon className="mr-2 h-4 w-4" />
+                    <span className="flex-1">{label}</span>
+                    {isActive ? (
+                      <RiCheckLine className="h-4 w-4 text-primary" />
+                    ) : null}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem

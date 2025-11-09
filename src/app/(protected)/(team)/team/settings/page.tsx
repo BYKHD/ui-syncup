@@ -1,14 +1,13 @@
-import { TeamSettingsScreen } from "@/features/team-settings/screens";
-import { MOCK_DEFAULT_TEAM, MOCK_DEFAULT_USER_ROLE } from "@/features/team-settings";
+import TeamSettingsGeneral from "@features/team-settings/components/team-settings-genaral";
+import { MOCK_DEFAULT_TEAM, MOCK_DEFAULT_USER_ROLE } from "@features/team-settings";
 
 export default function TeamSettingsPage() {
-  // In a real implementation, fetch team and user role from server
-  // const teamId = cookies().get("team_id")?.value;
-  // const team = await getTeam(teamId);
-  // const userRole = await getUserRole(teamId);
+  // Server component - thin page that delegates to feature component
+  // In a real implementation, props would come from layout via server-side fetch
+  // Layout handles auth/tenant gating and passes team/userRole down
 
   return (
-    <TeamSettingsScreen
+    <TeamSettingsGeneral
       initialTeam={MOCK_DEFAULT_TEAM}
       userRole={MOCK_DEFAULT_USER_ROLE}
     />
