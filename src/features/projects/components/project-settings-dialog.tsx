@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { Button } from '@components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@components/ui/dialog'
 import { Input } from '@components/ui/input'
@@ -22,161 +22,60 @@ interface Project {
 interface ProjectSettingsDialogProps {
   project: Project
   userRole: 'owner' | 'editor' | 'member' | 'viewer' | null
-  onProjectUpdated?: (project: Project) => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  formData: {
+    name: string
+    description: string
+    visibility: 'private' | 'public'
+  }
+  errors?: {
+    name?: string
+    description?: string
+  }
+  isSubmitting?: boolean
+  submittingError?: string | null
+  showVisibilityConfirm: boolean
+  pendingVisibility: 'private' | 'public' | null
+  onInputChange: (field: string, value: string) => void
+  onVisibilityChange: (visibility: 'private' | 'public') => void
+  onConfirmVisibilityChange: () => void
+  onCancelVisibilityChange: () => void
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
+  onCancel: () => void
+  hasChanges: boolean
   children?: React.ReactNode
 }
 
-type FormErrors = { 
-  name?: string
-  description?: string
-}
-
-export function ProjectSettingsDialog({ 
-  project, 
-  userRole, 
-  onProjectUpdated, 
-  children 
+export function ProjectSettingsDialog({
+  project,
+  userRole,
+  open,
+  onOpenChange,
+  formData,
+  errors = {},
+  isSubmitting = false,
+  submittingError = null,
+  showVisibilityConfirm,
+  pendingVisibility,
+  onInputChange,
+  onVisibilityChange,
+  onConfirmVisibilityChange,
+  onCancelVisibilityChange,
+  onSubmit,
+  onCancel,
+  hasChanges,
+  children
 }: ProjectSettingsDialogProps) {
-  const [open, setOpen] = useState(false)
-  const [showVisibilityConfirm, setShowVisibilityConfirm] = useState(false)
-  const [pendingVisibility, setPendingVisibility] = useState<'private' | 'public' | null>(null)
-  const [formData, setFormData] = useState({
-    name: project.name,
-    description: project.description || '',
-    visibility: project.visibility
-  })
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submittingError, setSubmittingError] = useState<string | null>(null)
-
-  // Reset form when project changes or dialog opens
-  useEffect(() => {
-    if (open) {
-      setFormData({
-        name: project.name,
-        description: project.description || '',
-        visibility: project.visibility
-      })
-      setErrors({})
-      setSubmittingError(null)
-    }
-  }, [project, open])
-
   const canEditSettings = userRole === 'owner'
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    
-    // Clear error when user starts typing
-    if (errors[field as keyof typeof errors]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }))
-    }
-  }
-
-  const handleVisibilityChange = (newVisibility: 'private' | 'public') => {
-    if (newVisibility !== project.visibility) {
-      setPendingVisibility(newVisibility)
-      setShowVisibilityConfirm(true)
-    }
-  }
-
-  const confirmVisibilityChange = () => {
-    if (pendingVisibility) {
-      setFormData(prev => ({ ...prev, visibility: pendingVisibility }))
-    }
-    setShowVisibilityConfirm(false)
-    setPendingVisibility(null)
-  }
-
-  const cancelVisibilityChange = () => {
-    setShowVisibilityConfirm(false)
-    setPendingVisibility(null)
-  }
-
-  const validateForm = () => {
-    const newErrors: FormErrors = {}
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Project name is required'
-    } else if (formData.name.length < 3) {
-      newErrors.name = 'Project name must be at least 3 characters'
-    } else if (formData.name.length > 100) {
-      newErrors.name = 'Project name must be 100 characters or less'
-    }
-
-    if (formData.description.length > 500) {
-      newErrors.description = 'Project description must be 500 characters or less'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const hasChanges = () => {
-    return (
-      formData.name !== project.name ||
-      formData.description !== (project.description || '') ||
-      formData.visibility !== project.visibility
-    )
-  }
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-
-    if (!validateForm() || !hasChanges()) {
-      return
-    }
-
-    setIsSubmitting(true)
-    setSubmittingError(null)
-
-    try {
-      const response = await fetch(`/api/projects/${project.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          description: formData.description.trim() || null,
-          visibility: formData.visibility
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to update project')
-      }
-
-      const result = await response.json()
-      onProjectUpdated?.(result.project)
-      setOpen(false)
-    } catch (error) {
-      console.error('Error updating project', error)
-      setSubmittingError(error instanceof Error ? error.message : 'Failed to update project. Please try again.')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleCancel = () => {
-    setFormData({
-      name: project.name,
-      description: project.description || '',
-      visibility: project.visibility
-    })
-    setErrors({})
-    setSubmittingError(null)
-    setOpen(false)
-  }
-
   if (!canEditSettings) {
-    return null // Don't render if user can't edit settings
+    return null
   }
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogTrigger asChild>
           {children || (
             <Button variant="outline" size="sm">
@@ -189,8 +88,8 @@ export function ProjectSettingsDialog({
           <DialogHeader>
             <DialogTitle>Project Settings</DialogTitle>
           </DialogHeader>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
+
+          <form onSubmit={onSubmit} className="space-y-6">
             <div className="space-y-4">
               {/* Project Name */}
               <Field>
@@ -198,7 +97,7 @@ export function ProjectSettingsDialog({
                 <Input
                   id="project-name"
                   value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  onChange={(e) => onInputChange('name', e.target.value)}
                   placeholder="Enter project name"
                   maxLength={100}
                   className={errors.name ? 'border-destructive' : ''}
@@ -217,7 +116,7 @@ export function ProjectSettingsDialog({
                 <Textarea
                   id="project-description"
                   value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  onChange={(e) => onInputChange('description', e.target.value)}
                   placeholder="Describe what this project is about"
                   maxLength={500}
                   rows={3}
@@ -237,7 +136,7 @@ export function ProjectSettingsDialog({
                   <div className="space-y-0.5">
                     <Label className="text-base">Project Visibility</Label>
                     <FieldDescription className="text-xs text-muted-foreground">
-                      {formData.visibility === 'private' 
+                      {formData.visibility === 'private'
                         ? 'Only invited members can access this project'
                         : 'All team members can see and join this project'
                       }
@@ -247,8 +146,8 @@ export function ProjectSettingsDialog({
                     <RiLockLine className="h-4 w-4 text-muted-foreground" />
                     <Switch
                       checked={formData.visibility === 'public'}
-                      onCheckedChange={(checked) => 
-                        handleVisibilityChange(checked ? 'public' : 'private')
+                      onCheckedChange={(checked) =>
+                        onVisibilityChange(checked ? 'public' : 'private')
                       }
                     />
                     <RiGlobalLine className="h-4 w-4 text-muted-foreground" />
@@ -258,19 +157,19 @@ export function ProjectSettingsDialog({
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCancel}>
+              <Button type="button" variant="outline" onClick={onCancel}>
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting || !hasChanges()}
+              <Button
+                type="submit"
+                disabled={isSubmitting || !hasChanges}
               >
                 <RiSaveLine className="h-4 w-4" />
                 {isSubmitting ? 'Saving...' : 'Save Changes'}
               </Button>
             </DialogFooter>
           </form>
-          
+
           {submittingError && (
             <p className="text-sm text-destructive mt-2">{submittingError}</p>
           )}
@@ -278,7 +177,7 @@ export function ProjectSettingsDialog({
       </Dialog>
 
       {/* Visibility Change Confirmation Dialog */}
-      <AlertDialog open={showVisibilityConfirm} onOpenChange={setShowVisibilityConfirm}>
+      <AlertDialog open={showVisibilityConfirm} onOpenChange={(open) => !open && onCancelVisibilityChange()}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Change Project Visibility</AlertDialogTitle>
@@ -295,10 +194,10 @@ export function ProjectSettingsDialog({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelVisibilityChange}>
+            <AlertDialogCancel onClick={onCancelVisibilityChange}>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmVisibilityChange}>
+            <AlertDialogAction onClick={onConfirmVisibilityChange}>
               Change Visibility
             </AlertDialogAction>
           </AlertDialogFooter>

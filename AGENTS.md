@@ -27,9 +27,14 @@ src/
 │  │  ├─ layout.tsx                     # public shell (no auth)
 │  │  ├─ sign-in/page.tsx
 │  │  └─ sig-up/page.tsx
+
 │  ├─ (protected)/
 │  │  ├─ layout.tsx                     # Server gate: requires session
-│  │  └─ dashboard/page.tsx
+│  │  └─ dashboard/
+│  │     ├─ page.tsx
+│  │     ├─ loading.tsx                 # Loading state
+│  │     ├─ error.tsx                   # Error boundary
+│  │     └─ not-found.tsx               # 404 state
 │  └─ api/                              # Route handlers
 │     └─ auth/
 │        ├─ login/route.ts

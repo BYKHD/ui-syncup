@@ -36,7 +36,7 @@ import {
   getRoleBadgeVariant,
 } from "@features/projects/utils";
 import { useJoinProject } from "@features/projects/hooks";
-import { ProjectMemberManager } from "./project-member-manager";
+import { ProjectMemberManager } from "./project-member-manager-dialog";
 
 interface ProjectCardProps {
   project: ProjectSummary;

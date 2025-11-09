@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import { Button } from '@components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@components/ui/dialog'
 import { Input } from '@components/ui/input'
@@ -12,142 +12,56 @@ import { RiMailSendLine } from '@remixicon/react'
 interface ProjectInvitationDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  projectId: string
   projectName: string
-  onInvitationSent?: () => void
+  email: string
+  role: 'editor' | 'member' | 'viewer'
+  errors?: {
+    email?: string
+    role?: string
+  }
+  isSubmitting?: boolean
+  submittingError?: string | null
+  onEmailChange: (email: string) => void
+  onRoleChange: (role: 'editor' | 'member' | 'viewer') => void
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
+  onCancel: () => void
 }
 
-type FormErrors = {
-  email?: string
-  role?: string
+function getRoleDescription(role: string) {
+  switch (role) {
+    case 'editor':
+      return 'Can invite members, create and edit issues, and comment'
+    case 'member':
+      return 'Can view project content and comment on issues'
+    case 'viewer':
+      return 'Can only view project content (read-only access)'
+    default:
+      return ''
+  }
 }
 
 export function ProjectInvitationDialog({
   open,
   onOpenChange,
-  projectId,
   projectName,
-  onInvitationSent
+  email,
+  role,
+  errors = {},
+  isSubmitting = false,
+  submittingError = null,
+  onEmailChange,
+  onRoleChange,
+  onSubmit,
+  onCancel
 }: ProjectInvitationDialogProps) {
-  const [formData, setFormData] = useState({
-    email: '',
-    role: 'member' as 'editor' | 'member' | 'viewer'
-  })
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submittingError, setSubmittingError] = useState<string | null>(null)
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    
-    // Clear error when user starts typing
-    if (errors[field as keyof typeof errors]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }))
-    }
-    setSubmittingError(null)
-  }
-
-  const validateForm = () => {
-    const newErrors: FormErrors = {}
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email address is required'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      newErrors.email = 'Please enter a valid email address'
-    }
-
-    if (!formData.role) {
-      newErrors.role = 'Please select a role'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-
-    if (!validateForm()) {
-      return
-    }
-
-    setIsSubmitting(true)
-    setSubmittingError(null)
-
-    try {
-      const response = await fetch(`/api/projects/${projectId}/invitations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: formData.email.trim().toLowerCase(),
-          role: formData.role
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        
-        if (errorData.error === 'USER_NOT_FOUND') {
-          setErrors({ email: errorData.message })
-          return
-        }
-        
-        if (errorData.error === 'ALREADY_MEMBER') {
-          setErrors({ email: 'This user is already a member of the project' })
-          return
-        }
-        
-        if (errorData.error === 'INVITATION_EXISTS') {
-          setErrors({ email: 'This user already has a pending invitation' })
-          return
-        }
-
-        throw new Error(errorData.message || 'Failed to send invitation')
-      }
-
-      // Reset form and close dialog
-      setFormData({ email: '', role: 'member' })
-      setErrors({})
-      onOpenChange(false)
-      onInvitationSent?.()
-    } catch (error) {
-      console.error('Error sending invitation:', error)
-      setSubmittingError(error instanceof Error ? error.message : 'Failed to send invitation. Please try again.')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleCancel = () => {
-    setFormData({ email: '', role: 'member' })
-    setErrors({})
-    setSubmittingError(null)
-    onOpenChange(false)
-  }
-
-  const getRoleDescription = (role: string) => {
-    switch (role) {
-      case 'editor':
-        return 'Can invite members, create and edit issues, and comment'
-      case 'member':
-        return 'Can view project content and comment on issues'
-      case 'viewer':
-        return 'Can only view project content (read-only access)'
-      default:
-        return ''
-    }
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Invite to {projectName}</DialogTitle>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
+
+        <form onSubmit={onSubmit} className="space-y-6">
           <div className="space-y-4">
             {/* Email Input */}
             <Field>
@@ -155,8 +69,8 @@ export function ProjectInvitationDialog({
               <Input
                 id="invite-email"
                 type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                value={email}
+                onChange={(e) => onEmailChange(e.target.value)}
                 placeholder="Enter email address"
                 className={errors.email ? 'border-destructive' : ''}
                 autoComplete="email"
@@ -169,10 +83,7 @@ export function ProjectInvitationDialog({
             {/* Role Selection */}
             <Field>
               <Label htmlFor="invite-role">Role</Label>
-              <Select 
-                value={formData.role} 
-                onValueChange={(value) => handleInputChange('role', value)}
-              >
+              <Select value={role} onValueChange={onRoleChange}>
                 <SelectTrigger className={errors.role ? 'border-destructive' : ''}>
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
@@ -198,13 +109,13 @@ export function ProjectInvitationDialog({
                 </SelectContent>
               </Select>
               <FieldDescription className={errors.role ? 'text-destructive' : ''}>
-                {errors.role || getRoleDescription(formData.role)}
+                {errors.role || getRoleDescription(role)}
               </FieldDescription>
             </Field>
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleCancel}>
+            <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
@@ -213,7 +124,7 @@ export function ProjectInvitationDialog({
             </Button>
           </DialogFooter>
         </form>
-        
+
         {submittingError && (
           <p className="text-sm text-destructive mt-2">{submittingError}</p>
         )}
