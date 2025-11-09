@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@components/ui/button";
@@ -25,16 +24,17 @@ export interface TeamDeletionDialogProps {
   teamId: string;
   teamName: string;
   userRole: TeamRole | null;
-  isLastTeam: boolean;
+  isLastTeam?: boolean;
+  onDelete?: (teamId: string) => void | Promise<void>;
 }
 
 export function TeamDeletionDialog({
   teamId,
   teamName,
   userRole,
-  isLastTeam,
+  isLastTeam = false,
+  onDelete,
 }: TeamDeletionDialogProps) {
-  const router = useRouter();
   const [isDeletingTeam, setIsDeletingTeam] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -48,55 +48,27 @@ export function TeamDeletionDialog({
     setDeleteDialogOpen(false);
 
     try {
-      const response = await fetch(`/api/v1/teams/${teamId}`, {
-        method: "DELETE",
-      });
+      // UI-only mock: simulate deletion delay
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // Check if response is HTML (error page) or JSON
-      const contentType = response.headers.get("content-type");
-      const isJson = contentType?.includes("application/json");
-
-      if (!response.ok) {
-        let errorMessage = "Failed to delete team";
-
-        if (isJson) {
-          try {
-            const data = await response.json();
-            errorMessage = data.error || errorMessage;
-          } catch (e) {
-            console.error("Failed to parse error response:", e);
-          }
-        }
-
-        throw new Error(errorMessage);
-      }
-
-      // Parse successful response
-      let result;
-      try {
-        result = isJson ? await response.json() : { hasRemainingTeams: false };
-      } catch (e) {
-        console.error("Failed to parse success response:", e);
-        result = { hasRemainingTeams: false };
+      // Call optional onDelete callback if provided
+      if (onDelete) {
+        await onDelete(teamId);
       }
 
       // Show appropriate success message
       if (isLastTeam) {
         toast.success(
-          'Team deleted successfully. You will be redirected to create a new team.',
+          "Team deleted successfully. You will be redirected to create a new team.",
           { duration: 3000 }
         );
       } else {
-        toast.success('Team deleted successfully');
+        toast.success("Team deleted successfully");
       }
 
-      // Redirect immediately - do NOT call refetchTeams before redirect
-      // The destination page will handle refreshing teams
-      const redirectPath = result.hasRemainingTeams ? "/projects" : "/onboarding";
-
-      // Use hard redirect to completely navigate away from deleted team
-      window.location.href = redirectPath;
-
+      // UI-only mock: log deletion instead of actual redirect
+      console.log(`[MOCK] Team "${teamName}" (${teamId}) deleted`);
+      console.log(`[MOCK] Would redirect to: ${isLastTeam ? "/onboarding" : "/projects"}`);
     } catch (error) {
       // Reset states on error so user can try again
       setIsDeletingTeam(false);
@@ -105,6 +77,9 @@ export function TeamDeletionDialog({
       console.error("Error deleting team:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to delete team";
       toast.error(errorMessage);
+    } finally {
+      // Reset loading state after mock operation
+      setTimeout(() => setIsDeletingTeam(false), 2000);
     }
   };
 

@@ -6,6 +6,7 @@ import {
   SettingsCard,
   TeamInformationForm,
   SettingsSection,
+  TeamDeletionDialog,
 } from ".";
 
 type TeamSettingsScreenProps = {
@@ -70,6 +71,13 @@ export default function TeamSettingsScreen({
             </p>
           </div>
         </SettingsCard>
+
+        <TeamDeletionDialog
+          teamId={currentTeam.id}
+          teamName={currentTeam.name}
+          userRole={userRole}
+          isLastTeam={false}
+        />
       </SettingsSection>
     </div>
   );

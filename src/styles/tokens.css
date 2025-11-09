@@ -63,6 +63,8 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-destructive: var(--destructive);
+  /* Text on destructive backgrounds */
+  --color-destructive-foreground: var(--destructive-foreground);
 
   /* Brand palette (example shades) */
   --color-brand-50: oklch(0.99 0.02 25);
