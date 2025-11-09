@@ -16,25 +16,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Team Settings",
-  description: "Manage team settings, account preferences, billing, and integrations",
+  title: 'Settings',
+  description: 'Manage your account settings and preferences',
 };
 
-export default function RootLayout({
+
+export default function SettingLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AppShell>{children}</AppShell>
-          <Toaster />
-        </ThemeProvider>
-      </body>
-    </html>
+    <></>
   );
 }

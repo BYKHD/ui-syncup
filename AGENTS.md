@@ -22,7 +22,9 @@ This guide defines a scalable, team-friendly scaffold for a React + TypeScript a
 ```
 src/
 ├─ app/                                 # Routing & screens (server-first)
+│  ├─ layout.tsx                        # root: <html>, <body>, truly global providers
 │  ├─ (public)/
+│  │  ├─ layout.tsx                     # public shell (no auth)
 │  │  ├─ sign-in/page.tsx
 │  │  └─ sig-up/page.tsx
 │  ├─ (protected)/

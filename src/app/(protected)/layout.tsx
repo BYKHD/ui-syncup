@@ -1,9 +1,9 @@
 import { AppShell } from "@components/layout/app-shell";
 
-export default function PublicLayout({
+export default function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AppShell variant="blank">{children}</AppShell>;
+  return <AppShell variant="sidebar">{children}</AppShell>;
 }
