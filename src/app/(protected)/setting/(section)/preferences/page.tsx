@@ -1,19 +1,13 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card";
+'use client'
 
-export default function PreferencesSettingsPage() {
+import UserSettingsScreen from '@features/user-settings/screens/user-settings-screen'
+import { UserPreferencesComponent } from '@features/user-settings/components/user-preferences'
+import { MOCK_USER_PREFERENCES } from '@/mocks'
+
+export default function PreferencesPage() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Appearance</CardTitle>
-        <CardDescription>
-          Customize the appearance of the application.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground">
-          Preferences settings coming soon...
-        </p>
-      </CardContent>
-    </Card>
-  );
+    <UserSettingsScreen>
+      <UserPreferencesComponent initialPreferences={MOCK_USER_PREFERENCES} />
+    </UserSettingsScreen>
+  )
 }
