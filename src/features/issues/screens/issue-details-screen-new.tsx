@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw, Wifi } from 'lucide-react';
 import ResponsiveIssueLayout from '../components/responsive-issue-layout';
 import { EnhancedResponsiveIssueLayoutSkeleton } from './issue-details-skeletons';
-import type { IssuePermissions } from '@types/issue';
+import type { IssuePermissions } from '@/types/issue';
 
 interface IssueDetailsScreenProps {
   issueId: string;

@@ -17,24 +17,38 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'motion/react';
-import { OptimizedImage, AttachmentImage } from '@/src/components/ui/optimized-image';
-import { Button } from '@/src/components/ui/button';
-import { LoadingIndicator } from '@/src/components/ui/loading-indicator';
-import { Alert, AlertDescription } from '@/src/components/ui/alert';
-import { 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCcw, 
-  Download, 
-  Maximize, 
+import { OptimizedImage, AttachmentImage } from '@/components/ui/optimized-image';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Download,
+  Maximize,
   AlertCircle,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { cn } from '@/src/lib/utils';
-import { usePerformanceMonitoring, useMemoryOptimization } from '@/src/lib/performance';
-import { motionPresets, gestureVariants, performanceProps } from '@/src/lib/motion-utils';
-import type { IssueAttachment } from '@/src/types/issue';
+import { cn } from '@/lib/utils';
+import type { IssueAttachment } from '@/types/issue';
+
+// Motion configuration constants
+const motionPresets = {
+  normal: { duration: 0.3 },
+  quick: { duration: 0.15 },
+  instant: { duration: 0 }
+};
+
+const gestureVariants = {
+  hover: { scale: 1.05 },
+  tap: { scale: 0.95 }
+};
+
+const performanceProps = {
+  layoutId: undefined as string | undefined
+};
 
 interface OptimizedAttachmentViewProps {
   issueId: string;
@@ -71,11 +85,9 @@ export default function OptimizedAttachmentView({
   const [canvasState, setCanvasState] = useState<CanvasState>(INITIAL_CANVAS_STATE);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [imageLoadError, setImageLoadError] = useState<string | null>(null);
-  
+
   const canvasRef = useRef<HTMLDivElement>(null);
-  const endMeasurement = usePerformanceMonitoring('attachmentLoad');
-  const { addCleanup } = useMemoryOptimization();
-  
+
   // Memoize current attachment to prevent unnecessary re-renders
   const currentAttachment = useMemo(() => 
     attachments[selectedIndex] || null,
@@ -93,13 +105,6 @@ export default function OptimizedAttachmentView({
     setCanvasState(INITIAL_CANVAS_STATE);
     setImageLoadError(null);
   }, [selectedIndex]);
-  
-  // Cleanup on unmount
-  useEffect(() => {
-    addCleanup(() => {
-      endMeasurement();
-    });
-  }, [addCleanup, endMeasurement]);
   
   // Canvas manipulation handlers
   const handleZoomIn = useCallback(() => {
@@ -235,8 +240,9 @@ export default function OptimizedAttachmentView({
   // Loading state
   if (isLoading) {
     return (
-      <div className={cn("h-full flex items-center justify-center", className)}>
-        <LoadingIndicator variant="spring" text="Loading attachments..." />
+      <div className={cn("h-full flex flex-col items-center justify-center gap-3", className)}>
+        <Spinner className="size-6" />
+        <p className="text-sm text-muted-foreground">Loading attachments...</p>
       </div>
     );
   }
@@ -303,10 +309,7 @@ export default function OptimizedAttachmentView({
                   alt={currentAttachment.fileName}
                   className="max-w-full max-h-full object-contain"
                   onError={() => setImageLoadError(currentAttachment.fileName)}
-                  onLoad={() => {
-                    setImageLoadError(null);
-                    endMeasurement();
-                  }}
+                  onLoad={() => setImageLoadError(null)}
                 />
               ) : (
                 <div className="flex items-center justify-center w-64 h-64 bg-muted rounded-lg">

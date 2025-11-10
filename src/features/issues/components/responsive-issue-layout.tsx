@@ -2,41 +2,26 @@
 
 import React, { useState, useEffect, lazy, Suspense, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { useIsMobile } from "@/src/hooks/use-mobile";
-import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
-import { Button } from "@/src/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/src/components/ui/dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Image, FileText, PanelRightClose, PanelRightOpen, Keyboard } from "lucide-react";
-import { formatShortcut, type KeyboardShortcut } from "@/src/hooks/use-keyboard-shortcuts";
-import { usePerformanceMonitoring, useMemoryOptimization } from "@/src/lib/performance";
-import { motionPresets, performanceProps } from "@/src/lib/motion-utils";
-import { LoadingIndicator } from "@/src/components/ui/loading-indicator";
-import { cn } from "@/src/lib/utils";
-import type { IssueDetailData, IssuePermissions, ActivityEntry, IssueAttachment } from "@/src/types/issue";
+import { formatShortcut, type KeyboardShortcut } from "@/features/issues/hooks/use-keyboard-shortcuts";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
+import type { IssueDetailData, IssuePermissions, ActivityEntry, IssueAttachment } from "@/types/issue";
 
-// Hook for window dimensions
-function useWindowSize() {
-  const [windowSize, setWindowSize] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1024,
-    height: typeof window !== 'undefined' ? window.innerHeight : 768,
-  });
+// Motion configuration constants
+const motionPresets = {
+  normal: { duration: 0.3 },
+  quick: { duration: 0.15 },
+  instant: { duration: 0 }
+};
 
-  useEffect(() => {
-    function handleResize() {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    }
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-    }
-  }, []);
-
-  return windowSize;
-}
+const performanceProps = {
+  layoutId: undefined as string | undefined
+};
 
 // Lazy load heavy components for better performance
 const IssueAttachmentView = lazy(() => import("./issue-attachments-view"));
@@ -94,15 +79,20 @@ export default function ResponsiveIssueLayout({
   shortcuts = []
 }: ResponsiveIssueLayoutProps) {
   const isMobile = useIsMobile();
-  const { width: windowWidth } = useWindowSize();
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
   const [activeTab, setActiveTab] = useState("attachments");
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
-  
-  // Performance monitoring
-  const endMeasurement = usePerformanceMonitoring('issueDetailLoad');
-  const { addCleanup } = useMemoryOptimization();
+
+  // Track window width for responsive behavior
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, []);
 
   // Reset to attachments tab when switching to mobile
   useEffect(() => {
@@ -110,13 +100,6 @@ export default function ResponsiveIssueLayout({
       setActiveTab("attachments");
     }
   }, [isMobile]); // Remove activeTab from dependencies to avoid cascading renders
-  
-  // Performance monitoring cleanup
-  useEffect(() => {
-    addCleanup(() => {
-      endMeasurement();
-    });
-  }, [addCleanup, endMeasurement]);
 
   // Handle swipe gestures for mobile tab switching
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -238,8 +221,9 @@ export default function ResponsiveIssueLayout({
                 {...performanceProps}
               >
                 <Suspense fallback={
-                  <div className="flex-1 flex items-center justify-center">
-                    <LoadingIndicator variant="spinner" text="Loading attachments..." delay={0} />
+                  <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                    <Spinner className="size-6" />
+                    <p className="text-sm text-muted-foreground">Loading attachments...</p>
                   </div>
                 }>
                   <IssueAttachmentView 
@@ -264,8 +248,9 @@ export default function ResponsiveIssueLayout({
                 {...performanceProps}
               >
                 <Suspense fallback={
-                  <div className="flex-1 flex items-center justify-center">
-                    <LoadingIndicator variant="spinner" text="Loading details..." delay={0} />
+                  <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                    <Spinner className="size-6" />
+                    <p className="text-sm text-muted-foreground">Loading details...</p>
                   </div>
                 }>
                   <IssueDetailsPanel
@@ -339,8 +324,9 @@ export default function ResponsiveIssueLayout({
       {/* Attachment canvas - flexible width */}
       <div className="flex-1 min-w-0 relative">
         <Suspense fallback={
-          <div className="h-full flex items-center justify-center bg-muted/30">
-            <LoadingIndicator variant="spinner" text="Loading attachments..." delay={0} />
+          <div className="h-full flex flex-col items-center justify-center gap-3 bg-muted/30">
+            <Spinner className="size-6" />
+            <p className="text-sm text-muted-foreground">Loading attachments...</p>
           </div>
         }>
           <IssueAttachmentView 
@@ -409,8 +395,9 @@ export default function ResponsiveIssueLayout({
               transition={motionPresets.instant}
             >
               <Suspense fallback={
-                <div className="h-full flex items-center justify-center border-l">
-                  <LoadingIndicator variant="spinner" text="Loading details..." delay={0} />
+                <div className="h-full flex flex-col items-center justify-center gap-3 border-l">
+                  <Spinner className="size-6" />
+                  <p className="text-sm text-muted-foreground">Loading details...</p>
                 </div>
               }>
                 <IssueDetailsPanel

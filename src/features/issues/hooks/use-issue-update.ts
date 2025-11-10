@@ -1,85 +1,93 @@
-// ============================================================================
-// USE ISSUE UPDATE HOOK
-// React hook for updating issue fields with optimistic updates
-// ============================================================================
+/**
+ * USE ISSUE UPDATE HOOK
+ * Ready-to-wire: React Query mutation for updating issue fields
+ */
 
-import { useState, useCallback } from 'react';
-import { updateIssue, type UpdateIssueParams } from '../api';
-import type { IssueUpdateResponse } from '@/src/types/issue';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { updateIssue } from '../api';
+import { issueKeys } from './use-issue-details';
+import type { IssueUpdateResponse } from '@/types/issue';
+
+// ============================================================================
+// HOOK
+// ============================================================================
 
 export interface UseIssueUpdateOptions {
   onSuccess?: (data: IssueUpdateResponse) => void;
   onError?: (error: Error) => void;
 }
 
-export interface UseIssueUpdateReturn {
-  updateField: (issueId: string, field: string, value: any, actorId: string) => Promise<IssueUpdateResponse>;
-  isUpdating: boolean;
+export interface UseIssueUpdateParams {
+  issueId: string;
+  field: string;
+  value: any;
+  actorId: string;
+}
+
+export interface UseIssueUpdateResult {
+  mutate: (params: UseIssueUpdateParams) => void;
+  mutateAsync: (params: UseIssueUpdateParams) => Promise<IssueUpdateResponse>;
+  isPending: boolean;
+  isError: boolean;
   error: Error | null;
+  reset: () => void;
 }
 
 /**
- * Hook for updating issue fields
+ * Ready-to-wire mutation hook for updating issue fields
+ * Automatically revalidates issue details and activities
  *
  * @example
  * ```tsx
- * const { updateField, isUpdating } = useIssueUpdate({
- *   onSuccess: (data) => console.log('Updated:', data),
- *   onError: (error) => console.error('Error:', error),
+ * const { mutate: updateField, isPending } = useIssueUpdate({
+ *   onSuccess: () => toast.success('Issue updated'),
+ *   onError: (error) => toast.error(error.message),
  * });
  *
- * await updateField('issue_1', 'title', 'New title', 'user_1');
+ * updateField({
+ *   issueId: 'issue_1',
+ *   field: 'status',
+ *   value: 'in_progress',
+ *   actorId: 'user_1'
+ * });
  * ```
+ *
+ * TODO: wire to React Query when backend is ready
+ * - Currently uses mock data from fixtures
  */
-export function useIssueUpdate(options: UseIssueUpdateOptions = {}): UseIssueUpdateReturn {
-  const { onSuccess, onError } = options;
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+export function useIssueUpdate(options?: UseIssueUpdateOptions): UseIssueUpdateResult {
+  const queryClient = useQueryClient();
 
-  const updateField = useCallback(
-    async (
-      issueId: string,
-      field: string,
-      value: any,
-      actorId: string
-    ): Promise<IssueUpdateResponse> => {
-      setIsUpdating(true);
-      setError(null);
+  const mutation = useMutation({
+    mutationFn: ({ issueId, field, value, actorId }: UseIssueUpdateParams) =>
+      updateIssue({ issueId, field, value, actorId }),
+    onSuccess: (data, variables) => {
+      // Invalidate issue details and activities to refetch latest data
+      queryClient.invalidateQueries({ queryKey: issueKeys.detail(variables.issueId) });
+      queryClient.invalidateQueries({ queryKey: issueKeys.activities(variables.issueId) });
 
-      try {
-        const params: UpdateIssueParams = {
-          issueId,
-          field,
-          value,
-          actorId,
-        };
+      // Show success toast
+      toast.success('Issue updated successfully');
 
-        const response = await updateIssue(params);
-
-        if (onSuccess) {
-          onSuccess(response);
-        }
-
-        return response;
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error('Update failed');
-        setError(error);
-
-        if (onError) {
-          onError(error);
-        }
-
-        throw error;
-      } finally {
-        setIsUpdating(false);
-      }
+      // Call custom success handler
+      options?.onSuccess?.(data);
     },
-    [onSuccess, onError]
-  );
+    onError: (error: Error) => {
+      // Show error toast
+      toast.error(error.message || 'Failed to update issue');
+
+      // Call custom error handler
+      options?.onError?.(error);
+    },
+  });
 
   return {
-    updateField,
-    isUpdating,
-    error,
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    reset: mutation.reset,
   };
 }

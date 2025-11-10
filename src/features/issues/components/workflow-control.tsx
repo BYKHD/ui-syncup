@@ -85,17 +85,15 @@ const REQUIRES_CONFIRMATION: IssueStatus[] = ['archived'];
 
 interface ExtendedWorkflowControlProps extends WorkflowControlProps {
   id?: string;
-  disabled?: boolean;
   issue?: any; // For permission checking
 }
 
 export function WorkflowControl({
   currentStatus,
-  canChangeStatus,
   onStatusChange,
   isLoading: externalLoading = false,
-  id,
   disabled = false,
+  id,
   issue
 }: ExtendedWorkflowControlProps) {
   const generatedId = useId();

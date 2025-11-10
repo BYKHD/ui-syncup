@@ -12,11 +12,11 @@ import {
   Loader2
 } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
-import { Badge } from "@/src/components/ui/badge";
-import { ScrollArea } from "@/src/components/ui/scroll-area";
-import { Separator } from "@/src/components/ui/separator";
-import { cn } from "@/src/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 import type { 
   ActivityEntry, 
@@ -25,7 +25,7 @@ import type {
   FieldUpdateDetails,
   CommentDetails,
   AttachmentDetails
-} from "@/src/types/issue";
+} from "@/types/issue";
 
 // Enhanced props to include error handling
 interface EnhancedActivityTimelineProps extends ActivityTimelineProps {

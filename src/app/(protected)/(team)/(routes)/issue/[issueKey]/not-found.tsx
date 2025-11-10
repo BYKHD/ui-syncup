@@ -3,8 +3,8 @@
 // Displayed when an issue key doesn't exist
 // ============================================================================
 
-import { Button } from '@/src/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/src/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft, Search } from 'lucide-react';
 import Link from 'next/link';
 

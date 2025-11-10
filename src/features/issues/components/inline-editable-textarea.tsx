@@ -2,10 +2,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { RiLoader4Line } from '@remixicon/react';
-import { Textarea } from '@/src/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/src/components/ui/tooltip';
+import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface InlineEditableTextareaProps {
   value: string;

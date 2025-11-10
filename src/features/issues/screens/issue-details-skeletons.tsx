@@ -1,8 +1,8 @@
 "use client";
 
-import { Skeleton } from "@/src/components/ui/skeleton";
-import { ScrollArea } from "@/src/components/ui/scroll-area";
-import { Separator } from "@/src/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
 // ============================================================================
 // PANEL HEADER SKELETON

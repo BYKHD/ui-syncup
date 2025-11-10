@@ -35,12 +35,12 @@ export function CenteredCanvasView({
     );
   }
 
-  const handleZoomChange = (zoomLevel: number) => {
-    onCanvasStateChange({ zoomLevel });
+  const handleZoomChange = (zoom: number) => {
+    onCanvasStateChange({ zoom });
   };
 
   const handlePanChange = (panOffset: { x: number; y: number }) => {
-    onCanvasStateChange({ panOffset });
+    onCanvasStateChange({ panX: panOffset.x, panY: panOffset.y });
   };
 
   const handleFitModeChange = (fitMode: CanvasViewState['fitMode']) => {
@@ -58,7 +58,7 @@ export function CenteredCanvasView({
       // Create a temporary link to download the file
       const link = document.createElement('a');
       link.href = attachment.url;
-      link.download = attachment.filename;
+      link.download = attachment.fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -75,12 +75,12 @@ export function CenteredCanvasView({
       <div className="flex-1 relative overflow-hidden">
         {/* Layered canvas structure for future annotation support */}
         <div className="absolute inset-0">
-          {attachment.kind === 'video' ? (
+          {attachment.fileType.startsWith('video/') ? (
             /* Video player */
             <VideoPlayer
               src={attachment.url}
-              alt={attachment.filename}
-              mimeType={attachment.mimeType}
+              alt={attachment.fileName}
+              mimeType={attachment.fileType}
               onVideoLoad={setImageDimensions}
             />
           ) : (
@@ -88,9 +88,9 @@ export function CenteredCanvasView({
             <>
               <ImageCanvas
                 src={attachment.url}
-                alt={attachment.filename}
-                zoomLevel={canvasState.zoomLevel}
-                panOffset={canvasState.panOffset}
+                alt={attachment.fileName}
+                zoomLevel={canvasState.zoom}
+                panOffset={{ x: canvasState.panX, y: canvasState.panY }}
                 fitMode={canvasState.fitMode}
                 onZoomChange={handleZoomChange}
                 onPanChange={handlePanChange}
@@ -106,13 +106,13 @@ export function CenteredCanvasView({
         </div>
 
         {/* Zoom controls overlay - only for images */}
-        {attachment.kind === 'image' && (
+        {attachment.fileType.startsWith('image/') && (
           <div className="absolute top-4 right-4 z-20">
             <ZoomControls
-              zoomLevel={canvasState.zoomLevel}
+              zoomLevel={canvasState.zoom}
               fitMode={canvasState.fitMode}
-              onZoomIn={() => handleZoomChange(Math.min(canvasState.zoomLevel * 1.5, 5))}
-              onZoomOut={() => handleZoomChange(Math.max(canvasState.zoomLevel / 1.5, 0.1))}
+              onZoomIn={() => handleZoomChange(Math.min(canvasState.zoom * 1.5, 5))}
+              onZoomOut={() => handleZoomChange(Math.max(canvasState.zoom / 1.5, 0.1))}
               onFitToCanvas={() => handleFitModeChange('fit')}
               onActualSize={() => {
                 handleFitModeChange('actual');
@@ -122,17 +122,7 @@ export function CenteredCanvasView({
           </div>
         )}
 
-        {/* File info bar overlay */}
-        <div className="absolute bottom-4 left-4 right-4 z-20">
-          <FileInfoBar
-            filename={attachment.filename}
-            mimeType={attachment.mimeType}
-            size={attachment.size}
-            imageDimensions={imageDimensions}
-            url={attachment.url}
-            onDownload={handleDownload}
-          />
-        </div>
+       
       </div>
 
       {/* Image selector for multiple attachments */}
@@ -140,7 +130,7 @@ export function CenteredCanvasView({
         <div className="flex-shrink-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <ImageSelector
             attachments={attachments}
-            selectedId={canvasState.selectedAttachmentId}
+            selectedAttachmentId={attachment.id}
             onSelect={onAttachmentSelect}
             layout="thumbnails"
           />
@@ -148,7 +138,7 @@ export function CenteredCanvasView({
       )}
 
       {/* Future annotation support indicator - only for images */}
-      {attachment.kind === 'image' && (
+      {attachment.fileType.startsWith('image/') && (
         <div className="absolute top-4 left-4 z-20">
           <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-md px-3 py-1.5 text-xs text-muted-foreground border flex items-center gap-2">
             <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />

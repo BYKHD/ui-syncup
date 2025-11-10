@@ -2,11 +2,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { RiLoader4Line } from '@remixicon/react';
-import { Input } from '@/src/components/ui/input';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/src/components/ui/tooltip';
+import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { issueFeedback } from '@/src/lib/feedback';
-import { cn } from '@/src/lib/utils';
+import { issueFeedback } from '@/lib/feedback';
+import { cn } from '@/lib/utils';
 
 interface InlineEditableTextProps {
   value: string;

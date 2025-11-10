@@ -4,21 +4,21 @@
 // ============================================================================
 
 import { IssueDetailsScreen } from '@/features/issues';
-import { getDetailedIssueByKey } from '@/src/mocks/issue.fixtures';
+import { getDetailedIssueByKey } from '@/mocks/issue.fixtures';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
 interface IssuePageProps {
-  params: {
+  params: Promise<{
     issueKey: string;
-  };
+  }>;
 }
 
 /**
  * Generate metadata for the issue page
  */
 export async function generateMetadata({ params }: IssuePageProps): Promise<Metadata> {
-  const issueKey = params.issueKey;
+  const { issueKey } = await params;
   const issue = getDetailedIssueByKey(issueKey);
 
   if (!issue) {
@@ -41,8 +41,8 @@ export async function generateMetadata({ params }: IssuePageProps): Promise<Meta
  *
  * @param params - Route parameters containing the issue key (e.g., "MKT-101")
  */
-export default function IssuePage({ params }: IssuePageProps) {
-  const issueKey = params.issueKey;
+export default async function IssuePage({ params }: IssuePageProps) {
+  const { issueKey } = await params;
 
   // Look up issue by key to get the ID
   // In production, this would be a server-side database query

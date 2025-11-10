@@ -1,72 +1,71 @@
+/**
+ * USE ISSUE ACTIVITIES HOOK
+ * Ready-to-wire: React Query hook for issue activity timeline (no business logic)
+ */
+
+import { useQuery } from '@tanstack/react-query';
+import { getIssueActivities } from '../api';
+import { issueKeys } from './use-issue-details';
+import type { ActivityEntry } from '@/types/issue';
+
 // ============================================================================
-// USE ISSUE ACTIVITIES HOOK
-// React hook for fetching issue activity timeline with pagination
+// HOOK
 // ============================================================================
 
-import useSWR, { type SWRConfiguration } from 'swr';
-import { getIssueActivities, type GetIssueActivitiesParams } from '../api';
-import type { ActivityTimelineResponse, ActivityEntry } from '@/src/types/issue';
-
-export interface UseIssueActivitiesOptions extends SWRConfiguration<ActivityTimelineResponse> {
+export interface UseIssueActivitiesParams {
   issueId: string;
   cursor?: string | null;
   limit?: number;
   enabled?: boolean;
 }
 
-export interface UseIssueActivitiesReturn {
+export interface UseIssueActivitiesResult {
   activities: ActivityEntry[];
   hasMore: boolean;
   nextCursor: string | null;
   isLoading: boolean;
   isError: boolean;
-  error: Error | undefined;
-  mutate: () => Promise<ActivityTimelineResponse | undefined>;
-  isValidating: boolean;
+  error: Error | null;
+  refetch: () => void;
 }
 
 /**
- * Hook to fetch and cache issue activity timeline with pagination
+ * Ready-to-wire hook: fetch and cache issue activity timeline
+ * Pure data fetching - no business logic
  *
  * @example
  * ```tsx
- * const { activities, hasMore, isLoading } = useIssueActivities({
+ * const { activities, hasMore, nextCursor, isLoading } = useIssueActivities({
  *   issueId: 'issue_1',
  *   limit: 10,
  * });
  * ```
+ *
+ * TODO: wire to React Query when backend is ready
+ * - Currently uses mock data from fixtures
+ * - Consider implementing infinite query for pagination
  */
-export function useIssueActivities(
-  options: UseIssueActivitiesOptions
-): UseIssueActivitiesReturn {
-  const { issueId, cursor, limit = 10, enabled = true, ...swrOptions } = options;
-
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate,
-  } = useSWR<ActivityTimelineResponse, Error>(
-    enabled && issueId ? ['issue-activities', issueId, cursor, limit] : null,
-    () => getIssueActivities({ issueId, cursor, limit }),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-      dedupingInterval: 5000,
-      refreshInterval: 30000, // Refresh every 30 seconds
-      ...swrOptions,
-    }
-  );
+export function useIssueActivities({
+  issueId,
+  cursor,
+  limit = 10,
+  enabled = true,
+}: UseIssueActivitiesParams): UseIssueActivitiesResult {
+  const query = useQuery({
+    queryKey: [...issueKeys.activities(issueId), cursor, limit],
+    queryFn: () => getIssueActivities({ issueId, cursor: cursor ?? undefined, limit }),
+    enabled: enabled && !!issueId,
+    staleTime: 30 * 1000, // 30 seconds
+    retry: 1,
+  });
 
   return {
-    activities: data?.activities || [],
-    hasMore: data?.hasMore || false,
-    nextCursor: data?.nextCursor || null,
-    isLoading,
-    isError: !!error,
-    error,
-    mutate,
-    isValidating,
+    activities: query.data?.activities || [],
+    hasMore: query.data?.hasMore || false,
+    nextCursor: query.data?.nextCursor || null,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
   };
 }

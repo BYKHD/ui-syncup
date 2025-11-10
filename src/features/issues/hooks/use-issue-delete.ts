@@ -1,28 +1,38 @@
-// ============================================================================
-// USE ISSUE DELETE HOOK
-// React hook for deleting issues
-// ============================================================================
+/**
+ * USE ISSUE DELETE HOOK
+ * Ready-to-wire: React Query mutation for deleting issues
+ */
 
-import { useState, useCallback } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { deleteIssue, type DeleteIssueParams, type DeleteIssueResponse } from '../api';
+import { issueKeys } from './use-issue-details';
+
+// ============================================================================
+// HOOK
+// ============================================================================
 
 export interface UseIssueDeleteOptions {
   onSuccess?: (data: DeleteIssueResponse) => void;
   onError?: (error: Error) => void;
 }
 
-export interface UseIssueDeleteReturn {
-  deleteIssueById: (issueId: string, actorId: string) => Promise<DeleteIssueResponse>;
-  isDeleting: boolean;
+export interface UseIssueDeleteResult {
+  mutate: (params: DeleteIssueParams) => void;
+  mutateAsync: (params: DeleteIssueParams) => Promise<DeleteIssueResponse>;
+  isPending: boolean;
+  isError: boolean;
   error: Error | null;
+  reset: () => void;
 }
 
 /**
- * Hook for deleting issues
+ * Ready-to-wire mutation hook for deleting issues
+ * Automatically invalidates issue lists
  *
  * @example
  * ```tsx
- * const { deleteIssueById, isDeleting } = useIssueDelete({
+ * const { mutate: deleteIssueById, isPending } = useIssueDelete({
  *   onSuccess: () => {
  *     toast.success('Issue deleted');
  *     router.push('/issues');
@@ -30,51 +40,45 @@ export interface UseIssueDeleteReturn {
  *   onError: (error) => toast.error(error.message),
  * });
  *
- * await deleteIssueById('issue_1', 'user_1');
+ * deleteIssueById({ issueId: 'issue_1', actorId: 'user_1' });
  * ```
+ *
+ * TODO: wire to React Query when backend is ready
+ * - Currently uses mock data from fixtures
  */
-export function useIssueDelete(options: UseIssueDeleteOptions = {}): UseIssueDeleteReturn {
-  const { onSuccess, onError } = options;
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+export function useIssueDelete(options?: UseIssueDeleteOptions): UseIssueDeleteResult {
+  const queryClient = useQueryClient();
 
-  const deleteIssueById = useCallback(
-    async (issueId: string, actorId: string): Promise<DeleteIssueResponse> => {
-      setIsDeleting(true);
-      setError(null);
+  const mutation = useMutation({
+    mutationFn: (params: DeleteIssueParams) => deleteIssue(params),
+    onSuccess: (data, variables) => {
+      // Remove the deleted issue from cache
+      queryClient.removeQueries({ queryKey: issueKeys.detail(variables.issueId) });
 
-      try {
-        const params: DeleteIssueParams = {
-          issueId,
-          actorId,
-        };
+      // Invalidate issue lists to refetch
+      queryClient.invalidateQueries({ queryKey: issueKeys.lists() });
 
-        const response = await deleteIssue(params);
+      // Show success toast
+      toast.success('Issue deleted successfully');
 
-        if (onSuccess) {
-          onSuccess(response);
-        }
-
-        return response;
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error('Delete failed');
-        setError(error);
-
-        if (onError) {
-          onError(error);
-        }
-
-        throw error;
-      } finally {
-        setIsDeleting(false);
-      }
+      // Call custom success handler
+      options?.onSuccess?.(data);
     },
-    [onSuccess, onError]
-  );
+    onError: (error: Error) => {
+      // Show error toast
+      toast.error(error.message || 'Failed to delete issue');
+
+      // Call custom error handler
+      options?.onError?.(error);
+    },
+  });
 
   return {
-    deleteIssueById,
-    isDeleting,
-    error,
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    reset: mutation.reset,
   };
 }

@@ -1,10 +1,10 @@
 'use client';
 
-import { ScrollArea } from '@/src/components/ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { PanelHeader } from './panel-header';
 import { MetadataSection } from './metadata-section';
 import { ActivityTimeline } from './activity-timeline';
-import type { IssueDetailData, IssuePermissions, ActivityEntry } from '@/src/types/issue';
+import type { IssueDetailData, IssuePermissions, ActivityEntry } from '@/types/issue';
 
 interface IssueDetailsPanelProps {
   issueData: IssueDetailData;

@@ -3,9 +3,9 @@
 // Fetches complete issue details with all relationships
 // ============================================================================
 
-import type { IssueDetailData } from '@/src/types/issue';
-import { getDetailedIssueById } from '@/src/mocks/issue.fixtures';
-import { getAttachmentsByIssueId } from '@/src/mocks/attachment.fixtures';
+import type { IssueDetailData } from '@/types/issue';
+import { getDetailedIssueById } from '@/mocks/issue.fixtures';
+import { getAttachmentsByIssueId } from '@/mocks/attachment.fixtures';
 
 export interface GetIssueDetailsParams {
   issueId: string;

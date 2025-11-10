@@ -2,9 +2,6 @@
 
 import React from 'react';
 
-// External dependencies
-import { formatDistanceToNow } from 'date-fns';
-
 // UI Components
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -17,13 +14,8 @@ import { InlineEditableText } from './inline-editable-text';
 import { InlineEditableTextarea } from './inline-editable-textarea';
 import { InlineEditableSelect } from './inline-editable-select';
 import { InlineEditableUserSelect } from './inline-editable-user-select';
-import { WorkflowControl } from './workflow-control';
-
-// Permission Guards
-import { EditGuard, StatusGuard, AssignGuard } from '@/components/shared/PermissionGuard';
-
-// Hooks
-import { useIssuePermissions } from '@/hooks/use-issue-permissions';
+// TODO: wire WorkflowControl when dependencies are ready
+// import { WorkflowControl } from './workflow-control';
 
 // Config
 import { TYPE_OPTIONS, PRIORITY_OPTIONS } from '@/config/issue-options';
@@ -48,6 +40,34 @@ const MOCK_TEAM_MEMBERS = [
   { id: '2', name: 'Jane Smith', email: 'jane@example.com', image: null },
   { id: '3', name: 'Bob Johnson', email: 'bob@example.com', image: null },
 ];
+
+// TODO: wire useIssuePermissions hook when implemented
+const useMockPermissions = (issue: IssueDetailData) => {
+  return {
+    permissions: {
+      canEdit: true,
+      canEditField: (field: string) => true,
+      canChangeStatus: true,
+      canDelete: true,
+    }
+  };
+};
+
+// Simple date formatter until date-fns is added
+function formatTimestamp(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const now = new Date();
+  const diffMs = now.getTime() - dateObj.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+  if (diffDays < 30) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+  return dateObj.toLocaleDateString();
+}
 
 function MetadataField({
   label,
@@ -110,21 +130,16 @@ function UserDisplay({
   );
 }
 
-function formatTimestamp(date: Date | string): string {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  return formatDistanceToNow(dateObj, { addSuffix: true });
-}
-
-export function MetadataSection({ 
-  issue, 
-  onUpdate, 
+export function MetadataSection({
+  issue,
+  onUpdate,
   isLoading = false,
   isEditingTitle,
   isEditingDescription,
   onEditingTitleChange,
   onEditingDescriptionChange
 }: MetadataSectionProps) {
-  const { permissions } = useIssuePermissions(issue);
+  const { permissions } = useMockPermissions(issue);
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -181,17 +196,8 @@ export function MetadataSection({
 
       {/* Status */}
       <MetadataField label="Status">
-        <StatusGuard 
-          issue={issue}
-          fallback={<IssueStatusBadge status={issue.status} />}
-        >
-          <WorkflowControl
-            currentStatus={issue.status}
-            canChangeStatus={permissions.canChangeStatus}
-            onStatusChange={(newStatus) => onUpdate('status', newStatus)}
-            issue={issue}
-          />
-        </StatusGuard>
+        {/* TODO: wire WorkflowControl when ready */}
+        <IssueStatusBadge status={issue.status} />
       </MetadataField>
 
       {/* Type */}

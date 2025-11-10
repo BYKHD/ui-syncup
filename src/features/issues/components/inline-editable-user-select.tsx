@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { RiCheckLine, RiArrowDownSLine, RiLoader4Line, RiUserLine } from '@remixicon/react';
-import { Button } from '@/src/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -10,12 +10,12 @@ import {
   CommandInput,
   CommandItem,
   CommandList
-} from '@/src/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/src/components/ui/popover';
-import { Avatar, AvatarFallback, AvatarImage } from '@/src/components/ui/avatar';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/src/components/ui/tooltip';
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { cn } from '@/src/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface UserOption {
   id: string;

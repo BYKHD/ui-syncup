@@ -3,9 +3,9 @@
 // Updates a single field on an issue with optimistic updates
 // ============================================================================
 
-import type { IssueUpdatePayload, IssueUpdateResponse } from '@/src/types/issue';
-import { getDetailedIssueById } from '@/src/mocks/issue.fixtures';
-import { getAttachmentsByIssueId } from '@/src/mocks/attachment.fixtures';
+import type { IssueUpdatePayload, IssueUpdateResponse } from '@/types/issue';
+import { getDetailedIssueById } from '@/mocks/issue.fixtures';
+import { getAttachmentsByIssueId } from '@/mocks/attachment.fixtures';
 
 export interface UpdateIssueParams extends IssueUpdatePayload {
   issueId: string;

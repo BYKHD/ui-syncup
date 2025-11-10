@@ -2,18 +2,23 @@
 
 import { useState } from 'react';
 import { RiMore2Line, RiDeleteBinLine, RiKeyboardBoxLine } from '@remixicon/react';
-import { Button } from '@/src/components/ui/button';
+
+// UI Components
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@/src/components/ui/dropdown-menu';
-import { Skeleton } from '@/src/components/ui/skeleton';
+} from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Issue Components
 import { IssueDeleteDialog } from './issue-deletion-dialog';
-import { DeleteGuard, PermissionTooltip } from '@/src/components/shared/PermissionGuard';
-import type { IssueDetailData } from '@/src/types/issue';
+
+// Types
+import type { IssueDetailData } from '@/types/issue';
 
 interface PanelHeaderProps {
   issueKey: string;
@@ -52,58 +57,37 @@ export function PanelHeader({
           {issueKey}
         </h2>
 
-        <DeleteGuard 
-          issue={issue}
-          fallback={
-            <PermissionTooltip
-              issue={issue}
-              permission="canDelete"
-              tooltipContent="You don't have permission to delete this issue"
-              asChild
+        {/* TODO: wire permission guards when implemented */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label="Issue actions"
             >
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 opacity-50 cursor-not-allowed"
-                aria-label="Issue actions (disabled)"
-                disabled
-              >
-                <RiMore2Line className="h-4 w-4" />
-              </Button>
-            </PermissionTooltip>
-          }
-        >
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                aria-label="Issue actions"
-              >
-                <RiMore2Line className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {onToggleShortcutsHelp && (
-                <>
-                  <DropdownMenuItem onClick={onToggleShortcutsHelp}>
-                    <RiKeyboardBoxLine className="mr-2 h-4 w-4" />
-                    Keyboard Shortcuts
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              <DropdownMenuItem
-                onClick={handleDeleteClick}
-                className="text-destructive focus:text-destructive"
-              >
-                <RiDeleteBinLine className="text-destructive mr-2 h-4 w-4" />
-                Delete Issue
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </DeleteGuard>
+              <RiMore2Line className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            {onToggleShortcutsHelp && (
+              <>
+                <DropdownMenuItem onClick={onToggleShortcutsHelp}>
+                  <RiKeyboardBoxLine className="mr-2 h-4 w-4" />
+                  Keyboard Shortcuts
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
+            <DropdownMenuItem
+              onClick={handleDeleteClick}
+              className="text-destructive focus:text-destructive"
+            >
+              <RiDeleteBinLine className="text-destructive mr-2 h-4 w-4" />
+              Delete Issue
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       <IssueDeleteDialog

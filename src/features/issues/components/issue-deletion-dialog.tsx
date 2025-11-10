@@ -11,7 +11,7 @@
  * 
  * @example
  * ```tsx
- * import { IssueDeleteDialog } from '@/src/features/issues/components/issue-deletion-dialog';
+ * import { IssueDeleteDialog } from '@/features/issues/components/issue-deletion-dialog';
  * 
  * function IssueActions() {
  *   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -49,7 +49,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle
-} from '@/src/components/ui/alert-dialog';
+} from '@/components/ui/alert-dialog';
 import { RiLoader4Line, RiDeleteBinLine, RiAlertLine } from '@remixicon/react';
 import { toast } from 'sonner';
 

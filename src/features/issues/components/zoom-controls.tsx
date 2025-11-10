@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import { Button } from "@/src/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/src/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ZoomIn, ZoomOut, Maximize, RotateCcw } from "lucide-react";
-import { useIsMobile } from "@/src/hooks/use-mobile";
-import type { CanvasViewState } from "@/src/types/issue";
+import { useIsMobile } from "@/hooks/use-mobile";
+import type { CanvasViewState } from "@/types/issue";
 
 interface ZoomControlsProps {
   zoomLevel: number;

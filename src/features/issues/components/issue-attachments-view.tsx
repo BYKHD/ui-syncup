@@ -7,12 +7,12 @@
 // ============================================================================
 
 import { useState, useMemo } from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/src/components/ui/alert';
-import { Button } from '@/src/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw, FileText, Upload } from 'lucide-react';
-import CenteredCanvasView from './centered-canvas-view';
-import ImageSelector from './image-selector';
-import type { IssueAttachment } from '@/src/types/issue';
+import {CenteredCanvasView} from './centered-canvas-view';
+import {ImageSelector} from './image-selector';
+import type { IssueAttachment, CanvasViewState } from '@/types/issue';
 
 interface IssueAttachmentsViewProps {
   issueId: string;
@@ -39,6 +39,14 @@ export default function IssueAttachmentsView({
     imageAttachments[0]?.id || ''
   );
 
+  // Canvas state management
+  const [canvasState, setCanvasState] = useState<CanvasViewState>({
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+    fitMode: 'fit',
+  });
+
   // Update selected attachment when attachments change
   useState(() => {
     if (imageAttachments.length > 0 && !selectedAttachmentId) {
@@ -50,6 +58,23 @@ export default function IssueAttachmentsView({
     () => imageAttachments.find((att) => att.id === selectedAttachmentId) || imageAttachments[0],
     [imageAttachments, selectedAttachmentId]
   );
+
+  // Handle canvas state updates
+  const handleCanvasStateChange = (updates: Partial<CanvasViewState>) => {
+    setCanvasState(prev => ({ ...prev, ...updates }));
+  };
+
+  // Handle attachment selection
+  const handleAttachmentSelect = (attachmentId: string) => {
+    setSelectedAttachmentId(attachmentId);
+    // Reset zoom and pan when switching attachments
+    setCanvasState({
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      fitMode: 'fit',
+    });
+  };
 
   // Error state
   if (error && onRetry) {
@@ -151,6 +176,10 @@ export default function IssueAttachmentsView({
         <CenteredCanvasView
           key={selectedAttachment.id}
           attachment={selectedAttachment}
+          attachments={imageAttachments}
+          canvasState={canvasState}
+          onCanvasStateChange={handleCanvasStateChange}
+          onAttachmentSelect={handleAttachmentSelect}
         />
       )}
     </div>

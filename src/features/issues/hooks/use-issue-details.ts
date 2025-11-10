@@ -1,59 +1,70 @@
+/**
+ * USE ISSUE DETAILS HOOK
+ * Ready-to-wire: React Query hook for issue details (no business logic)
+ */
+
+import { useQuery } from '@tanstack/react-query';
+import { getIssueDetails } from '../api';
+import type { IssueDetailData } from '@/types/issue';
+
 // ============================================================================
-// USE ISSUE DETAILS HOOK
-// React hook for fetching issue details with SWR
+// QUERY KEYS
 // ============================================================================
 
-import useSWR, { type SWRConfiguration } from 'swr';
-import { getIssueDetails, type GetIssueDetailsResponse } from '../api';
-import type { IssueDetailData } from '@/src/types/issue';
+export const issueKeys = {
+  all: ['issues'] as const,
+  lists: () => [...issueKeys.all, 'list'] as const,
+  list: (filters: Record<string, unknown>) => [...issueKeys.lists(), filters] as const,
+  details: () => [...issueKeys.all, 'detail'] as const,
+  detail: (id: string) => [...issueKeys.details(), id] as const,
+  activities: (id: string) => [...issueKeys.detail(id), 'activities'] as const,
+};
 
-export interface UseIssueDetailsOptions extends SWRConfiguration<GetIssueDetailsResponse> {
+// ============================================================================
+// HOOK
+// ============================================================================
+
+export interface UseIssueDetailsParams {
   issueId: string;
+  enabled?: boolean;
 }
 
-export interface UseIssueDetailsReturn {
+export interface UseIssueDetailsResult {
   issue: IssueDetailData | undefined;
   isLoading: boolean;
   isError: boolean;
-  error: Error | undefined;
-  mutate: () => Promise<GetIssueDetailsResponse | undefined>;
-  isValidating: boolean;
+  error: Error | null;
+  refetch: () => void;
 }
 
 /**
- * Hook to fetch and cache issue details
+ * Ready-to-wire hook: fetch and cache issue details
+ * Pure data fetching - no business logic
  *
  * @example
  * ```tsx
- * const { issue, isLoading, error } = useIssueDetails({ issueId: 'issue_1' });
+ * const { issue, isLoading, error, refetch } = useIssueDetails({
+ *   issueId: 'issue_1'
+ * });
  * ```
+ *
+ * TODO: wire to React Query when backend is ready
+ * - Currently uses mock data from fixtures
  */
-export function useIssueDetails(options: UseIssueDetailsOptions): UseIssueDetailsReturn {
-  const { issueId, ...swrOptions } = options;
-
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate,
-  } = useSWR<GetIssueDetailsResponse, Error>(
-    issueId ? ['issue-details', issueId] : null,
-    () => getIssueDetails({ issueId }),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-      dedupingInterval: 5000,
-      ...swrOptions,
-    }
-  );
+export function useIssueDetails({ issueId, enabled = true }: UseIssueDetailsParams): UseIssueDetailsResult {
+  const query = useQuery({
+    queryKey: issueKeys.detail(issueId),
+    queryFn: () => getIssueDetails({ issueId }).then(res => res.issue),
+    enabled: enabled && !!issueId,
+    staleTime: 30 * 1000, // 30 seconds
+    retry: 1,
+  });
 
   return {
-    issue: data?.issue,
-    isLoading,
-    isError: !!error,
-    error,
-    mutate,
-    isValidating,
+    issue: query.data,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
   };
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import { useIsMobile } from "@/src/hooks/use-mobile";
-import { Skeleton } from "@/src/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
-import { Button } from "@/src/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft, Image, FileText } from "lucide-react";
 
 export function ResponsiveIssueLayoutSkeleton() {
