@@ -24,7 +24,7 @@ const performanceProps = {
 };
 
 // Lazy load heavy components for better performance
-const IssueAttachmentView = lazy(() => import("./issue-attachments-view"));
+const IssueAttachmentView = lazy(() => import("./optimized-attachment-view"));
 const IssueDetailsPanel = lazy(() => import("./issue-details-panel"));
 
 interface ResponsiveIssueLayoutProps {

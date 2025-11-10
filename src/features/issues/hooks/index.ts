@@ -14,3 +14,6 @@ export * from './use-issue-delete';
 // UI state hooks
 export * from './use-issue-filters';
 export * from './use-keyboard-shortcuts';
+
+// Performance hooks
+export * from './use-optimized-image';

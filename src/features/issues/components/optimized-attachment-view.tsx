@@ -17,7 +17,7 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'motion/react';
-import { OptimizedImage, AttachmentImage } from '@/components/ui/optimized-image';
+import { OptimizedImage, AttachmentImage } from './optimized-image';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';

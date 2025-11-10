@@ -4,7 +4,7 @@
 // ============================================================================
 
 // Screens (main entry points)
-export { default as IssueDetailsScreen } from './screens/issue-details-screen-new';
+export { default as IssueDetailsScreen } from './screens/issue-details-screen';
 export { EnhancedResponsiveIssueLayoutSkeleton } from './screens/issue-details-skeletons';
 
 // List Components
@@ -15,7 +15,7 @@ export { IssuesListFilter } from './components/issues-list-filter';
 // Detail Components (for composition)
 export { default as ResponsiveIssueLayout } from './components/responsive-issue-layout';
 export { default as IssueDetailsPanel } from './components/issue-details-panel';
-export { default as IssueAttachmentsView } from './components/issue-attachments-view';
+export { default as IssueAttachmentsView } from './components/optimized-attachment-view';
 
 // Hooks
 export {
