@@ -36,7 +36,6 @@ import {
   getRoleBadgeVariant,
 } from "@features/projects/utils";
 import { useJoinProject } from "@features/projects/hooks";
-import { ProjectMemberManager } from "./project-member-manager-dialog";
 
 interface ProjectCardProps {
   project: ProjectSummary;
@@ -52,22 +51,11 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
     },
   });
 
-  const handleRename = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log("Rename project:", project.id);
-  };
 
   const handleJoin = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     joinProject(project.id);
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log("Delete project:", project.id);
   };
 
   const renderIcon = () => {
@@ -175,7 +163,7 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
             className="shadow-lg"
           >
             <RiUserAddLine className="h-4 w-4 mr-2" />
-            {isJoining ? "Joining..." : "Join Project"}
+            {isJoining ? "Joining..." : "Join"}
           </Button>
         </div>
       )}

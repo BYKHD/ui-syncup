@@ -10,29 +10,50 @@ import { Popover, PopoverContent, PopoverTrigger } from '@components/ui/popover'
 import { Switch } from '@components/ui/switch'
 import { Label } from '@components/ui/label'
 import { RiAddLine } from '@remixicon/react'
-import { 
-  RiBox2Fill, 
-  RiNotification2Fill, 
-  RiPaletteFill, 
-  RiServerFill, 
-  RiSmartphoneFill,
-  RiCodeFill,
-  RiDatabaseFill,
-  RiSettingsFill,
-  RiUserFill,
-  RiTeamFill,
-  RiShieldFill,
+import {
   RiRocketFill,
   RiLightbulbFill,
+  RiCodeBoxFill,
+  RiDashboardFill,
+  RiPuzzleFill,
+  RiBrainFill,
+  RiFlashlightFill,
+  RiCompassFill,
+  RiLeafFill,
+  RiFireFill,
+  RiThunderstormsFill,
+  RiMagicFill,
+  RiSparklingFill,
+  RiFolderFill,
+  RiPlanetFill,
+  RiMeteorFill,
+  RiCactusFill,
+  RiFlowerFill,
+  RiCupFill,
+  RiAnchorFill,
   RiStarFill,
   RiHeartFill,
-  RiBookmarkFill,
-  RiFlagFill,
-  RiTargetFill,
   RiTrophyFill,
-  RiAwardFill,
+  RiShieldFill,
+  RiTargetFill,
+  RiBugFill,
+  RiPaletteFill,
+  RiCameraFill,
+  RiBookFill,
+  RiGamepadFill,
+  RiShoppingCartFill,
+  RiSmartphoneFill,
+  RiTvFill,
+  RiMusicFill,
+  RiGiftFill,
+  RiMailFill,
+  RiBellFill,
+  RiTimeFill,
+  RiHomeFill,
+  RiMapPinFill,
   RiLockLine,
-  RiGlobalLine
+  RiGlobalLine,
+  RiSearchLine
 } from '@remixicon/react'
 import { useTeam } from '@hooks/use-team'
 
@@ -54,36 +75,57 @@ interface ProjectCreateDialogProps {
 const KEY_PATTERN = /^[A-Z]{2,6}$/
 
 const iconOptions = [
-  { name: 'RiBox2Fill', component: RiBox2Fill, label: 'Box' },
-  { name: 'RiNotification2Fill', component: RiNotification2Fill, label: 'Notification' },
-  { name: 'RiPaletteFill', component: RiPaletteFill, label: 'Palette' },
-  { name: 'RiServerFill', component: RiServerFill, label: 'Server' },
-  { name: 'RiSmartphoneFill', component: RiSmartphoneFill, label: 'Mobile' },
-  { name: 'RiCodeFill', component: RiCodeFill, label: 'Code' },
-  { name: 'RiDatabaseFill', component: RiDatabaseFill, label: 'Database' },
-  { name: 'RiSettingsFill', component: RiSettingsFill, label: 'Settings' },
-  { name: 'RiUserFill', component: RiUserFill, label: 'User' },
-  { name: 'RiTeamFill', component: RiTeamFill, label: 'Team' },
-  { name: 'RiShieldFill', component: RiShieldFill, label: 'Shield' },
+  { name: 'RiFolderFill', component: RiFolderFill, label: 'Folder' },
   { name: 'RiRocketFill', component: RiRocketFill, label: 'Rocket' },
   { name: 'RiLightbulbFill', component: RiLightbulbFill, label: 'Lightbulb' },
+  { name: 'RiCodeBoxFill', component: RiCodeBoxFill, label: 'Code Box' },
+  { name: 'RiDashboardFill', component: RiDashboardFill, label: 'Dashboard' },
+  { name: 'RiPuzzleFill', component: RiPuzzleFill, label: 'Puzzle' },
+  { name: 'RiBrainFill', component: RiBrainFill, label: 'Brain' },
+  { name: 'RiFlashlightFill', component: RiFlashlightFill, label: 'Flashlight' },
+  { name: 'RiCompassFill', component: RiCompassFill, label: 'Compass' },
+  { name: 'RiLeafFill', component: RiLeafFill, label: 'Leaf' },
+  { name: 'RiFireFill', component: RiFireFill, label: 'Fire' },
+  { name: 'RiThunderstormsFill', component: RiThunderstormsFill, label: 'Storm' },
+  { name: 'RiMagicFill', component: RiMagicFill, label: 'Magic' },
+  { name: 'RiSparklingFill', component: RiSparklingFill, label: 'Sparkle' },
+  { name: 'RiPlanetFill', component: RiPlanetFill, label: 'Planet' },
+  { name: 'RiMeteorFill', component: RiMeteorFill, label: 'Meteor' },
+  { name: 'RiCactusFill', component: RiCactusFill, label: 'Cactus' },
+  { name: 'RiFlowerFill', component: RiFlowerFill, label: 'Flower' },
+  { name: 'RiCupFill', component: RiCupFill, label: 'Cup' },
+  { name: 'RiAnchorFill', component: RiAnchorFill, label: 'Anchor' },
   { name: 'RiStarFill', component: RiStarFill, label: 'Star' },
   { name: 'RiHeartFill', component: RiHeartFill, label: 'Heart' },
-  { name: 'RiBookmarkFill', component: RiBookmarkFill, label: 'Bookmark' },
-  { name: 'RiFlagFill', component: RiFlagFill, label: 'Flag' },
-  { name: 'RiTargetFill', component: RiTargetFill, label: 'Target' },
   { name: 'RiTrophyFill', component: RiTrophyFill, label: 'Trophy' },
-  { name: 'RiAwardFill', component: RiAwardFill, label: 'Award' }
+  { name: 'RiShieldFill', component: RiShieldFill, label: 'Shield' },
+  { name: 'RiTargetFill', component: RiTargetFill, label: 'Target' },
+  { name: 'RiBugFill', component: RiBugFill, label: 'Bug' },
+  { name: 'RiPaletteFill', component: RiPaletteFill, label: 'Palette' },
+  { name: 'RiCameraFill', component: RiCameraFill, label: 'Camera' },
+  { name: 'RiBookFill', component: RiBookFill, label: 'Book' },
+  { name: 'RiGamepadFill', component: RiGamepadFill, label: 'Game' },
+  { name: 'RiShoppingCartFill', component: RiShoppingCartFill, label: 'Cart' },
+  { name: 'RiSmartphoneFill', component: RiSmartphoneFill, label: 'Mobile' },
+  { name: 'RiTvFill', component: RiTvFill, label: 'TV' },
+  { name: 'RiMusicFill', component: RiMusicFill, label: 'Music' },
+  { name: 'RiGiftFill', component: RiGiftFill, label: 'Gift' },
+  { name: 'RiMailFill', component: RiMailFill, label: 'Mail' },
+  { name: 'RiBellFill', component: RiBellFill, label: 'Bell' },
+  { name: 'RiTimeFill', component: RiTimeFill, label: 'Time' },
+  { name: 'RiHomeFill', component: RiHomeFill, label: 'Home' },
+  { name: 'RiMapPinFill', component: RiMapPinFill, label: 'Location' }
 ]
 
 export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateDialogProps) {
-  const [open, setOpen] = useState(false) 
+  const [open, setOpen] = useState(false)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
+  const [iconSearch, setIconSearch] = useState('')
   const [formData, setFormData] = useState({
     key: '',
     name: '',
     desc: '',
-    icon: 'RiBox2Fill',
+    icon: 'RiFolderFill',
     visibility: 'public' as 'private' | 'public'
   })
   type FormErrors = { key?: string; name?: string; desc?: string }
@@ -124,7 +166,12 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
   const handleIconSelect = (iconName: string) => {
     setFormData(prev => ({ ...prev, icon: iconName }))
     setIconPickerOpen(false)
+    setIconSearch('')
   }
+
+  const filteredIcons = iconOptions.filter(icon =>
+    icon.label.toLowerCase().includes(iconSearch.toLowerCase())
+  )
 
   const validateForm = () => {
     const newErrors: FormErrors = {}
@@ -270,10 +317,11 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
 
       onProjectAdded?.(newProject)
 
-      setFormData({ key: '', name: '', desc: '', icon: 'RiBox2Fill', visibility: 'public' })
+      setFormData({ key: '', name: '', desc: '', icon: 'RiFolderFill', visibility: 'public' })
       setErrors({})
       setKeyStatus('idle')
       setKeyHelper('Use 2-6 uppercase letters')
+      setIconSearch('')
       setOpen(false)
     } catch (error) {
       console.error('Error creating project', error)
@@ -284,15 +332,16 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
   }
 
   const handleCancel = () => {
-    setFormData({ key: '', name: '', desc: '', icon: 'RiBox2Fill', visibility: 'public' })
+    setFormData({ key: '', name: '', desc: '', icon: 'RiFolderFill', visibility: 'public' })
     setErrors({})
     setKeyStatus('idle')
     setKeyHelper('Use 2-6 uppercase letters')
+    setIconSearch('')
     setOpen(false)
   }
 
   const selectedIcon = iconOptions.find(option => option.name === formData.icon)
-  const SelectedIconComponent = selectedIcon?.component || RiBox2Fill
+  const SelectedIconComponent = selectedIcon?.component || RiFolderFill
   const isCheckingKey = keyStatus === 'checking'
   const disableSubmit = isSubmitting || isCheckingKey || !currentTeam?.id
 
@@ -318,31 +367,68 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
             <Field className="w-fit">
               <Popover open={iconPickerOpen} onOpenChange={setIconPickerOpen}>
                 <PopoverTrigger className="w-fit" asChild>
-                  <div className="flex items-start">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <SelectedIconComponent className="h-5 w-5 text-primary" />
+                  <button
+                    type="button"
+                    className="flex items-start transition-all hover:scale-105"
+                  >
+                    <div className="p-3 bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors">
+                      <SelectedIconComponent className="h-6 w-6 text-primary" />
                     </div>
-                  </div>
+                  </button>
                 </PopoverTrigger>
-                <PopoverContent className="p-0">
-                  <div className="p-3">
-                    <div className="text-xs font-medium text-muted-foreground mb-3">
+                <PopoverContent className="p-0 w-80">
+                  <div className="p-4">
+                    <div className="text-sm font-medium mb-3">
                       Choose an icon for your project
                     </div>
-                    <div className="grid grid-cols-5 gap-2">
-                      {iconOptions.map(({ name, component: IconComponent }) => {
-                        const isSelected = formData.icon === name;
-                        return (
-                          <Button
-                            key={name}
-                            variant={isSelected ? 'secondary' : 'ghost'}
-                            className="h-10 w-10 flex items-center justify-center p-1"
-                            onClick={() => handleIconSelect(name)}
-                          >
-                            <IconComponent/>
-                          </Button>
-                        );
-                      })}
+
+                    {/* Search Input */}
+                    <div className="relative mb-3">
+                      <RiSearchLine className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="Search icons..."
+                        value={iconSearch}
+                        onChange={(e) => setIconSearch(e.target.value)}
+                        className="pl-9 h-9"
+                      />
+                    </div>
+
+                    {/* Icon Grid */}
+                    <div
+                      className="grid grid-cols-5 gap-1.5 max-h-[480px] overflow-y-visible pr-2 "
+                      style={{
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: 'rgba(0, 0, 0, 0.2) transparent'
+                      }}
+                    >
+                      {filteredIcons.length > 0 ? (
+                        filteredIcons.map(({ name, component: IconComponent, label }) => {
+                          const isSelected = formData.icon === name;
+                          return (
+                            <button
+                              type="button"
+                              key={name}
+                              title={label}
+                              className={`
+                                h-12 w-12 flex items-center justify-center rounded-md
+                                transition-all hover:scale-110
+                                ${isSelected
+                                  ? 'bg-primary text-primary-foreground shadow-sm'
+                                  : 'hover:bg-accent'
+                                }
+                              `}
+                              onClick={() => handleIconSelect(name)}
+                            >
+                              <IconComponent className="h-5 w-5" />
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="col-span-5 text-center py-8 text-sm text-muted-foreground">
+                          No icons found
+                        </div>
+                      )}
                     </div>
                   </div>
                 </PopoverContent>

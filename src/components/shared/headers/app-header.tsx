@@ -95,6 +95,7 @@ export function AppHeader({
       <div className="flex items-center gap-2">
         {actions}
         <NotificationPanel />
+        <Separator orientation="vertical" className="h-6" />
         <HeaderUserMenu />
       </div>
     </header>

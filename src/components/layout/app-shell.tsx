@@ -2,7 +2,7 @@
 
 import { SidebarProvider } from "@components/ui/sidebar"
 import { AppSidebar } from "@components/shared/sidebar/app-sidebar"
-import { AppHeader } from "@components/shared/header"
+import { AppHeader } from "@components/shared/headers"
 
 type Variant = "sidebar" | "blank"
 
