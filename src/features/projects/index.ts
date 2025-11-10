@@ -14,16 +14,74 @@ export type {
   ProjectRole,
 } from './types'
 
-// Hooks
-export { useProjects, useProjectFilters, useJoinProject } from './hooks'
+// Hooks - Query
+export {
+  useProjects,
+  useProject,
+  useProjectMembers,
+  useProjectFilters,
+  projectKeys,
+} from './hooks'
 export type { ProjectFilters } from './hooks'
+
+// Hooks - Mutations
+export {
+  useCreateProject,
+  useUpdateProject,
+  useDeleteProject,
+  useJoinProject,
+  useLeaveProject,
+  useUpdateMemberRole,
+  useRemoveMember,
+} from './hooks'
+
+// API Functions (for advanced use cases)
+export {
+  getProjects,
+  getProject,
+  getProjectMembers,
+  createProject,
+  updateProject,
+  deleteProject,
+  joinProject,
+  leaveProject,
+  updateMemberRole,
+  removeMember,
+} from './api'
+
+// API Types (for consumers who need request/response types)
+export type {
+  GetProjectsParams,
+  GetProjectsResponse,
+  GetProjectResponse,
+  CreateProjectBody,
+  CreateProjectResponse,
+  UpdateProjectBody,
+  UpdateProjectResponse,
+  GetProjectMembersResponse,
+  UpdateMemberRoleBody,
+  UpdateMemberRoleResponse,
+  RemoveMemberResponse,
+  DeleteProjectResponse,
+  LeaveMemberResponse,
+} from './api'
 
 // Components
 export {
   ProjectCard,
   ProjectFiltersComponent,
   ProjectCreateDialog,
-  ProjectMemberManager,
+  ProjectSettingsDialog,
+  ProjectInvitationDialog,
+  ProjectIssues,
+  ProjectOverview,
+  ProjectActivityFeed,
+  ProjectDetailHeader,
+  ProjectTitleSection,
+  ProjectStats as ProjectStatsComponent,
+  ProjectActions,
+  ProjectLeaveButton,
+  ProjectInvitationStatus,
 } from './components'
 
 // Screens

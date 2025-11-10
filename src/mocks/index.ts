@@ -4,6 +4,10 @@
 
 export * from './notification.fixtures'
 export * from './project.fixtures'
+export * from './project-member.fixtures'
+export * from './project-activity.fixtures'
+export * from './project-invitation.fixtures'
+export * from './issue.fixtures'
 export * from './team.fixtures'
 export * from './team-member.fixtures'
 export * from './user.fixtures'

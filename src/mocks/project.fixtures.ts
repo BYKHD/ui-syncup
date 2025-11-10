@@ -96,6 +96,32 @@ export const MOCK_PROJECTS: Project[] = [
     createdAt: '2023-11-01T09:00:00Z',
     updatedAt: '2024-08-15T10:00:00Z',
   },
+  {
+    id: 'proj_8',
+    teamId: 'team-123',
+    key: 'AI',
+    slug: 'ai-research-lab',
+    name: 'AI Research Lab',
+    description: 'Internal incubator to prototype AI copilots and recommendations across the product suite.',
+    icon: 'RiRobot2Line',
+    visibility: 'private',
+    status: 'active',
+    createdAt: '2024-07-18T12:00:00Z',
+    updatedAt: '2024-12-02T08:45:00Z',
+  },
+  {
+    id: 'proj_9',
+    teamId: 'team-123',
+    key: 'CUS',
+    slug: 'customer-success-portal',
+    name: 'Customer Success Portal',
+    description: 'Self-service portal with guided onboarding, health scores, and escalation workflows.',
+    icon: 'RiCustomerService2Line',
+    visibility: 'public',
+    status: 'active',
+    createdAt: '2024-08-05T09:30:00Z',
+    updatedAt: '2024-11-25T15:10:00Z',
+  },
 ]
 
 export const MOCK_PROJECTS_WITH_STATS: ProjectWithStats[] = [
@@ -175,6 +201,28 @@ export const MOCK_PROJECTS_WITH_STATS: ProjectWithStats[] = [
     },
     userRole: 'member',
     canJoin: false,
+  },
+  {
+    ...MOCK_PROJECTS[7],
+    stats: {
+      totalTickets: 23,
+      completedTickets: 11,
+      progressPercent: 48,
+      memberCount: 7,
+    },
+    userRole: 'editor',
+    canJoin: false,
+  },
+  {
+    ...MOCK_PROJECTS[8],
+    stats: {
+      totalTickets: 12,
+      completedTickets: 2,
+      progressPercent: 17,
+      memberCount: 4,
+    },
+    userRole: null,
+    canJoin: true,
   },
 ]
 

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Button } from '@components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar'
@@ -15,7 +15,6 @@ import {
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@components/ui/alert-dialog'
 import { Separator } from '@components/ui/separator'
 import { RiTeamLine, RiMore2Line, RiUserLine, RiDeleteBinLine, RiAddLine, RiVipCrownLine, RiMailSendLine } from '@remixicon/react'
-import { ProjectInvitationDialog } from './project-invitation-dialog'
 
 interface User {
   id: string
@@ -44,79 +43,56 @@ interface ProjectInvitation {
   invitedByUser: User
 }
 
-interface ProjectMemberManagerProps {
+interface ProjectMemberManagerDialogProps {
   projectId: string
   projectName: string
   userRole: 'owner' | 'editor' | 'member' | 'viewer' | null
   canManageMembers: boolean
-  onMembershipChanged?: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  members: ProjectMember[]
+  pendingInvitations: ProjectInvitation[]
+  isLoading?: boolean
+  error?: string | null
+  onRoleChange: (memberId: string, newRole: 'owner' | 'editor' | 'member' | 'viewer') => void
+  onRemoveMember: (memberId: string) => void
+  onRevokeInvitation: (invitationId: string) => void
+  onResendInvitation: (invitationId: string) => void
+  onInviteMember: () => void
   children?: React.ReactNode
 }
 
-type MemberWithAction = ProjectMember & {
-  pendingAction?: 'removing' | 'changingRole'
-}
-
-export function ProjectMemberManager({ 
+/**
+ * ProjectMemberManagerDialog
+ * 
+ * Ready-to-wire controlled dialog for managing project members and invitations.
+ * All state and actions are managed by the parent component.
+ */
+export function ProjectMemberManagerDialog({ 
   projectId, 
   projectName,
   userRole, 
   canManageMembers,
-  onMembershipChanged,
+  open,
+  onOpenChange,
+  members,
+  pendingInvitations,
+  isLoading = false,
+  error = null,
+  onRoleChange,
+  onRemoveMember,
+  onRevokeInvitation,
+  onResendInvitation,
+  onInviteMember,
   children 
-}: ProjectMemberManagerProps) {
-  const [open, setOpen] = useState(false)
-  const [members, setMembers] = useState<MemberWithAction[]>([])
-  const [pendingInvitations, setPendingInvitations] = useState<ProjectInvitation[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [showInviteDialog, setShowInviteDialog] = useState(false)
-  
+}: ProjectMemberManagerDialogProps) {
   // Confirmation dialogs
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
   const [memberToRemove, setMemberToRemove] = useState<ProjectMember | null>(null)
   const [showRoleChangeConfirm, setShowRoleChangeConfirm] = useState(false)
-  const [roleChangeData, setRoleChangeData] = useState<{ member: ProjectMember; newRole: string } | null>(null)
+  const [roleChangeData, setRoleChangeData] = useState<{ member: ProjectMember; newRole: 'owner' | 'editor' | 'member' | 'viewer' } | null>(null)
 
-  const fetchMembers = async () => {
-    if (!open) return
-    
-    setLoading(true)
-    setError(null)
-    
-    try {
-      const [membersResponse, invitationsResponse] = await Promise.all([
-        fetch(`/api/projects/${projectId}/members`),
-        fetch(`/api/projects/${projectId}/invitations?status=pending`)
-      ])
-      
-      if (!membersResponse.ok) {
-        throw new Error('Failed to fetch project members')
-      }
-      
-      const membersData = await membersResponse.json()
-      setMembers(Array.isArray(membersData.members) ? membersData.members : [])
-      
-      // Only fetch invitations if user can manage members
-      if (canManageMembers && invitationsResponse.ok) {
-        const invitationsData = await invitationsResponse.json()
-        setPendingInvitations(Array.isArray(invitationsData.invitations) ? invitationsData.invitations : [])
-      } else {
-        setPendingInvitations([])
-      }
-    } catch (error) {
-      console.error('Error fetching members:', error)
-      setError(error instanceof Error ? error.message : 'Failed to load members')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchMembers()
-  }, [open, projectId])
-
-  const handleRoleChange = async (member: ProjectMember, newRole: string) => {
+  const handleRoleChange = (member: ProjectMember, newRole: 'owner' | 'editor' | 'member' | 'viewer') => {
     if (newRole === 'owner') {
       // Show confirmation for ownership transfer
       setRoleChangeData({ member, newRole })
@@ -124,38 +100,7 @@ export function ProjectMemberManager({
       return
     }
 
-    await updateMemberRole(member, newRole)
-  }
-
-  const updateMemberRole = async (member: ProjectMember, newRole: string) => {
-    setMembers(prev => prev.map(m => 
-      m.id === member.id ? { ...m, pendingAction: 'changingRole' } : m
-    ))
-
-    try {
-      const response = await fetch(`/api/projects/${projectId}/members/${member.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: newRole })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to update member role')
-      }
-
-      const result = await response.json()
-      setMembers(prev => prev.map(m => 
-        m.id === member.id ? { ...result.member, pendingAction: undefined } : m
-      ))
-      onMembershipChanged?.()
-    } catch (error) {
-      console.error('Error updating member role:', error)
-      setError(error instanceof Error ? error.message : 'Failed to update member role')
-      setMembers(prev => prev.map(m => 
-        m.id === member.id ? { ...m, pendingAction: undefined } : m
-      ))
-    }
+    onRoleChange(member.id, newRole)
   }
 
   const handleRemoveMember = (member: ProjectMember) => {
@@ -163,89 +108,18 @@ export function ProjectMemberManager({
     setShowRemoveConfirm(true)
   }
 
-  const confirmRemoveMember = async () => {
+  const confirmRemoveMember = () => {
     if (!memberToRemove) return
-
-    setMembers(prev => prev.map(m => 
-      m.id === memberToRemove.id ? { ...m, pendingAction: 'removing' } : m
-    ))
-
-    try {
-      const response = await fetch(`/api/projects/${projectId}/members/${memberToRemove.id}`, {
-        method: 'DELETE'
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to remove member')
-      }
-
-      setMembers(prev => prev.filter(m => m.id !== memberToRemove.id))
-      onMembershipChanged?.()
-    } catch (error) {
-      console.error('Error removing member:', error)
-      setError(error instanceof Error ? error.message : 'Failed to remove member')
-      setMembers(prev => prev.map(m => 
-        m.id === memberToRemove.id ? { ...m, pendingAction: undefined } : m
-      ))
-    } finally {
-      setShowRemoveConfirm(false)
-      setMemberToRemove(null)
-    }
+    onRemoveMember(memberToRemove.id)
+    setShowRemoveConfirm(false)
+    setMemberToRemove(null)
   }
 
-  const confirmRoleChange = async () => {
+  const confirmRoleChange = () => {
     if (!roleChangeData) return
-
-    await updateMemberRole(roleChangeData.member, roleChangeData.newRole)
+    onRoleChange(roleChangeData.member.id, roleChangeData.newRole)
     setShowRoleChangeConfirm(false)
     setRoleChangeData(null)
-  }
-
-  const handleInvitationSent = () => {
-    setShowInviteDialog(false)
-    fetchMembers() // Refresh to show new pending invitation
-    onMembershipChanged?.() // Notify parent of potential membership change
-  }
-
-  const handleRevokeInvitation = async (invitation: ProjectInvitation) => {
-    try {
-      const response = await fetch(`/api/projects/${projectId}/invitations/${invitation.id}`, {
-        method: 'DELETE'
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to revoke invitation')
-      }
-
-      // Remove invitation from list
-      setPendingInvitations(prev => prev.filter(inv => inv.id !== invitation.id))
-      onMembershipChanged?.() // Notify parent of membership change
-    } catch (error) {
-      console.error('Error revoking invitation:', error)
-      setError(error instanceof Error ? error.message : 'Failed to revoke invitation')
-    }
-  }
-
-  const handleResendInvitation = async (invitation: ProjectInvitation) => {
-    try {
-      const response = await fetch(`/api/projects/${projectId}/invitations/${invitation.id}/resend`, {
-        method: 'POST'
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to resend invitation')
-      }
-
-      // Refresh invitations to show updated data
-      fetchMembers()
-      onMembershipChanged?.() // Notify parent of membership change
-    } catch (error) {
-      console.error('Error resending invitation:', error)
-      setError(error instanceof Error ? error.message : 'Failed to resend invitation')
-    }
   }
 
   const getRoleDisplayName = (role: string) => {
@@ -287,7 +161,7 @@ export function ProjectMemberManager({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogTrigger asChild>
           {children || (
             <Button variant="outline" size="sm">
@@ -302,7 +176,7 @@ export function ProjectMemberManager({
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto">
-            {loading ? (
+            {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="text-sm text-muted-foreground">Loading members...</div>
               </div>
@@ -320,7 +194,7 @@ export function ProjectMemberManager({
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => setShowInviteDialog(true)}
+                        onClick={onInviteMember}
                       >
                         <RiAddLine className="h-4 w-4" />
                         Invite
@@ -358,7 +232,6 @@ export function ProjectMemberManager({
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
-                                  disabled={member.pendingAction !== undefined}
                                 >
                                   <RiMore2Line className="h-4 w-4" />
                                 </Button>
@@ -441,13 +314,13 @@ export function ProjectMemberManager({
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleResendInvitation(invitation)}>
+                                    <DropdownMenuItem onClick={() => onResendInvitation(invitation.id)}>
                                       <RiMailSendLine className="h-4 w-4" />
                                       Resend Invitation
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem 
-                                      onClick={() => handleRevokeInvitation(invitation)}
+                                      onClick={() => onRevokeInvitation(invitation.id)}
                                       variant="destructive"
                                     >
                                       <RiDeleteBinLine className="h-4 w-4" />
@@ -507,14 +380,6 @@ export function ProjectMemberManager({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Invitation Dialog */}
-      <ProjectInvitationDialog
-        open={showInviteDialog}
-        onOpenChange={setShowInviteDialog}
-        projectId={projectId}
-        projectName={projectName}
-        onInvitationSent={handleInvitationSent}
-      />
     </>
   )
 }

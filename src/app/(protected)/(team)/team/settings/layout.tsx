@@ -1,5 +1,5 @@
 import { TeamSettingsScreen } from "@features/team-settings/screens";
-import { MOCK_DEFAULT_TEAM, MOCK_DEFAULT_USER_ROLE } from "@features/team-settings";
+import { MOCK_DEFAULT_TEAM, MOCK_DEFAULT_USER_ROLE } from "@/mocks";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
