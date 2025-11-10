@@ -12,7 +12,7 @@ import {
   RiLightbulbLine,
   RiToolsLine,
 } from '@remixicon/react'
-import type { IssuePriority, IssueStatus, IssueType } from '@lib/issues'
+import type { IssuePriority, IssueStatus, IssueType } from '@/lib/issues'
 
 // ============================================================================
 // PRIORITY OPTIONS

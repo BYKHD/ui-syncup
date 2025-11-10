@@ -1,8 +1,8 @@
 "use client";
 
 import type { Team, UserRole } from "../types";
-import { TeamSettingAside } from "@components/shared/settings-sidebar";
-import { TEAM_SETTINGS_NAV } from "@config/team-settings-nav";
+import { TeamSettingAside } from "@/components/shared/settings-sidebar";
+import { TEAM_SETTINGS_NAV } from "@/config/team-settings-nav";
 
 interface TeamSettingsScreenProps {
   initialTeam: Team;

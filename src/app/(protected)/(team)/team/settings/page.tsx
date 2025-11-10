@@ -1,4 +1,4 @@
-import TeamSettingsGeneral from "@features/team-settings/components/team-settings-genaral";
+import TeamSettingsGeneral from "@/features/team-settings/components/team-settings-genaral";
 import { MOCK_DEFAULT_TEAM, MOCK_DEFAULT_USER_ROLE } from "@/mocks";
 
 export default function TeamSettingsPage() {

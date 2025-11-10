@@ -125,7 +125,7 @@ Use multiple domain-based files. Keep mocks aligned to real domain
 Minimal example::
 ```typescript
 // src/mocks/team.fixtures.ts
-import type { Team } from '@features/teams/types'
+import type { Team } from '@/features/teams/types'
 
 export const MOCK_TEAMS: Team[] = [
   { id: 'team_1', name: 'Design Squad', slug: 'design-squad', planId: 'free' },
@@ -134,7 +134,7 @@ export const MOCK_TEAMS: Team[] = [
 ```
 ```typescript
 // src/mocks/project.fixtures.ts
-import type { Project } from '@features/projects/types'
+import type { Project } from '@/features/projects/types'
 
 export const MOCK_PROJECTS: Project[] = [
   {
@@ -151,8 +151,8 @@ export const MOCK_PROJECTS: Project[] = [
 
 ```typescript
 // src/mocks/issue.fixtures.ts
-import type { Issue } from '@features/issues/types'
-import { ISSUE_WORKFLOW } from '@config/workflows'
+import type { Issue } from '@/features/issues/types'
+import { ISSUE_WORKFLOW } from '@/config/workflows'
 
 export const MOCK_ISSUES: Issue[] = [
   {
@@ -189,25 +189,6 @@ export const DEFAULT_TEAM_SCENARIO = {
 }
 ```
 
-
-### tsconfig path
-This project is custom a parts for import in tsconfig.json:
-```json
-"paths": {
-      "@/*": ["./src/*"],
-      "@components/*": ["./src/components/*"],
-      "@features/*": ["./src/features/*"],
-      "@lib/*": ["./src/lib/*"],
-      "@services/*": ["./src/services/*"],
-      "@hooks/*": ["./src/hooks/*"],
-      "@utils/*": ["./src/utils/*"],
-      "@styles/*": ["./src/styles/*"],
-      "@assets/*": ["./src/assets/*"],
-      "@types/*": ["./src/types/*"],
-      "@config/*": ["./src/config/*"],
-      "@providers/*": ["./src/providers/*"]
-    }
-```
 
 ### Vite / SPA Variant
 
@@ -334,30 +315,20 @@ tsconfig.json has path aliases like:
 ```json
 "compilerOptions": {
   "paths": {
-        "@/*": ["./src/*"],
-        "@components/*": ["./src/components/*"],
-        "@features/*": ["./src/features/*"],
-        "@lib/*": ["./src/lib/*"],
-        "@services/*": ["./src/services/*"],
-        "@hooks/*": ["./src/hooks/*"],
-        "@utils/*": ["./src/utils/*"],
-        "@styles/*": ["./src/styles/*"],
-        "@assets/*": ["./src/assets/*"],
-        "@types/*": ["./src/types/*"],
-        "@config/*": ["./src/config/*"]
+        "@/*": ["./src/*"]
       }
 }
 ```
 
 ```ts
 // Page composing a feature
-import { IssuesTable, CreateIssueDialog, useIssues } from "@features/issues"
+import { IssuesTable, CreateIssueDialog, useIssues } from "@/features/issues"
 
 // Shared widget
-import { Sidebar } from "@components/shared/sidebar"
+import { Sidebar } from "@/components/shared/sidebar"
 
 // App plumbing
-import { queryClient } from "@lib/query"
+import { queryClient } from "@/lib/query"
 ```
 
 ---
@@ -412,7 +383,7 @@ Minimal example:
 ```ts
 // app route (thin)
 // src/app/(protected)/(team)/issues/page.tsx
-import IssuesListScreen from "@features/issues/screens/issues-list-screen"
+import IssuesListScreen from "@/features/issues/screens/issues-list-screen"
 import { z } from "zod"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
@@ -433,8 +404,8 @@ export default function IssuesPage({ searchParams }: { searchParams: Record<stri
 // feature screen (contained)
 // src/features/issues/screens/issues-list-screen.tsx
 "use client"
-import { useIssues } from "@hooks/use-issues"
-import { IssuesTable } from "@components/issues-table"
+import { useIssues } from "@/hooks/use-issues"
+import { IssuesTable } from "@/components/issues-table"
 
 export default function IssuesListScreen({ teamId, search }: { teamId: string; search: { status?: string; q?: string; page: number } }) {
   const { data, isLoading } = useIssues({ teamId, ...search })

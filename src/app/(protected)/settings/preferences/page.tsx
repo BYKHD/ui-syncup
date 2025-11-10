@@ -1,4 +1,4 @@
-import PreferencesScreen from '@features/user-settings/screens/setting-preferences-screen'
+import PreferencesScreen from '@/features/user-settings/screens/setting-preferences-screen'
 import { MOCK_USER_PREFERENCES } from '@/mocks/user-settings.fixtures'
 
 export default function PreferencesPage() {

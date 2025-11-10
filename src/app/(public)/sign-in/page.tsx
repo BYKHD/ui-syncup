@@ -1,4 +1,4 @@
-import SignInScreen from "@features/auth/screens/sign-in-screen";
+import SignInScreen from "@/features/auth/screens/sign-in-screen";
 
 const invitationCopy = {
   default: "Sign in to your account to continue",

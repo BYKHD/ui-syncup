@@ -16,8 +16,8 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from '@components/ui/avatar';
-import { Button } from '@components/ui/button';
+} from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +29,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu';
 import { MOCK_USER } from '../sidebar/type';
 
 // ============================================================================

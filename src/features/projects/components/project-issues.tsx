@@ -1,9 +1,9 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card'
-import { Button } from '@components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { RiAddLine } from '@remixicon/react'
-import { IssuesList, IssuesListFilter, useIssueFilters } from '@features/issues'
+import { IssuesList, IssuesListFilter, useIssueFilters } from '@/features/issues'
 import { MOCK_ISSUES } from '@/mocks/issue.fixtures'
 
 interface ProjectIssuesProps {

@@ -1,4 +1,4 @@
-import OtherSettingsScreen from '@features/user-settings/screens/other-settings-screen'
+import OtherSettingsScreen from '@/features/user-settings/screens/other-settings-screen'
 import { MOCK_USER_PROFILE } from '@/mocks/user-settings.fixtures'
 
 export default function OtherPage() {

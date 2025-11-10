@@ -1,4 +1,4 @@
-import type { ProjectRole } from '@features/projects/types'
+import type { ProjectRole } from '@/features/projects/types'
 
 export function getRoleDisplayName(role: ProjectRole): string {
   const roleNames: Record<ProjectRole, string> = {

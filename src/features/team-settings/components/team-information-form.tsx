@@ -2,10 +2,10 @@
 
 import { Upload, X } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
-import { Button } from "@components/ui/button";
-import { Input } from "@components/ui/input";
-import { Label } from "@components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SettingsCard } from "./settings-card";
 import { LoadingButton } from "./loading-states";
 import type { TeamGeneralFormData, Team } from "../types";

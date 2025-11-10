@@ -2,15 +2,17 @@
 // MOCK DATA BARREL EXPORTS
 // ============================================================================
 
-export * from './notification.fixtures'
-export * from './project.fixtures'
-export * from './project-member.fixtures'
-export * from './project-activity.fixtures'
-export * from './project-invitation.fixtures'
-export * from './issue.fixtures'
-export * from './team.fixtures'
-export * from './team-member.fixtures'
-export * from './user.fixtures'
+export * from './notification.fixtures';
+export * from './project.fixtures';
+export * from './project-member.fixtures';
+export * from './project-activity.fixtures';
+export * from './project-invitation.fixtures';
+export * from './issue.fixtures';
+export * from './attachment.fixtures';
+export * from './activity.fixtures';
+export * from './team.fixtures';
+export * from './team-member.fixtures';
+export * from './user.fixtures';
 
 // Re-export with explicit naming to avoid conflicts
 export {

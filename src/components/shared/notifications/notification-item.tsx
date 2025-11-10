@@ -1,14 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Avatar, AvatarFallback } from '@components/ui/avatar'
-import { Alert, AlertDescription } from '@components/ui/alert'
-import { Button } from '@components/ui/button'
-import { Spinner } from '@components/ui/spinner'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { RiCloseLine, RiInformationLine } from '@remixicon/react'
 import { formatTimestamp, getNotificationMessage } from './utils'
 import type { Notification } from '@/mocks'
-import { cn } from '@lib/utils'
+import { cn } from '@/lib/utils'
 import { NotificationActions } from './notification-actions'
 
 // ============================================================================

@@ -7,8 +7,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@components/ui/sidebar"
-import { Skeleton } from "@components/ui/skeleton"
+} from "@/components/ui/sidebar"
+import { Skeleton } from "@/components/ui/skeleton"
 import type { Project } from "./type"
 
 export function NavProjects({

@@ -1,8 +1,8 @@
 'use client'
 
-import { Button } from '@components/ui/button'
-import { Spinner } from '@components/ui/spinner'
-import { cn } from '@lib/utils'
+import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
+import { cn } from '@/lib/utils'
 
 // ============================================================================
 // NOTIFICATION LOAD MORE COMPONENT (MOCKUP UI)

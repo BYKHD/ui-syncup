@@ -1,4 +1,4 @@
-import type { UserSettingsNavItem } from "@components/shared/settings-sidebar";
+import type { UserSettingsNavItem } from "@/components/shared/settings-sidebar";
 import { RiEqualizer3Fill, RiMoreLine, RiNotification2Line, RiPuzzle2Line } from "@remixicon/react";
 
 /**

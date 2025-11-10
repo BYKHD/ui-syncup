@@ -1,10 +1,16 @@
 'use client';
 
 import React from 'react';
+
+// External dependencies
 import { formatDistanceToNow } from 'date-fns';
-import { Avatar, AvatarFallback, AvatarImage } from '@/src/components/ui/avatar';
-import { Separator } from '@/src/components/ui/separator';
-import { Skeleton } from '@/src/components/ui/skeleton';
+
+// UI Components
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Issue Components
 import IssueStatusBadge from './issues-status-badge';
 import IssuesPriorityBadge from './issues-priority-badge';
 import { InlineEditableText } from './inline-editable-text';
@@ -12,10 +18,18 @@ import { InlineEditableTextarea } from './inline-editable-textarea';
 import { InlineEditableSelect } from './inline-editable-select';
 import { InlineEditableUserSelect } from './inline-editable-user-select';
 import { WorkflowControl } from './workflow-control';
-import { EditGuard, StatusGuard, AssignGuard } from '@/src/components/shared/PermissionGuard';
-import { useIssuePermissions } from '@/src/hooks/use-issue-permissions';
-import { TYPE_OPTIONS, PRIORITY_OPTIONS } from '@/src/config/issue-options';
-import type { IssueDetailData } from '@/src/types/issue';
+
+// Permission Guards
+import { EditGuard, StatusGuard, AssignGuard } from '@/components/shared/PermissionGuard';
+
+// Hooks
+import { useIssuePermissions } from '@/hooks/use-issue-permissions';
+
+// Config
+import { TYPE_OPTIONS, PRIORITY_OPTIONS } from '@/config/issue-options';
+
+// Types
+import type { IssueDetailData } from '@/types/issue';
 
 interface MetadataSectionProps {
   issue: IssueDetailData;

@@ -11,12 +11,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@components/ui/alert-dialog'
-import { Button } from '@components/ui/button'
-import { Input } from '@components/ui/input'
-import { Label } from '@components/ui/label'
-import { Checkbox } from '@components/ui/checkbox'
-import { Alert, AlertDescription } from '@components/ui/alert'
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 

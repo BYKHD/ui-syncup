@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from '@components/ui/sidebar';
+} from '@/components/ui/sidebar';
 import {
   RiHome3Line,
   RiBox2Line,
@@ -24,9 +24,9 @@ import {
   NavMain,
   NavProjects,
   MOCK_PROJECTS,
-} from '@components/shared/sidebar';
-import type { NavItem } from '@components/shared/sidebar';
-import { Separator } from '@components/ui/separator';
+} from '@/components/shared/sidebar';
+import type { NavItem } from '@/components/shared/sidebar';
+import { Separator } from '@/components/ui/separator';
 
 // Mock navigation data for mockup UI
 const MOCK_NAV_ITEMS: NavItem[] = [

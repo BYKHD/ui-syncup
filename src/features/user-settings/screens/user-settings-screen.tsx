@@ -1,7 +1,7 @@
 "use client";
 
-import { UserSettingsAside } from "@components/shared/settings-sidebar";
-import { USER_SETTINGS_NAV } from "@config/user-settings-nav";
+import { UserSettingsAside } from "@/components/shared/settings-sidebar";
+import { USER_SETTINGS_NAV } from "@/config/user-settings-nav";
 
 interface UserSettingsScreenProps {
   children: React.ReactNode;

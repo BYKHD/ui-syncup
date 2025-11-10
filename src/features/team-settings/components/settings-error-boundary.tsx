@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { Button } from "@components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, RefreshCw, Home, Shield, Users, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 

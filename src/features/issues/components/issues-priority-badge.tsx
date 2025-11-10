@@ -5,10 +5,10 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
-} from '@components/ui/tooltip'
-import { DEFAULT_PRIORITY_ICON, PRIORITY_OPTIONS } from '@config/issue-options'
-import type { IssuePriority } from '@lib/issues'
-import { cn } from '@lib/utils'
+} from '@/components/ui/tooltip'
+import { DEFAULT_PRIORITY_ICON, PRIORITY_OPTIONS } from '@/config/issue-options'
+import type { IssuePriority } from '@/lib/issues'
+import { cn } from '@/lib/utils'
 
 const PRIORITY_OPTION_MAP = Object.fromEntries(
   PRIORITY_OPTIONS.map(option => [option.value, option])

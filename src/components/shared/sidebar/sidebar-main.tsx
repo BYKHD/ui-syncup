@@ -10,8 +10,8 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from '@components/ui/sidebar';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@components/ui/collapsible';
+} from '@/components/ui/sidebar';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { NavItem } from './type';
 
 export function NavMain({

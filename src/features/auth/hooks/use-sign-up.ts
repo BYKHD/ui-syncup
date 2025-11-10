@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
 import { signUpSchema, type SignUpSchema } from "../utils/validators";

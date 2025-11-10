@@ -7,8 +7,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@components/ui/table";
-import { Badge } from "@components/ui/badge";
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import IssueStatusBadge from "./issues-status-badge";
 import PriorityBadge from "./issues-priority-badge";
 import type { Issue } from "@/mocks/issue.fixtures";

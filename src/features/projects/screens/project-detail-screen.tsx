@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { IssuesCreateDialog } from "@features/issues/components/issues-create-dialog";
+import { IssuesCreateDialog } from "@/features/issues/components/issues-create-dialog";
 import { ProjectMemberManagerDialog } from "../components/project-member-manager-dialog";
 import { ProjectSettingsDialog } from "../components/project-settings-dialog";
 import { ProjectLeaveButton } from "../components/project-leave-button";

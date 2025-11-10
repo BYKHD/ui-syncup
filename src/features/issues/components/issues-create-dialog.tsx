@@ -8,8 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@components/ui/dialog";
-import { Button } from "@components/ui/button";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldContent,
@@ -17,10 +17,10 @@ import {
   FieldGroup,
   FieldLabel,
   FieldSet,
-} from "@components/ui/field";
-import { Input } from "@components/ui/input";
-import { Textarea } from "@components/ui/textarea";
-import { ScrollArea } from "@components/ui/scroll-area";
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { PrioritySelector } from "./priority-selector";
 import { TypeSelector } from "./type-selector";
 import { RiImageAddLine } from "@remixicon/react";

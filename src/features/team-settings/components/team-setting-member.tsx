@@ -7,9 +7,9 @@ import {
   SettingsSection,
   LoadingButton,
 } from ".";
-import { Button } from "@components/ui/button";
-import { Badge } from "@components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
   TableBody,
@@ -17,7 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@components/ui/table";
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,14 +25,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@components/ui/select";
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,7 +42,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -51,10 +51,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@components/ui/dialog";
-import { Input } from "@components/ui/input";
-import { Label } from "@components/ui/label";
-import { Textarea } from "@components/ui/textarea";
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   MOCK_TEAM_MEMBERS,

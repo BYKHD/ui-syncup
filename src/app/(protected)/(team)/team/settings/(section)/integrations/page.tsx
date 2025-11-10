@@ -1,4 +1,4 @@
-import IntegrationsSettingsScreen from "@features/team-settings/components/team-setting-integrations";
+import IntegrationsSettingsScreen from "@/features/team-settings/components/team-setting-integrations";
 
 export default function IntegrationsSettingsPage() {
   // Server component - thin page that renders feature component

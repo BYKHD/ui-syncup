@@ -1,9 +1,9 @@
 'use client'
 
-import { DEFAULT_STATUS_ICON, STATUS_OPTIONS } from '@config/issue-options'
-import type { StatusOption } from '@config/issue-options'
-import type { IssueStatus } from '@lib/issues'
-import { cn } from '@lib/utils'
+import { DEFAULT_STATUS_ICON, STATUS_OPTIONS } from '@/config/issue-options'
+import type { StatusOption } from '@/config/issue-options'
+import type { IssueStatus } from '@/lib/issues'
+import { cn } from '@/lib/utils'
 
 const STATUS_OPTION_MAP = Object.fromEntries(
   STATUS_OPTIONS.map(option => [option.value, option])

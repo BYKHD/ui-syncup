@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { SidebarTrigger } from '@components/ui/sidebar'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 import {
   Breadcrumb,
   BreadcrumbItem as BreadcrumbItemComponent,
@@ -9,9 +9,9 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@components/ui/breadcrumb'
-import { Separator } from '@components/ui/separator'
-import { Skeleton } from '@components/ui/skeleton'
+} from '@/components/ui/breadcrumb'
+import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 import { NotificationPanel } from '../notifications/notification-panel'
 import { HeaderUserMenu } from './header-user-menu'
 

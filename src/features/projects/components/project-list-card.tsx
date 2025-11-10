@@ -24,18 +24,18 @@ import {
   CardTitle,
   CardDescription,
   CardFooter,
-} from "@components/ui/card";
-import { Progress } from "@components/ui/progress";
-import { Button } from "@components/ui/button";
-import { Badge } from "@components/ui/badge";
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
-import type { ProjectSummary } from "@features/projects/types";
+import type { ProjectSummary } from "@/features/projects/types";
 import {
   formatLastActivity,
   getRoleDisplayName,
   getRoleBadgeVariant,
-} from "@features/projects/utils";
-import { useJoinProject } from "@features/projects/hooks";
+} from "@/features/projects/utils";
+import { useJoinProject } from "@/features/projects/hooks";
 
 interface ProjectCardProps {
   project: ProjectSummary;

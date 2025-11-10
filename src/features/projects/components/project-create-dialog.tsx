@@ -1,14 +1,14 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Button } from '@components/ui/button'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@components/ui/dialog'
-import { Input } from '@components/ui/input'
-import { Textarea } from '@components/ui/textarea'
-import { Field, FieldDescription } from '@components/ui/field'
-import { Popover, PopoverContent, PopoverTrigger } from '@components/ui/popover'
-import { Switch } from '@components/ui/switch'
-import { Label } from '@components/ui/label'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Field, FieldDescription } from '@/components/ui/field'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import { RiAddLine } from '@remixicon/react'
 import {
   RiRocketFill,
@@ -55,7 +55,7 @@ import {
   RiGlobalLine,
   RiSearchLine
 } from '@remixicon/react'
-import { useTeam } from '@hooks/use-team'
+import { useTeam } from '@/hooks/use-team'
 
 type ProjectPreview = {
   id: string

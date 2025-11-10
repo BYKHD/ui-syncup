@@ -1,15 +1,15 @@
 'use client'
 
 import React from 'react'
-import { Badge } from '@components/ui/badge'
-import { Button } from '@components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
-} from '@components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu'
 import { RiMore2Line, RiMailSendLine, RiDeleteBinLine, RiTimeLine, RiCheckLine, RiCloseLine } from '@remixicon/react'
 
 type InvitationStatus = 'pending' | 'accepted' | 'declined' | 'expired'

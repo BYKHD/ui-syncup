@@ -1,4 +1,4 @@
-import IntegrationsScreen from '@features/user-settings/screens/integrations-screen'
+import IntegrationsScreen from '@/features/user-settings/screens/integrations-screen'
 import { MOCK_INTEGRATIONS } from '@/mocks/user-settings.fixtures'
 
 export default function IntegrationsPage() {

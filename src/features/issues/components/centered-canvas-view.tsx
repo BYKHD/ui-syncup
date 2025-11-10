@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import type { IssueAttachment, CanvasViewState } from "@/src/types/issue";
+import type { IssueAttachment, CanvasViewState } from "@/types/issue";
 import { ImageCanvas } from "./image-canvas";
 import { VideoPlayer } from "./video-player";
 import { ZoomControls } from "./zoom-controls";
-import { FileInfoBar } from "./file-info-bar";
 import { ImageSelector } from "./image-selector";
 
 interface CenteredCanvasViewProps {

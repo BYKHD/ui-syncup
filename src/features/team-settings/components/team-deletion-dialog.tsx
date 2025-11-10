@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@components/ui/button";
-import { Alert, AlertDescription } from "@components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,8 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@components/ui/alert-dialog";
-import { Separator } from "@components/ui/separator";
+} from "@/components/ui/alert-dialog";
+import { Separator } from "@/components/ui/separator";
 import { SettingsCard } from "./settings-card";
 import type { TeamRole } from "../types";
 

@@ -1,4 +1,4 @@
-import NotificationsScreen from '@features/user-settings/screens/notifications-screen'
+import NotificationsScreen from '@/features/user-settings/screens/notifications-screen'
 import { MOCK_NOTIFICATION_PREFERENCES } from '@/mocks/user-settings.fixtures'
 
 export default function NotificationsPage() {

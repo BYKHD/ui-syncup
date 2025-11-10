@@ -14,15 +14,15 @@ import {
   RiAlertLine,
 } from '@remixicon/react'
 
-import { Button } from '@components/ui/button'
-import { Input } from '@components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@components/ui/select'
+} from '@/components/ui/select'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,10 +31,10 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from '@components/ui/dropdown-menu'
-import { Badge } from '@components/ui/badge'
+} from '@/components/ui/dropdown-menu'
+import { Badge } from '@/components/ui/badge'
 
-import type { IssueFilters } from '@features/issues/hooks/use-issue-filters'
+import type { IssueFilters } from '@/features/issues/hooks/use-issue-filters'
 
 interface IssuesListFilterProps {
   filters: IssueFilters

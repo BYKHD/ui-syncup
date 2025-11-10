@@ -3,7 +3,7 @@ import type {
   NotificationPreference,
   UserPreferences,
   Integration,
-} from '@features/user-settings/types'
+} from '@/features/user-settings/types'
 
 export const MOCK_USER_PROFILE: UserProfile = {
   id: 'user_1',

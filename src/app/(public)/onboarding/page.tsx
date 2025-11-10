@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 
-import { OnboardingScreen } from "@features/auth";
+import { OnboardingScreen } from "@/features/auth";
 
 export default function OnboardingPage() {
   const searchParams = useSearchParams();

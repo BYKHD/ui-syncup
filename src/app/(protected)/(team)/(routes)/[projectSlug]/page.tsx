@@ -1,4 +1,4 @@
-import ProjectDetailScreen from "@features/projects/screens/project-detail-screen";
+import ProjectDetailScreen from "@/features/projects/screens/project-detail-screen";
 import { MOCK_PROJECTS_WITH_STATS } from "@/mocks";
 
 interface PageProps {

@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@lib/utils";
+import { cn } from "@/lib/utils";
 
 import type { PlanTier } from "../types";
 import { onboardingPlanOptions } from "../utils/constants";
