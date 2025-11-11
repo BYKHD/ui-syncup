@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ZoomIn, ZoomOut, Maximize, RotateCcw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { CanvasViewState } from "@/types/issue";
-import { cn } from "@/lib/utils";
+import { motion } from "motion/react";
 
 interface ZoomControlsProps {
   zoomLevel: number;
@@ -28,94 +28,98 @@ export function ZoomControls({
   onActualSize,
 }: ZoomControlsProps) {
   const isMobile = useIsMobile();
-  const zoomPercentage = `${Math.round(zoomLevel * 100)}%`;
-  const zoomProgress = Math.min(Math.max((zoomLevel - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN), 0), 1);
+  const formatZoomPercentage = (zoom: number) => `${Math.round(zoom * 100)}%`;
 
-  const buttons = [
-    {
-      id: "zoom-in",
-      label: "Zoom in",
-      icon: ZoomIn,
-      action: onZoomIn,
-      disabled: zoomLevel >= ZOOM_MAX,
-    },
-    {
-      id: "zoom-out",
-      label: "Zoom out",
-      icon: ZoomOut,
-      action: onZoomOut,
-      disabled: zoomLevel <= ZOOM_MIN,
-    },
-    {
-      id: "fit",
-      label: "Fit to canvas",
-      icon: Maximize,
-      action: onFitToCanvas,
-      variant: fitMode === "fit" ? "default" : "ghost",
-    },
-    {
-      id: "actual",
-      label: "Actual size (100%)",
-      icon: RotateCcw,
-      action: onActualSize,
-      variant: fitMode === "actual" && zoomLevel === 1 ? "default" : "ghost",
-    },
-  ] as const;
-
-  const buttonSize = isMobile ? "default" : "icon";
-  const tooltipSide = isMobile ? "top" : "left";
+  const buttonSize = isMobile ? "default" : "sm";
+  const buttonClass = isMobile ? "h-10 w-10 p-0" : "h-8 w-8 p-0";
+  const iconClass = isMobile ? "h-5 w-5" : "h-4 w-4";
+  const isAtMinZoom = zoomLevel <= ZOOM_MIN;
+  const isAtMaxZoom = zoomLevel >= ZOOM_MAX;
 
   return (
     <TooltipProvider>
-      <div
-        className={cn(
-          "w-full min-w-[220px] rounded-2xl border border-border/60 bg-background/90 p-3 text-xs shadow-lg backdrop-blur-md",
-          !isMobile && "min-w-[140px]"
-        )}
+      <motion.div
+        className="flex items-center gap-2 rounded-lg border bg-background/95 p-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.35em] text-muted-foreground">
-          <span>Canvas</span>
-          <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[11px] text-foreground">{zoomPercentage}</span>
-        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size={buttonSize}
+              className={buttonClass}
+              aria-label="Zoom out"
+              onClick={onZoomOut}
+              disabled={isAtMinZoom}
+            >
+              <ZoomOut className={iconClass} aria-hidden="true" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Zoom out</TooltipContent>
+        </Tooltip>
 
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-primary transition-all duration-200"
-            style={{ width: `${zoomProgress * 100}%` }}
-          />
-        </div>
+        <span className="min-w-[3rem] text-center text-sm font-mono tabular-nums">
+          {formatZoomPercentage(zoomLevel)}
+        </span>
 
-        <div
-          className={cn(
-            "mt-3 flex items-center gap-2",
-            !isMobile && "flex-col items-stretch gap-1"
-          )}
-        >
-          {buttons.map(({ id, label, icon: Icon, action, disabled, variant }) => (
-            <Tooltip key={id}>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={variant ?? "ghost"}
-                  size={buttonSize}
-                  onClick={action}
-                  disabled={disabled}
-                  className={cn(
-                    "transition-all",
-                    buttonSize === "icon" ? "h-9 w-9" : "h-10 w-10",
-                    variant === "default" && "shadow-inner"
-                  )}
-                  aria-label={label}
-                >
-                  <Icon className={buttonSize === "icon" ? "h-4 w-4" : "h-5 w-5"} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side={tooltipSide}>
-                <p>{label}</p>
-              </TooltipContent>
-            </Tooltip>
-          ))}
-        </div>
-      </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size={buttonSize}
+              className={buttonClass}
+              aria-label="Zoom in"
+              onClick={onZoomIn}
+              disabled={isAtMaxZoom}
+            >
+              <ZoomIn className={iconClass} aria-hidden="true" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Zoom in</TooltipContent>
+        </Tooltip>
+
+        <div className="h-6 w-px bg-border" aria-hidden="true" />
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size={buttonSize}
+              className={buttonClass}
+              aria-label="Fit to canvas"
+              onClick={onFitToCanvas}
+              aria-pressed={fitMode === "fit"}
+              disabled={fitMode === "fit"}
+            >
+              <Maximize className={iconClass} aria-hidden="true" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Fit to canvas</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size={buttonSize}
+              className={buttonClass}
+              aria-label="Actual size"
+              onClick={onActualSize}
+              aria-pressed={fitMode === "actual"}
+              disabled={fitMode === "actual"}
+            >
+              <RotateCcw className={iconClass} aria-hidden="true" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Actual size</TooltipContent>
+        </Tooltip>
+      </motion.div>
     </TooltipProvider>
   );
 }
