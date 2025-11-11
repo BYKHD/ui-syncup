@@ -19,7 +19,7 @@ import type {
   IssueAttachment,
   CanvasViewState,
   AttachmentAnnotation,
-} from '@/types/issue';
+} from '@/features/issues/types';
 
 const VIEW_MODES = [
   { id: 'annotate', label: 'Annotate', icon: PenLine },

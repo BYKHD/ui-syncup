@@ -256,7 +256,7 @@ External Dependencies
         ▼
 Internal Dependencies
     │
-    ├─> @/src/types/issue (types)
+    ├─> @/features/issues/types (types)
     ├─> @/src/mocks/* (fixtures)
     ├─> @/components/ui/* (shadcn)
     ├─> @/lib/utils (utilities)

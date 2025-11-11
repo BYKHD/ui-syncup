@@ -11,7 +11,7 @@ import {
   CommandList
 } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import type { IssuePriority } from '@/lib/issues'
+import type { IssuePriority } from '@/features/issues/types'
 import { DEFAULT_PRIORITY_ICON, PRIORITY_OPTIONS } from '@/config/issue-options'
 import { RiCheckLine } from '@remixicon/react'
 

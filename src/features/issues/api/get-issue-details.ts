@@ -3,7 +3,7 @@
 // Fetches complete issue details with all relationships
 // ============================================================================
 
-import type { IssueDetailData } from '@/types/issue';
+import type { IssueDetailData } from '@/features/issues/types';
 import { getDetailedIssueById } from '@/mocks/issue.fixtures';
 import { getAttachmentsByIssueId } from '@/mocks/attachment.fixtures';
 

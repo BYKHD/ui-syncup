@@ -2,7 +2,7 @@
 // ACTIVITY MOCK FIXTURES
 // ============================================================================
 
-import type { ActivityEntry, ActivityType, IssueUser } from '@/src/types/issue';
+import type { ActivityEntry, ActivityType, IssueUser } from '@/features/issues/types';
 
 // Mock users for activities (reuse from attachments for consistency)
 const MOCK_ACTIVITY_USERS: IssueUser[] = [

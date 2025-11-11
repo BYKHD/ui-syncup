@@ -38,7 +38,7 @@ src/features/issues/
 │   └── issue-details-skeletons.tsx   # Loading skeletons
 │
 ├── types/                              # Domain types
-│   └── index.ts                       # Re-exports from @/src/types/issue
+│   └── index.ts                       # Re-exports from @/features/issues/types
 │
 └── index.ts                           # Feature barrel exports
 ```

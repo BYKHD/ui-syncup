@@ -6,7 +6,7 @@ import type {
   IssueAttachment,
   IssueUser,
   AttachmentAnnotation,
-} from '@/src/types/issue';
+} from '@/features/issues/types';
 
 // Mock users for attachments
 const MOCK_ATTACHMENT_USERS: IssueUser[] = [
@@ -97,6 +97,20 @@ export const MOCK_ATTACHMENTS: IssueAttachment[] = [
     createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
     reviewVariant: 'as_is',
     annotations: CPM101_ANNOTATIONS,
+  },
+  {
+    id: 'att_cpm101_to_be',
+    issueId: 'issue_1',
+    fileName: 'to-be-image.jpg',
+    fileSize: 498110,
+    fileType: 'image/jpeg',
+    url: '/playground/CPM-101/to-be-image.jpg',
+    thumbnailUrl: '/playground/CPM-101/to-be-image.jpg',
+    width: 1920,
+    height: 1350,
+    uploadedBy: MOCK_ATTACHMENT_USERS[1],
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    reviewVariant: 'to_be',
   },
   {
     id: 'att_dark_mode',

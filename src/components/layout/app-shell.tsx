@@ -26,7 +26,7 @@ function SidebarLayout({
     <AppShellHeaderContext.Provider value={{ headerConfig, setHeaderConfig }}>
       <SidebarProvider>
         {sidebar || <AppSidebar />}
-        <SidebarInset className="min-w-0 flex flex-col">
+        <SidebarInset className="min-w-0 flex flex-col h-screen">
           {/* Skip link for accessibility */}
           <a 
             href="#content" 
@@ -50,7 +50,7 @@ function SidebarLayout({
           {/* Single scroll container */}
           <main 
             id="content"
-            className="flex-1 overflow-auto p-3 md:p-4 [scrollbar-gutter:stable]"
+            className="flex-1 overflow-auto [scrollbar-gutter:stable] h-full"
           >
             {children}
           </main>

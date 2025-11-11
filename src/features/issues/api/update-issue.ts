@@ -3,7 +3,7 @@
 // Updates a single field on an issue with optimistic updates
 // ============================================================================
 
-import type { IssueUpdatePayload, IssueUpdateResponse } from '@/types/issue';
+import type { IssueUpdatePayload, IssueUpdateResponse } from '@/features/issues/types';
 import { getDetailedIssueById } from '@/mocks/issue.fixtures';
 import { getAttachmentsByIssueId } from '@/mocks/attachment.fixtures';
 

@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { updateIssue } from '../api';
 import { issueKeys } from './use-issue-details';
-import type { IssueUpdateResponse } from '@/types/issue';
+import type { IssueUpdateResponse } from '@/features/issues/types';
 
 // ============================================================================
 // HOOK

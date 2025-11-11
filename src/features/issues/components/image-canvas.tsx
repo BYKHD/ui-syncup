@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
-import type { CanvasViewState } from "@/types/issue";
+import type { CanvasViewState } from "@/features/issues/types";
 
 interface ImageCanvasProps {
   src: string;

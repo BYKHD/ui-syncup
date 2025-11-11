@@ -3,7 +3,7 @@
 // Deletes an issue (soft delete in production)
 // ============================================================================
 
-import type { IssueDeletePayload } from '@/types/issue';
+import type { IssueDeletePayload } from '@/features/issues/types';
 
 export interface DeleteIssueParams extends IssueDeletePayload {
   issueId: string;

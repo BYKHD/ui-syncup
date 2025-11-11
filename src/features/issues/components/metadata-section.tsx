@@ -21,7 +21,7 @@ import { InlineEditableUserSelect } from './inline-editable-user-select';
 import { TYPE_OPTIONS, PRIORITY_OPTIONS } from '@/config/issue-options';
 
 // Types
-import type { IssueDetailData } from '@/types/issue';
+import type { IssueDetailData } from '@/features/issues/types';
 
 interface MetadataSectionProps {
   issue: IssueDetailData;
@@ -71,11 +71,13 @@ function formatTimestamp(date: Date | string): string {
 
 function MetadataField({
   label,
+  labelVisible = true,
   children,
   isLoading = false,
   id
 }: {
   label: string;
+  labelVisible?: boolean;
   children?: React.ReactNode;
   isLoading?: boolean;
   id?: string;
@@ -86,7 +88,8 @@ function MetadataField({
     <div className="space-y-1.5">
       <label 
         htmlFor={fieldId}
-        className="text-xs font-medium text-muted-foreground"
+        id={`${fieldId}-label`}
+        className={labelVisible ? 'text-xs font-medium text-muted-foreground' : 'sr-only'}
       >
         {label}
       </label>
@@ -162,7 +165,7 @@ export function MetadataSection({
   return (
     <div className="space-y-4" role="region" aria-label="Issue metadata">
       {/* Title */}
-      <MetadataField label="Title" id="title-field">
+      <MetadataField label="Title" id="title-field" labelVisible={false}>
         <InlineEditableText
           value={issue.title}
           onSave={(value) => onUpdate('title', value)}
@@ -177,7 +180,7 @@ export function MetadataSection({
       </MetadataField>
 
       {/* Description */}
-      <MetadataField label="Description" id="description-field">
+      <MetadataField label="Description" id="description-field" labelVisible={false}>
         <InlineEditableTextarea
           value={issue.description || ''}
           onSave={(value) => onUpdate('description', value)}

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ZoomIn, ZoomOut, Maximize, RotateCcw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { CanvasViewState } from "@/types/issue";
+import type { CanvasViewState } from "@/features/issues/types";
 import { motion } from "motion/react";
 
 interface ZoomControlsProps {

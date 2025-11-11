@@ -5,7 +5,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getIssueDetails } from '../api';
-import type { IssueDetailData } from '@/types/issue';
+import type { IssueDetailData } from '@/features/issues/types';
 
 // ============================================================================
 // QUERY KEYS

@@ -16,7 +16,7 @@ import type {
   ActivityEntry,
   IssueAttachment,
   AttachmentAnnotation,
-} from "@/types/issue";
+} from "@/features/issues/types";
 
 // Motion configuration constants
 const motionPresets = {

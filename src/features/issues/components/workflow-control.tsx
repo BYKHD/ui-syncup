@@ -72,9 +72,8 @@ import {
 } from '@/src/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/src/components/ui/popover';
 import { PermissionTooltip } from '@/src/components/shared/PermissionGuard';
-import type { IssueStatus } from '@/src/lib/issues';
-import type { WorkflowControlProps } from '@/src/types/issue';
-import { STATUS_TRANSITIONS } from '@/src/types/issue';
+import type { IssueStatus, WorkflowControlProps } from '@/features/issues/types';
+import { STATUS_TRANSITIONS } from '@/features/issues/types';
 import { DEFAULT_STATUS_ICON, STATUS_OPTIONS } from '@/src/config/issue-options';
 import { RiCheckLine, RiLoader4Line } from '@remixicon/react';
 import { toast } from 'sonner';

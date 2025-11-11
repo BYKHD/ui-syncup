@@ -2,7 +2,7 @@
 // ISSUE MOCK FIXTURES
 // ============================================================================
 
-import type { IssuePriority, IssueType, IssueStatus } from '@/lib/issues';
+import type { IssuePriority, IssueType, IssueStatus } from '@/features/issues/types';
 
 // Re-export types for convenience
 export type { IssuePriority, IssueType, IssueStatus };

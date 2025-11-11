@@ -3,7 +3,7 @@
 // Fetches activity timeline for an issue with pagination
 // ============================================================================
 
-import type { ActivityTimelineResponse } from '@/types/issue';
+import type { ActivityTimelineResponse } from '@/features/issues/types';
 import { getPaginatedActivities } from '@/mocks/activity.fixtures';
 
 export interface GetIssueActivitiesParams {

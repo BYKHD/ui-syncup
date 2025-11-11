@@ -15,7 +15,7 @@ import type {
   ActivityEntry,
   AttachmentAnnotation,
   IssueAttachment,
-} from '@/types/issue';
+} from '@/features/issues/types';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -76,6 +76,7 @@ export default function IssueDetailsPanel({
   
   return (
     <div 
+      id="issue-details-panel-container"
       className="pointer-events-auto flex h-full w-full flex-col overflow-hidden bg-card md:border-l md:border-border"
       role="complementary"
       aria-label="Issue details and activity"
@@ -88,11 +89,11 @@ export default function IssueDetailsPanel({
         onToggleShortcutsHelp={onToggleShortcutsHelp}
       />
       
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 min-h-0 flex-col">
         <Tabs
           value={panelTab}
           onValueChange={(value) => setPanelTab(value as DetailsPanelTab)}
-          className="flex flex-1 flex-col"
+          className="flex flex-1 min-h-0 flex-col gap-0"
         >
           <TabsList className="h-12 w-full justify-start rounded-none border-b px-6">
             <TabsTrigger value="general" className="h-full">General</TabsTrigger>
@@ -100,8 +101,9 @@ export default function IssueDetailsPanel({
           </TabsList>
 
           <TabsContent
+            id="issue-details-panel-general-content"
             value="general"
-            className="flex-1 data-[state=inactive]:hidden focus-visible:outline-none"
+            className="flex flex-1 min-h-0 data-[state=inactive]:hidden focus-visible:outline-none"
           >
             <ScrollArea className="flex-1 overflow-auto">
               <div className="p-6 space-y-8">
@@ -130,13 +132,14 @@ export default function IssueDetailsPanel({
 
           <TabsContent
             value="comments"
-            className="flex-1 data-[state=inactive]:hidden focus-visible:outline-none"
-          >
+            className="flex flex-1 min-h-0 data-[state=inactive]:hidden focus-visible:outline-none"
+          ><ScrollArea className="flex-1 overflow-auto">
             <AnnotationCommentsPanel
               annotations={annotations}
               activeAnnotationId={activeAnnotationId}
               onAnnotationSelect={onAnnotationSelect}
             />
+            </ScrollArea>
           </TabsContent>
         </Tabs>
       </div>

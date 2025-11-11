@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode, type RefObject } from "react";
-import type { IssueAttachment, CanvasViewState } from "@/types/issue";
+import type { IssueAttachment, CanvasViewState } from "@/features/issues/types";
 import { ImageCanvas } from "./image-canvas";
 import { VideoPlayer } from "./video-player";
 import { ZoomControls } from "./zoom-controls";

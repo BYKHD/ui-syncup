@@ -69,7 +69,7 @@ export default async function IssuePage({ params }: IssuePageProps) {
         pageName={resolvedIssue.issueKey}
         breadcrumbs={issueBreadcrumbs}
       />
-      <div className="h-screen flex flex-col">
+      <div className="h-full flex flex-col">
         {/* Issue Details Screen */}
         <div className="flex-1 overflow-hidden">
           <IssueDetailsScreen issueId={resolvedIssue.id} userId={userId} />

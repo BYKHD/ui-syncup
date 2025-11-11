@@ -2,7 +2,7 @@
 
 import { DEFAULT_STATUS_ICON, STATUS_OPTIONS } from '@/config/issue-options'
 import type { StatusOption } from '@/config/issue-options'
-import type { IssueStatus } from '@/lib/issues'
+import type { IssueStatus } from '@/features/issues/types'
 import { cn } from '@/lib/utils'
 
 const STATUS_OPTION_MAP = Object.fromEntries(

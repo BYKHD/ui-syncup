@@ -3,10 +3,14 @@
 // Feature-specific types and re-exports
 // ============================================================================
 
-// Re-export all global issue types
+// Re-export issue domain types from the feature module
 export type {
   IssueDetailData,
   IssueAttachment,
+  AttachmentAnnotation,
+  AttachmentReviewVariant,
+  AnnotationStatus,
+  AnnotationComment,
   IssueUser,
   IssuePermissions,
   ActivityEntry,
@@ -23,7 +27,8 @@ export type {
   IssuePriority,
   IssueType,
   IssueStatus,
-} from '@/types/issue';
+  StatusTransition,
+} from './issue';
 
 export {
   STATUS_TRANSITIONS,
@@ -34,7 +39,7 @@ export {
   IssueNetworkError,
   AttachmentLoadError,
   ActivityLoadError,
-} from '@/types/issue';
+} from './issue';
 
 // ============================================================================
 // FEATURE-SPECIFIC TYPES (if needed in the future)

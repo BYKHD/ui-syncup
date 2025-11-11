@@ -6,7 +6,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getIssueActivities } from '../api';
 import { issueKeys } from './use-issue-details';
-import type { ActivityEntry } from '@/types/issue';
+import type { ActivityEntry } from '@/features/issues/types';
 
 // ============================================================================
 // HOOK

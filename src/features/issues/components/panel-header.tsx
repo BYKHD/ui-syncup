@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { IssueDeleteDialog } from './issue-deletion-dialog';
 
 // Types
-import type { IssueDetailData } from '@/types/issue';
+import type { IssueDetailData } from '@/features/issues/types';
 
 interface PanelHeaderProps {
   issueKey: string;

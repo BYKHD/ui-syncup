@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import type { IssueAttachment, ImageSelectorProps } from "@/types/issue";
+import type { IssueAttachment, ImageSelectorProps } from "@/features/issues/types";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu,

@@ -7,7 +7,7 @@ import {
   TooltipTrigger
 } from '@/components/ui/tooltip'
 import { DEFAULT_PRIORITY_ICON, PRIORITY_OPTIONS } from '@/config/issue-options'
-import type { IssuePriority } from '@/lib/issues'
+import type { IssuePriority } from '@/features/issues/types'
 import { cn } from '@/lib/utils'
 
 const PRIORITY_OPTION_MAP = Object.fromEntries(
