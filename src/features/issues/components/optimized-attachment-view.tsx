@@ -243,7 +243,7 @@ export default function IssueAttachmentsView({
         </Tabs>
       </header>
 
-      <div className="relative flex-1 overflow-hidden">
+      <div className="relative flex-1 min-h-0 overflow-hidden">
         <AnimatePresence mode="wait">
           {viewMode === 'annotate' && selectedAttachment ? (
             <motion.div
@@ -409,13 +409,31 @@ function CompareCanvasView({
   };
 
   return (
-    <div className="relative flex h-full flex-col gap-4 p-4">
-      <div className="grid flex-1 gap-4 md:grid-cols-2">
+    <div className="relative flex h-full max-h-full min-h-0 flex-col gap-4 p-4">
+      <div className="pointer-events-auto self-end">
+        <ZoomControls
+          zoomLevel={canvasState.zoom}
+          fitMode={canvasState.fitMode}
+          onZoomIn={() => handleZoomChange(Math.min(canvasState.zoom * 1.5, 5))}
+          onZoomOut={() => handleZoomChange(Math.max(canvasState.zoom / 1.5, 0.1))}
+          onFitToCanvas={() => handleFitModeChange('fit')}
+          onActualSize={() => {
+            handleFitModeChange('actual');
+            handleZoomChange(1);
+          }}
+        />
+      </div>
+      <div id="compare-canvas-container" className="grid flex-1 min-h-0 gap-4 md:grid-cols-2">
         {[{ label: 'As-Is', attachment: asIsAttachment }, { label: 'To-Be', attachment: toBeAttachment }].map(
           ({ label, attachment }) => (
             <div
               key={attachment.id}
-              className="relative overflow-hidden rounded-2xl border border-border/60 bg-background/80"
+              className="relative overflow-hidden rounded-2xl border border-border/60 bg-canvas h-full"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 1px 1px, var(--color-canvas-dotted) 1px, transparent 0)",
+                backgroundSize: "16px 16px",
+              }}
             >
               <div className="absolute left-4 top-4 z-20 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em]">
                 <span
@@ -438,19 +456,7 @@ function CompareCanvasView({
         )}
       </div>
 
-      <div className="pointer-events-auto self-end">
-        <ZoomControls
-          zoomLevel={canvasState.zoom}
-          fitMode={canvasState.fitMode}
-          onZoomIn={() => handleZoomChange(Math.min(canvasState.zoom * 1.5, 5))}
-          onZoomOut={() => handleZoomChange(Math.max(canvasState.zoom / 1.5, 0.1))}
-          onFitToCanvas={() => handleFitModeChange('fit')}
-          onActualSize={() => {
-            handleFitModeChange('actual');
-            handleZoomChange(1);
-          }}
-        />
-      </div>
+      
     </div>
   );
 }

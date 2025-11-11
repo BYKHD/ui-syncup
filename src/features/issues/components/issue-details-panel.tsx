@@ -87,6 +87,8 @@ export default function IssueDetailsPanel({
         onDelete={onDelete}
         isLoading={isLoading}
         onToggleShortcutsHelp={onToggleShortcutsHelp}
+        permissions={permissions}
+        onStatusChange={(nextStatus) => onUpdate('status', nextStatus)}
       />
       
       <div className="flex flex-1 min-h-0 flex-col">
@@ -95,7 +97,7 @@ export default function IssueDetailsPanel({
           onValueChange={(value) => setPanelTab(value as DetailsPanelTab)}
           className="flex flex-1 min-h-0 flex-col gap-0"
         >
-          <TabsList className="h-12 w-full justify-start rounded-none border-b px-6">
+          <TabsList className="h-10 w-full justify-start rounded-none border-b px-6">
             <TabsTrigger value="general" className="h-full">General</TabsTrigger>
             <TabsTrigger value="comments" className="h-full">Comments</TabsTrigger>
           </TabsList>

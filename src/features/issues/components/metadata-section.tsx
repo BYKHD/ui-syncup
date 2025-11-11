@@ -8,7 +8,6 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Issue Components
-import IssueStatusBadge from './issues-status-badge';
 import IssuesPriorityBadge from './issues-priority-badge';
 import { InlineEditableText } from './inline-editable-text';
 import { InlineEditableTextarea } from './inline-editable-textarea';
@@ -149,9 +148,10 @@ export function MetadataSection({
         <MetadataField label="Title" isLoading />
         <MetadataField label="Description" isLoading />
         <Separator />
-        <MetadataField label="Status" isLoading />
-        <MetadataField label="Type" isLoading />
-        <MetadataField label="Priority" isLoading />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <MetadataField label="Type" isLoading />
+          <MetadataField label="Priority" isLoading />
+        </div>
         <Separator />
         <MetadataField label="Reporter" isLoading />
         <MetadataField label="Assignee" isLoading />
@@ -197,48 +197,44 @@ export function MetadataSection({
 
       <Separator />
 
-      {/* Status */}
-      <MetadataField label="Status">
-        {/* TODO: wire WorkflowControl when ready */}
-        <IssueStatusBadge status={issue.status} />
-      </MetadataField>
-
-      {/* Type */}
-      <MetadataField label="Type">
-        <InlineEditableSelect
-          value={issue.type}
-          options={TYPE_OPTIONS}
-          onSave={(value) => onUpdate('type', value)}
-          canEdit={permissions.canEditField('type')}
-          placeholder="Select type"
-          renderValue={(option) => {
-            const IconComponent = option.icon;
-            return (
-              <div className="flex items-center gap-2">
-                {IconComponent && <IconComponent className="h-4 w-4" />}
+      <div className="grid gap-4 sm:grid-cols-2" role="group" aria-label="Issue classification">
+        {/* Type */}
+        <MetadataField label="Type">
+          <InlineEditableSelect
+            value={issue.type}
+            options={TYPE_OPTIONS}
+            onSave={(value) => onUpdate('type', value)}
+            canEdit={permissions.canEditField('type')}
+            placeholder="Select type"
+            renderValue={(option) => {
+              const IconComponent = option.icon;
+              return (
+                <div className="flex items-center gap-2">
+                  {IconComponent && <IconComponent className="h-4 w-4" />}
                   {option.label}
-              </div>
-            );
-          }}
-        />
-      </MetadataField>
+                </div>
+              );
+            }}
+          />
+        </MetadataField>
 
-      {/* Priority */}
-      <MetadataField label="Priority">
-        <InlineEditableSelect
-          value={issue.priority}
-          options={PRIORITY_OPTIONS}
-          onSave={(value) => onUpdate('priority', value)}
-          canEdit={permissions.canEditField('priority')}
-          placeholder="Select priority"
-          renderValue={(option) => (
-            <div className="flex items-center gap-2">
-              <IssuesPriorityBadge priority={issue.priority} />
-              <span className="text-sm capitalize">{option.label}</span>
-            </div>
-          )}
-        />
-      </MetadataField>
+        {/* Priority */}
+        <MetadataField label="Priority">
+          <InlineEditableSelect
+            value={issue.priority}
+            options={PRIORITY_OPTIONS}
+            onSave={(value) => onUpdate('priority', value)}
+            canEdit={permissions.canEditField('priority')}
+            placeholder="Select priority"
+            renderValue={(option) => (
+              <div className="flex items-center gap-2">
+                <IssuesPriorityBadge priority={issue.priority} />
+                <span className="text-sm capitalize">{option.label}</span>
+              </div>
+            )}
+          />
+        </MetadataField>
+      </div>
 
       <Separator />
 
@@ -250,7 +246,7 @@ export function MetadataSection({
       {/* Assignee */}
       <MetadataField label="Assignee">
         <InlineEditableUserSelect
-          value={issue.assigneeId}
+          value={issue.assignee?.id || 'unassigned'}
           users={MOCK_TEAM_MEMBERS}
           onSave={(userId) => onUpdate('assigneeId', userId)}
           canEdit={permissions.canEditField('assigneeId')}

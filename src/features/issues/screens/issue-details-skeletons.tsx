@@ -10,13 +10,14 @@ import { Separator } from "@/components/ui/separator";
 
 export function PanelHeaderSkeleton() {
   return (
-    <div className="flex items-center justify-between p-6 border-b border-border">
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-6 w-20" /> {/* Issue key */}
+    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-6 py-4">
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-3 w-12" /> {/* Label */}
+        <Skeleton className="h-6 w-24" /> {/* Issue key */}
       </div>
       <div className="flex items-center gap-2">
-        <Skeleton className="h-8 w-16" /> {/* Edit button */}
-        <Skeleton className="h-8 w-8" />  {/* More actions */}
+        <Skeleton className="h-10 w-36 rounded-md" /> {/* Status selector */}
+        <Skeleton className="h-8 w-8 rounded-md" />  {/* More actions */}
       </div>
     </div>
   );
@@ -45,30 +46,24 @@ export function MetadataSectionSkeleton() {
         </div>
       </div>
 
-      {/* Status and Type row */}
+      {/* Type and Priority row */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-12" /> {/* Status label */}
-          <Skeleton className="h-6 w-20" /> {/* Status badge */}
-        </div>
         <div className="space-y-2">
           <Skeleton className="h-4 w-8" /> {/* Type label */}
           <Skeleton className="h-6 w-16" /> {/* Type badge */}
         </div>
-      </div>
-
-      {/* Priority and Assignee row */}
-      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Skeleton className="h-4 w-14" /> {/* Priority label */}
           <Skeleton className="h-6 w-18" /> {/* Priority badge */}
         </div>
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-16" /> {/* Assignee label */}
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-6 w-6 rounded-full" /> {/* Avatar */}
-            <Skeleton className="h-4 w-24" /> {/* Name */}
-          </div>
+      </div>
+
+      {/* Assignee row */}
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-16" /> {/* Assignee label */}
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-6 w-6 rounded-full" /> {/* Avatar */}
+          <Skeleton className="h-4 w-24" /> {/* Name */}
         </div>
       </div>
 
