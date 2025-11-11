@@ -10,6 +10,7 @@ import { motion } from "motion/react";
 interface ZoomControlsProps {
   zoomLevel: number;
   fitMode: CanvasViewState["fitMode"];
+  onRecenterView: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onFitToCanvas: () => void;
@@ -22,6 +23,7 @@ const ZOOM_MAX = 5;
 export function ZoomControls({
   zoomLevel,
   fitMode,
+  onRecenterView,
   onZoomIn,
   onZoomOut,
   onFitToCanvas,
@@ -83,6 +85,22 @@ export function ZoomControls({
         </Tooltip>
 
         <div className="h-6 w-px bg-border" aria-hidden="true" />
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size={buttonSize}
+              className={buttonClass}
+              aria-label="Re-center"
+              onClick={onRecenterView}
+            >
+              <RotateCcw className={iconClass} aria-hidden="true" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Re-center</TooltipContent>
+        </Tooltip>
 
         <Tooltip>
           <TooltipTrigger asChild>

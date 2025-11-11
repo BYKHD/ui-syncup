@@ -94,6 +94,7 @@ export function CenteredCanvasView({
             <ZoomControls
               zoomLevel={canvasState.zoom}
               fitMode={canvasState.fitMode}
+              onRecenterView={() => handlePanChange({ x: 0, y: 0 })}
               onZoomIn={() => handleZoomChange(Math.min(canvasState.zoom * 1.5, 5))}
               onZoomOut={() => handleZoomChange(Math.max(canvasState.zoom / 1.5, 0.1))}
               onFitToCanvas={() => handleFitModeChange('fit')}
