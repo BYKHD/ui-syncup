@@ -1,6 +1,6 @@
 "use client"
 
-import { SidebarProvider } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/shared/sidebar/app-sidebar"
 import { AppHeader } from "@/components/shared/headers"
 
@@ -18,12 +18,26 @@ function SidebarLayout({
   return (
     <SidebarProvider>
       {sidebar || <AppSidebar />}
-      <div className="flex flex-1 flex-col">
-        {header || <AppHeader pageName="Dashboard" />}
-        <main className="p-4 overflow-auto w-full h-full">
+      <SidebarInset className="min-w-0 flex flex-col">
+        {/* Skip link for accessibility */}
+        <a 
+          href="#content" 
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 bg-primary text-primary-foreground px-3 py-2 rounded"
+        >
+          Skip to content
+        </a>
+        
+        {/* Sticky header (outside scroll container) */}
+        {header || <AppHeader />}
+        
+        {/* Single scroll container */}
+        <main 
+          id="content"
+          className="flex-1 overflow-auto p-3 md:p-4 [scrollbar-gutter:stable]"
+        >
           {children}
         </main>
-      </div>
+      </SidebarInset>
     </SidebarProvider>
   )
 }
