@@ -5,24 +5,19 @@ import type { IssueAttachment, CanvasViewState } from "@/types/issue";
 import { ImageCanvas } from "./image-canvas";
 import { VideoPlayer } from "./video-player";
 import { ZoomControls } from "./zoom-controls";
-import { ImageSelector } from "./image-selector";
 
 interface CenteredCanvasViewProps {
   attachment?: IssueAttachment;
-  attachments: IssueAttachment[];
   canvasState: CanvasViewState;
   onCanvasStateChange: (updates: Partial<CanvasViewState>) => void;
-  onAttachmentSelect: (attachmentId: string) => void;
   overlayContent?: ReactNode;
   overlayRef?: RefObject<HTMLDivElement | null>;
 }
 
 export function CenteredCanvasView({
   attachment,
-  attachments,
   canvasState,
   onCanvasStateChange,
-  onAttachmentSelect,
   overlayContent,
   overlayRef
 }: CenteredCanvasViewProps) {
@@ -109,21 +104,7 @@ export function CenteredCanvasView({
             />
           </div>
         )}
-
-       
       </div>
-
-      {/* Image selector pinned to canvas footer */}
-      {attachments.length > 1 && (
-        <div className="flex-shrink-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <ImageSelector
-            attachments={attachments}
-            selectedAttachmentId={attachment.id}
-            onSelect={onAttachmentSelect}
-            layout="thumbnails"
-          />
-        </div>
-      )}
 
       {/* Future annotation support indicator - only for images */}
       {attachment.fileType.startsWith('image/') && overlayContent && (

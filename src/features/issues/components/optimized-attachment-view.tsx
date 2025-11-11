@@ -110,11 +110,6 @@ export default function IssueAttachmentsView({
     setCanvasState((prev) => ({ ...prev, ...updates }));
   }, []);
 
-  const handleAttachmentSelect = useCallback((attachmentId: string) => {
-    setSelectedAttachmentId(attachmentId);
-    setCanvasState({ zoom: 1, panX: 0, panY: 0, fitMode: 'fit' });
-  }, []);
-
   const handleAnnotationSelect = useCallback(
     (annotationId: string) => {
       setViewMode('annotate');
@@ -262,10 +257,8 @@ export default function IssueAttachmentsView({
               <CenteredCanvasView
                 key={selectedAttachment.id}
                 attachment={selectedAttachment}
-                attachments={imageAttachments}
                 canvasState={canvasState}
                 onCanvasStateChange={handleCanvasStateChange}
-                onAttachmentSelect={handleAttachmentSelect}
                 overlayRef={annotationOverlayRef}
                 overlayContent={annotateOverlay}
               />

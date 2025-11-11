@@ -20,7 +20,7 @@ function SidebarLayout({
       {sidebar || <AppSidebar />}
       <div className="flex flex-1 flex-col">
         {header || <AppHeader pageName="Dashboard" />}
-        <main className="mx-auto size-full max-w-7xl flex-1 px-4 py-4 sm:px-4">
+        <main className="p-4 overflow-auto w-full h-full">
           {children}
         </main>
       </div>
