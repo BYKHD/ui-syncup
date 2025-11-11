@@ -13,7 +13,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, RefreshCw, FileText, Upload, PenLine, Columns2 } from 'lucide-react';
 import { CenteredCanvasView } from './centered-canvas-view';
-import { ImageSelector } from './image-selector';
 import { ImageCanvas } from './image-canvas';
 import { ZoomControls } from './zoom-controls';
 import type {
@@ -271,20 +270,6 @@ export default function IssueAttachmentsView({
                 overlayContent={annotateOverlay}
               />
 
-              {imageAttachments.length > 1 && (
-                <motion.div
-                  className="pointer-events-auto absolute bottom-4 left-1/2 z-20 -translate-x-1/2"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <ImageSelector
-                    attachments={imageAttachments}
-                    selectedAttachmentId={selectedAttachmentId}
-                    onSelect={handleAttachmentSelect}
-                    layout="thumbnails"
-                  />
-                </motion.div>
-              )}
             </motion.div>
           ) : (
             <motion.div

@@ -113,7 +113,7 @@ export function CenteredCanvasView({
        
       </div>
 
-      {/* Image selector for multiple attachments */}
+      {/* Image selector pinned to canvas footer */}
       {attachments.length > 1 && (
         <div className="flex-shrink-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <ImageSelector
