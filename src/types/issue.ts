@@ -23,6 +23,31 @@ export interface IssueUser {
 // ATTACHMENT TYPES
 // ============================================================================
 
+export type AttachmentReviewVariant = 'as_is' | 'to_be' | 'reference';
+
+export type AnnotationStatus = 'open' | 'in_review' | 'resolved';
+
+export interface AnnotationComment {
+  id: string;
+  annotationId: string;
+  author: IssueUser;
+  message: string;
+  createdAt: string;
+}
+
+export interface AttachmentAnnotation {
+  id: string;
+  attachmentId: string;
+  label: string;
+  description?: string;
+  status: AnnotationStatus;
+  x: number; // relative position (0 - 1)
+  y: number; // relative position (0 - 1)
+  author: IssueUser;
+  createdAt: string;
+  comments?: AnnotationComment[];
+}
+
 export interface IssueAttachment {
   id: string;
   issueId: string;
@@ -35,6 +60,8 @@ export interface IssueAttachment {
   height?: number | null;
   uploadedBy: IssueUser;
   createdAt: string;
+  reviewVariant?: AttachmentReviewVariant;
+  annotations?: AttachmentAnnotation[];
 }
 
 // ============================================================================

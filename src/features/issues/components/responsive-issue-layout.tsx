@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, lazy, Suspense, useMemo } from "react";
+import React, { useState, useEffect, lazy, Suspense, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,7 +10,13 @@ import { ArrowLeft, Image, FileText, PanelRightClose, PanelRightOpen, Keyboard }
 import { formatShortcut, type KeyboardShortcut } from "@/features/issues/hooks/use-keyboard-shortcuts";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import type { IssueDetailData, IssuePermissions, ActivityEntry, IssueAttachment } from "@/types/issue";
+import type {
+  IssueDetailData,
+  IssuePermissions,
+  ActivityEntry,
+  IssueAttachment,
+  AttachmentAnnotation,
+} from "@/types/issue";
 
 // Motion configuration constants
 const motionPresets = {
@@ -21,6 +27,23 @@ const motionPresets = {
 
 const performanceProps = {
   layoutId: undefined as string | undefined
+};
+
+type AnnotationThread = AttachmentAnnotation & {
+  attachmentName?: string;
+  attachmentVariant?: IssueAttachment['reviewVariant'];
+  attachmentPreview?: string | null;
+};
+
+const mapAttachmentsToAnnotations = (sources: IssueAttachment[]): AnnotationThread[] => {
+  return sources.flatMap((attachment) =>
+    (attachment.annotations ?? []).map((annotation) => ({
+      ...annotation,
+      attachmentName: attachment.fileName,
+      attachmentVariant: attachment.reviewVariant,
+      attachmentPreview: attachment.thumbnailUrl ?? attachment.url,
+    }))
+  );
 };
 
 // Lazy load heavy components for better performance
@@ -78,12 +101,15 @@ export default function ResponsiveIssueLayout({
   onToggleShortcutsHelp,
   shortcuts = []
 }: ResponsiveIssueLayoutProps) {
+  const annotationSeed = useMemo(() => mapAttachmentsToAnnotations(attachments), [attachments]);
   const isMobile = useIsMobile();
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
   const [activeTab, setActiveTab] = useState("attachments");
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+  const [annotationThreads, setAnnotationThreads] = useState<AnnotationThread[]>(annotationSeed);
+  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(annotationSeed[0]?.id ?? null);
 
   // Track window width for responsive behavior
   useEffect(() => {
@@ -100,6 +126,16 @@ export default function ResponsiveIssueLayout({
       setActiveTab("attachments");
     }
   }, [isMobile]); // Remove activeTab from dependencies to avoid cascading renders
+
+  useEffect(() => {
+    setAnnotationThreads(annotationSeed);
+    setActiveAnnotationId((prev) => {
+      if (prev && annotationSeed.some((annotation) => annotation.id === prev)) {
+        return prev;
+      }
+      return annotationSeed[0]?.id ?? null;
+    });
+  }, [annotationSeed]);
 
   // Handle swipe gestures for mobile tab switching
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -130,6 +166,18 @@ export default function ResponsiveIssueLayout({
     setTouchStartX(null);
     setTouchStartY(null);
   };
+
+  const handleAnnotationSelect = useCallback((annotationId: string) => {
+    setActiveAnnotationId(annotationId);
+  }, []);
+
+  const handleAnnotationMove = useCallback((annotationId: string, coords: { x: number; y: number }) => {
+    setAnnotationThreads((prev) =>
+      prev.map((annotation) =>
+        annotation.id === annotationId ? { ...annotation, x: coords.x, y: coords.y } : annotation
+      )
+    );
+  }, []);
 
   const handleBackToIssues = () => {
     window.location.href = '/issues';
@@ -232,6 +280,10 @@ export default function ResponsiveIssueLayout({
                     isLoading={isLoading}
                     error={attachmentError}
                     onRetry={onRetryAttachments}
+                    annotationThreads={annotationThreads}
+                    activeAnnotationId={activeAnnotationId}
+                    onAnnotationSelect={handleAnnotationSelect}
+                    onAnnotationMove={handleAnnotationMove}
                   />
                 </Suspense>
               </motion.div>
@@ -270,6 +322,9 @@ export default function ResponsiveIssueLayout({
                     onEditingTitleChange={onEditingTitleChange}
                     onEditingDescriptionChange={onEditingDescriptionChange}
                     onToggleShortcutsHelp={onToggleShortcutsHelp}
+                    annotations={annotationThreads}
+                    activeAnnotationId={activeAnnotationId}
+                    onAnnotationSelect={handleAnnotationSelect}
                   />
                 </Suspense>
               </motion.div>
@@ -335,6 +390,10 @@ export default function ResponsiveIssueLayout({
             isLoading={isLoading}
             error={attachmentError}
             onRetry={onRetryAttachments}
+            annotationThreads={annotationThreads}
+            activeAnnotationId={activeAnnotationId}
+            onAnnotationSelect={handleAnnotationSelect}
+            onAnnotationMove={handleAnnotationMove}
           />
         </Suspense>
 
@@ -417,6 +476,9 @@ export default function ResponsiveIssueLayout({
                   onEditingTitleChange={onEditingTitleChange}
                   onEditingDescriptionChange={onEditingDescriptionChange}
                   onToggleShortcutsHelp={onToggleShortcutsHelp}
+                  annotations={annotationThreads}
+                  activeAnnotationId={activeAnnotationId}
+                  onAnnotationSelect={handleAnnotationSelect}
                 />
               </Suspense>
             </motion.div>

@@ -1,20 +1,23 @@
 "use client";
 
-import React from "react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ZoomIn, ZoomOut, Maximize, RotateCcw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { CanvasViewState } from "@/types/issue";
+import { cn } from "@/lib/utils";
 
 interface ZoomControlsProps {
   zoomLevel: number;
-  fitMode: CanvasViewState['fitMode'];
+  fitMode: CanvasViewState["fitMode"];
   onZoomIn: () => void;
   onZoomOut: () => void;
   onFitToCanvas: () => void;
   onActualSize: () => void;
 }
+
+const ZOOM_MIN = 0.1;
+const ZOOM_MAX = 5;
 
 export function ZoomControls({
   zoomLevel,
@@ -22,92 +25,95 @@ export function ZoomControls({
   onZoomIn,
   onZoomOut,
   onFitToCanvas,
-  onActualSize
+  onActualSize,
 }: ZoomControlsProps) {
   const isMobile = useIsMobile();
-  
-  const formatZoomPercentage = (zoom: number) => {
-    return `${Math.round(zoom * 100)}%`;
-  };
+  const zoomPercentage = `${Math.round(zoomLevel * 100)}%`;
+  const zoomProgress = Math.min(Math.max((zoomLevel - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN), 0), 1);
+
+  const buttons = [
+    {
+      id: "zoom-in",
+      label: "Zoom in",
+      icon: ZoomIn,
+      action: onZoomIn,
+      disabled: zoomLevel >= ZOOM_MAX,
+    },
+    {
+      id: "zoom-out",
+      label: "Zoom out",
+      icon: ZoomOut,
+      action: onZoomOut,
+      disabled: zoomLevel <= ZOOM_MIN,
+    },
+    {
+      id: "fit",
+      label: "Fit to canvas",
+      icon: Maximize,
+      action: onFitToCanvas,
+      variant: fitMode === "fit" ? "default" : "ghost",
+    },
+    {
+      id: "actual",
+      label: "Actual size (100%)",
+      icon: RotateCcw,
+      action: onActualSize,
+      variant: fitMode === "actual" && zoomLevel === 1 ? "default" : "ghost",
+    },
+  ] as const;
+
+  const buttonSize = isMobile ? "default" : "icon";
+  const tooltipSide = isMobile ? "top" : "left";
 
   return (
     <TooltipProvider>
-      <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-lg border shadow-sm">
-        <div className={`flex flex-col gap-1 ${isMobile ? 'p-3' : 'p-2'}`}>
-          {/* Zoom level display */}
-          <div className={`text-xs text-center text-muted-foreground px-2 py-1 w-full ${isMobile ? 'text-sm' : ''}`}>
-            {formatZoomPercentage(zoomLevel)}
-          </div>
-          
-          {/* Zoom in */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size={isMobile ? "default" : "sm"}
-                onClick={onZoomIn}
-                disabled={zoomLevel >= 5}
-                className={isMobile ? "h-10 w-10 p-0" : "h-8 w-8 p-0"}
-              >
-                <ZoomIn className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p>Zoom in</p>
-            </TooltipContent>
-          </Tooltip>
+      <div
+        className={cn(
+          "w-full min-w-[220px] rounded-2xl border border-border/60 bg-background/90 p-3 text-xs shadow-lg backdrop-blur-md",
+          !isMobile && "min-w-[140px]"
+        )}
+      >
+        <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.35em] text-muted-foreground">
+          <span>Canvas</span>
+          <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[11px] text-foreground">{zoomPercentage}</span>
+        </div>
 
-          {/* Zoom out */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size={isMobile ? "default" : "sm"}
-                onClick={onZoomOut}
-                disabled={zoomLevel <= 0.1}
-                className={isMobile ? "h-10 w-10 p-0" : "h-8 w-8 p-0"}
-              >
-                <ZoomOut className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p>Zoom out</p>
-            </TooltipContent>
-          </Tooltip>
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-200"
+            style={{ width: `${zoomProgress * 100}%` }}
+          />
+        </div>
 
-          {/* Fit to canvas */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={fitMode === 'fit' ? 'default' : 'ghost'}
-                size={isMobile ? "default" : "sm"}
-                onClick={onFitToCanvas}
-                className={isMobile ? "h-10 w-10 p-0" : "h-8 w-8 p-0"}
-              >
-                <Maximize className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p>Fit to canvas</p>
-            </TooltipContent>
-          </Tooltip>
-
-          {/* Actual size (100%) */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={fitMode === 'actual' && zoomLevel === 1 ? 'default' : 'ghost'}
-                size={isMobile ? "default" : "sm"}
-                onClick={onActualSize}
-                className={isMobile ? "h-10 w-10 p-0" : "h-8 w-8 p-0"}
-              >
-                <RotateCcw className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p>Actual size (100%)</p>
-            </TooltipContent>
-          </Tooltip>
+        <div
+          className={cn(
+            "mt-3 flex items-center gap-2",
+            !isMobile && "flex-col items-stretch gap-1"
+          )}
+        >
+          {buttons.map(({ id, label, icon: Icon, action, disabled, variant }) => (
+            <Tooltip key={id}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={variant ?? "ghost"}
+                  size={buttonSize}
+                  onClick={action}
+                  disabled={disabled}
+                  className={cn(
+                    "transition-all",
+                    buttonSize === "icon" ? "h-9 w-9" : "h-10 w-10",
+                    variant === "default" && "shadow-inner"
+                  )}
+                  aria-label={label}
+                >
+                  <Icon className={buttonSize === "icon" ? "h-4 w-4" : "h-5 w-5"} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side={tooltipSide}>
+                <p>{label}</p>
+              </TooltipContent>
+            </Tooltip>
+          ))}
         </div>
       </div>
     </TooltipProvider>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode, type RefObject } from "react";
 import type { IssueAttachment, CanvasViewState } from "@/types/issue";
 import { ImageCanvas } from "./image-canvas";
 import { VideoPlayer } from "./video-player";
@@ -13,6 +13,8 @@ interface CenteredCanvasViewProps {
   canvasState: CanvasViewState;
   onCanvasStateChange: (updates: Partial<CanvasViewState>) => void;
   onAttachmentSelect: (attachmentId: string) => void;
+  overlayContent?: ReactNode;
+  overlayRef?: RefObject<HTMLDivElement | null>;
 }
 
 export function CenteredCanvasView({
@@ -20,7 +22,9 @@ export function CenteredCanvasView({
   attachments,
   canvasState,
   onCanvasStateChange,
-  onAttachmentSelect
+  onAttachmentSelect,
+  overlayContent,
+  overlayRef
 }: CenteredCanvasViewProps) {
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | undefined>();
 
@@ -47,45 +51,32 @@ export function CenteredCanvasView({
     onCanvasStateChange({ fitMode });
   };
 
-  const handleDownload = async () => {
-    try {
-      // Check if the file exists first
-      const response = await fetch(attachment.url, { method: 'HEAD' });
-      if (!response.ok) {
-        throw new Error(`File not found: ${response.status}`);
-      }
-      
-      // Create a temporary link to download the file
-      const link = document.createElement('a');
-      link.href = attachment.url;
-      link.download = attachment.fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error('Download failed:', error);
-      // You could show a toast notification here
-      alert(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
-
   return (
     <div className="relative h-full w-full flex flex-col">
       {/* Main canvas area - takes up most of the space */}
       <div className="flex-1 relative overflow-hidden">
         {/* Layered canvas structure for future annotation support */}
         <div className="absolute inset-0">
-          {attachment.fileType.startsWith('video/') ? (
-            /* Video player */
-            <VideoPlayer
-              src={attachment.url}
-              alt={attachment.fileName}
-              mimeType={attachment.fileType}
-              onVideoLoad={setImageDimensions}
-            />
-          ) : (
-            /* Image canvas with zoom/pan */
-            <>
+          {/* Background pattern */}
+          <div
+            className="absolute inset-0 z-0 opacity-70"
+            style={{
+              backgroundImage:
+                'radial-gradient(circle at 1px 1px, var(--color-canvas-dotted) 1px, transparent 0)',
+              backgroundSize: '16px 16px',
+            }}
+            aria-hidden="true"
+          />
+
+          <div className="absolute inset-0 z-10">
+            {attachment.fileType.startsWith('video/') ? (
+              <VideoPlayer
+                src={attachment.url}
+                alt={attachment.fileName}
+                mimeType={attachment.fileType}
+                onVideoLoad={setImageDimensions}
+              />
+            ) : (
               <ImageCanvas
                 src={attachment.url}
                 alt={attachment.fileName}
@@ -95,14 +86,11 @@ export function CenteredCanvasView({
                 onZoomChange={handleZoomChange}
                 onPanChange={handlePanChange}
                 onImageLoad={setImageDimensions}
+                overlayRef={overlayRef}
+                overlayContent={overlayContent}
               />
-              
-              {/* Interaction layer placeholder for future annotations */}
-              <div className="absolute inset-0 pointer-events-none">
-                {/* Future annotation layer will go here */}
-              </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Zoom controls overlay - only for images */}
@@ -138,11 +126,11 @@ export function CenteredCanvasView({
       )}
 
       {/* Future annotation support indicator - only for images */}
-      {attachment.fileType.startsWith('image/') && (
+      {attachment.fileType.startsWith('image/') && overlayContent && (
         <div className="absolute top-4 left-4 z-20">
           <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-md px-3 py-1.5 text-xs text-muted-foreground border flex items-center gap-2">
-            <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
-            <span>📝 Annotations coming soon</span>
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+            <span>Drag pins to reposition annotations</span>
           </div>
         </div>
       )}

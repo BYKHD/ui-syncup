@@ -12,6 +12,8 @@ interface ImageCanvasProps {
   onZoomChange: (zoomLevel: number) => void;
   onPanChange: (panOffset: { x: number; y: number }) => void;
   onImageLoad?: (dimensions: { width: number; height: number }) => void;
+  overlayRef?: React.RefObject<HTMLDivElement | null>;
+  overlayContent?: React.ReactNode;
 }
 
 export function ImageCanvas({
@@ -22,10 +24,14 @@ export function ImageCanvas({
   fitMode,
   onZoomChange,
   onPanChange,
-  onImageLoad
+  onImageLoad,
+  overlayRef,
+  overlayContent
 }: ImageCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  const fallbackOverlayRef = useRef<HTMLDivElement | null>(null);
+  const resolvedOverlayRef = overlayRef ?? fallbackOverlayRef;
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -220,27 +226,41 @@ export function ImageCanvas({
           transform: `translate(${panOffset.x}px, ${panOffset.y}px)`,
         }}
       >
-        {!imageLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-muted-foreground">Loading image...</div>
-          </div>
-        )}
-        
-        <img
-          ref={imageRef}
-          src={src}
-          alt={alt}
-          className={`max-w-none transition-opacity duration-200 ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
+        <div
+          className="relative"
           style={{
             width: displaySize.width,
             height: displaySize.height,
           }}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-          draggable={false}
-        />
+        >
+          {!imageLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-muted-foreground">Loading image...</div>
+            </div>
+          )}
+
+          <img
+            ref={imageRef}
+            src={src}
+            alt={alt}
+            className={`max-w-none transition-opacity duration-200 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{
+              width: displaySize.width,
+              height: displaySize.height,
+            }}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            draggable={false}
+          />
+
+          {overlayContent && (
+            <div ref={resolvedOverlayRef} className="absolute inset-0">
+              {overlayContent}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

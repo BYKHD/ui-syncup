@@ -2,7 +2,11 @@
 // ATTACHMENT MOCK FIXTURES
 // ============================================================================
 
-import type { IssueAttachment, IssueUser } from '@/src/types/issue';
+import type {
+  IssueAttachment,
+  IssueUser,
+  AttachmentAnnotation,
+} from '@/src/types/issue';
 
 // Mock users for attachments
 const MOCK_ATTACHMENT_USERS: IssueUser[] = [
@@ -26,49 +30,103 @@ const MOCK_ATTACHMENT_USERS: IssueUser[] = [
   },
 ];
 
+const CPM101_ANNOTATIONS: AttachmentAnnotation[] = [
+  {
+    id: 'annot_cpm101_badge_spacing',
+    attachmentId: 'att_cpm101_as_is',
+    label: '01',
+    description: 'Badge spacing is off and text is overflowing outside CTA.',
+    status: 'open',
+    x: 0.32,
+    y: 0.41,
+    author: MOCK_ATTACHMENT_USERS[1],
+    createdAt: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
+    comments: [
+      {
+        id: 'annot_cpm101_badge_spacing_comment_1',
+        annotationId: 'annot_cpm101_badge_spacing',
+        author: MOCK_ATTACHMENT_USERS[1],
+        message: 'CTA badge caps at 8px padding per token. Please align with design spec.',
+        createdAt: new Date(Date.now() - 85 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'annot_cpm101_badge_spacing_comment_2',
+        annotationId: 'annot_cpm101_badge_spacing',
+        author: MOCK_ATTACHMENT_USERS[0],
+        message: 'Copy that—will tighten spacing once we finalize type ramp.',
+        createdAt: new Date(Date.now() - 75 * 60 * 1000).toISOString(),
+      },
+    ],
+  },
+  {
+    id: 'annot_cpm101_card_shadow',
+    attachmentId: 'att_cpm101_as_is',
+    label: '02',
+    description: 'Shadow token mismatch makes the hover state look heavy.',
+    status: 'in_review',
+    x: 0.62,
+    y: 0.58,
+    author: MOCK_ATTACHMENT_USERS[2],
+    createdAt: new Date(Date.now() - 65 * 60 * 1000).toISOString(),
+    comments: [
+      {
+        id: 'annot_cpm101_card_shadow_comment_1',
+        annotationId: 'annot_cpm101_card_shadow',
+        author: MOCK_ATTACHMENT_USERS[2],
+        message: 'Should use shadow/elevation-card not the modal drop shadow.',
+        createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      },
+    ],
+  },
+];
+
 // Mock attachments for different issues
 export const MOCK_ATTACHMENTS: IssueAttachment[] = [
   {
-    id: 'att_1',
+    id: 'att_cpm101_as_is',
     issueId: 'issue_1',
-    fileName: 'LinkedIn-skeleton-screen.png',
-    fileSize: 245632,
-    fileType: 'image/png',
-    url: '/playground/TEST-1/LinkedIn-skeleton-screen.png',
-    thumbnailUrl: '/playground/TEST-1/LinkedIn-skeleton-screen.png',
+    fileName: 'as-is-image.jpg',
+    fileSize: 512432,
+    fileType: 'image/jpeg',
+    url: '/playground/CPM-101/as-is-image.jpg',
+    thumbnailUrl: '/playground/CPM-101/as-is-image.jpg',
     width: 1920,
-    height: 1080,
+    height: 1350,
     uploadedBy: MOCK_ATTACHMENT_USERS[0],
     createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+    reviewVariant: 'as_is',
+    annotations: CPM101_ANNOTATIONS,
   },
   {
-    id: 'att_2',
+    id: 'att_cpm101_to_be',
     issueId: 'issue_1',
-    fileName: 'linkedin_skeletonscreen.jpg',
-    fileSize: 189456,
+    fileName: 'to-be-image.jpg',
+    fileSize: 498110,
     fileType: 'image/jpeg',
-    url: '/playground/TEST-1/linkedin_skeletonscreen.jpg',
-    thumbnailUrl: '/playground/TEST-1/linkedin_skeletonscreen.jpg',
+    url: '/playground/CPM-101/to-be-image.jpg',
+    thumbnailUrl: '/playground/CPM-101/to-be-image.jpg',
+    width: 1920,
+    height: 1350,
+    uploadedBy: MOCK_ATTACHMENT_USERS[1],
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    reviewVariant: 'to_be',
+  },
+  {
+    id: 'att_cpm101_reference',
+    issueId: 'issue_1',
+    fileName: 'as-is-zoomed.jpg',
+    fileSize: 423782,
+    fileType: 'image/jpeg',
+    url: '/playground/CPM-101/as-is-image.jpg',
+    thumbnailUrl: '/playground/CPM-101/as-is-image.jpg',
     width: 1600,
     height: 900,
-    uploadedBy: MOCK_ATTACHMENT_USERS[0],
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    uploadedBy: MOCK_ATTACHMENT_USERS[2],
+    createdAt: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
+    reviewVariant: 'reference',
   },
   {
-    id: 'att_3',
-    issueId: 'issue_1',
-    fileName: 'https___dev-to-uploads.s3.amazonaws.com_uploads_articles_vuahe90ka1mkx9aepmea.webp',
-    fileSize: 156789,
-    fileType: 'image/webp',
-    url: '/playground/TEST-1/https___dev-to-uploads.s3.amazonaws.com_uploads_articles_vuahe90ka1mkx9aepmea.webp',
-    thumbnailUrl: '/playground/TEST-1/https___dev-to-uploads.s3.amazonaws.com_uploads_articles_vuahe90ka1mkx9aepmea.webp',
-    width: 1440,
-    height: 810,
-    uploadedBy: MOCK_ATTACHMENT_USERS[1],
-    createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'att_4',
+    id: 'att_dark_mode',
     issueId: 'issue_2',
     fileName: 'dark-mode-mockup.png',
     fileSize: 342567,
@@ -81,7 +139,7 @@ export const MOCK_ATTACHMENTS: IssueAttachment[] = [
     createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
   },
   {
-    id: 'att_5',
+    id: 'att_perf_report',
     issueId: 'issue_3',
     fileName: 'performance-report.pdf',
     fileSize: 567890,
