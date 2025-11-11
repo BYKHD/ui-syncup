@@ -9,6 +9,7 @@
 // Main header component
 export { AppHeader } from './app-header'
 export type { AppHeaderProps, BreadcrumbItem } from './app-header'
+export { AppHeaderConfigurator } from './app-header-configurator'
 
 // Sub-components
 export { HeaderUserMenu } from './header-user-menu'

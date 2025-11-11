@@ -3,6 +3,7 @@
 // Next.js App Router page for viewing issue details
 // ============================================================================
 
+import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/shared/headers';
 import { IssueDetailsScreen } from '@/features/issues';
 import { getDetailedIssueByKey } from '@/mocks/issue.fixtures';
 import { notFound } from 'next/navigation';
@@ -53,15 +54,27 @@ export default async function IssuePage({ params }: IssuePageProps) {
     notFound();
   }
 
+  const resolvedIssue = issue!;
+  const issueBreadcrumbs: BreadcrumbItem[] = [
+    { label: 'Issues', href: '/issue' },
+    { label: resolvedIssue.issueKey },
+  ];
+
   // Mock user ID - in production, get from session
   const userId = 'user_1';
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Issue Details Screen */}
-      <div className="flex-1 overflow-hidden">
-        <IssueDetailsScreen issueId={issue.id} userId={userId} />
+    <>
+      <AppHeaderConfigurator
+        pageName={resolvedIssue.issueKey}
+        breadcrumbs={issueBreadcrumbs}
+      />
+      <div className="h-screen flex flex-col">
+        {/* Issue Details Screen */}
+        <div className="flex-1 overflow-hidden">
+          <IssueDetailsScreen issueId={resolvedIssue.id} userId={userId} />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
