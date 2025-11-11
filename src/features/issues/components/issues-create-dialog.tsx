@@ -24,15 +24,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { PrioritySelector } from "./priority-selector";
 import { TypeSelector } from "./type-selector";
 import { RiImageAddLine } from "@remixicon/react";
+import type { IssuePriority, IssueType } from "@/features/issues/types";
 
-type IssuePriority = 'critical' | 'high' | 'medium' | 'low' | null
-type IssueType = 'bug' | 'feature' | 'improvement' | null
+type IssuePriorityValue = IssuePriority | null
+type IssueTypeValue = IssueType | null
 
 interface IssueFormData {
   title: string
   description: string
-  type: IssueType
-  priority: IssuePriority
+  type: IssueTypeValue
+  priority: IssuePriorityValue
 }
 
 interface IssuesCreateDialogProps extends PropsWithChildren {
@@ -48,8 +49,8 @@ interface IssuesCreateDialogProps extends PropsWithChildren {
   isSubmitting?: boolean
   onTitleChange: (value: string) => void
   onDescriptionChange: (value: string) => void
-  onTypeChange: (value: IssueType) => void
-  onPriorityChange: (value: IssuePriority) => void
+  onTypeChange: (value: IssueTypeValue) => void
+  onPriorityChange: (value: IssuePriorityValue) => void
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
   onCancel: () => void
   // Visual upload mockup props

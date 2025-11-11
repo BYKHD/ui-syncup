@@ -1,12 +1,13 @@
-import { ISSUE_WORKFLOW } from '@/config/workflow'
+import { ISSUE_PRIORITY_VALUES, ISSUE_TYPE_VALUES } from '@/config/issue-options'
+import { ISSUE_STATUS_VALUES, ISSUE_WORKFLOW } from '@/config/workflow'
 
 // ============================================================================
 // ISSUE DOMAIN ENUMS
 // ============================================================================
 
-export type IssuePriority = 'critical' | 'high' | 'medium' | 'low'
-export type IssueType = 'bug' | 'feature' | 'improvement'
-export type IssueStatus = keyof typeof ISSUE_WORKFLOW
+export type IssuePriority = (typeof ISSUE_PRIORITY_VALUES)[number]
+export type IssueType = (typeof ISSUE_TYPE_VALUES)[number]
+export type IssueStatus = (typeof ISSUE_STATUS_VALUES)[number]
 
 // ============================================================================
 // USER & ACTOR TYPES

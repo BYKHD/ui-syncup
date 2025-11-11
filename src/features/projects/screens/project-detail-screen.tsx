@@ -8,6 +8,7 @@ import { ProjectLeaveButton } from "../components/project-leave-button";
 import { ProjectDetailHeader, ProjectIssues } from "../components";
 import { ProjectOverview } from "../components/project-detail-overview";
 import type { ProjectRole } from "../types";
+import type { IssuePriority, IssueType } from "@/features/issues/types";
 
 interface ProjectDetailScreenProps {
   project: {
@@ -26,8 +27,8 @@ interface ProjectDetailScreenProps {
   isLoading?: boolean;
 }
 
-type IssuePriority = "critical" | "high" | "medium" | "low" | null;
-type IssueType = "bug" | "feature" | "improvement" | null;
+type IssuePriorityValue = IssuePriority | null;
+type IssueTypeValue = IssueType | null;
 
 /**
  * ProjectDetailScreen
@@ -46,8 +47,8 @@ export default function ProjectDetailScreen({
   const [issueFormData, setIssueFormData] = useState({
     title: "",
     description: "",
-    type: null as IssueType,
-    priority: null as IssuePriority,
+    type: null as IssueTypeValue,
+    priority: null as IssuePriorityValue,
   });
   const [issueErrors, setIssueErrors] = useState<Record<string, string>>({});
   const [isSubmittingIssue, setIsSubmittingIssue] = useState(false);

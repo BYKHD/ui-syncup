@@ -3,14 +3,12 @@
  * Pure utility functions for filtering and sorting issues (no React)
  */
 
-import type { Issue, IssueStatus } from '@/mocks/issue.fixtures';
+import type { Issue } from '@/mocks/issue.fixtures';
+import type { IssuePriority, IssueStatus, IssueType } from '@/features/issues/types';
 
 // ============================================================================
 // TYPES
 // ============================================================================
-
-type IssuePriority = 'critical' | 'high' | 'medium' | 'low';
-type IssueType = 'bug' | 'feature' | 'improvement';
 
 export interface IssueFilters {
   search: string;

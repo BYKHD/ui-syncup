@@ -60,7 +60,7 @@ export const MOCK_ISSUES: Issue[] = [
     issueKey: 'MKT-102',
     title: 'Add dark mode toggle to navigation',
     description: 'Users have requested a dark mode option. Add toggle to main navigation.',
-    type: 'feature',
+    type: 'other',
     priority: 'medium',
     status: 'in_progress',
     coverImageUrl: null,
@@ -73,7 +73,7 @@ export const MOCK_ISSUES: Issue[] = [
     issueKey: 'MKT-103',
     title: 'Optimize hero image loading performance',
     description: 'Hero images on landing page are loading slowly. Implement lazy loading and WebP format.',
-    type: 'improvement',
+    type: 'other',
     priority: 'medium',
     status: 'in_review',
     coverImageUrl: null,
@@ -112,7 +112,7 @@ export const MOCK_ISSUES: Issue[] = [
     issueKey: 'MKT-106',
     title: 'Add analytics tracking to CTA buttons',
     description: 'Implement Google Analytics event tracking for all CTA button clicks.',
-    type: 'feature',
+    type: 'other',
     priority: 'low',
     status: 'open',
     coverImageUrl: null,
@@ -185,7 +185,7 @@ This issue does not occur on Android Chrome or desktop browsers.`,
 
 ## Design Notes
 Follow the existing design system color tokens for dark mode variants.`,
-    type: 'feature',
+    type: 'other',
     priority: 'medium',
     status: 'in_progress',
     assignee: {
@@ -227,7 +227,7 @@ Follow the existing design system color tokens for dark mode variants.`,
 ## Target Metrics
 - LCP: < 2.0s
 - Hero image size: < 150KB`,
-    type: 'improvement',
+    type: 'other',
     priority: 'medium',
     status: 'in_review',
     assignee: {
@@ -337,7 +337,7 @@ Users are unable to submit contact forms with these valid email formats, resulti
   page_path: string
 }
 \`\`\``,
-    type: 'feature',
+    type: 'other',
     priority: 'low',
     status: 'open',
     assignee: null,

@@ -241,8 +241,8 @@ export const MOCK_ACTIVITIES: ActivityEntry[] = [
     changes: [
       {
         field: 'type',
-        oldValue: 'improvement',
-        newValue: 'feature',
+        oldValue: 'bug',
+        newValue: 'other',
       },
     ],
     createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),

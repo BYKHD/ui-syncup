@@ -25,7 +25,7 @@ export {
   useIssueDelete,
   useIssueFilters,
 } from './hooks';
-export type { IssueFilters } from './hooks/use-issue-filters';
+export type { IssueFilters } from './utils';
 
 // Types
 export type {

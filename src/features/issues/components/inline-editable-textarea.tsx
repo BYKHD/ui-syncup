@@ -191,7 +191,7 @@ export function InlineEditableTextarea({
           onBlur={handleSave}
           disabled={isSaving}
           rows={rows}
-          className={cn(error && 'border-destructive')}
+          className={cn(error && 'border-destructive','h-[320px]')}
           maxLength={maxLength}
           aria-label={`Editing ${placeholder.toLowerCase()}`}
           aria-describedby={error ? 'edit-error' : 'edit-help'}

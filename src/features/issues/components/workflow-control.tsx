@@ -13,7 +13,7 @@
  * 
  * @example
  * ```tsx
- * import { WorkflowControl } from '@/src/features/issues/components/workflow-control';
+ * import { WorkflowControl } from '@/features/issues/components/workflow-control';
  * 
  * function IssueDetails() {
  *   const [issue, setIssue] = useState<IssueDetailData>(...);
@@ -51,7 +51,7 @@
 
 import { useId, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Button } from '@/src/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -59,7 +59,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList
-} from '@/src/components/ui/command';
+} from '@/components/ui/command';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,15 +69,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle
-} from '@/src/components/ui/alert-dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@/src/components/ui/popover';
-import { PermissionTooltip } from '@/src/components/shared/PermissionGuard';
+} from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PermissionTooltip } from '@/components/shared/PermissionGuard';
 import type { IssueStatus, WorkflowControlProps } from '@/features/issues/types';
 import { STATUS_TRANSITIONS } from '@/features/issues/types';
-import { DEFAULT_STATUS_ICON, STATUS_OPTIONS } from '@/src/config/issue-options';
+import { DEFAULT_STATUS_ICON, STATUS_OPTIONS } from '@/config/issue-options';
 import { RiCheckLine, RiLoader4Line } from '@remixicon/react';
 import { toast } from 'sonner';
-import { issueFeedback } from '@/src/lib/feedback';
+import { issueFeedback } from '@/lib/feedback';
 
 // Statuses that require confirmation before transition
 const REQUIRES_CONFIRMATION: IssueStatus[] = ['archived'];
