@@ -1,7 +1,6 @@
 import { ISSUE_PRIORITY_VALUES, ISSUE_TYPE_VALUES } from '@/config/issue-options'
 import { ISSUE_STATUS_VALUES, ISSUE_WORKFLOW } from '@/config/workflow'
 import type {
-  AnnotationStatus as BaseAnnotationStatus,
   AnnotationComment as BaseAnnotationComment,
   AttachmentAnnotation as BaseAttachmentAnnotation,
 } from '@/features/annotations'
@@ -31,7 +30,6 @@ export interface IssueUser {
 
 export type AttachmentReviewVariant = 'as_is' | 'to_be' | 'reference'
 
-export type AnnotationStatus = BaseAnnotationStatus
 export type AnnotationComment = BaseAnnotationComment<IssueUser>
 export type AttachmentAnnotation = BaseAttachmentAnnotation<IssueUser>
 

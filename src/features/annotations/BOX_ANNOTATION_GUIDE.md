@@ -1,9 +1,10 @@
-# Box Annotation Feature - Integration Guide
+# Box Annotation Feature with Comment Flow - Integration Guide
 
 ## Overview
 
 The box annotation feature allows users to draw rectangular boxes on images/attachments, with support for:
 - Drawing boxes that can extend outside image bounds (like professional annotation tools)
+- **Automatic comment prompt after drawing box** (Enter to save, Esc to cancel)
 - Moving and resizing boxes with interactive handles
 - Visual feedback during drawing
 - Status-based coloring (open, in_review, resolved)
@@ -16,16 +17,27 @@ Following the project's feature-first architecture (see `AGENTS.md`), the box an
 ```
 src/features/annotations/
 ├── components/
-│   ├── annotation-box.tsx        # Renders individual box annotations
-│   ├── annotation-canvas.tsx     # Handles drawing new annotations
-│   ├── annotation-layer.tsx      # Renders all annotations (pins + boxes)
-│   └── annotation-toolbar.tsx    # Tool selection UI
+│   ├── annotation-box.tsx            # Renders individual box annotations
+│   ├── annotation-canvas.tsx         # Handles drawing + comment flow
+│   ├── annotation-comment-input.tsx  # Comment input after drawing box
+│   ├── annotation-layer.tsx          # Renders all annotations (pins + boxes)
+│   └── annotation-toolbar.tsx        # Tool selection UI
 ├── hooks/
-│   ├── use-annotation-tools.ts   # Tool state & keyboard shortcuts
-│   └── use-annotation-drafts.ts  # Draft annotation management
+│   ├── use-annotation-tools.ts       # Tool state & keyboard shortcuts
+│   └── use-annotation-drafts.ts      # Draft annotation management
 └── types/
-    └── annotation.ts             # Domain types with shape support
+    └── annotation.ts                 # Domain types with shape support
 ```
+
+## User Flow
+
+1. **Select Box Tool** - User presses "2" or "B" or clicks box tool
+2. **Draw Box** - User clicks and drags to create a box
+3. **Add Comment** - Textarea automatically appears below the box
+4. **Save or Cancel**:
+   - Press **Enter** or click **Save** → Creates annotation with comment
+   - Press **Esc** or click **Cancel** → Discards the annotation
+5. **Edit Later** - Click existing box to move/resize
 
 ## Components
 
@@ -54,11 +66,12 @@ interface AnnotationBoxProps {
 
 ### AnnotationCanvas
 
-Drawing surface that captures pointer events to create new annotations.
+Drawing surface that captures pointer events to create new annotations and shows comment input for boxes.
 
 **Key Features:**
 - Handles pointer events for drawing
 - Shows live preview while drawing
+- **Automatically shows comment input after drawing a box**
 - Supports all annotation tools (pin, box, arrow)
 - Ignores existing annotations (clicks pass through to them)
 - Respects edit mode and hand tool states
@@ -72,8 +85,31 @@ interface AnnotationCanvasProps {
   handToolActive?: boolean;
   onDraftCreate?: (draft: AnnotationDraft) => void;
   onDraftUpdate?: (draft: AnnotationDraft) => void;
-  onDraftCommit?: (draft: AnnotationDraft) => void;
+  onDraftCommit?: (draft: AnnotationDraft, message?: string) => void; // ✨ NEW: message param
   onDraftCancel?: () => void;
+  requireCommentForBox?: boolean;  // ✨ NEW: defaults to true
+}
+```
+
+### AnnotationCommentInput
+
+Floating textarea that appears after drawing a box annotation.
+
+**Key Features:**
+- Auto-focus on mount
+- Enter to submit, Esc to cancel
+- Visual keyboard hints
+- Positioned near the box
+- Prevents interaction with canvas while open
+
+**Props:**
+```typescript
+interface AnnotationCommentInputProps {
+  position: { x: number; y: number }; // Pixel position for input
+  onSubmit: (message: string) => void;
+  onCancel: () => void;
+  placeholder?: string;
+  autoFocus?: boolean;
 }
 ```
 
@@ -90,7 +126,7 @@ Updated to render both pins and boxes based on shape metadata.
 
 ### useAnnotationDrafts
 
-Manages draft annotation state during drawing operations.
+Manages draft annotation state during drawing operations, now with comment support.
 
 ```typescript
 const {
@@ -98,33 +134,38 @@ const {
   isDrawing,
   createDraft,
   updateDraft,
-  commitDraft,
+  commitDraft,  // ✨ Now accepts optional message param
   cancelDraft,
 } = useAnnotationDrafts({
-  onCommit: async (draft) => {
-    // Convert draft to AttachmentAnnotation and persist
+  onCommit: async (draft, message) => {  // ✨ NEW: message param
+    // Convert draft to AttachmentAnnotation with comment
     const annotation = draftToAnnotation(
       draft,
       attachmentId,
       currentUser,
-      getNextLabel()
+      getNextLabel(),
+      message  // ✨ NEW: message param
     );
     await createAnnotationMutation(annotation);
   },
 });
 ```
 
-**Helper Function:**
+**Helper Function (Updated):**
 ```typescript
 draftToAnnotation(
   draft: AnnotationDraft,
   attachmentId: string,
   author: AnnotationAuthor,
-  label: string
+  label: string,
+  message?: string  // ✨ NEW: Optional message
 ): Omit<AttachmentAnnotation, 'id'>
 ```
 
-Converts a draft to a ready-to-persist annotation object.
+The helper now:
+- Stores message as `description` field
+- Creates initial comment in `comments` array if message provided
+- Returns annotation ready for persistence
 
 ## Types
 
@@ -144,19 +185,20 @@ interface AttachmentAnnotation {
   id: string;
   attachmentId: string;
   label: string;
+  description?: string;  // ✨ Populated from comment input
   status: 'open' | 'in_review' | 'resolved';
   x: number;  // For backward compatibility (center for boxes)
   y: number;  // For backward compatibility
   author: AnnotationAuthor;
   createdAt: string;
-  shape?: AnnotationShape;  // NEW: Optional shape metadata
-  // ... other fields
+  shape?: AnnotationShape;  // Optional shape metadata
+  comments?: AnnotationComment[];  // ✨ Initial comment included
 }
 ```
 
 ## Integration Example
 
-### Complete Screen Implementation
+### Complete Screen Implementation with Comment Flow
 
 ```tsx
 'use client';
@@ -194,14 +236,20 @@ export function ImageAnnotationScreen({ attachmentId }: { attachmentId: string }
     enableKeyboardShortcuts: true,
   });
 
-  // Draft management
+  // Draft management with comment support
   const { createDraft, updateDraft, commitDraft, cancelDraft } = useAnnotationDrafts({
-    onCommit: async (draft) => {
+    onCommit: async (draft, message) => {  // ✨ Receives message from comment input
       // Generate next label
       const nextLabel = String.fromCharCode(65 + annotations.length); // A, B, C...
 
-      // Convert draft to annotation
-      const newAnnotation = draftToAnnotation(draft, attachmentId, currentUser, nextLabel);
+      // Convert draft to annotation with message
+      const newAnnotation = draftToAnnotation(
+        draft,
+        attachmentId,
+        currentUser,
+        nextLabel,
+        message  // ✨ Pass message to helper
+      );
 
       // In real implementation, persist to database:
       // const created = await createAnnotation(newAnnotation);
@@ -214,7 +262,7 @@ export function ImageAnnotationScreen({ attachmentId }: { attachmentId: string }
       // Record in history
       pushHistory({
         id: withId.id,
-        label: `Created ${draft.tool} annotation`,
+        label: `Created ${draft.tool} annotation${message ? ` with comment` : ''}`,
         timestamp: Date.now(),
       });
     },
@@ -288,7 +336,7 @@ export function ImageAnnotationScreen({ attachmentId }: { attachmentId: string }
             />
           </div>
 
-          {/* Drawing Canvas - Captures drawing interactions */}
+          {/* Drawing Canvas - Captures drawing + shows comment input */}
           {editModeEnabled && (
             <AnnotationCanvas
               overlayRef={overlayRef}
@@ -297,8 +345,9 @@ export function ImageAnnotationScreen({ attachmentId }: { attachmentId: string }
               handToolActive={handToolActive}
               onDraftCreate={createDraft}
               onDraftUpdate={updateDraft}
-              onDraftCommit={commitDraft}
+              onDraftCommit={commitDraft}  // ✨ Will receive message from comment input
               onDraftCancel={cancelDraft}
+              requireCommentForBox={true}  // ✨ Show comment input for boxes
             />
           )}
         </div>
@@ -308,9 +357,20 @@ export function ImageAnnotationScreen({ attachmentId }: { attachmentId: string }
 }
 ```
 
+## Disabling Comment Requirement
+
+If you want boxes to be created immediately without requiring a comment:
+
+```tsx
+<AnnotationCanvas
+  // ... other props
+  requireCommentForBox={false}  // ✨ Disable comment requirement
+/>
+```
+
 ## Wiring to Database
 
-When ready to persist annotations, implement the following:
+When ready to persist annotations with comments, implement the following:
 
 ### 1. API Layer (`features/annotations/api/`)
 
@@ -322,14 +382,17 @@ import { apiClient } from '@/lib/api-client';
 const CreateAnnotationSchema = z.object({
   attachmentId: z.string(),
   label: z.string(),
+  description: z.string().optional(),  // ✨ Comment from textarea
   status: z.enum(['open', 'in_review', 'resolved']),
   x: z.number(),
   y: z.number(),
   shape: z.discriminatedUnion('type', [
     z.object({ type: z.literal('pin'), position: z.object({ x: z.number(), y: z.number() }) }),
     z.object({ type: z.literal('box'), start: z.object({ x: z.number(), y: z.number() }), end: z.object({ x: z.number(), y: z.number() }) }),
-    // ... other shapes
   ]).optional(),
+  comments: z.array(z.object({  // ✨ Initial comment
+    message: z.string(),
+  })).optional(),
 });
 
 export async function createAnnotation(
@@ -366,8 +429,14 @@ export function useCreateAnnotation() {
 const createAnnotationMutation = useCreateAnnotation();
 
 const { commitDraft } = useAnnotationDrafts({
-  onCommit: async (draft) => {
-    const annotation = draftToAnnotation(draft, attachmentId, currentUser, nextLabel);
+  onCommit: async (draft, message) => {  // ✨ Receives message
+    const annotation = draftToAnnotation(
+      draft,
+      attachmentId,
+      currentUser,
+      nextLabel,
+      message  // ✨ Pass to helper
+    );
     await createAnnotationMutation.mutateAsync(annotation);
   },
 });
@@ -380,18 +449,27 @@ CREATE TABLE annotations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   attachment_id UUID NOT NULL REFERENCES attachments(id),
   label VARCHAR(10) NOT NULL,
+  description TEXT,               -- ✨ Comment from textarea
   status VARCHAR(20) NOT NULL DEFAULT 'open',
-  x DECIMAL(10, 8) NOT NULL,  -- Normalized 0-1
-  y DECIMAL(10, 8) NOT NULL,  -- Normalized 0-1
-  shape_type VARCHAR(20),     -- 'pin', 'box', 'arrow'
-  shape_data JSONB,           -- { start: {x,y}, end: {x,y} }
+  x DECIMAL(10, 8) NOT NULL,      -- Normalized 0-1
+  y DECIMAL(10, 8) NOT NULL,      -- Normalized 0-1
+  shape_type VARCHAR(20),         -- 'pin', 'box', 'arrow'
+  shape_data JSONB,               -- { start: {x,y}, end: {x,y} }
   author_id UUID NOT NULL REFERENCES users(id),
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE annotation_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  annotation_id UUID NOT NULL REFERENCES annotations(id) ON DELETE CASCADE,
+  author_id UUID NOT NULL REFERENCES users(id),
+  message TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX idx_annotations_attachment ON annotations(attachment_id);
-CREATE INDEX idx_annotations_status ON annotations(status);
+CREATE INDEX idx_annotation_comments_annotation ON annotation_comments(annotation_id);
 ```
 
 ## Keyboard Shortcuts
@@ -405,6 +483,10 @@ The feature includes built-in keyboard shortcuts (managed by `useAnnotationTools
 - **Space**: Temporary hand tool (pan)
 - **Cmd/Ctrl + Z**: Undo
 - **Shift + Cmd/Ctrl + Z**: Redo
+
+**When comment input is shown:**
+- **Enter**: Save annotation with comment
+- **Esc**: Cancel annotation
 
 ## Styling & Customization
 
@@ -430,18 +512,22 @@ Override by passing custom `className` props where supported.
 2. **Manage edit mode carefully**: Disable interactive features when edit mode is off
 3. **Use optimistic updates**: Update local state immediately, sync to server asynchronously
 4. **Handle errors gracefully**: Show toasts when mutations fail, roll back optimistic updates
-5. **Validate on server**: Never trust client-side coordinates, re-validate with Zod
+5. **Validate on server**: Never trust client-side coordinates or messages, re-validate with Zod
 6. **Keep labels short**: Single letters or numbers work best for UI space
-7. **Debounce move operations**: Consider debouncing `onMove` callbacks for performance
+7. **Sanitize user input**: Always sanitize comment messages before rendering to prevent XSS
+8. **Debounce move operations**: Consider debouncing `onMove` callbacks for performance
 
 ## Testing
 
 When implementing, ensure you test:
 
 - Drawing boxes that extend outside image bounds
+- Comment input flow (Enter to save, Esc to cancel)
+- Empty comment handling
 - Resizing boxes in all directions
 - Moving boxes (including partially off-screen boxes)
 - Switching tools mid-draw (should cancel current draft)
+- Comment input cancellation (box should be discarded)
 - Keyboard shortcuts in various contexts
 - Undo/redo operations
 - Status changes and color updates

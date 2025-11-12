@@ -11,7 +11,6 @@ export interface BoxAnnotation {
   label: string;
   start: AnnotationPosition;
   end: AnnotationPosition;
-  status?: 'open' | 'in_review' | 'resolved';
 }
 
 export interface AnnotationBoxProps {
@@ -42,17 +41,6 @@ export function AnnotationBox({
 
   const width = Math.abs((x2 - x1) * 100);
   const height = Math.abs((y2 - y1) * 100);
-
-  const statusColors = {
-    open: 'border-blue-500',
-    in_review: 'border-amber-500',
-    resolved: 'border-green-500',
-  };
-
-  const getColorClass = () => {
-    if (!annotation.status) return 'border-primary';
-    return statusColors[annotation.status];
-  };
 
   const calculateNewPosition = useCallback(
     (event: PointerEvent, handle: DragHandle): { start: AnnotationPosition; end: AnnotationPosition } | null => {
@@ -154,7 +142,7 @@ export function AnnotationBox({
       <div
         className={cn(
           'absolute inset-0 border-2 transition-colors',
-          isActive ? getColorClass() : 'border-muted-foreground/50',
+          isActive ? 'border-primary' : 'border-muted-foreground/50',
           interactive && 'cursor-move hover:border-primary/80',
         )}
         onPointerDown={(e) => handlePointerDown(e, 'box')}
@@ -170,7 +158,7 @@ export function AnnotationBox({
         className={cn(
           'absolute -top-8 left-0 flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-semibold shadow-sm backdrop-blur',
           isActive
-            ? `${getColorClass()} bg-primary text-primary-foreground`
+            ? 'border-primary bg-primary text-primary-foreground'
             : 'border-border bg-background/90 text-foreground',
         )}
         initial={{ opacity: 0, y: 10 }}
@@ -186,8 +174,7 @@ export function AnnotationBox({
           {/* Top-Left */}
           <div
             className={cn(
-              'absolute -left-1.5 -top-1.5 h-3 w-3 rounded-full border-2 bg-background shadow-sm transition-all',
-              getColorClass(),
+              'absolute -left-1.5 -top-1.5 h-3 w-3 rounded-full border-2 border-primary bg-background shadow-sm transition-all',
               'cursor-nwse-resize hover:scale-125',
             )}
             onPointerDown={(e) => handlePointerDown(e, 'top-left')}
@@ -198,8 +185,7 @@ export function AnnotationBox({
           {/* Top-Right */}
           <div
             className={cn(
-              'absolute -right-1.5 -top-1.5 h-3 w-3 rounded-full border-2 bg-background shadow-sm transition-all',
-              getColorClass(),
+              'absolute -right-1.5 -top-1.5 h-3 w-3 rounded-full border-2 border-primary bg-background shadow-sm transition-all',
               'cursor-nesw-resize hover:scale-125',
             )}
             onPointerDown={(e) => handlePointerDown(e, 'top-right')}
@@ -210,8 +196,7 @@ export function AnnotationBox({
           {/* Bottom-Left */}
           <div
             className={cn(
-              'absolute -bottom-1.5 -left-1.5 h-3 w-3 rounded-full border-2 bg-background shadow-sm transition-all',
-              getColorClass(),
+              'absolute -bottom-1.5 -left-1.5 h-3 w-3 rounded-full border-2 border-primary bg-background shadow-sm transition-all',
               'cursor-nesw-resize hover:scale-125',
             )}
             onPointerDown={(e) => handlePointerDown(e, 'bottom-left')}
@@ -222,8 +207,7 @@ export function AnnotationBox({
           {/* Bottom-Right */}
           <div
             className={cn(
-              'absolute -bottom-1.5 -right-1.5 h-3 w-3 rounded-full border-2 bg-background shadow-sm transition-all',
-              getColorClass(),
+              'absolute -bottom-1.5 -right-1.5 h-3 w-3 rounded-full border-2 border-primary bg-background shadow-sm transition-all',
               'cursor-nwse-resize hover:scale-125',
             )}
             onPointerDown={(e) => handlePointerDown(e, 'bottom-right')}

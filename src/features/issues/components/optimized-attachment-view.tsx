@@ -14,10 +14,12 @@ import { AlertCircle, RefreshCw, FileText, Upload, PenLine, Columns2 } from 'luc
 import {
   AnnotationLayer,
   AnnotationToolbar,
-  AnnotationDrawer,
+  AnnotationCanvas,
   useAnnotationTools,
+  useAnnotationDrafts,
+  draftToAnnotation,
 } from '@/features/annotations';
-import type { AttachmentAnnotation, AnnotationPosition, AnnotationDraft } from '@/features/annotations';
+import type { AttachmentAnnotation, AnnotationPosition } from '@/features/annotations';
 import { CenteredCanvasView } from './centered-canvas-view';
 import { ImageCanvas } from './image-canvas';
 import { ZoomControls } from './zoom-controls';
@@ -92,7 +94,30 @@ export default function IssueAttachmentsView({
     redo: redoAnnotationHistory,
     pushHistory: pushAnnotationHistory,
     handToolActive,
-  } = useAnnotationTools({ initialTool: 'pin', initialEditMode: false });
+  } = useAnnotationTools({ initialTool: 'box', initialEditMode: false });
+
+  // Draft management for new annotations
+  const { createDraft, updateDraft, commitDraft, cancelDraft } = useAnnotationDrafts({
+    onCommit: (draft, message) => {
+      // Generate label (A, B, C, etc.)
+      const nextLabel = String.fromCharCode(65 + currentAnnotations.length);
+
+      // Log the annotation (ready to wire to API)
+      console.info('📝 New annotation created:', {
+        draft,
+        message,
+        label: nextLabel,
+        attachmentId: selectedAttachment?.id,
+      });
+
+      // Record in history
+      recordAnnotationHistory('create', draft.id);
+
+      // TODO: Wire to API
+      // const annotation = draftToAnnotation(draft, selectedAttachment.id, currentUser, nextLabel, message);
+      // await createAnnotationMutation(annotation);
+    },
+  });
   const isAnnotationView = viewMode === 'annotate';
   const isAnnotationInteractive = annotationEditModeEnabled && isAnnotationView;
   const pointerPanEnabled = !isAnnotationView || !annotationEditModeEnabled || handToolActive;
@@ -157,11 +182,6 @@ export default function IssueAttachmentsView({
     },
     [annotationEditModeEnabled, onAnnotationMove, recordAnnotationHistory]
   );
-
-  const handleDraftCommit = useCallback((draft: AnnotationDraft) => {
-    console.info('Ready-to-wire annotation draft', draft);
-    recordAnnotationHistory('draft', draft.id);
-  }, [recordAnnotationHistory]);
 
   // Error state
   if (error && onRetry) {
@@ -256,12 +276,19 @@ export default function IssueAttachmentsView({
             onMove={handleAnnotationMove}
           />
         )}
-        <AnnotationDrawer
-          activeTool={activeAnnotationTool}
-          enabled={isAnnotationInteractive}
-          overlayRef={annotationOverlayRef}
-          onDraftCommit={handleDraftCommit}
-        />
+        {isAnnotationInteractive && (
+          <AnnotationCanvas
+            overlayRef={annotationOverlayRef}
+            activeTool={activeAnnotationTool}
+            editModeEnabled={annotationEditModeEnabled}
+            handToolActive={handToolActive}
+            onDraftCreate={createDraft}
+            onDraftUpdate={updateDraft}
+            onDraftCommit={commitDraft}
+            onDraftCancel={cancelDraft}
+            requireCommentForBox={true}
+          />
+        )}
       </>
     ) : null;
 

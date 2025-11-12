@@ -2,8 +2,6 @@
 // ANNOTATION DOMAIN TYPES
 // ============================================================================
 
-
-
 export interface AnnotationAuthor {
   id: string;
   name: string;
@@ -38,8 +36,14 @@ export interface AttachmentAnnotation<A extends AnnotationAuthor = AnnotationAut
 }
 
 
+export interface AnnotationThreadMeta {
+  attachmentName?: string;
+  attachmentVariant?: string | null;
+  attachmentPreview?: string | null;
+}
+
 export type AnnotationThread<A extends AnnotationAuthor = AnnotationAuthor> =
-  AttachmentAnnotation<A>;
+  AttachmentAnnotation<A> & AnnotationThreadMeta;
 
 export const ANNOTATION_TOOL_IDS = ['pin', 'box', 'arrow'] as const;
 export type AnnotationToolId = (typeof ANNOTATION_TOOL_IDS)[number];

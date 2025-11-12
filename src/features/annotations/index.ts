@@ -11,6 +11,8 @@ export { AnnotationBox } from './components/annotation-box';
 export type { AnnotationBoxProps, BoxAnnotation } from './components/annotation-box';
 export { AnnotationCanvas } from './components/annotation-canvas';
 export type { AnnotationCanvasProps } from './components/annotation-canvas';
+export { AnnotationCommentInput } from './components/annotation-comment-input';
+export type { AnnotationCommentInputProps } from './components/annotation-comment-input';
 export { AnnotationCommentsPanel } from './components/annotation-comments-panel';
 export { AnnotationToolbar } from './components/annotation-toolbar';
 export type { AnnotationToolbarProps } from './components/annotation-toolbar';
@@ -21,7 +23,6 @@ export type {
   AnnotationAuthor,
   AnnotationComment,
   AnnotationPosition,
-  AnnotationStatus,
   AnnotationThread,
   AnnotationThreadMeta,
   AttachmentAnnotation,

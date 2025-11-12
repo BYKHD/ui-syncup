@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -71,7 +70,7 @@ export function AnnotationCommentsPanel<A extends AnnotationThread>({
                 type="button"
                 onClick={() => handleSelect(annotation.id)}
                 className={cn(
-                  'w-full rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                  'w-full rounded-md border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                   isActive ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/50',
                 )}
               >

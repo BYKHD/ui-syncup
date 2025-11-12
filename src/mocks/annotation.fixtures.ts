@@ -3,7 +3,7 @@
 // ============================================================================
 
 import type { IssueUser } from '@/features/issues/types';
-import type { AttachmentAnnotation, AnnotationStatus } from '@/features/annotations';
+import type { AttachmentAnnotation } from '@/features/annotations';
 
 const DEFAULT_ATTACHMENT_ID = 'att_mock_canvas';
 
@@ -31,7 +31,6 @@ export const MOCK_ATTACHMENT_USERS: IssueUser[] = [
 type AnnotationFactoryOverrides = Partial<AttachmentAnnotation<IssueUser>> & {
   attachmentId?: string;
   author?: IssueUser;
-  status?: AnnotationStatus;
 };
 
 const mulberry32 = (seed: number) => {
@@ -62,7 +61,6 @@ export const createAnnotationFactory = (
       attachmentId,
       label,
       description: overrides.description ?? 'Ready-to-wire annotation mock',
-      status: overrides.status ?? 'open',
       x,
       y,
       author,
@@ -75,19 +73,21 @@ export const createAnnotationFactory = (
   };
 };
 
-const annotationFactory = createAnnotationFactory(101);
-
 export const MOCK_CPM101_ANNOTATIONS: AttachmentAnnotation<IssueUser>[] = [
+  // Pin annotation example
   {
     id: 'annot_cpm101_badge_spacing',
     attachmentId: 'att_cpm101_as_is',
-    label: '01',
+    label: 'A',
     description: 'Badge spacing is off and text is overflowing outside CTA.',
-    status: 'open',
     x: 0.32,
     y: 0.41,
     author: MOCK_ATTACHMENT_USERS[1],
     createdAt: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
+    shape: {
+      type: 'pin',
+      position: { x: 0.32, y: 0.41 },
+    },
     comments: [
       {
         id: 'annot_cpm101_badge_spacing_comment_1',
@@ -105,16 +105,21 @@ export const MOCK_CPM101_ANNOTATIONS: AttachmentAnnotation<IssueUser>[] = [
       },
     ],
   },
+  // Box annotation example - covering a component area
   {
     id: 'annot_cpm101_card_shadow',
     attachmentId: 'att_cpm101_as_is',
-    label: '02',
+    label: 'B',
     description: 'Shadow token mismatch makes the hover state look heavy.',
-    status: 'in_review',
     x: 0.62,
     y: 0.58,
     author: MOCK_ATTACHMENT_USERS[2],
     createdAt: new Date(Date.now() - 65 * 60 * 1000).toISOString(),
+    shape: {
+      type: 'box',
+      start: { x: 0.55, y: 0.50 },
+      end: { x: 0.75, y: 0.70 },
+    },
     comments: [
       {
         id: 'annot_cpm101_card_shadow_comment_1',
@@ -125,15 +130,106 @@ export const MOCK_CPM101_ANNOTATIONS: AttachmentAnnotation<IssueUser>[] = [
       },
     ],
   },
-  annotationFactory({
+  // Box annotation example - highlighting header section
+  {
     id: 'annot_cpm101_typography',
     attachmentId: 'att_cpm101_as_is',
-    label: '03',
-    description: 'Typography weight doesn’t match the spec on the header.',
-    status: 'open',
+    label: 'C',
+    description: 'Typography weight does not match the spec on the header.',
     x: 0.48,
     y: 0.25,
-  }),
+    author: MOCK_ATTACHMENT_USERS[0],
+    createdAt: new Date(Date.now() - 50 * 60 * 1000).toISOString(),
+    shape: {
+      type: 'box',
+      start: { x: 0.35, y: 0.15 },
+      end: { x: 0.65, y: 0.30 },
+    },
+    comments: [
+      {
+        id: 'annot_cpm101_typography_comment_1',
+        annotationId: 'annot_cpm101_typography',
+        author: MOCK_ATTACHMENT_USERS[0],
+        message: 'Header should use font-weight: 600 (semibold) instead of 700 (bold).',
+        createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+      },
+    ],
+  },
+  // Box annotation example - extending outside image bounds (right side)
+  {
+    id: 'annot_cpm101_overflow_right',
+    attachmentId: 'att_cpm101_as_is',
+    label: 'D',
+    description: 'Content extends beyond the container on smaller viewports.',
+    x: 0.85,
+    y: 0.40,
+    author: MOCK_ATTACHMENT_USERS[1],
+    createdAt: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
+    shape: {
+      type: 'box',
+      start: { x: 0.80, y: 0.35 },
+      end: { x: 1.15, y: 0.55 }, // Extends 15% beyond right edge
+    },
+    comments: [
+      {
+        id: 'annot_cpm101_overflow_right_comment_1',
+        annotationId: 'annot_cpm101_overflow_right',
+        author: MOCK_ATTACHMENT_USERS[1],
+        message: 'This content is cut off on mobile devices. Need to add responsive container constraints.',
+        createdAt: new Date(Date.now() - 38 * 60 * 1000).toISOString(),
+      },
+    ],
+  },
+  // Box annotation example - extending outside image bounds (bottom)
+  {
+    id: 'annot_cpm101_overflow_bottom',
+    attachmentId: 'att_cpm101_as_is',
+    label: 'E',
+    description: 'Footer alignment issues when viewport height is reduced.',
+    x: 0.50,
+    y: 0.92,
+    author: MOCK_ATTACHMENT_USERS[2],
+    createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    shape: {
+      type: 'box',
+      start: { x: 0.30, y: 0.85 },
+      end: { x: 0.70, y: 1.10 }, // Extends 10% beyond bottom edge
+    },
+    comments: [
+      {
+        id: 'annot_cpm101_overflow_bottom_comment_1',
+        annotationId: 'annot_cpm101_overflow_bottom',
+        author: MOCK_ATTACHMENT_USERS[2],
+        message: 'Footer gets clipped on short screens. Consider using sticky positioning.',
+        createdAt: new Date(Date.now() - 28 * 60 * 1000).toISOString(),
+      },
+    ],
+  },
+  // Small box annotation example - highlighting an icon
+  {
+    id: 'annot_cpm101_icon_size',
+    attachmentId: 'att_cpm101_as_is',
+    label: 'F',
+    description: 'Icon size is inconsistent with design system.',
+    x: 0.15,
+    y: 0.20,
+    author: MOCK_ATTACHMENT_USERS[0],
+    createdAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+    shape: {
+      type: 'box',
+      start: { x: 0.12, y: 0.17 },
+      end: { x: 0.18, y: 0.23 }, // Small 6x6% box
+    },
+    comments: [
+      {
+        id: 'annot_cpm101_icon_size_comment_1',
+        annotationId: 'annot_cpm101_icon_size',
+        author: MOCK_ATTACHMENT_USERS[0],
+        message: 'Icons should be 24px, currently showing at 20px.',
+        createdAt: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
+      },
+    ],
+  },
 ];
 
 export const MOCK_ANNOTATION_SCENARIOS = {

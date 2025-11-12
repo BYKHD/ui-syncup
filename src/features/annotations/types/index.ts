@@ -2,7 +2,6 @@ export type {
   AnnotationAuthor,
   AnnotationComment,
   AnnotationPosition,
-  AnnotationStatus,
   AttachmentAnnotation,
   AnnotationThread,
   AnnotationThreadMeta,

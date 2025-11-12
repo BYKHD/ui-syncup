@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback, type PointerEvent, type RefObject } from 'react';
+import { useState, useCallback, useEffect, type PointerEvent, type RefObject } from 'react';
 import type { AnnotationToolId, AnnotationPosition, AnnotationDraft } from '../types';
+import { AnnotationCommentInput } from './annotation-comment-input';
 import { cn } from '@/lib/utils';
 
 export interface AnnotationCanvasProps {
@@ -11,8 +12,9 @@ export interface AnnotationCanvasProps {
   handToolActive?: boolean;
   onDraftCreate?: (draft: AnnotationDraft) => void;
   onDraftUpdate?: (draft: AnnotationDraft) => void;
-  onDraftCommit?: (draft: AnnotationDraft) => void;
+  onDraftCommit?: (draft: AnnotationDraft, message?: string) => void;
   onDraftCancel?: () => void;
+  requireCommentForBox?: boolean; // If true, box annotations require a comment
   className?: string;
 }
 
@@ -24,6 +26,16 @@ interface DraftState {
   isDrawing: boolean;
 }
 
+interface PendingCommentState {
+  draft: AnnotationDraft;
+  position: { x: number; y: number }; // Pixel position for input
+  boxBounds: { x: number; y: number; width: number; height: number }; // Box bounds in pixels
+}
+
+const COMMENT_INPUT_WIDTH = 320; // 80 * 4 = 320px (w-80)
+const COMMENT_INPUT_HEIGHT = 200; // Approximate height
+const PADDING = 16; // Padding from edges
+
 export function AnnotationCanvas({
   overlayRef,
   activeTool,
@@ -33,9 +45,11 @@ export function AnnotationCanvas({
   onDraftUpdate,
   onDraftCommit,
   onDraftCancel,
+  requireCommentForBox = true,
   className,
 }: AnnotationCanvasProps) {
   const [draftState, setDraftState] = useState<DraftState | null>(null);
+  const [pendingComment, setPendingComment] = useState<PendingCommentState | null>(null);
 
   const getRelativePosition = useCallback(
     (event: PointerEvent<HTMLDivElement>): AnnotationPosition | null => {
@@ -52,9 +66,71 @@ export function AnnotationCanvas({
     [overlayRef],
   );
 
+  const calculateSmartPosition = useCallback(
+    (draft: AnnotationDraft): { position: { x: number; y: number }; boxBounds: { x: number; y: number; width: number; height: number } } | null => {
+      const overlay = overlayRef.current;
+      if (!overlay || draft.shape.type !== 'box') return null;
+
+      const rect = overlay.getBoundingClientRect();
+      const { start, end } = draft.shape;
+
+      // Calculate box bounds in pixels (can be outside image bounds)
+      const x1 = Math.min(start.x, end.x) * rect.width;
+      const y1 = Math.min(start.y, end.y) * rect.height;
+      const x2 = Math.max(start.x, end.x) * rect.width;
+      const y2 = Math.max(start.y, end.y) * rect.height;
+      const boxWidth = x2 - x1;
+      const boxHeight = y2 - y1;
+
+      // Clamp box bounds to visible area for space calculation
+      const visibleX1 = Math.max(0, Math.min(rect.width, x1));
+      const visibleY1 = Math.max(0, Math.min(rect.height, y1));
+      const visibleX2 = Math.max(0, Math.min(rect.width, x2));
+      const visibleY2 = Math.max(0, Math.min(rect.height, y2));
+
+      // Available space in each direction (from visible portion of box)
+      const spaceRight = rect.width - visibleX2;
+      const spaceLeft = visibleX1;
+      const spaceBottom = rect.height - visibleY2;
+      const spaceTop = visibleY1;
+
+      let x = visibleX2; // Default to right of box
+      let y = visibleY1; // Default to top of box
+
+      // Priority: Right > Left > Bottom > Top
+      if (spaceRight >= COMMENT_INPUT_WIDTH + PADDING) {
+        // Position to the right
+        x = visibleX2 + PADDING;
+        y = Math.max(PADDING, Math.min(visibleY1, rect.height - COMMENT_INPUT_HEIGHT - PADDING));
+      } else if (spaceLeft >= COMMENT_INPUT_WIDTH + PADDING) {
+        // Position to the left
+        x = visibleX1 - COMMENT_INPUT_WIDTH - PADDING;
+        y = Math.max(PADDING, Math.min(visibleY1, rect.height - COMMENT_INPUT_HEIGHT - PADDING));
+      } else if (spaceBottom >= COMMENT_INPUT_HEIGHT + PADDING) {
+        // Position below
+        x = Math.max(PADDING, Math.min(visibleX1, rect.width - COMMENT_INPUT_WIDTH - PADDING));
+        y = visibleY2 + PADDING;
+      } else if (spaceTop >= COMMENT_INPUT_HEIGHT + PADDING) {
+        // Position above
+        x = Math.max(PADDING, Math.min(visibleX1, rect.width - COMMENT_INPUT_WIDTH - PADDING));
+        y = visibleY1 - COMMENT_INPUT_HEIGHT - PADDING;
+      } else {
+        // Fallback: center on screen
+        x = Math.max(PADDING, (rect.width - COMMENT_INPUT_WIDTH) / 2);
+        y = Math.max(PADDING, (rect.height - COMMENT_INPUT_HEIGHT) / 2);
+      }
+
+      return {
+        position: { x, y },
+        boxBounds: { x: x1, y: y1, width: boxWidth, height: boxHeight },
+      };
+    },
+    [overlayRef],
+  );
+
   const createDraft = useCallback(
     (tool: AnnotationToolId, position: AnnotationPosition): AnnotationDraft => {
-      const id = `draft-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const id = `draft-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
       const createdAt = Date.now();
 
       switch (tool) {
@@ -129,14 +205,15 @@ export function AnnotationCanvas({
 
   const handlePointerDown = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
-      if (!editModeEnabled || handToolActive) return;
+      if (!editModeEnabled || handToolActive || pendingComment) return;
 
-      // Ignore if clicking on existing annotations
+      // Ignore if clicking on existing annotations or comment input
       const target = event.target as HTMLElement;
       if (
         target.closest('[data-annotation-pin]') ||
         target.closest('[data-annotation-box]') ||
-        target.closest('[data-annotation-arrow]')
+        target.closest('[data-annotation-arrow]') ||
+        target.closest('[data-annotation-comment-input]')
       ) {
         return;
       }
@@ -162,7 +239,7 @@ export function AnnotationCanvas({
       // Capture pointer for smooth dragging
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [editModeEnabled, handToolActive, activeTool, getRelativePosition, createDraft, onDraftCreate],
+    [editModeEnabled, handToolActive, pendingComment, activeTool, getRelativePosition, createDraft, onDraftCreate],
   );
 
   const handlePointerMove = useCallback(
@@ -206,25 +283,112 @@ export function AnnotationCanvas({
       const finalDraft = updateDraft(draftState, position);
 
       // For pins, commit immediately
-      // For boxes/arrows, only commit if there's meaningful size
       if (draftState.tool === 'pin') {
         onDraftCommit?.(finalDraft);
-      } else {
-        const dx = Math.abs(position.x - draftState.startPosition.x);
-        const dy = Math.abs(position.y - draftState.startPosition.y);
-        const minSize = 0.01; // Minimum 1% of canvas size
+        setDraftState(null);
+        return;
+      }
 
-        if (dx > minSize || dy > minSize) {
-          onDraftCommit?.(finalDraft);
+      // For boxes/arrows, check if there's meaningful size
+      const dx = Math.abs(position.x - draftState.startPosition.x);
+      const dy = Math.abs(position.y - draftState.startPosition.y);
+      const minSize = 0.01; // Minimum 1% of canvas size
+
+      if (dx < minSize && dy < minSize) {
+        // Too small, cancel
+        onDraftCancel?.();
+        setDraftState(null);
+        return;
+      }
+
+      // For box tool with requireCommentForBox, show comment input
+      if (draftState.tool === 'box' && requireCommentForBox) {
+        const smartPos = calculateSmartPosition(finalDraft);
+
+        if (smartPos) {
+          setPendingComment({
+            draft: finalDraft,
+            position: smartPos.position,
+            boxBounds: smartPos.boxBounds,
+          });
+          setDraftState(null);
         } else {
-          onDraftCancel?.();
+          // Fallback: commit without comment
+          onDraftCommit?.(finalDraft);
+          setDraftState(null);
+        }
+      } else {
+        // For arrows or when comment not required, commit immediately
+        onDraftCommit?.(finalDraft);
+        setDraftState(null);
+      }
+    },
+    [draftState, getRelativePosition, calculateSmartPosition, updateDraft, onDraftCommit, onDraftCancel, requireCommentForBox],
+  );
+
+  const handleCommentSubmit = useCallback(
+    (message: string) => {
+      if (pendingComment) {
+        onDraftCommit?.(pendingComment.draft, message);
+        setPendingComment(null);
+      }
+    },
+    [pendingComment, onDraftCommit],
+  );
+
+  const handleCommentCancel = useCallback(() => {
+    if (pendingComment) {
+      onDraftCancel?.();
+      setPendingComment(null);
+    }
+  }, [pendingComment, onDraftCancel]);
+
+  // Click outside to dismiss
+  useEffect(() => {
+    if (!pendingComment) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+
+      // Don't dismiss if clicking inside comment input
+      if (target.closest('[data-annotation-comment-input]')) {
+        return;
+      }
+
+      // Check if clicking inside the box area
+      const overlay = overlayRef.current;
+      if (overlay) {
+        const rect = overlay.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const clickY = event.clientY - rect.top;
+
+        const { boxBounds } = pendingComment;
+
+        // Check if click is inside the box
+        if (
+          clickX >= boxBounds.x &&
+          clickX <= boxBounds.x + boxBounds.width &&
+          clickY >= boxBounds.y &&
+          clickY <= boxBounds.y + boxBounds.height
+        ) {
+          return; // Don't dismiss if clicking inside the box
         }
       }
 
-      setDraftState(null);
-    },
-    [draftState, getRelativePosition, updateDraft, onDraftCommit, onDraftCancel],
-  );
+      // Dismiss annotation
+      handleCommentCancel();
+    };
+
+    // Add listener after a small delay to avoid immediate dismissal
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [pendingComment, overlayRef, handleCommentCancel]);
 
   const renderDraftPreview = () => {
     if (!draftState || !draftState.isDrawing) return null;
@@ -305,21 +469,70 @@ export function AnnotationCanvas({
     }
   };
 
+  const renderPendingBox = () => {
+    if (!pendingComment || pendingComment.draft.shape.type !== 'box') return null;
+
+    const { start, end } = pendingComment.draft.shape;
+    const x1 = Math.min(start.x, end.x);
+    const y1 = Math.min(start.y, end.y);
+    const x2 = Math.max(start.x, end.x);
+    const y2 = Math.max(start.y, end.y);
+    const width = (x2 - x1) * 100;
+    const height = (y2 - y1) * 100;
+
+    return (
+      <div
+        className="pointer-events-none absolute border-2 border-primary bg-primary/10 shadow-lg"
+        style={{
+          left: `${x1 * 100}%`,
+          top: `${y1 * 100}%`,
+          width: `${width}%`,
+          height: `${height}%`,
+        }}
+      />
+    );
+  };
+
   if (!editModeEnabled) return null;
 
   return (
-    <div
-      className={cn(
-        'absolute inset-0 z-10',
-        handToolActive ? 'cursor-grab active:cursor-grabbing' : 'cursor-crosshair',
-        className,
+    <>
+      <div
+        className={cn(
+          'absolute inset-0 z-10',
+          handToolActive ? 'cursor-grab active:cursor-grabbing' : 'cursor-crosshair',
+          pendingComment && 'pointer-events-none', // Disable canvas interaction when comment input is shown
+          className,
+        )}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        data-annotation-canvas="true"
+      >
+        {renderDraftPreview()}
+        {renderPendingBox()}
+      </div>
+
+      {/* Comment Input Overlay */}
+      {pendingComment && (
+        <div className="pointer-events-none absolute inset-0 z-20">
+          <div
+            className="pointer-events-auto absolute"
+            style={{
+              left: `${pendingComment.position.x}px`,
+              top: `${pendingComment.position.y}px`,
+            }}
+            data-annotation-comment-input="true"
+          >
+            <AnnotationCommentInput
+              position={{ x: 0, y: 0 }} // Position handled by parent div
+              onSubmit={handleCommentSubmit}
+              onCancel={handleCommentCancel}
+              placeholder="Describe this annotation..."
+            />
+          </div>
+        </div>
       )}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      data-annotation-canvas="true"
-    >
-      {renderDraftPreview()}
-    </div>
+    </>
   );
 }

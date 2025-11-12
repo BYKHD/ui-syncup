@@ -9,7 +9,6 @@ export type {
   IssueAttachment,
   AttachmentAnnotation,
   AttachmentReviewVariant,
-  AnnotationStatus,
   AnnotationComment,
   IssueUser,
   IssuePermissions,

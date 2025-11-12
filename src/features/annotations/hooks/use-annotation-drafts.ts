@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import type { AnnotationDraft, AnnotationPosition } from '../types';
 
 export interface UseAnnotationDraftsOptions {
-  onCommit?: (draft: AnnotationDraft) => void;
+  onCommit?: (draft: AnnotationDraft, message?: string) => void;
   onCancel?: () => void;
 }
 
@@ -11,7 +11,7 @@ export interface UseAnnotationDraftsReturn {
   isDrawing: boolean;
   createDraft: (draft: AnnotationDraft) => void;
   updateDraft: (draft: AnnotationDraft) => void;
-  commitDraft: (draft: AnnotationDraft) => void;
+  commitDraft: (draft: AnnotationDraft, message?: string) => void;
   cancelDraft: () => void;
   clearDraft: () => void;
 }
@@ -52,8 +52,8 @@ export function useAnnotationDrafts(options: UseAnnotationDraftsOptions = {}): U
   }, []);
 
   const commitDraft = useCallback(
-    (draft: AnnotationDraft) => {
-      onCommit?.(draft);
+    (draft: AnnotationDraft, message?: string) => {
+      onCommit?.(draft, message);
       setCurrentDraft(null);
     },
     [onCommit],
@@ -87,6 +87,7 @@ export function useAnnotationDrafts(options: UseAnnotationDraftsOptions = {}): U
  * @param attachmentId - The attachment ID to associate with
  * @param author - The annotation author
  * @param label - The annotation label (e.g., "A", "B", "1", "2")
+ * @param message - Optional initial comment/message for the annotation
  * @returns Partial AttachmentAnnotation (missing id which comes from backend)
  */
 export function draftToAnnotation(
@@ -94,6 +95,7 @@ export function draftToAnnotation(
   attachmentId: string,
   author: { id: string; name: string; email?: string; avatarUrl?: string | null },
   label: string,
+  message?: string,
 ): Omit<import('../types').AttachmentAnnotation, 'id'> {
   // Get position for x, y fields (required for backward compatibility)
   let x = 0;
@@ -112,14 +114,28 @@ export function draftToAnnotation(
     y = draft.shape.start.y;
   }
 
+  // Create initial comment if message is provided
+  const comments = message
+    ? [
+        {
+          id: `comment-${Date.now()}`,
+          annotationId: draft.id,
+          author,
+          message,
+          createdAt: new Date(draft.createdAt).toISOString(),
+        },
+      ]
+    : undefined;
+
   return {
     attachmentId,
     label,
-    status: 'open',
+    description: message, // Store message as description as well
     x,
     y,
     author,
     createdAt: new Date(draft.createdAt).toISOString(),
     shape: draft.shape,
+    comments,
   };
 }

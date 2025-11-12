@@ -49,7 +49,6 @@ export function AnnotationLayer<A extends AttachmentAnnotation>({
                 label: annotation.label,
                 start: shape.start,
                 end: shape.end,
-                status: annotation.status,
               };
 
               return (
