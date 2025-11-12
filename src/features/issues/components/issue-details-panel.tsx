@@ -49,6 +49,8 @@ interface IssueDetailsPanelProps {
   annotations?: AnnotationThreadWithMeta[];
   activeAnnotationId?: string | null;
   onAnnotationSelect?: (annotationId: string) => void;
+  isPanelCollapsed?: boolean;
+  onPanelToggle?: () => void;
 }
 
 export default function IssueDetailsPanel({
@@ -71,6 +73,8 @@ export default function IssueDetailsPanel({
   annotations = [],
   activeAnnotationId = null,
   onAnnotationSelect,
+  isPanelCollapsed,
+  onPanelToggle,
 }: IssueDetailsPanelProps) {
   const [panelTab, setPanelTab] = useState<DetailsPanelTab>('general');
   
@@ -89,6 +93,8 @@ export default function IssueDetailsPanel({
         onToggleShortcutsHelp={onToggleShortcutsHelp}
         permissions={permissions}
         onStatusChange={(nextStatus) => onUpdate('status', nextStatus)}
+        isPanelCollapsed={isPanelCollapsed}
+        onPanelToggle={onPanelToggle}
       />
       
       <div className="flex flex-1 min-h-0 flex-col">

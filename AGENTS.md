@@ -26,7 +26,7 @@ src/
 │  ├─ (public)/
 │  │  ├─ layout.tsx                     # public shell (no auth)
 │  │  ├─ sign-in/page.tsx
-│  │  └─ sig-up/page.tsx
+│  │  └─ sign-up/page.tsx
 
 │  ├─ (protected)/
 │  │  ├─ layout.tsx                     # Server gate: requires session

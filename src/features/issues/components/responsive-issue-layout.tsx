@@ -1,13 +1,29 @@
 "use client";
 
-import React, { useState, useEffect, lazy, Suspense, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  lazy,
+  Suspense,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Image, FileText, PanelRightClose, PanelRightOpen, Keyboard } from "lucide-react";
-import { formatShortcut, type KeyboardShortcut } from "@/features/issues/hooks/use-keyboard-shortcuts";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ArrowLeft, Image, FileText, Keyboard } from "lucide-react";
+import {
+  formatShortcut,
+  type KeyboardShortcut,
+} from "@/features/issues/hooks/use-keyboard-shortcuts";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import type {
@@ -20,22 +36,26 @@ import type {
 
 // Motion configuration constants
 const motionPresets = {
-  normal: { duration: 0.3 },
-  quick: { duration: 0.15 },
-  instant: { duration: 0 }
+  slow: { duration: 2 },
+  gentle: { duration: 1 },
+  normal: { duration: 0.5 },
+  quick: { duration: 0.25 },
+  instant: { duration: 0 },
 };
 
 const performanceProps = {
-  layoutId: undefined as string | undefined
+  layoutId: undefined as string | undefined,
 };
 
 type AnnotationThread = AttachmentAnnotation & {
   attachmentName?: string;
-  attachmentVariant?: IssueAttachment['reviewVariant'];
+  attachmentVariant?: IssueAttachment["reviewVariant"];
   attachmentPreview?: string | null;
 };
 
-const mapAttachmentsToAnnotations = (sources: IssueAttachment[]): AnnotationThread[] => {
+const mapAttachmentsToAnnotations = (
+  sources: IssueAttachment[]
+): AnnotationThread[] => {
   return sources.flatMap((attachment) =>
     (attachment.annotations ?? []).map((annotation) => ({
       ...annotation,
@@ -99,26 +119,68 @@ export default function ResponsiveIssueLayout({
   onEditingDescriptionChange,
   showShortcutsHelp,
   onToggleShortcutsHelp,
-  shortcuts = []
+  shortcuts = [],
 }: ResponsiveIssueLayoutProps) {
-  const annotationSeed = useMemo(() => mapAttachmentsToAnnotations(attachments), [attachments]);
+  const annotationSeed = useMemo(
+    () => mapAttachmentsToAnnotations(attachments),
+    [attachments]
+  );
   const isMobile = useIsMobile();
-  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1024
+  );
   const [activeTab, setActiveTab] = useState("attachments");
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
-  const [annotationThreads, setAnnotationThreads] = useState<AnnotationThread[]>(annotationSeed);
-  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(annotationSeed[0]?.id ?? null);
+  // Initialize panel state based on viewport width
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const width = window.innerWidth;
+    // Auto-collapse on initial load if viewport is 768-991px
+    return width < 992;
+  });
+  const [annotationThreads, setAnnotationThreads] =
+    useState<AnnotationThread[]>(annotationSeed);
+  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(
+    annotationSeed[0]?.id ?? null
+  );
+
+  // Track previous width to detect threshold crossings
+  const prevWidthRef = useRef<number>(
+    typeof window !== "undefined" ? window.innerWidth : 1024
+  );
 
   // Track window width for responsive behavior
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
     }
   }, []);
+
+  // Auto-collapse/expand panel based on viewport width threshold crossings
+  useEffect(() => {
+    if (isMobile) return;
+
+    const prevWidth = prevWidthRef.current;
+    const currentWidth = windowWidth;
+
+    // Early return if width hasn't changed
+    if (prevWidth === currentWidth) return;
+
+    const wasAboveThreshold = prevWidth >= 992;
+    const isAboveThreshold = currentWidth >= 992;
+
+    // Only act when threshold is crossed
+    if (wasAboveThreshold !== isAboveThreshold) {
+      setIsPanelCollapsed(!isAboveThreshold);
+      prevWidthRef.current = currentWidth;
+    } else {
+      // Still update ref for accurate tracking
+      prevWidthRef.current = currentWidth;
+    }
+  }, [windowWidth, isMobile]);
 
   // Reset to attachments tab when switching to mobile
   useEffect(() => {
@@ -171,24 +233,27 @@ export default function ResponsiveIssueLayout({
     setActiveAnnotationId(annotationId);
   }, []);
 
-  const handleAnnotationMove = useCallback((annotationId: string, coords: { x: number; y: number }) => {
-    setAnnotationThreads((prev) =>
-      prev.map((annotation) =>
-        annotation.id === annotationId ? { ...annotation, x: coords.x, y: coords.y } : annotation
-      )
-    );
-  }, []);
+  const handleAnnotationMove = useCallback(
+    (annotationId: string, coords: { x: number; y: number }) => {
+      setAnnotationThreads((prev) =>
+        prev.map((annotation) =>
+          annotation.id === annotationId
+            ? { ...annotation, x: coords.x, y: coords.y }
+            : annotation
+        )
+      );
+    },
+    []
+  );
 
   const handleBackToIssues = () => {
-    window.location.href = '/issues';
+    window.location.href = "/issues";
   };
-
-
 
   // Mobile layout with tabs
   if (isMobile) {
     return (
-      <div 
+      <div
         className="flex h-full flex-col"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -210,11 +275,18 @@ export default function ResponsiveIssueLayout({
               {issueData.issueKey}
             </div>
           </div>
-          
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 rounded-none border-t h-12" role="tablist">
-              <TabsTrigger 
-                value="attachments" 
+
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList
+              className="grid w-full grid-cols-2 rounded-none border-t h-12"
+              role="tablist"
+            >
+              <TabsTrigger
+                value="attachments"
                 className="flex items-center gap-2 data-[state=active]:bg-background h-full text-sm"
                 id="attachments-tab"
                 role="tab"
@@ -224,7 +296,7 @@ export default function ResponsiveIssueLayout({
                 <Image className="h-4 w-4" />
                 Attachments
                 {attachments.length > 0 && (
-                  <span 
+                  <span
                     className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs"
                     aria-label={`${attachments.length} attachments`}
                   >
@@ -232,8 +304,8 @@ export default function ResponsiveIssueLayout({
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger 
-                value="details" 
+              <TabsTrigger
+                value="details"
                 className="flex items-center gap-2 data-[state=active]:bg-background h-full text-sm"
                 id="details-tab"
                 role="tab"
@@ -243,7 +315,7 @@ export default function ResponsiveIssueLayout({
                 <FileText className="h-4 w-4" />
                 Details
                 {activities.length > 0 && (
-                  <span 
+                  <span
                     className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs"
                     aria-label={`${activities.length} activity entries`}
                   >
@@ -268,14 +340,18 @@ export default function ResponsiveIssueLayout({
                 transition={motionPresets.quick}
                 {...performanceProps}
               >
-                <Suspense fallback={
-                  <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                    <Spinner className="size-6" />
-                    <p className="text-sm text-muted-foreground">Loading attachments...</p>
-                  </div>
-                }>
-                  <IssueAttachmentView 
-                    issueId={issueId} 
+                <Suspense
+                  fallback={
+                    <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                      <Spinner className="size-6" />
+                      <p className="text-sm text-muted-foreground">
+                        Loading attachments...
+                      </p>
+                    </div>
+                  }
+                >
+                  <IssueAttachmentView
+                    issueId={issueId}
                     attachments={attachments}
                     isLoading={isLoading}
                     error={attachmentError}
@@ -288,7 +364,7 @@ export default function ResponsiveIssueLayout({
                 </Suspense>
               </motion.div>
             )}
-            
+
             {activeTab === "details" && (
               <motion.div
                 key="details"
@@ -299,12 +375,16 @@ export default function ResponsiveIssueLayout({
                 transition={motionPresets.quick}
                 {...performanceProps}
               >
-                <Suspense fallback={
-                  <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                    <Spinner className="size-6" />
-                    <p className="text-sm text-muted-foreground">Loading details...</p>
-                  </div>
-                }>
+                <Suspense
+                  fallback={
+                    <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                      <Spinner className="size-6" />
+                      <p className="text-sm text-muted-foreground">
+                        Loading details...
+                      </p>
+                    </div>
+                  }
+                >
                   <IssueDetailsPanel
                     issueData={issueData}
                     permissions={permissions}
@@ -331,7 +411,7 @@ export default function ResponsiveIssueLayout({
             )}
           </AnimatePresence>
         </Tabs>
-        
+
         {/* Keyboard shortcuts help */}
         <Dialog open={showShortcutsHelp} onOpenChange={onToggleShortcutsHelp}>
           <DialogContent className="max-w-md">
@@ -343,13 +423,17 @@ export default function ResponsiveIssueLayout({
             </DialogHeader>
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                Use these keyboard shortcuts to navigate and edit the issue efficiently.
+                Use these keyboard shortcuts to navigate and edit the issue
+                efficiently.
               </div>
               <div className="space-y-2">
                 {shortcuts
-                  .filter(shortcut => !shortcut.disabled)
+                  .filter((shortcut) => !shortcut.disabled)
                   .map((shortcut, index) => (
-                    <div key={index} className="flex items-center justify-between py-1">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between py-1"
+                    >
                       <span className="text-sm">{shortcut.description}</span>
                       <kbd className="px-2 py-1 text-xs font-mono bg-muted rounded border">
                         {formatShortcut(shortcut)}
@@ -358,8 +442,15 @@ export default function ResponsiveIssueLayout({
                   ))}
               </div>
               <div className="text-xs text-muted-foreground pt-2 border-t">
-                Press <kbd className="px-1 py-0.5 text-xs font-mono bg-muted rounded">?</kbd> to toggle this help, 
-                or <kbd className="px-1 py-0.5 text-xs font-mono bg-muted rounded">Esc</kbd> to close.
+                Press{" "}
+                <kbd className="px-1 py-0.5 text-xs font-mono bg-muted rounded">
+                  ?
+                </kbd>{" "}
+                to toggle this help, or{" "}
+                <kbd className="px-1 py-0.5 text-xs font-mono bg-muted rounded">
+                  Esc
+                </kbd>{" "}
+                to close.
               </div>
             </div>
           </DialogContent>
@@ -369,23 +460,38 @@ export default function ResponsiveIssueLayout({
   }
 
   // Desktop/tablet split layout
+  const panelWidth = windowWidth >= 1200 ? 380 : 320;
+  const panelOverlap = 16;
+
   return (
-    <motion.div 
-      className="flex h-full"
+    <motion.div
+      className="flex h-full relative"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={motionPresets.instant}
     >
       {/* Attachment canvas - flexible width */}
-      <div className="flex-1 min-w-0 relative">
-        <Suspense fallback={
-          <div className="h-full flex flex-col items-center justify-center gap-3 bg-muted/30">
-            <Spinner className="size-6" />
-            <p className="text-sm text-muted-foreground">Loading attachments...</p>
-          </div>
-        }>
-          <IssueAttachmentView 
-            issueId={issueId} 
+      <motion.div
+        className="flex-1 min-w-0 relative transition-all duration-500 ease-out"
+        style={{
+          marginRight: panelWidth,
+        }}
+        animate={{
+          marginRight: isPanelCollapsed ? 0+panelOverlap : window.innerWidth>992 ? panelWidth : 0+panelOverlap,
+        }}
+      >
+        <Suspense
+          fallback={
+            <div className="h-full flex flex-col items-center justify-center gap-3 bg-muted/30">
+              <Spinner className="size-6" />
+              <p className="text-sm text-muted-foreground">
+                Loading attachments...
+              </p>
+            </div>
+          }
+        >
+          <IssueAttachmentView
+            issueId={issueId}
             attachments={attachments}
             isLoading={isLoading}
             error={attachmentError}
@@ -396,96 +502,57 @@ export default function ResponsiveIssueLayout({
             onAnnotationMove={handleAnnotationMove}
           />
         </Suspense>
+        
+      </motion.div>
 
-        {/* Panel toggle button for tablet */}
-        <div className="md:block lg:hidden">
-          <motion.div
-            className="absolute top-4 right-4 z-20"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={motionPresets.quick}
-          >
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
-                className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border shadow-sm"
-                aria-label={isPanelCollapsed ? "Show details panel" : "Hide details panel"}
-              >
-                <motion.div
-                  animate={{ rotate: isPanelCollapsed ? 180 : 0 }}
-                  transition={motionPresets.quick}
-                >
-                  {isPanelCollapsed ? (
-                    <>
-                      <PanelRightOpen className="h-4 w-4 mr-2" />
-                      Show Details
-                    </>
-                  ) : (
-                    <>
-                      <PanelRightClose className="h-4 w-4 mr-2" />
-                      Hide Details
-                    </>
-                  )}
-                </motion.div>
-              </Button>
-            </motion.div>
-          </motion.div>
-        </div>
-      </div>
-      
-      {/* Details panel - fixed width with collapsible option */}
-      <div 
+      {/* Details panel - fixed width with position-based collapse */}
+      <motion.div
         className={cn(
-          "flex-shrink-0 transition-all duration-75 ease-out",
-          isPanelCollapsed 
-            ? windowWidth >= 1024 ? "w-[480px]" : "w-0"
-            : windowWidth >= 768 ? "w-[360px]" : "w-[480px]"
+          "absolute top-0 right-0 h-full flex-shrink-0 z-20 ease-out",
+          isPanelCollapsed ? "duration-800 " : "duration-500"
         )}
+        style={{ width: panelWidth }}
+        initial={false}
+        animate={{
+          x: isPanelCollapsed ? panelWidth-panelOverlap : 0,
+        }}
       >
-        <AnimatePresence>
-          {(!isPanelCollapsed || windowWidth >= 1024) && (
-            <motion.div 
-              className="h-full"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={motionPresets.instant}
-            >
-              <Suspense fallback={
-                <div className="h-full flex flex-col items-center justify-center gap-3 border-l">
-                  <Spinner className="size-6" />
-                  <p className="text-sm text-muted-foreground">Loading details...</p>
-                </div>
-              }>
-                <IssueDetailsPanel
-                  issueData={issueData}
-                  permissions={permissions}
-                  activities={activities}
-                  activitiesLoading={activitiesLoading}
-                  hasMoreActivities={hasMoreActivities}
-                  onLoadMoreActivities={onLoadMoreActivities}
-                  onUpdate={onUpdate}
-                  onDelete={onDelete}
-                  isLoading={isLoading}
-                  activityError={activityError}
-                  onRetryActivity={onRetryActivity}
-                  isEditingTitle={isEditingTitle}
-                  isEditingDescription={isEditingDescription}
-                  onEditingTitleChange={onEditingTitleChange}
-                  onEditingDescriptionChange={onEditingDescriptionChange}
-                  onToggleShortcutsHelp={onToggleShortcutsHelp}
-                  annotations={annotationThreads}
-                  activeAnnotationId={activeAnnotationId}
-                  onAnnotationSelect={handleAnnotationSelect}
-                />
-              </Suspense>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-      
+        <Suspense
+          fallback={
+            <div className="h-full flex flex-col items-center justify-center gap-3 border-l bg-card">
+              <Spinner className="size-6" />
+              <p className="text-sm text-muted-foreground">
+                Loading details...
+              </p>
+            </div>
+          }
+        >
+          <IssueDetailsPanel
+            issueData={issueData}
+            permissions={permissions}
+            activities={activities}
+            activitiesLoading={activitiesLoading}
+            hasMoreActivities={hasMoreActivities}
+            onLoadMoreActivities={onLoadMoreActivities}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+            isLoading={isLoading}
+            activityError={activityError}
+            onRetryActivity={onRetryActivity}
+            isEditingTitle={isEditingTitle}
+            isEditingDescription={isEditingDescription}
+            onEditingTitleChange={onEditingTitleChange}
+            onEditingDescriptionChange={onEditingDescriptionChange}
+            onToggleShortcutsHelp={onToggleShortcutsHelp}
+            annotations={annotationThreads}
+            activeAnnotationId={activeAnnotationId}
+            onAnnotationSelect={handleAnnotationSelect}
+            isPanelCollapsed={isPanelCollapsed}
+            onPanelToggle={() => setIsPanelCollapsed(!isPanelCollapsed)}
+          />
+        </Suspense>
+      </motion.div>
+
       {/* Keyboard shortcuts help */}
       <Dialog open={showShortcutsHelp} onOpenChange={onToggleShortcutsHelp}>
         <DialogContent className="max-w-md">
@@ -497,13 +564,17 @@ export default function ResponsiveIssueLayout({
           </DialogHeader>
           <div className="space-y-4">
             <div className="text-sm text-muted-foreground">
-              Use these keyboard shortcuts to navigate and edit the issue efficiently.
+              Use these keyboard shortcuts to navigate and edit the issue
+              efficiently.
             </div>
             <div className="space-y-2">
               {shortcuts
-                .filter(shortcut => !shortcut.disabled)
+                .filter((shortcut) => !shortcut.disabled)
                 .map((shortcut, index) => (
-                  <div key={index} className="flex items-center justify-between py-1">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between py-1"
+                  >
                     <span className="text-sm">{shortcut.description}</span>
                     <kbd className="px-2 py-1 text-xs font-mono bg-muted rounded border">
                       {formatShortcut(shortcut)}
@@ -512,8 +583,15 @@ export default function ResponsiveIssueLayout({
                 ))}
             </div>
             <div className="text-xs text-muted-foreground pt-2 border-t">
-              Press <kbd className="px-1 py-0.5 text-xs font-mono bg-muted rounded">?</kbd> to toggle this help, 
-              or <kbd className="px-1 py-0.5 text-xs font-mono bg-muted rounded">Esc</kbd> to close.
+              Press{" "}
+              <kbd className="px-1 py-0.5 text-xs font-mono bg-muted rounded">
+                ?
+              </kbd>{" "}
+              to toggle this help, or{" "}
+              <kbd className="px-1 py-0.5 text-xs font-mono bg-muted rounded">
+                Esc
+              </kbd>{" "}
+              to close.
             </div>
           </div>
         </DialogContent>

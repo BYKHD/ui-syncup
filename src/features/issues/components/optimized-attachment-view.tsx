@@ -42,8 +42,8 @@ interface IssueAttachmentsViewProps {
   onAnnotationMove?: (annotationId: string, position: AnnotationMovePayload) => void;
 }
 
+
 export default function IssueAttachmentsView({
-  issueId,
   attachments,
   isLoading = false,
   error = null,
@@ -222,25 +222,21 @@ export default function IssueAttachmentsView({
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Design QA</p>
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold">Attachment Canvas</h2>
-            {selectedAttachment?.reviewVariant && (
-              <Badge variant="secondary" className="uppercase tracking-wide">
-                {selectedAttachment.reviewVariant.replace('_', ' ')}
-              </Badge>
-            )}
           </div>
-          <p className="text-sm text-muted-foreground">Issue {issueId}</p>
         </div>
 
-        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as AttachmentViewMode)}>
-          <TabsList className="grid h-11 grid-cols-2">
-            {VIEW_MODES.map(({ id, label, icon: Icon }) => (
-              <TabsTrigger key={id} value={id} className="gap-2 text-sm">
-                <Icon className="h-4 w-4" />
-                {label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center gap-4">
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as AttachmentViewMode)}>
+            <TabsList className="grid h-11 grid-cols-2">
+              {VIEW_MODES.map(({ id, label, icon: Icon }) => (
+                <TabsTrigger key={id} value={id} className="gap-2 text-sm">
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
       </header>
 
       <div className="relative flex-1 min-h-0 overflow-hidden">

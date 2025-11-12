@@ -109,7 +109,7 @@ export function CenteredCanvasView({
 
       {/* Future annotation support indicator - only for images */}
       {attachment.fileType.startsWith('image/') && overlayContent && (
-        <div className="absolute top-4 left-4 z-20">
+        <div className="absolute top-4 left-4 z-10">
           <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-md px-3 py-1.5 text-xs text-muted-foreground border flex items-center gap-2">
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
             <span>Drag pins to reposition annotations</span>

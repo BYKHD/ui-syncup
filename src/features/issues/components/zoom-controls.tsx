@@ -6,6 +6,7 @@ import { ZoomIn, ZoomOut, Maximize, RotateCcw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { CanvasViewState } from "@/features/issues/types";
 import { motion } from "motion/react";
+import { RiAlignVertically, RiAspectRatioLine, RiFullscreenLine, RiZoomInLine, RiZoomOutLine } from "@remixicon/react";
 
 interface ZoomControlsProps {
   zoomLevel: number;
@@ -57,7 +58,7 @@ export function ZoomControls({
               onClick={onZoomOut}
               disabled={isAtMinZoom}
             >
-              <ZoomOut className={iconClass} aria-hidden="true" />
+              <RiZoomOutLine className={iconClass} aria-hidden="true" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Zoom out</TooltipContent>
@@ -78,7 +79,7 @@ export function ZoomControls({
               onClick={onZoomIn}
               disabled={isAtMaxZoom}
             >
-              <ZoomIn className={iconClass} aria-hidden="true" />
+              <RiZoomInLine className={iconClass} aria-hidden="true" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Zoom in</TooltipContent>
@@ -96,7 +97,7 @@ export function ZoomControls({
               aria-label="Re-center"
               onClick={onRecenterView}
             >
-              <RotateCcw className={iconClass} aria-hidden="true" />
+              <RiAlignVertically className={iconClass} aria-hidden="true" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Re-center</TooltipContent>
@@ -114,7 +115,7 @@ export function ZoomControls({
               aria-pressed={fitMode === "fit"}
               disabled={fitMode === "fit"}
             >
-              <Maximize className={iconClass} aria-hidden="true" />
+              <RiAspectRatioLine className={iconClass} aria-hidden="true" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Fit to canvas</TooltipContent>
@@ -132,7 +133,7 @@ export function ZoomControls({
               aria-pressed={fitMode === "actual"}
               disabled={fitMode === "actual"}
             >
-              <RotateCcw className={iconClass} aria-hidden="true" />
+              <RiFullscreenLine className={iconClass} aria-hidden="true" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Actual size</TooltipContent>
