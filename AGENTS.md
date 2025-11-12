@@ -27,7 +27,6 @@ src/
 │  │  ├─ layout.tsx                     # public shell (no auth)
 │  │  ├─ sign-in/page.tsx
 │  │  └─ sign-up/page.tsx
-
 │  ├─ (protected)/
 │  │  ├─ layout.tsx                     # Server gate: requires session
 │  │  └─ dashboard/
@@ -77,7 +76,8 @@ src/
 ├─ lib/                                  # App plumbing (query client, fetcher)
 │  ├─ api-client.ts                      # fetch/axios wrapper (credentials: 'include')
 │  ├─ query.ts                           # QueryClient setup/provider
-│  ├─ env.ts                             # Zod-validated env
+│  ├─ env.client.ts
+│  ├─ env.server.ts
 │  ├─ cn.ts                              # tailwind-merge + clsx
 │  └─ logger.ts
 ├─ server/                               # Server-only logic (auth, DB, RBAC)
@@ -93,18 +93,20 @@ src/
 │     ├─ schema.ts        # Tables & relations
 │     └─ index.ts                        # DB client
 │        ↳ **Database standard**: PostgreSQL (see `docker-compose.yml` for the local Postgres + pgAdmin stack).
+├─ mocks/                                # MSW handlers, test fixtures
 ├─ hooks/                                # Truly global hooks (useMediaQuery, etc.)
 ├─ utils/                                # Pure helpers (dates, currency)
 ├─ types/                                # Global types (User, Pagination)
-├─ config/                               # Constants, route maps, query keys
-├─ config/                               # 🔸 single sources of truth (imported everywhere)
+├─ config/                               # 🔸 single sources of truth (imported everywhere ) Pure, global, app-wide data (no side effects, no async)
 │  ├─ tiers.ts                           # plans/limits/features
 │  ├─ roles.ts                           # TEAM_* / PROJECT_* + PERMISSIONS map
 │  ├─ workflows.ts                       # issue status model (open→archived)
 │  ├─ nav.ts                             # main/sidebar nav
-│  └─ settings-nav.ts                    # team settings tabs
+│  ├─ settings-nav.ts                    # settings tabs
+│  └─ ...                   
 ├─ styles/                               # globals.css, tailwind.css
 └─ tests/                                # Unit/integration/e2e (see §8)
+drizzle/                         # migrations & config (outside src)
 ```
 
 ### If have to MOCKUP some data to draft a visual UI
