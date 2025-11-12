@@ -2,7 +2,7 @@
 // PROJECT MOCK FIXTURES
 // ============================================================================
 
-import type { Project, ProjectWithStats, ProjectSummary } from '@features/projects/types'
+import type { Project, ProjectWithStats, ProjectSummary } from '@/features/projects/types'
 
 export const MOCK_PROJECTS: Project[] = [
   {

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { ProjectSummary } from '@features/projects/types'
+import type { ProjectSummary } from '@/features/projects/types'
 import { MOCK_PROJECT_SUMMARIES } from '@/mocks'
 
 interface UseProjectsParams {

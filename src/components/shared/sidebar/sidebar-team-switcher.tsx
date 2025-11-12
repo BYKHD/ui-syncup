@@ -10,14 +10,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@components/ui/sidebar";
-import { CreateTeamDialog } from "@features/teams";
+} from "@/components/ui/sidebar";
+import { CreateTeamDialog } from "@/features/teams";
 import { TeamAvatar } from "./sidebar-team-avatar";
 import { MOCK_TEAMS, getPlanDisplayName, type Team } from "./type";
 

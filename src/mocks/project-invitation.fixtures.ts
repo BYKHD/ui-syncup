@@ -2,7 +2,7 @@
 // PROJECT INVITATION MOCK FIXTURES
 // ============================================================================
 
-import type { ProjectRole } from '@features/projects/types'
+import type { ProjectRole } from '@/features/projects/types'
 
 export type InvitationStatus = 'pending' | 'accepted' | 'declined' | 'expired'
 

@@ -1,28 +1,17 @@
 'use client'
 
 import React from 'react'
-import {
-  RiSearchLine,
-  RiFilterLine,
-  RiCloseLine,
-  RiBugLine,
-  RiLightbulbLine,
-  RiToolsLine,
-  RiArrowUpLine,
-  RiArrowDownLine,
-  RiEqualLine,
-  RiAlertLine,
-} from '@remixicon/react'
+import { RiSearchLine, RiFilterLine, RiCloseLine } from '@remixicon/react'
 
-import { Button } from '@components/ui/button'
-import { Input } from '@components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@components/ui/select'
+} from '@/components/ui/select'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,10 +20,25 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from '@components/ui/dropdown-menu'
-import { Badge } from '@components/ui/badge'
+} from '@/components/ui/dropdown-menu'
+import { Badge } from '@/components/ui/badge'
+import {
+  PRIORITY_OPTIONS,
+  TYPE_OPTIONS,
+  type PriorityOption,
+  type TypeOption,
+} from '@/config/issue-options'
 
-import type { IssueFilters } from '@features/issues/hooks/use-issue-filters'
+import type { IssueFilters } from '@/features/issues/utils'
+
+const TYPE_OPTION_MAP = Object.fromEntries(TYPE_OPTIONS.map(option => [option.value, option])) as Record<
+  TypeOption['value'],
+  TypeOption
+>
+
+const PRIORITY_OPTION_MAP = Object.fromEntries(
+  PRIORITY_OPTIONS.map(option => [option.value, option]),
+) as Record<PriorityOption['value'], PriorityOption>
 
 interface IssuesListFilterProps {
   filters: IssueFilters
@@ -82,33 +86,9 @@ export function IssuesListFilter({
     return count
   }
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'bug':
-        return <RiBugLine className="h-3 w-3" />
-      case 'feature':
-        return <RiLightbulbLine className="h-3 w-3" />
-      case 'improvement':
-        return <RiToolsLine className="h-3 w-3" />
-      default:
-        return null
-    }
-  }
-
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case 'critical':
-        return <RiAlertLine className="h-3 w-3" />
-      case 'high':
-        return <RiArrowUpLine className="h-3 w-3" />
-      case 'medium':
-        return <RiEqualLine className="h-3 w-3" />
-      case 'low':
-        return <RiArrowDownLine className="h-3 w-3" />
-      default:
-        return null
-    }
-  }
+  const activeTypeOption = filters.type !== 'all' ? TYPE_OPTION_MAP[filters.type] : undefined
+  const activePriorityOption =
+    filters.priority !== 'all' ? PRIORITY_OPTION_MAP[filters.priority] : undefined
 
   return (
     <div className="space-y-4">
@@ -186,27 +166,16 @@ export function IssuesListFilter({
               >
                 All Types
               </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={filters.type === 'bug'}
-                onCheckedChange={() => updateFilter('type', 'bug')}
-              >
-                {getTypeIcon('bug')}
-                <span className="ml-2">Bug</span>
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={filters.type === 'feature'}
-                onCheckedChange={() => updateFilter('type', 'feature')}
-              >
-                {getTypeIcon('feature')}
-                <span className="ml-2">Feature</span>
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={filters.type === 'improvement'}
-                onCheckedChange={() => updateFilter('type', 'improvement')}
-              >
-                {getTypeIcon('improvement')}
-                <span className="ml-2">Improvement</span>
-              </DropdownMenuCheckboxItem>
+              {TYPE_OPTIONS.map(option => (
+                <DropdownMenuCheckboxItem
+                  key={option.value}
+                  checked={filters.type === option.value}
+                  onCheckedChange={() => updateFilter('type', option.value)}
+                >
+                  <option.icon className="h-3 w-3" />
+                  <span className="ml-2">{option.label}</span>
+                </DropdownMenuCheckboxItem>
+              ))}
 
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Priority</DropdownMenuLabel>
@@ -216,34 +185,16 @@ export function IssuesListFilter({
               >
                 All Priorities
               </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={filters.priority === 'critical'}
-                onCheckedChange={() => updateFilter('priority', 'critical')}
-              >
-                {getPriorityIcon('critical')}
-                <span className="ml-2">Critical</span>
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={filters.priority === 'high'}
-                onCheckedChange={() => updateFilter('priority', 'high')}
-              >
-                {getPriorityIcon('high')}
-                <span className="ml-2">High</span>
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={filters.priority === 'medium'}
-                onCheckedChange={() => updateFilter('priority', 'medium')}
-              >
-                {getPriorityIcon('medium')}
-                <span className="ml-2">Medium</span>
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={filters.priority === 'low'}
-                onCheckedChange={() => updateFilter('priority', 'low')}
-              >
-                {getPriorityIcon('low')}
-                <span className="ml-2">Low</span>
-              </DropdownMenuCheckboxItem>
+              {PRIORITY_OPTIONS.map(option => (
+                <DropdownMenuCheckboxItem
+                  key={option.value}
+                  checked={filters.priority === option.value}
+                  onCheckedChange={() => updateFilter('priority', option.value)}
+                >
+                  <option.icon className="h-3 w-3" />
+                  <span className="ml-2">{option.label}</span>
+                </DropdownMenuCheckboxItem>
+              ))}
 
               {hasActiveFilters && (
                 <>
@@ -323,10 +274,10 @@ export function IssuesListFilter({
               </button>
             </Badge>
           )}
-          {filters.type !== 'all' && (
+          {activeTypeOption && (
             <Badge variant="secondary" className="gap-1 capitalize">
-              {getTypeIcon(filters.type)}
-              {filters.type}
+              <activeTypeOption.icon className="h-3 w-3" />
+              {activeTypeOption.label}
               <button
                 onClick={() => updateFilter('type', 'all')}
                 className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
@@ -335,10 +286,10 @@ export function IssuesListFilter({
               </button>
             </Badge>
           )}
-          {filters.priority !== 'all' && (
+          {activePriorityOption && (
             <Badge variant="secondary" className="gap-1 capitalize">
-              {getPriorityIcon(filters.priority)}
-              {filters.priority}
+              <activePriorityOption.icon className="h-3 w-3" />
+              {activePriorityOption.label}
               <button
                 onClick={() => updateFilter('priority', 'all')}
                 className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"

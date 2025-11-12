@@ -138,7 +138,7 @@ const { mutate: leaveProject } = useLeaveProject()
 Standardized query keys for cache management:
 
 ```typescript
-import { projectKeys } from '@features/projects'
+import { projectKeys } from '@/features/projects'
 
 projectKeys.all              // ['projects']
 projectKeys.lists()          // ['projects', 'list']
@@ -186,7 +186,7 @@ import {
   // API Types
   CreateProjectBody,
   UpdateProjectBody,
-} from '@features/projects'
+} from '@/features/projects'
 ```
 
 ---
@@ -329,7 +329,7 @@ Test full user flows with Playwright/Cypress:
 
 ```typescript
 // In your page.tsx
-import { ProjectsListScreen } from '@features/projects'
+import { ProjectsListScreen } from '@/features/projects'
 
 export default function ProjectsPage() {
   return <ProjectsListScreen />
@@ -338,7 +338,7 @@ export default function ProjectsPage() {
 
 ```typescript
 // Creating a project
-import { useCreateProject } from '@features/projects'
+import { useCreateProject } from '@/features/projects'
 
 function MyComponent() {
   const { mutate, isPending } = useCreateProject({

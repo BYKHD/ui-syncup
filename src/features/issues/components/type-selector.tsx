@@ -1,7 +1,7 @@
 'use client'
 
 import { useId, useState } from 'react'
-import { Button } from '@components/ui/button'
+import { Button } from '@/components/ui/button'
 import {
   Command,
   CommandEmpty,
@@ -9,10 +9,10 @@ import {
   CommandInput,
   CommandItem,
   CommandList
-} from '@components/ui/command'
-import { Popover, PopoverContent, PopoverTrigger } from '@components/ui/popover'
-import type { IssueType } from '@lib/issues'
-import { TYPE_OPTIONS } from '@config/issue-options'
+} from '@/components/ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import type { IssueType } from '@/features/issues/types'
+import { TYPE_OPTIONS } from '@/config/issue-options'
 import { RiCheckLine } from '@remixicon/react'
 
 interface TypeSelectorProps {

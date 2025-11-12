@@ -56,3 +56,27 @@ A deliverable is **ready‑to‑wire** when all of the following are true:
 - **Security respected**: server‑first session; no secrets in client; multi‑tenant safe.  
 - **Tooling respected**: typecheck, lint, tests, and build pass; follows Node LTS and bun conventions.  
 - **No extra markdown** or undocumented assumptions.
+
+
+## Example Imports
+
+tsconfig.json has path aliases like:
+
+```json
+"compilerOptions": {
+  "paths": {
+        "@/*": ["./src/*"]
+      }
+}
+```
+
+```ts
+// Page composing a feature
+import { IssuesTable, CreateIssueDialog, useIssues } from "@/features/issues"
+
+// Shared widget
+import { Sidebar } from "@/components/shared/sidebar"
+
+// App plumbing
+import { queryClient } from "@/lib/query"
+```

@@ -2,9 +2,9 @@
 
 import React from "react";
 import { Loader2, Settings, Users, Shield, CreditCard } from "lucide-react";
-import { Skeleton } from "@components/ui/skeleton";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@components/ui/card";
-import { Button } from "@components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 // Generic loading spinner
 export function LoadingSpinner({ 

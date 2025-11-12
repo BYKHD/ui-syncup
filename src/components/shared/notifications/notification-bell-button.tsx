@@ -1,13 +1,13 @@
 'use client'
 
 import { RiNotification2Line } from '@remixicon/react'
-import { Button } from '@components/ui/button'
-import { Badge } from '@components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu'
 import { NotificationDropdown } from './notification-dropdown'
 import { MOCK_UNREAD_COUNT } from '@/mocks'
 

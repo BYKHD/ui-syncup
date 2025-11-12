@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Badge } from '@components/ui/badge'
+import { Badge } from '@/components/ui/badge'
 import { RiArchiveLine, RiDeleteBinLine, RiCheckLine } from '@remixicon/react'
 
 interface ProjectStatusBadgeProps {

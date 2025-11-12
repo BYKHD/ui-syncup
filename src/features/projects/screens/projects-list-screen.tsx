@@ -9,17 +9,17 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '@components/ui/empty'
-import { Button } from '@components/ui/button'
-import PageHeader from '@components/shared/headers/page-header'
+} from '@/components/ui/empty'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/headers/page-header'
 
-import { useProjects, useProjectFilters } from '@features/projects/hooks'
+import { useProjects, useProjectFilters } from '@/features/projects/hooks'
 import {
   ProjectCard,
   ProjectCreateDialog,
   ProjectFiltersComponent,
-} from '@features/projects/components'
-import { useTeam } from '@hooks/use-team'
+} from '@/features/projects/components'
+import { useTeam } from '@/hooks/use-team'
 
 export default function ProjectsListScreen() {
   const { currentTeam, isLoading: isTeamLoading } = useTeam()

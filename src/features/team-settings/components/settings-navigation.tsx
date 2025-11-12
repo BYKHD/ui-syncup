@@ -3,8 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@lib/utils";
-import { Badge } from "@components/ui/badge";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import type { SettingsNavItem } from "../types";
 
 interface SettingsNavigationProps {

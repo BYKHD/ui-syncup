@@ -1,19 +1,19 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Button } from '@components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@components/ui/dialog'
-import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/avatar'
-import { Badge } from '@components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger,
   DropdownMenuSeparator 
-} from '@components/ui/dropdown-menu'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@components/ui/alert-dialog'
-import { Separator } from '@components/ui/separator'
+} from '@/components/ui/dropdown-menu'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { Separator } from '@/components/ui/separator'
 import { RiTeamLine, RiMore2Line, RiUserLine, RiDeleteBinLine, RiAddLine, RiVipCrownLine, RiMailSendLine } from '@remixicon/react'
 
 interface User {

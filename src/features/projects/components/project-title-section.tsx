@@ -1,4 +1,4 @@
-import { Badge } from '@components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { RiLockLine, RiGlobalLine, RiVipCrownLine } from '@remixicon/react';
 
 interface ProjectTitleSectionProps {

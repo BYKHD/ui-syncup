@@ -1,4 +1,5 @@
-import ProjectDetailScreen from "@features/projects/screens/project-detail-screen";
+import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/shared/headers";
+import ProjectDetailScreen from "@/features/projects/screens/project-detail-screen";
 import { MOCK_PROJECTS_WITH_STATS } from "@/mocks";
 
 interface PageProps {
@@ -29,12 +30,22 @@ export default function ProjectDetailPage({ params }: PageProps) {
   };
 
   const userRole = mockProject.userRole;
+  const projectBreadcrumbs: BreadcrumbItem[] = [
+    { label: "Projects", href: "/projects" },
+    { label: project.name },
+  ];
 
   return (
-    <ProjectDetailScreen
-      project={project}
-      userRole={userRole}
-      isLoading={false}
-    />
+    <>
+      <AppHeaderConfigurator
+        pageName={project.name}
+        breadcrumbs={projectBreadcrumbs}
+      />
+      <ProjectDetailScreen
+        project={project}
+        userRole={userRole}
+        isLoading={false}
+      />
+    </>
   );
 }

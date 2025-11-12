@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 
-import { UserSettingsScreen } from '@features/user-settings/screens'
+import { UserSettingsScreen } from '@/features/user-settings/screens'
 
 export const metadata: Metadata = {
   title: 'Settings',

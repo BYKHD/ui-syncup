@@ -3,8 +3,8 @@
 import type { ComponentType } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { cn } from '@lib/utils'
-import { Badge } from '@components/ui/badge'
+import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 
 export interface TeamSettingsNavItem {
   href: string

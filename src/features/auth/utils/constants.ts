@@ -1,5 +1,5 @@
 import type { PlanOption } from '../types'
-import { PLANS } from '@config/tiers'
+import { PLANS } from '@/config/tiers'
 
 // ============================================================================
 // PLAN OPTIONS FOR SIGN-UP

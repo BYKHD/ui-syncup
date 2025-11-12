@@ -2,11 +2,11 @@
 
 import type { UseFormReturn } from "react-hook-form";
 
-import { Alert, AlertDescription, AlertTitle } from "@components/ui/alert";
-import { Button } from "@components/ui/button";
-import { Input } from "@components/ui/input";
-import { Label } from "@components/ui/label";
-import { Separator } from "@components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 import type { SignInSchema } from "../utils/validators";
 

@@ -6,9 +6,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@components/ui/card'
-import { Alert, AlertDescription } from '@components/ui/alert'
-import { Separator } from '@components/ui/separator'
+} from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Separator } from '@/components/ui/separator'
 import { DeleteAccountDialog } from './delete-account-dialog'
 import type { UserProfile } from '../types'
 

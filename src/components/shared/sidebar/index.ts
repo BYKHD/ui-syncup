@@ -28,11 +28,11 @@ export {
 // ============================================================================
 //
 // Import individual components:
-// import { NavMain, NavProjects, TeamSwitcher } from '@components/shared/sidebar'
+// import { NavMain, NavProjects, TeamSwitcher } from '@/components/shared/sidebar'
 //
 // Import types:
-// import type { Team, NavItem } from '@components/shared/sidebar'
+// import type { Team, NavItem } from '@/components/shared/sidebar'
 //
 // Import mock data:
-// import { MOCK_TEAMS, MOCK_PROJECTS } from '@components/shared/sidebar'
+// import { MOCK_TEAMS, MOCK_PROJECTS } from '@/components/shared/sidebar'
 //

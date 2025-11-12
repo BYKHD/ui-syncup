@@ -1,5 +1,5 @@
 import { Settings, Users, CreditCard, Plug } from "lucide-react";
-import type { TeamSettingsNavItem } from "@components/shared/settings-sidebar";
+import type { TeamSettingsNavItem } from "@/components/shared/settings-sidebar";
 import { RiBankCard2Line, RiInfoCardLine, RiPuzzle2Line, RiTeamLine } from "@remixicon/react";
 
 /**

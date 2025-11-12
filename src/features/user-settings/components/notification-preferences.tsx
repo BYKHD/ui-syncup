@@ -6,10 +6,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@components/ui/card'
-import { Switch } from '@components/ui/switch'
-import { Button } from '@components/ui/button'
-import { Alert, AlertDescription } from '@components/ui/alert'
+} from '@/components/ui/card'
+import { Switch } from '@/components/ui/switch'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useNotificationPreferences } from '../hooks/use-notification-preferences'
 import type { NotificationPreference } from '../types'
 

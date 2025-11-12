@@ -19,7 +19,7 @@ export { CreateTeamDialog } from './components/create-team-dialog'
 // ============================================================================
 //
 // Import team components:
-// import { CreateTeamDialog } from '@features/teams'
+// import { CreateTeamDialog } from '@/features/teams'
 //
 // This keeps team functionality portable and organized
 //

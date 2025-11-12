@@ -37,14 +37,14 @@ export {
 // ============================================================================
 //
 // Import notification components:
-// import { NotificationPanel, NotificationBell } from '@components/shared/notifications'
+// import { NotificationPanel, NotificationBell } from '@/components/shared/notifications'
 //
 // Import types and mock data:
-// import type { Notification } from '@components/shared/notifications'
-// import { MOCK_NOTIFICATIONS } from '@components/shared/notifications'
+// import type { Notification } from '@/components/shared/notifications'
+// import { MOCK_NOTIFICATIONS } from '@/components/shared/notifications'
 //
 // Import utilities:
-// import { formatTimestamp, getNotificationMessage } from '@components/shared/notifications'
+// import { formatTimestamp, getNotificationMessage } from '@/components/shared/notifications'
 //
 // Example usage in header:
 // <NotificationPanel />

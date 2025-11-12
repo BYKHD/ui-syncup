@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import type { ProjectSummary } from '@features/projects/types'
+import type { ProjectSummary } from '@/features/projects/types'
 
 export interface ProjectFilters {
   search: string
