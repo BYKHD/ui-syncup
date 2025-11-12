@@ -70,6 +70,7 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
         top: `${annotation.y * 100}%`,
       }}
       aria-label={`Annotation ${annotation.label}`}
+      data-annotation-pin="true"
     >
       {annotation.label}
     </motion.button>

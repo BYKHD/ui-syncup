@@ -14,9 +14,10 @@ import { AlertCircle, RefreshCw, FileText, Upload, PenLine, Columns2 } from 'luc
 import {
   AnnotationLayer,
   AnnotationToolbar,
+  AnnotationDrawer,
   useAnnotationTools,
 } from '@/features/annotations';
-import type { AttachmentAnnotation, AnnotationPosition } from '@/features/annotations';
+import type { AttachmentAnnotation, AnnotationPosition, AnnotationDraft } from '@/features/annotations';
 import { CenteredCanvasView } from './centered-canvas-view';
 import { ImageCanvas } from './image-canvas';
 import { ZoomControls } from './zoom-controls';
@@ -90,8 +91,12 @@ export default function IssueAttachmentsView({
     undo: undoAnnotationHistory,
     redo: redoAnnotationHistory,
     pushHistory: pushAnnotationHistory,
+    handToolActive,
   } = useAnnotationTools({ initialTool: 'pin', initialEditMode: false });
-  const isAnnotationInteractive = annotationEditModeEnabled && viewMode === 'annotate';
+  const isAnnotationView = viewMode === 'annotate';
+  const isAnnotationInteractive = annotationEditModeEnabled && isAnnotationView;
+  const pointerPanEnabled = !isAnnotationView || !annotationEditModeEnabled || handToolActive;
+  const scrollPanEnabled = isAnnotationView;
 
   useEffect(() => {
     if (!imageAttachments.length) return;
@@ -152,6 +157,11 @@ export default function IssueAttachmentsView({
     },
     [annotationEditModeEnabled, onAnnotationMove, recordAnnotationHistory]
   );
+
+  const handleDraftCommit = useCallback((draft: AnnotationDraft) => {
+    console.info('Ready-to-wire annotation draft', draft);
+    recordAnnotationHistory('draft', draft.id);
+  }, [recordAnnotationHistory]);
 
   // Error state
   if (error && onRetry) {
@@ -233,16 +243,27 @@ export default function IssueAttachmentsView({
     );
   }
 
-  const annotateOverlay = currentAnnotations.length ? (
-    <AnnotationLayer
-      annotations={currentAnnotations}
-      overlayRef={annotationOverlayRef}
-      activeAnnotationId={activeAnnotationId}
-      interactive={isAnnotationInteractive}
-      onSelect={handleAnnotationSelect}
-      onMove={handleAnnotationMove}
-    />
-  ) : null;
+  const annotateOverlay =
+    currentAnnotations.length || isAnnotationInteractive ? (
+      <>
+        {currentAnnotations.length > 0 && (
+          <AnnotationLayer
+            annotations={currentAnnotations}
+            overlayRef={annotationOverlayRef}
+            activeAnnotationId={activeAnnotationId}
+            interactive={isAnnotationInteractive}
+            onSelect={handleAnnotationSelect}
+            onMove={handleAnnotationMove}
+          />
+        )}
+        <AnnotationDrawer
+          activeTool={activeAnnotationTool}
+          enabled={isAnnotationInteractive}
+          overlayRef={annotationOverlayRef}
+          onDraftCommit={handleDraftCommit}
+        />
+      </>
+    ) : null;
 
   return (
     <div className="relative flex h-full w-full flex-col bg-muted/30">
@@ -307,6 +328,8 @@ export default function IssueAttachmentsView({
                 onCanvasStateChange={handleCanvasStateChange}
                 overlayRef={annotationOverlayRef}
                 overlayContent={annotateOverlay}
+                pointerPanEnabled={pointerPanEnabled}
+                scrollPanEnabled={scrollPanEnabled}
               />
 
             </motion.div>

@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import type { CanvasViewState } from "@/features/issues/types";
+import { cn } from "@/lib/utils";
 
 interface ImageCanvasProps {
   src: string;
@@ -14,6 +15,8 @@ interface ImageCanvasProps {
   onImageLoad?: (dimensions: { width: number; height: number }) => void;
   overlayRef?: React.RefObject<HTMLDivElement | null>;
   overlayContent?: React.ReactNode;
+  pointerPanEnabled?: boolean;
+  scrollPanEnabled?: boolean;
 }
 
 export function ImageCanvas({
@@ -26,7 +29,9 @@ export function ImageCanvas({
   onPanChange,
   onImageLoad,
   overlayRef,
-  overlayContent
+  overlayContent,
+  pointerPanEnabled = true,
+  scrollPanEnabled = true,
 }: ImageCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -102,17 +107,35 @@ export function ImageCanvas({
   };
 
   // Mouse wheel zoom
-  const handleWheel = useCallback((event: WheelEvent) => {
-    event.preventDefault();
-    
-    const delta = event.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.max(0.1, Math.min(5, zoomLevel * delta));
-    
-    onZoomChange(newZoom);
-  }, [zoomLevel, onZoomChange]);
+  const handleWheel = useCallback(
+    (event: WheelEvent) => {
+      if (event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+        const delta = event.deltaY > 0 ? 0.9 : 1.1;
+        const newZoom = Math.max(0.1, Math.min(5, zoomLevel * delta));
+        onZoomChange(newZoom);
+        return;
+      }
+
+      if (!scrollPanEnabled) {
+        return;
+      }
+
+      event.preventDefault();
+      const deltaModeFactor = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : 1;
+      const deltaX = event.shiftKey ? event.deltaY : event.deltaX;
+      const deltaY = event.shiftKey ? 0 : event.deltaY;
+      onPanChange({
+        x: panOffset.x - deltaX * deltaModeFactor,
+        y: panOffset.y - deltaY * deltaModeFactor,
+      });
+    },
+    [onZoomChange, panOffset.x, panOffset.y, scrollPanEnabled, zoomLevel],
+  );
 
   // Mouse drag pan
   const handleMouseDown = (event: React.MouseEvent) => {
+    if (!pointerPanEnabled) return;
     if (event.button !== 0) return; // Only left mouse button
     
     setIsDragging(true);
@@ -137,6 +160,7 @@ export function ImageCanvas({
 
   // Touch events for mobile
   const handleTouchStart = (event: React.TouchEvent) => {
+    if (!pointerPanEnabled) return;
     if (event.touches.length === 1) {
       const touch = event.touches[0];
       setIsDragging(true);
@@ -216,7 +240,10 @@ export function ImageCanvas({
   return (
     <div
       ref={containerRef}
-      className="h-full w-full overflow-hidden cursor-grab active:cursor-grabbing"
+      className={cn(
+        "h-full w-full overflow-hidden",
+        pointerPanEnabled ? "cursor-grab active:cursor-grabbing" : "cursor-crosshair",
+      )}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
     >

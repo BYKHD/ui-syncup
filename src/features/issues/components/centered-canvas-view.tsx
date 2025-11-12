@@ -12,6 +12,8 @@ interface CenteredCanvasViewProps {
   onCanvasStateChange: (updates: Partial<CanvasViewState>) => void;
   overlayContent?: ReactNode;
   overlayRef?: RefObject<HTMLDivElement | null>;
+  pointerPanEnabled?: boolean;
+  scrollPanEnabled?: boolean;
 }
 
 export function CenteredCanvasView({
@@ -19,7 +21,9 @@ export function CenteredCanvasView({
   canvasState,
   onCanvasStateChange,
   overlayContent,
-  overlayRef
+  overlayRef,
+  pointerPanEnabled = true,
+  scrollPanEnabled = true,
 }: CenteredCanvasViewProps) {
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | undefined>();
 
@@ -83,6 +87,8 @@ export function CenteredCanvasView({
                 onImageLoad={setImageDimensions}
                 overlayRef={overlayRef}
                 overlayContent={overlayContent}
+                pointerPanEnabled={pointerPanEnabled}
+                scrollPanEnabled={scrollPanEnabled}
               />
             )}
           </div>
@@ -112,7 +118,11 @@ export function CenteredCanvasView({
         <div className="absolute top-4 left-4 z-10">
           <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-md px-3 py-1.5 text-xs text-muted-foreground border flex items-center gap-2">
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-            <span>Drag pins to reposition annotations</span>
+            <span>
+              {pointerPanEnabled
+                ? 'Drag to pan · Scroll to zoom'
+                : 'Scroll to pan · Hold Space for Hand tool'}
+            </span>
           </div>
         </div>
       )}

@@ -54,3 +54,16 @@ export interface AnnotationHistoryEntry {
   label: string;
   timestamp: number;
 }
+
+export type AnnotationShape =
+  | { type: 'pin'; position: AnnotationPosition }
+  | { type: 'box'; start: AnnotationPosition; end: AnnotationPosition }
+  | { type: 'arrow'; start: AnnotationPosition; end: AnnotationPosition }
+  | { type: 'highlight'; points: AnnotationPosition[] };
+
+export interface AnnotationDraft {
+  id: string;
+  tool: AnnotationToolId;
+  shape: AnnotationShape;
+  createdAt: number;
+}

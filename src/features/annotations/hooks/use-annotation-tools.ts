@@ -49,6 +49,7 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
   const [editModeEnabled, setEditModeEnabled] = useState<boolean>(initialEditMode);
   const [history, setHistory] = useState<AnnotationHistoryEntry[]>([]);
   const [redoStack, setRedoStack] = useState<AnnotationHistoryEntry[]>([]);
+  const [handToolActive, setHandToolActive] = useState<boolean>(false);
 
   const tools = ANNOTATION_TOOL_IDS;
   const canUndo = history.length > 0;
@@ -102,6 +103,19 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
   useEffect(() => {
     if (!enableKeyboardShortcuts) return;
 
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === ' ') {
+        setHandToolActive(false);
+      }
+    };
+
+    window.addEventListener('keyup', handleKeyUp);
+    return () => window.removeEventListener('keyup', handleKeyUp);
+  }, [enableKeyboardShortcuts]);
+
+  useEffect(() => {
+    if (!enableKeyboardShortcuts) return;
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isInputLikeElement(event.target)) return;
       const key = event.key.toLowerCase();
@@ -129,6 +143,12 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
         return;
       }
 
+      if (key === ' ' && editModeEnabled) {
+        event.preventDefault();
+        setHandToolActive(true);
+        return;
+      }
+
       if (!editModeEnabled) return;
 
       const nextTool = tools.find((tool) => TOOL_SHORTCUTS[tool].includes(key));
@@ -142,6 +162,12 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [enableKeyboardShortcuts, editModeEnabled, redo, selectTool, toggleEditMode, tools, undo]);
 
+  useEffect(() => {
+    if (!editModeEnabled) {
+      setHandToolActive(false);
+    }
+  }, [editModeEnabled]);
+
   return {
     tools,
     shortcuts,
@@ -151,6 +177,7 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
     canRedo,
     history,
     redoStack,
+    handToolActive,
     selectTool,
     toggleEditMode,
     undo,
