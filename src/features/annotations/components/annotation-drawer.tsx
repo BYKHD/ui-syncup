@@ -317,11 +317,6 @@ export function AnnotationDrawer({
   return (
     <div className={cn('absolute inset-0 z-30', enabled ? 'pointer-events-none' : 'pointer-events-none')}>
       {draftPreview}
-      {enabled && (
-        <div className="pointer-events-none absolute bottom-4 left-1/2 z-30 -translate-x-1/2 rounded-full border border-border/80 bg-background/95 px-4 py-2 text-xs font-medium text-muted-foreground shadow-sm">
-          Scroll to pan · Hold Space for Hand tool · Esc to cancel draft
-        </div>
-      )}
     </div>
   );
 }

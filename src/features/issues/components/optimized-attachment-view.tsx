@@ -304,11 +304,6 @@ export default function IssueAttachmentsView({
               onUndo={undoAnnotationHistory}
               onRedo={redoAnnotationHistory}
             />
-            {!annotationEditModeEnabled && (
-              <div className="pointer-events-auto rounded-2xl border border-dashed border-border/70 bg-card/95 px-4 py-2 text-xs text-muted-foreground shadow-sm">
-                Edit mode is off. Press <span className="font-semibold">E</span> to start annotating.
-              </div>
-            )}
           </div>
         )}
         <AnimatePresence mode="wait">

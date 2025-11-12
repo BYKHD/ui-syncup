@@ -59,13 +59,30 @@ export function AnnotationToolbar({
 }: AnnotationToolbarProps) {
   return (
     <TooltipProvider delayDuration={200}>
-      <div className={cn('inline-flex items-center gap-2', className)}>
-        {/* Edit Mode Toggle - Separate Container */}
-        <div
-          className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/95 p-1 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80"
-          role="toolbar"
-          aria-label="Edit mode toggle"
-        >
+      <div className={cn('inline-flex flex-col items-center gap-3', className)}>
+        {/* Keyboard Shortcuts Hint - Show when edit mode is on */}
+        <AnimatePresence mode="wait">
+          {!editModeEnabled && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, x: -10 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.95, x: -10 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="rounded-2xl border border-dashed border-border/70 bg-card/95 px-4 py-2 text-xs text-muted-foreground shadow-sm"
+            >
+              Edit mode is off. Press <span className="font-semibold">E</span> to start annotating.
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Toolbar Controls */}
+        <div className="inline-flex items-center gap-2">
+          {/* Edit Mode Toggle - Separate Container */}
+          <div
+            className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/95 p-1 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80"
+            role="toolbar"
+            aria-label="Edit mode toggle"
+          >
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -197,6 +214,7 @@ export function AnnotationToolbar({
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
     </TooltipProvider>
   );
