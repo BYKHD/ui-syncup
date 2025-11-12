@@ -31,8 +31,10 @@ import type {
   IssuePermissions,
   ActivityEntry,
   IssueAttachment,
-  AttachmentAnnotation,
+  IssueUser,
 } from "@/features/issues/types";
+import type { AnnotationThread } from "@/features/annotations";
+import { mapAttachmentsToAnnotationThreads } from "@/features/annotations";
 
 // Motion configuration constants
 const motionPresets = {
@@ -47,24 +49,7 @@ const performanceProps = {
   layoutId: undefined as string | undefined,
 };
 
-type AnnotationThread = AttachmentAnnotation & {
-  attachmentName?: string;
-  attachmentVariant?: IssueAttachment["reviewVariant"];
-  attachmentPreview?: string | null;
-};
-
-const mapAttachmentsToAnnotations = (
-  sources: IssueAttachment[]
-): AnnotationThread[] => {
-  return sources.flatMap((attachment) =>
-    (attachment.annotations ?? []).map((annotation) => ({
-      ...annotation,
-      attachmentName: attachment.fileName,
-      attachmentVariant: attachment.reviewVariant,
-      attachmentPreview: attachment.thumbnailUrl ?? attachment.url,
-    }))
-  );
-};
+type IssueAnnotationThread = AnnotationThread<IssueUser>;
 
 // Lazy load heavy components for better performance
 const IssueAttachmentView = lazy(() => import("./optimized-attachment-view"));
@@ -121,8 +106,8 @@ export default function ResponsiveIssueLayout({
   onToggleShortcutsHelp,
   shortcuts = [],
 }: ResponsiveIssueLayoutProps) {
-  const annotationSeed = useMemo(
-    () => mapAttachmentsToAnnotations(attachments),
+  const annotationSeed = useMemo<IssueAnnotationThread[]>(
+    () => mapAttachmentsToAnnotationThreads<IssueUser>(attachments),
     [attachments]
   );
   const isMobile = useIsMobile();
@@ -140,7 +125,7 @@ export default function ResponsiveIssueLayout({
     return width < 992;
   });
   const [annotationThreads, setAnnotationThreads] =
-    useState<AnnotationThread[]>(annotationSeed);
+    useState<IssueAnnotationThread[]>(annotationSeed);
   const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(
     annotationSeed[0]?.id ?? null
   );

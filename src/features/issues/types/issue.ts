@@ -1,5 +1,10 @@
 import { ISSUE_PRIORITY_VALUES, ISSUE_TYPE_VALUES } from '@/config/issue-options'
 import { ISSUE_STATUS_VALUES, ISSUE_WORKFLOW } from '@/config/workflow'
+import type {
+  AnnotationStatus as BaseAnnotationStatus,
+  AnnotationComment as BaseAnnotationComment,
+  AttachmentAnnotation as BaseAttachmentAnnotation,
+} from '@/features/annotations'
 
 // ============================================================================
 // ISSUE DOMAIN ENUMS
@@ -26,28 +31,9 @@ export interface IssueUser {
 
 export type AttachmentReviewVariant = 'as_is' | 'to_be' | 'reference'
 
-export type AnnotationStatus = 'open' | 'in_review' | 'resolved'
-
-export interface AnnotationComment {
-  id: string
-  annotationId: string
-  author: IssueUser
-  message: string
-  createdAt: string
-}
-
-export interface AttachmentAnnotation {
-  id: string
-  attachmentId: string
-  label: string
-  description?: string
-  status: AnnotationStatus
-  x: number // relative position (0 - 1)
-  y: number // relative position (0 - 1)
-  author: IssueUser
-  createdAt: string
-  comments?: AnnotationComment[]
-}
+export type AnnotationStatus = BaseAnnotationStatus
+export type AnnotationComment = BaseAnnotationComment<IssueUser>
+export type AttachmentAnnotation = BaseAttachmentAnnotation<IssueUser>
 
 export interface IssueAttachment {
   id: string
