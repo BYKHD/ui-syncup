@@ -2,7 +2,7 @@
 // ANNOTATION DOMAIN TYPES
 // ============================================================================
 
-export type AnnotationStatus = 'open' | 'in_review' | 'resolved';
+
 
 export interface AnnotationAuthor {
   id: string;
@@ -29,22 +29,17 @@ export interface AttachmentAnnotation<A extends AnnotationAuthor = AnnotationAut
   attachmentId: string;
   label: string;
   description?: string;
-  status: AnnotationStatus;
   x: number;
   y: number;
   author: A;
   createdAt: string;
   comments?: AnnotationComment<A>[];
+  shape?: AnnotationShape; // Optional shape metadata for rendering different annotation types
 }
 
-export interface AnnotationThreadMeta {
-  attachmentName?: string;
-  attachmentVariant?: string | null;
-  attachmentPreview?: string | null;
-}
 
 export type AnnotationThread<A extends AnnotationAuthor = AnnotationAuthor> =
-  AttachmentAnnotation<A> & AnnotationThreadMeta;
+  AttachmentAnnotation<A>;
 
 export const ANNOTATION_TOOL_IDS = ['pin', 'box', 'arrow'] as const;
 export type AnnotationToolId = (typeof ANNOTATION_TOOL_IDS)[number];

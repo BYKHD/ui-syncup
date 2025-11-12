@@ -11,7 +11,6 @@ const TOOL_SHORTCUTS: Record<AnnotationToolId, string[]> = {
   pin: ['1', 'p'],
   box: ['2', 'b'],
   arrow: ['3', 'a'],
-  highlight: ['4', 'h'],
 };
 
 const isInputLikeElement = (target: EventTarget | null): target is HTMLElement => {

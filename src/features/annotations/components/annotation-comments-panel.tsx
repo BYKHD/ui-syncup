@@ -9,22 +9,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type { AnnotationThread } from '../types';
 
-const annotationStatusTokens = {
-  open: {
-    label: 'Open',
-    className: 'bg-destructive/10 text-destructive border border-destructive/30',
-  },
-  in_review: {
-    label: 'In Review',
-    className:
-      'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-200',
-  },
-  resolved: {
-    label: 'Resolved',
-    className:
-      'bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-200',
-  },
-} satisfies Record<string, { label: string; className: string }>;
 
 export interface AnnotationCommentsPanelProps<A extends AnnotationThread = AnnotationThread> {
   annotations?: A[];
@@ -80,7 +64,6 @@ export function AnnotationCommentsPanel<A extends AnnotationThread>({
         <div className="space-y-3 p-6">
           {annotations.map((annotation) => {
             const isActive = annotation.id === resolvedActiveId;
-            const statusStyles = annotationStatusTokens[annotation.status] ?? annotationStatusTokens.open;
 
             return (
               <button
@@ -92,24 +75,8 @@ export function AnnotationCommentsPanel<A extends AnnotationThread>({
                   isActive ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/50',
                 )}
               >
-                <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                <div className="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-muted-foreground">
                   <span>Annotation {annotation.label}</span>
-                  <span
-                    className={cn(
-                      'rounded-full px-3 py-1 text-[10px] font-semibold capitalize',
-                      statusStyles.className,
-                    )}
-                  >
-                    {statusStyles.label}
-                  </span>
-                </div>
-                <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                  {annotation.attachmentVariant && (
-                    <Badge variant="outline" className="uppercase">
-                      {annotation.attachmentVariant.replace('_', ' ')}
-                    </Badge>
-                  )}
-                  {annotation.attachmentName && <span>{annotation.attachmentName}</span>}
                 </div>
                 <p className="mt-3 text-sm font-medium text-foreground">
                   {annotation.description || 'Unknown annotation detail'}

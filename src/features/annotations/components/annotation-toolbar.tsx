@@ -9,21 +9,15 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import {
-  MapPin,
-  Square,
-  ArrowUpRight,
-  Undo2,
-  Redo2,
-  Pencil,
-} from 'lucide-react';
+import { RemixiconComponentType, RiArrowGoBackLine, RiArrowGoForwardLine, RiArrowRightUpLine, RiMapPin3Line, RiPencilFill, RiPencilLine, RiSquareLine } from '@remixicon/react';
+
 import type { LucideIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
-const TOOL_ICONS: Record<AnnotationToolId, LucideIcon> = {
-  pin: MapPin,
-  box: Square,
-  arrow: ArrowUpRight,
+const TOOL_ICONS: Record<AnnotationToolId, RemixiconComponentType> = {
+  pin: RiMapPin3Line,
+  box: RiSquareLine,
+  arrow: RiArrowRightUpLine,
 };
 
 const TOOL_META: Record<AnnotationToolId, { label: string; shortcut: string }> = {
@@ -97,7 +91,7 @@ export function AnnotationToolbar({
                 aria-label="Toggle edit mode"
                 aria-pressed={editModeEnabled}
               >
-                <Pencil className="h-4 w-4" />
+                {editModeEnabled ? <RiPencilFill className="h-4 w-4" /> : <RiPencilLine className="h-4 w-4" /> }
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
@@ -176,7 +170,7 @@ export function AnnotationToolbar({
                       onClick={onUndo}
                       aria-label="Undo last change"
                     >
-                      <Undo2 className="h-4 w-4" />
+                      <RiArrowGoBackLine className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
@@ -202,7 +196,7 @@ export function AnnotationToolbar({
                       onClick={onRedo}
                       aria-label="Redo last change"
                     >
-                      <Redo2 className="h-4 w-4" />
+                      <RiArrowGoForwardLine className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">

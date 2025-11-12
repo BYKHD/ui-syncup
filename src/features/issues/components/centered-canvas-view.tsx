@@ -51,7 +51,7 @@ export function CenteredCanvasView({
   };
 
   return (
-    <div className="relative h-full w-full flex flex-col">
+    <div className="relative h-full w-full flex flex-col select-none">
       {/* Main canvas area - takes up most of the space */}
       <div className="flex-1 relative overflow-hidden">
         {/* Layered canvas structure for future annotation support */}
