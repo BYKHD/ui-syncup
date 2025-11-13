@@ -11,5 +11,8 @@ export type {
   AnnotationDraft,
   AnnotationActionType,
   AnnotationSnapshot,
+  AnnotationSaveStatus,
+  AnnotationSaveState,
+  AnnotationSaveOperation,
 } from './annotation';
-export { ANNOTATION_TOOL_IDS } from './annotation';
+export { ANNOTATION_TOOL_IDS, ANNOTATION_SAVE_STATUS } from './annotation';

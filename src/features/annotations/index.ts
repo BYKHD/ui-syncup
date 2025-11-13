@@ -51,3 +51,5 @@ export { useAnnotationDrafts, draftToAnnotation } from './hooks/use-annotation-d
 export type { UseAnnotationDraftsOptions, UseAnnotationDraftsReturn } from './hooks/use-annotation-drafts';
 export { useAnnotationsWithHistory } from './hooks/use-annotations-with-history';
 export type { UseAnnotationsWithHistoryOptions } from './hooks/use-annotations-with-history';
+export { useAnnotationSave } from './hooks/use-annotation-save';
+export type { UseAnnotationSaveOptions, UseAnnotationSaveReturn } from './hooks/use-annotation-save';

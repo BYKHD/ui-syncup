@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode, type RefObject } from "react";
 import type { IssueAttachment, CanvasViewState } from "@/features/issues/types";
+import type { AnnotationSaveStatus } from "@/features/annotations/types";
 import { CanvasStateIndicator } from "./canvas-state-indicator";
 import { ImageCanvas } from "./image-canvas";
 import { VideoPlayer } from "./video-player";
@@ -15,6 +16,8 @@ interface CenteredCanvasViewProps {
   overlayRef?: RefObject<HTMLDivElement | null>;
   pointerPanEnabled?: boolean;
   scrollPanEnabled?: boolean;
+  saveStatus?: AnnotationSaveStatus;
+  saveError?: string;
 }
 
 export function CenteredCanvasView({
@@ -25,6 +28,8 @@ export function CenteredCanvasView({
   overlayRef,
   pointerPanEnabled = true,
   scrollPanEnabled = true,
+  saveStatus,
+  saveError,
 }: CenteredCanvasViewProps) {
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | undefined>();
 
@@ -116,7 +121,11 @@ export function CenteredCanvasView({
 
       {/* State indicator */}
       {attachment.fileType.startsWith('image/') && overlayContent && (
-        <CanvasStateIndicator pointerPanEnabled={pointerPanEnabled} />
+        <CanvasStateIndicator
+          pointerPanEnabled={pointerPanEnabled}
+          saveStatus={saveStatus}
+          saveError={saveError}
+        />
       )}
     </div>
   );

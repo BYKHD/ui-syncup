@@ -78,3 +78,22 @@ export interface AnnotationHistoryEntry {
   snapshot: AnnotationSnapshot;
   previousSnapshot?: AnnotationSnapshot; // For move/resize operations
 }
+
+// ============================================================================
+// ANNOTATION SAVE STATE TYPES
+// ============================================================================
+
+export const ANNOTATION_SAVE_STATUS = ['idle', 'saving', 'success', 'error'] as const;
+export type AnnotationSaveStatus = (typeof ANNOTATION_SAVE_STATUS)[number];
+
+export interface AnnotationSaveState {
+  status: AnnotationSaveStatus;
+  error?: string;
+  lastSavedAt?: number;
+}
+
+export interface AnnotationSaveOperation {
+  type: 'create' | 'update' | 'delete';
+  annotationId: string;
+  attachmentId: string;
+}

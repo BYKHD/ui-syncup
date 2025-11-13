@@ -17,6 +17,7 @@ import {
   AnnotationCanvas,
   useAnnotationTools,
   useAnnotationDrafts,
+  useAnnotationSave,
   draftToAnnotation,
   createHistoryEntry,
   createSnapshot,
@@ -49,6 +50,7 @@ interface IssueAttachmentsViewProps {
 
 
 export default function IssueAttachmentsView({
+  issueId,
   attachments,
   isLoading = false,
   error = null,
@@ -152,14 +154,25 @@ export default function IssueAttachmentsView({
     onRedo: handleAnnotationRedo,  // ← NOW CONNECTED!
   });
 
+  // Save state management for annotation persistence
+  const { saveState, saveAnnotationPosition: saveAnnotationAPI, createNewAnnotation, isSaving } = useAnnotationSave({
+    onSaveSuccess: (annotation) => {
+      console.info('✅ Annotation saved successfully:', annotation);
+      // TODO: Update local annotation state or refetch from parent
+    },
+    onSaveError: (error) => {
+      console.error('❌ Failed to save annotation:', error);
+      // Error state is already tracked in saveState, will show in indicator
+    },
+  });
+
   // Draft management for new annotations
   const { createDraft, updateDraft, commitDraft, cancelDraft } = useAnnotationDrafts({
-    onCommit: (draft, message) => {
+    onCommit: async (draft, message) => {
       // Generate incremental numeric label (1, 2, 3, etc.)
       const nextLabel = String(currentAnnotations.length + 1);
 
-      // Log the annotation (ready to wire to API)
-      console.info('📝 New annotation created:', {
+      console.info('📝 Creating new annotation:', {
         draft,
         message,
         label: nextLabel,
@@ -169,9 +182,16 @@ export default function IssueAttachmentsView({
       // Record in history
       recordAnnotationHistory('create', draft.id, draft.shape);
 
-      // TODO: Wire to API
-      // const annotation = draftToAnnotation(draft, selectedAttachment.id, currentUser, nextLabel, message);
-      // await createAnnotationMutation(annotation);
+      // Save to mock API
+      if (selectedAttachment) {
+        await createNewAnnotation({
+          issueId,
+          attachmentId: selectedAttachment.id,
+          shape: draft.shape,
+          label: nextLabel,
+          description: message,
+        });
+      }
     },
   });
   const isAnnotationView = viewMode === 'annotate';
@@ -264,7 +284,7 @@ export default function IssueAttachmentsView({
 
   // Callback when pin drag completes
   const handleAnnotationMoveComplete = useCallback(
-    (annotationId: string, finalPosition: AnnotationPosition) => {
+    async (annotationId: string, finalPosition: AnnotationPosition) => {
       if (!annotationDragState.current || !annotationEditModeEnabled) return;
 
       const { initialShape } = annotationDragState.current;
@@ -277,12 +297,22 @@ export default function IssueAttachmentsView({
         const newSnapshot = createSnapshot(annotationId, finalShape);
         const historyEntry = createHistoryEntry('move', annotationId, newSnapshot, previousSnapshot);
         pushAnnotationHistory(historyEntry);
+
+        // Save to API
+        if (selectedAttachment) {
+          await saveAnnotationAPI({
+            issueId,
+            attachmentId: selectedAttachment.id,
+            annotationId,
+            shape: finalShape,
+          });
+        }
       }
 
       // Clear drag state
       annotationDragState.current = null;
     },
-    [annotationEditModeEnabled, pushAnnotationHistory]
+    [annotationEditModeEnabled, pushAnnotationHistory, selectedAttachment, issueId, saveAnnotationAPI]
   );
 
   // Handler for box annotation movements (move/resize)
@@ -321,7 +351,7 @@ export default function IssueAttachmentsView({
 
   // Callback when box drag/resize completes
   const handleBoxAnnotationMoveComplete = useCallback(
-    (annotationId: string, finalStart: AnnotationPosition, finalEnd: AnnotationPosition) => {
+    async (annotationId: string, finalStart: AnnotationPosition, finalEnd: AnnotationPosition) => {
       if (!annotationDragState.current || !annotationEditModeEnabled) return;
 
       const { initialShape } = annotationDragState.current;
@@ -334,12 +364,22 @@ export default function IssueAttachmentsView({
         const newSnapshot = createSnapshot(annotationId, finalShape);
         const historyEntry = createHistoryEntry('resize', annotationId, newSnapshot, previousSnapshot);
         pushAnnotationHistory(historyEntry);
+
+        // Save to API
+        if (selectedAttachment) {
+          await saveAnnotationAPI({
+            issueId,
+            attachmentId: selectedAttachment.id,
+            annotationId,
+            shape: finalShape,
+          });
+        }
       }
 
       // Clear drag state
       annotationDragState.current = null;
     },
-    [annotationEditModeEnabled, pushAnnotationHistory]
+    [annotationEditModeEnabled, pushAnnotationHistory, selectedAttachment, issueId, saveAnnotationAPI]
   );
 
   // Error state
@@ -515,6 +555,8 @@ export default function IssueAttachmentsView({
                 overlayContent={annotateOverlay}
                 pointerPanEnabled={pointerPanEnabled}
                 scrollPanEnabled={scrollPanEnabled}
+                saveStatus={saveState.status}
+                saveError={saveState.error}
               />
 
             </motion.div>
