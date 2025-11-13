@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { motion, AnimatePresence, useDragControls, PanInfo } from 'motion/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageSquare, Pin } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -11,29 +12,35 @@ export interface AnnotationCommentsPanelProps<A extends AnnotationThread = Annot
   annotations?: A[];
   activeAnnotationId?: string | null;
   onAnnotationSelect?: (annotationId: string) => void;
+  isMobile?: boolean;
 }
 
 export function AnnotationCommentsPanel<A extends AnnotationThread>({
   annotations = [],
   activeAnnotationId,
   onAnnotationSelect,
+  isMobile = false,
 }: AnnotationCommentsPanelProps<A>) {
   const hasExternalControl = typeof onAnnotationSelect === 'function';
-  const [localActiveId, setLocalActiveId] = useState<string | null>(annotations[0]?.id ?? null);
+  const [localActiveId, setLocalActiveId] = useState<string | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [prevThreadId, setPrevThreadId] = useState<string | null>(null);
+  const dragControls = useDragControls();
+  const sheetRef = useRef<HTMLDivElement>(null);
 
+  const resolvedActiveId = hasExternalControl ? activeAnnotationId : localActiveId;
+  const selectedThread = annotations.find((a) => a.id === resolvedActiveId) ?? null;
+
+  // Auto-open sheet when annotation is selected
   useEffect(() => {
-    if (!annotations.length) {
-      setLocalActiveId(null);
-      return;
+    if (resolvedActiveId && !isSheetOpen) {
+      setIsSheetOpen(true);
+      setPrevThreadId(resolvedActiveId);
+    } else if (resolvedActiveId && isSheetOpen && resolvedActiveId !== prevThreadId) {
+      // Thread changed while sheet is open - trigger swap animation
+      setPrevThreadId(resolvedActiveId);
     }
-    if (!localActiveId) {
-      setLocalActiveId(annotations[0].id);
-    }
-  }, [annotations, localActiveId]);
-
-  const resolvedActiveId = hasExternalControl
-    ? activeAnnotationId ?? annotations[0]?.id ?? null
-    : localActiveId ?? annotations[0]?.id ?? null;
+  }, [resolvedActiveId, isSheetOpen, prevThreadId]);
 
   const handleSelect = (annotationId: string) => {
     if (hasExternalControl) {
@@ -42,6 +49,26 @@ export function AnnotationCommentsPanel<A extends AnnotationThread>({
       setLocalActiveId(annotationId);
     }
   };
+
+  const handleClose = useCallback(() => {
+    setIsSheetOpen(false);
+    // Clear selection when sheet closes
+    if (hasExternalControl) {
+      onAnnotationSelect?.(null as any);
+    } else {
+      setLocalActiveId(null);
+    }
+  }, [hasExternalControl, onAnnotationSelect]);
+
+  const handleDragEnd = useCallback(
+    (event: any, info: PanInfo) => {
+      const threshold = isMobile ? 100 : 80;
+      if (info.offset.y > threshold) {
+        handleClose();
+      }
+    },
+    [isMobile, handleClose]
+  );
 
   if (!annotations.length) {
     return (
@@ -57,12 +84,10 @@ export function AnnotationCommentsPanel<A extends AnnotationThread>({
     );
   }
 
-  const selectedThread = annotations.find((a) => a.id === resolvedActiveId) ?? null;
-
   return (
-    <div className="flex h-full flex-col md:flex-row">
-      {/* Annotation List - Left side on desktop, top on mobile */}
-      <div className="flex flex-col border-b md:w-80 md:border-b-0 md:border-r">
+    <div className="relative flex h-full flex-col">
+      {/* Full-width Annotation List */}
+      <div className="flex h-full flex-col">
         <div className="border-b p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <MessageSquare className="h-4 w-4" />
@@ -119,10 +144,68 @@ export function AnnotationCommentsPanel<A extends AnnotationThread>({
         </ScrollArea>
       </div>
 
-      {/* Thread Preview - Right side on desktop, bottom on mobile */}
-      <div className="flex-1 min-h-0">
-        <AnnotationThreadPreview thread={selectedThread} />
-      </div>
+      {/* Bottom Sheet with Thread Preview */}
+      <AnimatePresence mode="wait">
+        {isSheetOpen && selectedThread && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className={cn(
+                'absolute inset-0 bg-black/40 z-40',
+                isMobile ? 'fixed' : 'absolute'
+              )}
+              onClick={handleClose}
+              aria-hidden="true"
+            />
+
+            {/* Sheet Container */}
+            <motion.div
+              ref={sheetRef}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{
+                type: 'spring',
+                damping: 30,
+                stiffness: 300,
+              }}
+              drag={isMobile ? 'y' : false}
+              dragControls={dragControls}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.2 }}
+              onDragEnd={handleDragEnd}
+              className={cn(
+                'z-50 flex flex-col bg-background shadow-lg rounded-t-2xl border-t',
+                isMobile
+                  ? 'fixed inset-x-0 bottom-0 h-[85vh] max-h-[85vh]'
+                  : 'absolute inset-x-0 bottom-0 h-[70vh] max-h-[70vh]'
+              )}
+              style={{ touchAction: 'none' }}
+            >
+              {/* Card swap animation wrapper */}
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={selectedThread.id}
+                  initial={{ x: '100%', opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: '-100%', opacity: 0 }}
+                  transition={{
+                    duration: 0.3,
+                    ease: 'easeInOut',
+                  }}
+                  className="flex h-full flex-col"
+                >
+                  <AnnotationThreadPreview thread={selectedThread} onClose={handleClose} />
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

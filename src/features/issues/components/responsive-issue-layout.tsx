@@ -414,6 +414,7 @@ export default function ResponsiveIssueLayout({
                     annotations={annotationThreads}
                     activeAnnotationId={activeAnnotationId}
                     onAnnotationSelect={handleAnnotationSelect}
+                    isMobile={isMobile}
                   />
                 </Suspense>
               </motion.div>
@@ -559,6 +560,7 @@ export default function ResponsiveIssueLayout({
             onAnnotationSelect={handleAnnotationSelect}
             isPanelCollapsed={isPanelCollapsed}
             onPanelToggle={() => setIsPanelCollapsed(!isPanelCollapsed)}
+            isMobile={isMobile}
           />
         </Suspense>
       </motion.div>

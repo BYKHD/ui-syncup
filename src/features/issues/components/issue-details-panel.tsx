@@ -43,6 +43,7 @@ interface IssueDetailsPanelProps {
   onAnnotationSelect?: (annotationId: string) => void;
   isPanelCollapsed?: boolean;
   onPanelToggle?: () => void;
+  isMobile?: boolean;
 }
 
 export default function IssueDetailsPanel({
@@ -67,6 +68,7 @@ export default function IssueDetailsPanel({
   onAnnotationSelect,
   isPanelCollapsed,
   onPanelToggle,
+  isMobile = false,
 }: IssueDetailsPanelProps) {
   const [panelTab, setPanelTab] = useState<DetailsPanelTab>('general');
   
@@ -133,13 +135,13 @@ export default function IssueDetailsPanel({
           <TabsContent
             value="comments"
             className="flex flex-1 min-h-0 data-[state=inactive]:hidden focus-visible:outline-none"
-          ><ScrollArea className="flex-1 overflow-auto">
+          >
             <AnnotationCommentsPanel
               annotations={annotations}
               activeAnnotationId={activeAnnotationId}
               onAnnotationSelect={onAnnotationSelect}
+              isMobile={isMobile}
             />
-            </ScrollArea>
           </TabsContent>
         </Tabs>
       </div>

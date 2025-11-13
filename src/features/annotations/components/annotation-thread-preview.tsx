@@ -4,12 +4,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, Send } from 'lucide-react';
+import { MessageSquare, Send, X } from 'lucide-react';
 import type { AnnotationThread, AnnotationComment, AnnotationAuthor } from '../types';
 import { formatDistanceToNow } from 'date-fns';
 
 export interface AnnotationThreadPreviewProps<T extends AnnotationAuthor = AnnotationAuthor> {
-  thread: AnnotationThread<T> | null;
+  thread: AnnotationThread<T>;
+  onClose: () => void;
   onCommentSubmit?: (threadId: string, message: string) => void;
 }
 
@@ -51,39 +52,45 @@ function CommentCard<T extends AnnotationAuthor = AnnotationAuthor>({ comment }:
   );
 }
 
-export function AnnotationThreadPreview<T extends AnnotationAuthor = AnnotationAuthor>({ thread, onCommentSubmit }: AnnotationThreadPreviewProps<T>) {
-  // Empty state - no thread selected
-  if (!thread) {
-    return (
-      <div className="flex h-full items-center justify-center p-6">
-        <div className="text-center space-y-2">
-          <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">Select a thread to view comments</p>
-        </div>
-      </div>
-    );
-  }
-
+export function AnnotationThreadPreview<T extends AnnotationAuthor = AnnotationAuthor>({ thread, onClose, onCommentSubmit }: AnnotationThreadPreviewProps<T>) {
   const comments = thread.comments || [];
   const hasComments = comments.length > 0;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-background">
+      {/* Drag Handle */}
+      <div className="flex items-center justify-center pt-2 pb-1">
+        <div className="h-1 w-12 rounded-full bg-muted-foreground/30" />
+      </div>
+
       {/* Thread Header */}
-      <div className="border-b p-4 space-y-1">
-        <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full border border-primary bg-primary/10 text-xs font-semibold text-primary">
-            {thread.label}
+      <div className="border-b px-4 py-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary bg-primary/10 text-xs font-semibold text-primary">
+                {thread.label}
+              </div>
+              <h3 className="text-sm font-semibold text-foreground line-clamp-1">
+                {thread.description || 'Annotation thread'}
+              </h3>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <MessageSquare className="h-3.5 w-3.5" />
+              <span>
+                {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
+              </span>
+            </div>
           </div>
-          <h3 className="text-sm font-semibold text-foreground">
-            {thread.description || 'Annotation thread'}
-          </h3>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <MessageSquare className="h-3.5 w-3.5" />
-          <span>
-            {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
-          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={onClose}
+            aria-label="Close thread preview"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
