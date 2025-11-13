@@ -8,9 +8,9 @@ import {
 const HISTORY_LIMIT = 50;
 
 const TOOL_SHORTCUTS: Record<AnnotationToolId, string[]> = {
-  pin: ['1', 'p'],
-  box: ['2', 'b'],
-  arrow: ['3', 'a'],
+  cursor: ['1', 'c'],
+  pin: ['2', 'p'],
+  box: ['3', 'b'],
 };
 
 const isInputLikeElement = (target: EventTarget | null): target is HTMLElement => {
@@ -39,7 +39,7 @@ export interface AnnotationToolShortcut {
 
 export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
   const {
-    initialTool = 'pin',
+    initialTool = 'cursor',
     initialEditMode = false,
     enableKeyboardShortcuts = true,
   } = options;

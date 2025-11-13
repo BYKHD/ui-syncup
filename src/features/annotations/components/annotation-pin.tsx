@@ -2,8 +2,11 @@
 
 import { motion } from 'motion/react';
 import type { PointerEvent, RefObject } from 'react';
+import { useRef } from 'react';
 import type { AttachmentAnnotation, AnnotationPosition } from '../types';
 import { cn } from '@/lib/utils';
+
+const PIN_DRAG_THRESHOLD_PX = 4;
 
 export interface AnnotationPinProps<A extends AttachmentAnnotation = AttachmentAnnotation> {
   annotation: A;
@@ -22,18 +25,35 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   onSelect,
   onMove,
 }: AnnotationPinProps<A>) {
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const isDraggingRef = useRef(false);
+
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     if (!interactive) return;
     event.stopPropagation();
     event.preventDefault();
     onSelect?.(annotation.id);
     event.currentTarget.setPointerCapture(event.pointerId);
+    dragStartRef.current = { x: event.clientX, y: event.clientY };
+    isDraggingRef.current = false;
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
     if (!interactive) return;
     if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
       return;
+    }
+
+    const startPoint = dragStartRef.current;
+    if (!startPoint) return;
+    const deltaX = event.clientX - startPoint.x;
+    const deltaY = event.clientY - startPoint.y;
+    const distanceSquared = deltaX * deltaX + deltaY * deltaY;
+    if (!isDraggingRef.current) {
+      if (distanceSquared < PIN_DRAG_THRESHOLD_PX * PIN_DRAG_THRESHOLD_PX) {
+        return;
+      }
+      isDraggingRef.current = true;
     }
 
     event.preventDefault();
@@ -52,6 +72,8 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
+    dragStartRef.current = null;
+    isDraggingRef.current = false;
   };
 
   return (

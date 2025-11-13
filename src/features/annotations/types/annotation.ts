@@ -45,7 +45,7 @@ export interface AnnotationThreadMeta {
 export type AnnotationThread<A extends AnnotationAuthor = AnnotationAuthor> =
   AttachmentAnnotation<A> & AnnotationThreadMeta;
 
-export const ANNOTATION_TOOL_IDS = ['pin', 'box', 'arrow'] as const;
+export const ANNOTATION_TOOL_IDS = ['cursor','pin', 'box'] as const;
 export type AnnotationToolId = (typeof ANNOTATION_TOOL_IDS)[number];
 
 export interface AnnotationHistoryEntry {
@@ -56,8 +56,7 @@ export interface AnnotationHistoryEntry {
 
 export type AnnotationShape =
   | { type: 'pin'; position: AnnotationPosition }
-  | { type: 'box'; start: AnnotationPosition; end: AnnotationPosition }
-  | { type: 'arrow'; start: AnnotationPosition; end: AnnotationPosition };
+  | { type: 'box'; start: AnnotationPosition; end: AnnotationPosition };
 
 export interface AnnotationDraft {
   id: string;

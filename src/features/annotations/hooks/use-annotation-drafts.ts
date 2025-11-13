@@ -108,10 +108,6 @@ export function draftToAnnotation(
     // Use center of box for x, y
     x = (draft.shape.start.x + draft.shape.end.x) / 2;
     y = (draft.shape.start.y + draft.shape.end.y) / 2;
-  } else if (draft.shape.type === 'arrow') {
-    // Use start position for x, y
-    x = draft.shape.start.x;
-    y = draft.shape.start.y;
   }
 
   // Create initial comment if message is provided

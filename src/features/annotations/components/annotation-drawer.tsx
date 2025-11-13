@@ -14,7 +14,7 @@ interface AnnotationDrawerProps {
 
 type DrawingState =
   | {
-      tool: 'box' | 'arrow';
+      tool: 'box';
       start: AnnotationPosition;
       current: AnnotationPosition;
     }
@@ -69,10 +69,7 @@ export function AnnotationDrawer({
         if (shape.tool === 'highlight') {
           return { type: 'highlight', points: shape.points };
         }
-        if (shape.tool === 'box') {
-          return { type: 'box', start: shape.start, end: shape.current };
-        }
-        return { type: 'arrow', start: shape.start, end: shape.current };
+        return { type: 'box', start: shape.start, end: shape.current };
       };
       onDraftCommit?.({
         id,
@@ -146,10 +143,7 @@ export function AnnotationDrawer({
       onDraftChange?.({
         id,
         tool: activeTool,
-        shape:
-          activeTool === 'box'
-            ? { type: 'box', start: position, end: position }
-            : { type: 'arrow', start: position, end: position },
+        shape: { type: 'box', start: position, end: position },
         createdAt: Date.now(),
       });
     },
@@ -180,10 +174,7 @@ export function AnnotationDrawer({
         onDraftChange?.({
           id: currentDraftId,
           tool: prev.tool,
-          shape:
-            prev.tool === 'box'
-              ? { type: 'box', start: prev.start, end: position }
-              : { type: 'arrow', start: prev.start, end: position },
+          shape: { type: 'box', start: prev.start, end: position },
           createdAt: Date.now(),
         });
         return updatedState;
@@ -271,46 +262,16 @@ export function AnnotationDrawer({
     const width = Math.abs(current.x - start.x) * 100;
     const height = Math.abs(current.y - start.y) * 100;
 
-    if (drawingState.tool === 'box') {
-      return (
-        <div
-          className="absolute z-30 border-2 border-dashed border-primary/70 bg-primary/10 pointer-events-none"
-          style={{
-            left: `${left}%`,
-            top: `${top}%`,
-            width: `${width}%`,
-            height: `${height}%`,
-          }}
-        />
-      );
-    }
-
     return (
-      <svg className="absolute inset-0 z-30 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <defs>
-          <marker
-            id="annotation-arrowhead"
-            markerWidth="4"
-            markerHeight="4"
-            refX="2"
-            refY="2"
-            orient="auto"
-            markerUnits="strokeWidth"
-          >
-            <path d="M0,0 L4,2 L0,4 z" fill="hsl(var(--primary))" />
-          </marker>
-        </defs>
-        <line
-          x1={start.x * 100}
-          y1={start.y * 100}
-          x2={current.x * 100}
-          y2={current.y * 100}
-          stroke="hsl(var(--primary))"
-          strokeWidth={1.5}
-          markerEnd="url(#annotation-arrowhead)"
-          className="drop-shadow-[0_0_6px_hsl(var(--primary)_/_0.35)]"
-        />
-      </svg>
+      <div
+        className="absolute z-30 border-2 border-dashed border-primary/70 bg-primary/10 pointer-events-none"
+        style={{
+          left: `${left}%`,
+          top: `${top}%`,
+          width: `${width}%`,
+          height: `${height}%`,
+        }}
+      />
     );
   }, [drawingState, overlayRef]);
 

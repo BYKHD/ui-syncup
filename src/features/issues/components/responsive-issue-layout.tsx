@@ -33,7 +33,7 @@ import type {
   IssueAttachment,
   IssueUser,
 } from "@/features/issues/types";
-import type { AnnotationThread } from "@/features/annotations";
+import type { AnnotationPosition, AnnotationThread } from "@/features/annotations";
 import { mapAttachmentsToAnnotationThreads } from "@/features/annotations";
 
 // Motion configuration constants
@@ -231,6 +231,24 @@ export default function ResponsiveIssueLayout({
     []
   );
 
+  const handleBoxAnnotationMove = useCallback(
+    (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => {
+      setAnnotationThreads((prev) =>
+        prev.map((annotation) =>
+          annotation.id === annotationId
+            ? {
+                ...annotation,
+                shape: { type: "box", start, end },
+                x: (start.x + end.x) / 2,
+                y: (start.y + end.y) / 2,
+              }
+            : annotation
+        )
+      );
+    },
+    []
+  );
+
   const handleBackToIssues = () => {
     window.location.href = "/issues";
   };
@@ -345,6 +363,7 @@ export default function ResponsiveIssueLayout({
                     activeAnnotationId={activeAnnotationId}
                     onAnnotationSelect={handleAnnotationSelect}
                     onAnnotationMove={handleAnnotationMove}
+                    onBoxAnnotationMove={handleBoxAnnotationMove}
                   />
                 </Suspense>
               </motion.div>
@@ -485,6 +504,7 @@ export default function ResponsiveIssueLayout({
             activeAnnotationId={activeAnnotationId}
             onAnnotationSelect={handleAnnotationSelect}
             onAnnotationMove={handleAnnotationMove}
+            onBoxAnnotationMove={handleBoxAnnotationMove}
           />
         </Suspense>
         

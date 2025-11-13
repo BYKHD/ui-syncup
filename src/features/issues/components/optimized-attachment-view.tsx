@@ -42,6 +42,7 @@ interface IssueAttachmentsViewProps {
   activeAnnotationId?: string | null;
   onAnnotationSelect?: (annotationId: string) => void;
   onAnnotationMove?: (annotationId: string, position: AnnotationPosition) => void;
+  onBoxAnnotationMove?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
 }
 
 
@@ -54,6 +55,7 @@ export default function IssueAttachmentsView({
   activeAnnotationId = null,
   onAnnotationSelect,
   onAnnotationMove,
+  onBoxAnnotationMove,
 }: IssueAttachmentsViewProps) {
   const imageAttachments = useMemo(
     () => attachments.filter((att) => att.fileType.startsWith('image/')),
@@ -99,8 +101,8 @@ export default function IssueAttachmentsView({
   // Draft management for new annotations
   const { createDraft, updateDraft, commitDraft, cancelDraft } = useAnnotationDrafts({
     onCommit: (draft, message) => {
-      // Generate label (A, B, C, etc.)
-      const nextLabel = String.fromCharCode(65 + currentAnnotations.length);
+      // Generate incremental numeric label (1, 2, 3, etc.)
+      const nextLabel = String(currentAnnotations.length + 1);
 
       // Log the annotation (ready to wire to API)
       console.info('📝 New annotation created:', {
@@ -181,6 +183,25 @@ export default function IssueAttachmentsView({
       onAnnotationMove?.(annotationId, payload);
     },
     [annotationEditModeEnabled, onAnnotationMove, recordAnnotationHistory]
+  );
+
+  // Handler for box annotation movements (move/resize)
+  const handleBoxAnnotationMove = useCallback(
+    (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => {
+      if (annotationEditModeEnabled) {
+        recordAnnotationHistory('move', annotationId);
+      }
+      // Call the parent handler with box-specific data if provided
+      if (onBoxAnnotationMove) {
+        onBoxAnnotationMove(annotationId, start, end);
+      } else {
+        // Fallback: use center point for legacy handlers
+        const centerX = (start.x + end.x) / 2;
+        const centerY = (start.y + end.y) / 2;
+        onAnnotationMove?.(annotationId, { x: centerX, y: centerY });
+      }
+    },
+    [annotationEditModeEnabled, onAnnotationMove, onBoxAnnotationMove, recordAnnotationHistory]
   );
 
   // Error state
@@ -274,6 +295,7 @@ export default function IssueAttachmentsView({
             interactive={isAnnotationInteractive}
             onSelect={handleAnnotationSelect}
             onMove={handleAnnotationMove}
+            onBoxMove={handleBoxAnnotationMove}
           />
         )}
         {isAnnotationInteractive && (
@@ -286,6 +308,7 @@ export default function IssueAttachmentsView({
             onDraftUpdate={updateDraft}
             onDraftCommit={commitDraft}
             onDraftCancel={cancelDraft}
+            requireCommentForPin={true}
             requireCommentForBox={true}
           />
         )}

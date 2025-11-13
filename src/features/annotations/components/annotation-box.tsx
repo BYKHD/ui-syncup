@@ -2,9 +2,11 @@
 
 import { motion } from 'motion/react';
 import type { PointerEvent, RefObject } from 'react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { AnnotationPosition } from '../types';
 import { cn } from '@/lib/utils';
+
+const BOX_DRAG_THRESHOLD_PX = 4;
 
 export interface BoxAnnotation {
   id: string;
@@ -33,6 +35,8 @@ export function AnnotationBox({
   onMove,
 }: AnnotationBoxProps) {
   const [activeHandle, setActiveHandle] = useState<DragHandle | null>(null);
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const isDraggingRef = useRef(false);
 
   const x1 = Math.min(annotation.start.x, annotation.end.x);
   const y1 = Math.min(annotation.start.y, annotation.end.y);
@@ -93,6 +97,8 @@ export function AnnotationBox({
       event.preventDefault();
       onSelect?.(annotation.id);
       setActiveHandle(handle);
+      dragStartRef.current = { x: event.clientX, y: event.clientY };
+      isDraggingRef.current = false;
       event.currentTarget.setPointerCapture(event.pointerId);
     },
     [interactive, onSelect, annotation.id],
@@ -104,6 +110,18 @@ export function AnnotationBox({
       if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
 
       event.preventDefault();
+      const startPoint = dragStartRef.current;
+      if (!startPoint) return;
+      const deltaX = event.clientX - startPoint.x;
+      const deltaY = event.clientY - startPoint.y;
+      const distanceSquared = deltaX * deltaX + deltaY * deltaY;
+      if (!isDraggingRef.current) {
+        if (distanceSquared < BOX_DRAG_THRESHOLD_PX * BOX_DRAG_THRESHOLD_PX) {
+          return;
+        }
+        isDraggingRef.current = true;
+      }
+
       const newPosition = calculateNewPosition(event, activeHandle);
       if (newPosition && onMove) {
         onMove(annotation.id, newPosition.start, newPosition.end);
@@ -119,6 +137,8 @@ export function AnnotationBox({
         event.currentTarget.releasePointerCapture(event.pointerId);
       }
       setActiveHandle(null);
+      dragStartRef.current = null;
+      isDraggingRef.current = false;
     },
     [interactive],
   );

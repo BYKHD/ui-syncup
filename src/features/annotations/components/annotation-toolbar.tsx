@@ -9,21 +9,20 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { RemixiconComponentType, RiArrowGoBackLine, RiArrowGoForwardLine, RiArrowRightUpLine, RiMapPin3Line, RiPencilFill, RiPencilLine, RiSquareLine } from '@remixicon/react';
+import { RemixiconComponentType, RiArrowGoBackLine, RiArrowGoForwardLine, RiCursorLine, RiMapPin3Line, RiPencilFill, RiPencilLine, RiSquareLine } from '@remixicon/react';
 
-import type { LucideIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
 const TOOL_ICONS: Record<AnnotationToolId, RemixiconComponentType> = {
+  cursor: RiCursorLine,
   pin: RiMapPin3Line,
   box: RiSquareLine,
-  arrow: RiArrowRightUpLine,
 };
 
 const TOOL_META: Record<AnnotationToolId, { label: string; shortcut: string }> = {
-  pin: { label: 'Pin', shortcut: '1 or P' },
-  box: { label: 'Box', shortcut: '2 or B' },
-  arrow: { label: 'Arrow', shortcut: '3 or A' },
+  cursor: { label: 'Cursor', shortcut: '1 or C' },
+  pin: { label: 'Pin', shortcut: '2 or P' },
+  box: { label: 'Box', shortcut: '3 or B' },
 };
 
 export interface AnnotationToolbarProps {

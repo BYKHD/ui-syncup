@@ -74,11 +74,11 @@ export const createAnnotationFactory = (
 };
 
 export const MOCK_CPM101_ANNOTATIONS: AttachmentAnnotation<IssueUser>[] = [
-  // Pin annotation example
+  // Pin annotation example - specific point feedback
   {
     id: 'annot_cpm101_badge_spacing',
     attachmentId: 'att_cpm101_as_is',
-    label: 'A',
+    label: '1',
     description: 'Badge spacing is off and text is overflowing outside CTA.',
     x: 0.32,
     y: 0.41,
@@ -109,7 +109,7 @@ export const MOCK_CPM101_ANNOTATIONS: AttachmentAnnotation<IssueUser>[] = [
   {
     id: 'annot_cpm101_card_shadow',
     attachmentId: 'att_cpm101_as_is',
-    label: 'B',
+    label: '2',
     description: 'Shadow token mismatch makes the hover state look heavy.',
     x: 0.62,
     y: 0.58,
@@ -130,20 +130,19 @@ export const MOCK_CPM101_ANNOTATIONS: AttachmentAnnotation<IssueUser>[] = [
       },
     ],
   },
-  // Box annotation example - highlighting header section
+  // Pin annotation example - typography issue
   {
     id: 'annot_cpm101_typography',
     attachmentId: 'att_cpm101_as_is',
-    label: 'C',
+    label: '3',
     description: 'Typography weight does not match the spec on the header.',
     x: 0.48,
-    y: 0.25,
+    y: 0.22,
     author: MOCK_ATTACHMENT_USERS[0],
     createdAt: new Date(Date.now() - 50 * 60 * 1000).toISOString(),
     shape: {
-      type: 'box',
-      start: { x: 0.35, y: 0.15 },
-      end: { x: 0.65, y: 0.30 },
+      type: 'pin',
+      position: { x: 0.48, y: 0.22 },
     },
     comments: [
       {
@@ -155,76 +154,51 @@ export const MOCK_CPM101_ANNOTATIONS: AttachmentAnnotation<IssueUser>[] = [
       },
     ],
   },
-  // Box annotation example - extending outside image bounds (right side)
+  // Box annotation example - larger region feedback
   {
-    id: 'annot_cpm101_overflow_right',
+    id: 'annot_cpm101_content_alignment',
     attachmentId: 'att_cpm101_as_is',
-    label: 'D',
-    description: 'Content extends beyond the container on smaller viewports.',
-    x: 0.85,
-    y: 0.40,
-    author: MOCK_ATTACHMENT_USERS[1],
-    createdAt: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
-    shape: {
-      type: 'box',
-      start: { x: 0.80, y: 0.35 },
-      end: { x: 1.15, y: 0.55 }, // Extends 15% beyond right edge
-    },
-    comments: [
-      {
-        id: 'annot_cpm101_overflow_right_comment_1',
-        annotationId: 'annot_cpm101_overflow_right',
-        author: MOCK_ATTACHMENT_USERS[1],
-        message: 'This content is cut off on mobile devices. Need to add responsive container constraints.',
-        createdAt: new Date(Date.now() - 38 * 60 * 1000).toISOString(),
-      },
-    ],
-  },
-  // Box annotation example - extending outside image bounds (bottom)
-  {
-    id: 'annot_cpm101_overflow_bottom',
-    attachmentId: 'att_cpm101_as_is',
-    label: 'E',
-    description: 'Footer alignment issues when viewport height is reduced.',
+    label: '4',
+    description: 'Content section needs better vertical spacing and alignment.',
     x: 0.50,
-    y: 0.92,
-    author: MOCK_ATTACHMENT_USERS[2],
-    createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    y: 0.65,
+    author: MOCK_ATTACHMENT_USERS[1],
+    createdAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
     shape: {
       type: 'box',
-      start: { x: 0.30, y: 0.85 },
-      end: { x: 0.70, y: 1.10 }, // Extends 10% beyond bottom edge
+      start: { x: 0.25, y: 0.55 },
+      end: { x: 0.75, y: 0.80 },
     },
     comments: [
       {
-        id: 'annot_cpm101_overflow_bottom_comment_1',
-        annotationId: 'annot_cpm101_overflow_bottom',
-        author: MOCK_ATTACHMENT_USERS[2],
-        message: 'Footer gets clipped on short screens. Consider using sticky positioning.',
-        createdAt: new Date(Date.now() - 28 * 60 * 1000).toISOString(),
+        id: 'annot_cpm101_content_alignment_comment_1',
+        annotationId: 'annot_cpm101_content_alignment',
+        author: MOCK_ATTACHMENT_USERS[1],
+        message: 'The spacing between elements should be 24px according to our design tokens.',
+        createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
       },
     ],
   },
-  // Small box annotation example - highlighting an icon
+  // Box annotation example - icon sizing
   {
     id: 'annot_cpm101_icon_size',
     attachmentId: 'att_cpm101_as_is',
-    label: 'F',
+    label: '5',
     description: 'Icon size is inconsistent with design system.',
     x: 0.15,
     y: 0.20,
-    author: MOCK_ATTACHMENT_USERS[0],
+    author: MOCK_ATTACHMENT_USERS[2],
     createdAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
     shape: {
       type: 'box',
       start: { x: 0.12, y: 0.17 },
-      end: { x: 0.18, y: 0.23 }, // Small 6x6% box
+      end: { x: 0.18, y: 0.23 },
     },
     comments: [
       {
         id: 'annot_cpm101_icon_size_comment_1',
         annotationId: 'annot_cpm101_icon_size',
-        author: MOCK_ATTACHMENT_USERS[0],
+        author: MOCK_ATTACHMENT_USERS[2],
         message: 'Icons should be 24px, currently showing at 20px.',
         createdAt: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
       },
