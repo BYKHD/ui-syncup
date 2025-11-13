@@ -53,14 +53,18 @@ export function AnnotationToolbar({
   return (
     <TooltipProvider delayDuration={200}>
       <div className={cn('inline-flex flex-col items-center gap-3', className)}>
-        {/* Keyboard Shortcuts Hint - Show when edit mode is on */}
+        {/* Keyboard Shortcuts Hint - Show when edit mode is off */}
         <AnimatePresence mode="wait">
           {!editModeEnabled && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, x: -10 }}
-              animate={{ opacity: 1, scale: 1, x: 0 }}
-              exit={{ opacity: 0, scale: 0.95, x: -10 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
+              initial={{ opacity: 0, scale: 0.92, y: -8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: -8 }}
+              transition={{
+                duration: 0.3,
+                ease: [0.34, 1.56, 0.64, 1], // Spring-like easing
+                opacity: { duration: 0.25 }
+              }}
               className="rounded-2xl border border-dashed border-border/70 bg-card/95 px-4 py-2 text-xs text-muted-foreground shadow-sm"
             >
               Edit mode is off. Press <span className="font-semibold">E</span> to start annotating.
@@ -106,10 +110,14 @@ export function AnnotationToolbar({
         <AnimatePresence mode="wait">
           {editModeEnabled && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, x: -10 }}
-              animate={{ opacity: 1, scale: 1, x: 0 }}
-              exit={{ opacity: 0, scale: 0.95, x: -10 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
+              initial={{ opacity: 0, scale: 0.88, x: -12, filter: 'blur(8px)' }}
+              animate={{ opacity: 1, scale: 1, x: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, scale: 0.88, x: -12, filter: 'blur(8px)' }}
+              transition={{
+                duration: 0.35,
+                ease: [0.25, 0.46, 0.45, 0.94], // Smooth cubic-bezier easing
+                filter: { duration: 0.25 }
+              }}
               className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/95 p-1 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80"
               role="toolbar"
               aria-label="Annotation tools"
@@ -121,9 +129,13 @@ export function AnnotationToolbar({
                 return (
                   <motion.div
                     key={tool}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05, duration: 0.15 }}
+                    initial={{ opacity: 0, scale: 0.6, y: 8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{
+                      delay: index * 0.06 + 0.1,
+                      duration: 0.3,
+                      ease: [0.34, 1.56, 0.64, 1], // Spring-like easing for bounce effect
+                    }}
                   >
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -151,12 +163,27 @@ export function AnnotationToolbar({
                 );
               })}
 
-              <div className="mx-1 h-6 w-px bg-border/70" role="separator" aria-orientation="vertical" />
+              <motion.div
+                initial={{ opacity: 0, scaleX: 0 }}
+                animate={{ opacity: 1, scaleX: 1 }}
+                transition={{
+                  delay: tools.length * 0.06 + 0.1,
+                  duration: 0.2,
+                  ease: 'easeOut'
+                }}
+                className="mx-1 h-6 w-px bg-border/70"
+                role="separator"
+                aria-orientation="vertical"
+              />
 
               <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: tools.length * 0.05, duration: 0.15 }}
+                initial={{ opacity: 0, scale: 0.6, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{
+                  delay: tools.length * 0.06 + 0.15,
+                  duration: 0.3,
+                  ease: [0.34, 1.56, 0.64, 1],
+                }}
               >
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -180,9 +207,13 @@ export function AnnotationToolbar({
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: (tools.length + 1) * 0.05, duration: 0.15 }}
+                initial={{ opacity: 0, scale: 0.6, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{
+                  delay: tools.length * 0.06 + 0.21,
+                  duration: 0.3,
+                  ease: [0.34, 1.56, 0.64, 1],
+                }}
               >
                 <Tooltip>
                   <TooltipTrigger asChild>
