@@ -238,14 +238,19 @@ export default function IssueAttachmentsView({
 
   const handleAnnotationMove = useCallback(
     (annotationId: string, payload: AnnotationPosition) => {
-      // BEST PRACTICE: Only create history when drag completes, not during every move
-      // Start tracking if not already dragging
+      // Track initial state on first move of a NEW drag operation
       if (!annotationDragState.current) {
-        const annotation = currentAnnotations.find(ann => ann.id === annotationId);
-        if (annotation?.shape && annotationEditModeEnabled) {
+        // Read the most current annotation state from annotationThreads
+        // Use annotationThreads directly to avoid stale closure over currentAnnotations
+        const annotation = (annotationThreads || [])
+          .filter(ann => ann.attachmentId === selectedAttachment?.id)
+          .find(ann => ann.id === annotationId);
+
+        if (annotation && annotationEditModeEnabled) {
+          const initialShape = annotation.shape || { type: 'pin' as const, position: { x: annotation.x, y: annotation.y } };
           annotationDragState.current = {
             annotationId,
-            initialShape: { ...annotation.shape },
+            initialShape: { ...initialShape },
             isDragging: true,
           };
         }
@@ -254,20 +259,48 @@ export default function IssueAttachmentsView({
       // Always apply the move immediately (for smooth dragging)
       onAnnotationMove?.(annotationId, payload);
     },
-    [currentAnnotations, annotationEditModeEnabled, onAnnotationMove]
+    [annotationThreads, selectedAttachment?.id, annotationEditModeEnabled, onAnnotationMove]
+  );
+
+  // Callback when pin drag completes
+  const handleAnnotationMoveComplete = useCallback(
+    (annotationId: string, finalPosition: AnnotationPosition) => {
+      if (!annotationDragState.current || !annotationEditModeEnabled) return;
+
+      const { initialShape } = annotationDragState.current;
+      const finalShape: import('@/features/annotations').AnnotationShape = { type: 'pin', position: finalPosition };
+
+      // Only create history if position actually changed
+      const hasChanged = JSON.stringify(initialShape) !== JSON.stringify(finalShape);
+      if (hasChanged) {
+        const previousSnapshot = createSnapshot(annotationId, initialShape);
+        const newSnapshot = createSnapshot(annotationId, finalShape);
+        const historyEntry = createHistoryEntry('move', annotationId, newSnapshot, previousSnapshot);
+        pushAnnotationHistory(historyEntry);
+      }
+
+      // Clear drag state
+      annotationDragState.current = null;
+    },
+    [annotationEditModeEnabled, pushAnnotationHistory]
   );
 
   // Handler for box annotation movements (move/resize)
   const handleBoxAnnotationMove = useCallback(
     (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => {
-      // BEST PRACTICE: Only create history when drag completes, not during every move
-      // Start tracking if not already dragging
+      // Track initial state on first move of a NEW drag operation
       if (!annotationDragState.current) {
-        const annotation = currentAnnotations.find(ann => ann.id === annotationId);
-        if (annotation?.shape && annotationEditModeEnabled) {
+        // Read the most current annotation state from annotationThreads
+        // Use annotationThreads directly to avoid stale closure over currentAnnotations
+        const annotation = (annotationThreads || [])
+          .filter(ann => ann.attachmentId === selectedAttachment?.id)
+          .find(ann => ann.id === annotationId);
+
+        if (annotation && annotationEditModeEnabled) {
+          const initialShape = annotation.shape || { type: 'box' as const, start, end };
           annotationDragState.current = {
             annotationId,
-            initialShape: { ...annotation.shape },
+            initialShape: { ...initialShape },
             isDragging: true,
           };
         }
@@ -283,40 +316,31 @@ export default function IssueAttachmentsView({
         onAnnotationMove?.(annotationId, { x: centerX, y: centerY });
       }
     },
-    [currentAnnotations, annotationEditModeEnabled, onAnnotationMove, onBoxAnnotationMove]
+    [annotationThreads, selectedAttachment?.id, annotationEditModeEnabled, onAnnotationMove, onBoxAnnotationMove]
   );
 
-  // Detect when drag completes and create history entry
-  useEffect(() => {
-    const handlePointerUp = () => {
-      if (annotationDragState.current && annotationEditModeEnabled) {
-        const { annotationId, initialShape } = annotationDragState.current;
+  // Callback when box drag/resize completes
+  const handleBoxAnnotationMoveComplete = useCallback(
+    (annotationId: string, finalStart: AnnotationPosition, finalEnd: AnnotationPosition) => {
+      if (!annotationDragState.current || !annotationEditModeEnabled) return;
 
-        // Find current state
-        const annotation = currentAnnotations.find(ann => ann.id === annotationId);
-        if (annotation?.shape) {
-          const finalShape = annotation.shape;
+      const { initialShape } = annotationDragState.current;
+      const finalShape: import('@/features/annotations').AnnotationShape = { type: 'box', start: finalStart, end: finalEnd };
 
-          // Only create history if position actually changed
-          const hasChanged = JSON.stringify(initialShape) !== JSON.stringify(finalShape);
-          if (hasChanged) {
-            const previousSnapshot = createSnapshot(annotationId, initialShape);
-            const newSnapshot = createSnapshot(annotationId, finalShape);
-            const action = finalShape.type === 'box' ? 'resize' : 'move';
-            const historyEntry = createHistoryEntry(action, annotationId, newSnapshot, previousSnapshot);
-            pushAnnotationHistory(historyEntry);
-          }
-        }
-
-        // Clear drag state
-        annotationDragState.current = null;
+      // Only create history if position actually changed
+      const hasChanged = JSON.stringify(initialShape) !== JSON.stringify(finalShape);
+      if (hasChanged) {
+        const previousSnapshot = createSnapshot(annotationId, initialShape);
+        const newSnapshot = createSnapshot(annotationId, finalShape);
+        const historyEntry = createHistoryEntry('resize', annotationId, newSnapshot, previousSnapshot);
+        pushAnnotationHistory(historyEntry);
       }
-    };
 
-    // Listen for pointer up globally (drag might end anywhere)
-    window.addEventListener('pointerup', handlePointerUp);
-    return () => window.removeEventListener('pointerup', handlePointerUp);
-  }, [currentAnnotations, annotationEditModeEnabled, pushAnnotationHistory]);
+      // Clear drag state
+      annotationDragState.current = null;
+    },
+    [annotationEditModeEnabled, pushAnnotationHistory]
+  );
 
   // Error state
   if (error && onRetry) {
@@ -410,6 +434,8 @@ export default function IssueAttachmentsView({
             onSelect={handleAnnotationSelect}
             onMove={handleAnnotationMove}
             onBoxMove={handleBoxAnnotationMove}
+            onMoveComplete={handleAnnotationMoveComplete}
+            onBoxMoveComplete={handleBoxAnnotationMoveComplete}
           />
         )}
         {isAnnotationInteractive && (

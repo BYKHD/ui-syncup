@@ -22,6 +22,7 @@ export interface AnnotationBoxProps {
   interactive?: boolean;
   onSelect?: (annotationId: string) => void;
   onMove?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
+  onMoveComplete?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
 }
 
 type DragHandle = 'box' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -33,10 +34,12 @@ export function AnnotationBox({
   interactive = true,
   onSelect,
   onMove,
+  onMoveComplete,
 }: AnnotationBoxProps) {
   const [activeHandle, setActiveHandle] = useState<DragHandle | null>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
+  const lastPositionRef = useRef<{ start: AnnotationPosition; end: AnnotationPosition } | null>(null);
 
   const x1 = Math.min(annotation.start.x, annotation.end.x);
   const y1 = Math.min(annotation.start.y, annotation.end.y);
@@ -124,6 +127,8 @@ export function AnnotationBox({
 
       const newPosition = calculateNewPosition(event, activeHandle);
       if (newPosition && onMove) {
+        // Store last position for drag completion callback
+        lastPositionRef.current = newPosition;
         onMove(annotation.id, newPosition.start, newPosition.end);
       }
     },
@@ -136,11 +141,18 @@ export function AnnotationBox({
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
         event.currentTarget.releasePointerCapture(event.pointerId);
       }
+
+      // Notify parent when drag completes (only if actually dragged)
+      if (isDraggingRef.current && lastPositionRef.current && onMoveComplete) {
+        onMoveComplete(annotation.id, lastPositionRef.current.start, lastPositionRef.current.end);
+      }
+
       setActiveHandle(null);
       dragStartRef.current = null;
       isDraggingRef.current = false;
+      lastPositionRef.current = null;
     },
-    [interactive],
+    [interactive, onMoveComplete, annotation.id],
   );
 
   return (

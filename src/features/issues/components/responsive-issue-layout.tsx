@@ -223,7 +223,12 @@ export default function ResponsiveIssueLayout({
       setAnnotationThreads((prev) =>
         prev.map((annotation) =>
           annotation.id === annotationId
-            ? { ...annotation, x: coords.x, y: coords.y }
+            ? {
+                ...annotation,
+                x: coords.x,
+                y: coords.y,
+                shape: { type: 'pin', position: { x: coords.x, y: coords.y } },
+              }
             : annotation
         )
       );

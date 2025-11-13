@@ -43,6 +43,7 @@ Follow the [Quick Start Guide](./QUICK_START.md) for a 3-step implementation.
 ### In-Depth Guides
 - **[BEST_PRACTICES.md](./BEST_PRACTICES.md)** - ⭐ Best practices for undo/redo (read this!)
 - **[UNDO_REDO_IMPLEMENTATION.md](./UNDO_REDO_IMPLEMENTATION.md)** - Complete undo/redo architecture
+- **[STALE_CLOSURE_FIX.md](./STALE_CLOSURE_FIX.md)** - Fix for multiple consecutive moves issue
 - **[BOX_ANNOTATION_GUIDE.md](./BOX_ANNOTATION_GUIDE.md)** - Box annotation details
 - **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)** - What was implemented
 

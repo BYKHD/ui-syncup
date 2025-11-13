@@ -15,6 +15,7 @@ export interface AnnotationPinProps<A extends AttachmentAnnotation = AttachmentA
   interactive?: boolean;
   onSelect?: (annotationId: string) => void;
   onMove?: (annotationId: string, position: AnnotationPosition) => void;
+  onMoveComplete?: (annotationId: string, position: AnnotationPosition) => void;
 }
 
 export function AnnotationPin<A extends AttachmentAnnotation>({
@@ -24,9 +25,11 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   interactive = true,
   onSelect,
   onMove,
+  onMoveComplete,
 }: AnnotationPinProps<A>) {
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
+  const lastPositionRef = useRef<AnnotationPosition | null>(null);
 
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     if (!interactive) return;
@@ -64,7 +67,11 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     const y = (event.clientY - rect.top) / rect.height;
     const clampedX = Math.min(Math.max(x, 0), 1);
     const clampedY = Math.min(Math.max(y, 0), 1);
-    onMove(annotation.id, { x: clampedX, y: clampedY });
+    const position = { x: clampedX, y: clampedY };
+
+    // Store last position for drag completion callback
+    lastPositionRef.current = position;
+    onMove(annotation.id, position);
   };
 
   const handlePointerUp = (event: PointerEvent<HTMLButtonElement>) => {
@@ -72,8 +79,15 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
+
+    // Notify parent when drag completes (only if actually dragged)
+    if (isDraggingRef.current && lastPositionRef.current && onMoveComplete) {
+      onMoveComplete(annotation.id, lastPositionRef.current);
+    }
+
     dragStartRef.current = null;
     isDraggingRef.current = false;
+    lastPositionRef.current = null;
   };
 
   return (

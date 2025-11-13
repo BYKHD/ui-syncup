@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode, type RefObject } from "react";
 import type { IssueAttachment, CanvasViewState } from "@/features/issues/types";
+import { CanvasStateIndicator } from "./canvas-state-indicator";
 import { ImageCanvas } from "./image-canvas";
 import { VideoPlayer } from "./video-player";
 import { ZoomControls } from "./zoom-controls";
@@ -113,18 +114,9 @@ export function CenteredCanvasView({
         )}
       </div>
 
-      {/* Future annotation support indicator - only for images */}
+      {/* State indicator */}
       {attachment.fileType.startsWith('image/') && overlayContent && (
-        <div className="absolute top-4 left-4 z-10">
-          <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-md px-3 py-1.5 text-xs text-muted-foreground border flex items-center gap-2">
-            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-            <span>
-              {pointerPanEnabled
-                ? 'Drag to pan · Scroll to zoom'
-                : 'Scroll to pan · Hold Space for Hand tool'}
-            </span>
-          </div>
-        </div>
+        <CanvasStateIndicator pointerPanEnabled={pointerPanEnabled} />
       )}
     </div>
   );

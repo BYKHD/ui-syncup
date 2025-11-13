@@ -13,6 +13,8 @@ export interface AnnotationLayerProps<A extends AttachmentAnnotation = Attachmen
   onSelect?: (annotationId: string) => void;
   onMove?: (annotationId: string, position: AnnotationPosition) => void;
   onBoxMove?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
+  onMoveComplete?: (annotationId: string, position: AnnotationPosition) => void;
+  onBoxMoveComplete?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
 }
 
 // Extended annotation type that includes shape data
@@ -28,6 +30,8 @@ export function AnnotationLayer<A extends AttachmentAnnotation>({
   onSelect,
   onMove,
   onBoxMove,
+  onMoveComplete,
+  onBoxMoveComplete,
 }: AnnotationLayerProps<A>) {
   if (!annotations.length) {
     return null;
@@ -60,6 +64,7 @@ export function AnnotationLayer<A extends AttachmentAnnotation>({
                   interactive={interactive}
                   onSelect={onSelect}
                   onMove={onBoxMove}
+                  onMoveComplete={onBoxMoveComplete}
                 />
               );
             }
@@ -74,6 +79,7 @@ export function AnnotationLayer<A extends AttachmentAnnotation>({
                   interactive={interactive}
                   onSelect={onSelect}
                   onMove={onMove}
+                  onMoveComplete={onMoveComplete}
                 />
               );
             }
@@ -92,6 +98,7 @@ export function AnnotationLayer<A extends AttachmentAnnotation>({
               interactive={interactive}
               onSelect={onSelect}
               onMove={onMove}
+              onMoveComplete={onMoveComplete}
             />
           );
         })}
