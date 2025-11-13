@@ -8,19 +8,21 @@ import { cn } from '@/lib/utils';
 import type { AnnotationThread } from '../types';
 import { AnnotationThreadPreview } from './annotation-thread-preview';
 
-export interface AnnotationCommentsPanelProps<A extends AnnotationThread = AnnotationThread> {
+export interface AnnotationAnnotationsPanelProps<A extends AnnotationThread = AnnotationThread> {
   annotations?: A[];
   activeAnnotationId?: string | null;
   onAnnotationSelect?: (annotationId: string) => void;
   isMobile?: boolean;
+  hideThreadPreview?: boolean;
 }
 
-export function AnnotationCommentsPanel<A extends AnnotationThread>({
+export function AnnotationAnnotationsPanel<A extends AnnotationThread>({
   annotations = [],
   activeAnnotationId,
   onAnnotationSelect,
   isMobile = false,
-}: AnnotationCommentsPanelProps<A>) {
+  hideThreadPreview = false,
+}: AnnotationAnnotationsPanelProps<A>) {
   const hasExternalControl = typeof onAnnotationSelect === 'function';
   const [localActiveId, setLocalActiveId] = useState<string | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -91,7 +93,7 @@ export function AnnotationCommentsPanel<A extends AnnotationThread>({
         <div className="border-b p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <MessageSquare className="h-4 w-4" />
-            <span>Comments ({annotations.length})</span>
+            <span>Annotation ({annotations.length})</span>
           </div>
         </div>
         <ScrollArea className="flex-1 overflow-auto">
@@ -145,67 +147,55 @@ export function AnnotationCommentsPanel<A extends AnnotationThread>({
       </div>
 
       {/* Bottom Sheet with Thread Preview */}
-      <AnimatePresence mode="wait">
-        {isSheetOpen && selectedThread && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className={cn(
-                'absolute inset-0 bg-black/40 z-40',
-                isMobile ? 'fixed' : 'absolute'
-              )}
-              onClick={handleClose}
-              aria-hidden="true"
-            />
+      {!hideThreadPreview && (
+        <AnimatePresence mode="wait">
+          {isSheetOpen && selectedThread && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className={cn(
+                  'absolute inset-0 bg-black/40 z-40',
+                  isMobile ? 'fixed' : 'absolute'
+                )}
+                onClick={handleClose}
+                aria-hidden="true"
+              />
 
-            {/* Sheet Container */}
-            <motion.div
-              ref={sheetRef}
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{
-                type: 'spring',
-                damping: 30,
-                stiffness: 300,
-              }}
-              drag={isMobile ? 'y' : false}
-              dragControls={dragControls}
-              dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={{ top: 0, bottom: 0.2 }}
-              onDragEnd={handleDragEnd}
-              className={cn(
-                'z-50 flex flex-col bg-background shadow-lg rounded-t-2xl border-t',
-                isMobile
-                  ? 'fixed inset-x-0 bottom-0 h-[85vh] max-h-[85vh]'
-                  : 'absolute inset-x-0 bottom-0 h-[70vh] max-h-[70vh]'
-              )}
-              style={{ touchAction: 'none' }}
-            >
-              {/* Card swap animation wrapper */}
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={selectedThread.id}
-                  initial={{ x: '100%', opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: '-100%', opacity: 0 }}
-                  transition={{
-                    duration: 0.3,
-                    ease: 'easeInOut',
-                  }}
-                  className="flex h-full flex-col"
-                >
-                  <AnnotationThreadPreview thread={selectedThread} onClose={handleClose} />
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              {/* Sheet Container - entire sheet animates with thread change */}
+              <motion.div
+                key={selectedThread.id}
+                ref={sheetRef}
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{
+                  type: 'spring',
+                  damping: 30,
+                  stiffness: 300,
+                }}
+                drag={isMobile ? 'y' : false}
+                dragControls={dragControls}
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragElastic={{ top: 0, bottom: 0.2 }}
+                onDragEnd={handleDragEnd}
+                className={cn(
+                  'z-50 flex flex-col bg-background shadow-lg rounded-t-2xl border-t',
+                  isMobile
+                    ? 'fixed inset-x-0 bottom-0 h-[85vh] max-h-[85vh]'
+                    : 'absolute inset-x-0 bottom-0 h-[70vh] max-h-[70vh]'
+                )}
+                style={{ touchAction: 'none' }}
+              >
+                <AnnotationThreadPreview thread={selectedThread} onClose={handleClose} />
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      )}
     </div>
   );
 }

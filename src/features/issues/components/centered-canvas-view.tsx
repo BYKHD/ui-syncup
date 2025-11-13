@@ -14,6 +14,7 @@ interface CenteredCanvasViewProps {
   onCanvasStateChange: (updates: Partial<CanvasViewState>) => void;
   overlayContent?: ReactNode;
   overlayRef?: RefObject<HTMLDivElement | null>;
+  interactionLayerRef?: RefObject<HTMLDivElement | null>;
   pointerPanEnabled?: boolean;
   scrollPanEnabled?: boolean;
   saveStatus?: AnnotationSaveStatus;
@@ -26,6 +27,7 @@ export function CenteredCanvasView({
   onCanvasStateChange,
   overlayContent,
   overlayRef,
+  interactionLayerRef,
   pointerPanEnabled = true,
   scrollPanEnabled = true,
   saveStatus,
@@ -61,7 +63,7 @@ export function CenteredCanvasView({
       {/* Main canvas area - takes up most of the space */}
       <div className="flex-1 relative overflow-hidden">
         {/* Layered canvas structure for future annotation support */}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0" ref={interactionLayerRef}>
           {/* Background pattern */}
           <div
             className="absolute inset-0 z-0 opacity-70"

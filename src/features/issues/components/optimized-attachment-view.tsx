@@ -88,6 +88,7 @@ export default function IssueAttachmentsView({
   });
 
   const annotationOverlayRef = useRef<HTMLDivElement | null>(null);
+  const annotationSurfaceRef = useRef<HTMLDivElement | null>(null);
 
   // Track drag state to only create history on completion (not during drag)
   const annotationDragState = useRef<{
@@ -148,11 +149,56 @@ export default function IssueAttachmentsView({
     pushHistory: pushAnnotationHistory,
     handToolActive,
   } = useAnnotationTools({
-    initialTool: 'box',
+    initialTool: 'cursor',
     initialEditMode: false,
     onUndo: handleAnnotationUndo,  // ← NOW CONNECTED!
     onRedo: handleAnnotationRedo,  // ← NOW CONNECTED!
   });
+
+  // Reset to cursor tool when edit mode is enabled
+  useEffect(() => {
+    if (annotationEditModeEnabled) {
+      selectAnnotationTool('cursor');
+    }
+  }, [annotationEditModeEnabled, selectAnnotationTool]);
+
+  useEffect(() => {
+    if (
+      viewMode !== 'annotate' ||
+      activeAnnotationTool !== 'cursor' ||
+      !onAnnotationSelect ||
+      !activeAnnotationId
+    ) {
+      return;
+    }
+
+    const interactionNode = annotationSurfaceRef.current;
+    if (!interactionNode) return;
+
+    const handleBackgroundPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node) || !interactionNode.contains(target)) {
+        return;
+      }
+
+      if (target instanceof HTMLElement) {
+        if (
+          target.closest('[data-annotation-pin]') ||
+          target.closest('[data-annotation-box]') ||
+          target.closest('[data-annotation-comment-input]')
+        ) {
+          return;
+        }
+      }
+
+      onAnnotationSelect(null);
+    };
+
+    interactionNode.addEventListener('pointerdown', handleBackgroundPointerDown);
+    return () => {
+      interactionNode.removeEventListener('pointerdown', handleBackgroundPointerDown);
+    };
+  }, [viewMode, activeAnnotationTool, onAnnotationSelect, activeAnnotationId]);
 
   // Save state management for annotation persistence
   const { saveState, saveAnnotationPosition: saveAnnotationAPI, createNewAnnotation, isSaving } = useAnnotationSave({
@@ -552,6 +598,7 @@ export default function IssueAttachmentsView({
                 canvasState={canvasState}
                 onCanvasStateChange={handleCanvasStateChange}
                 overlayRef={annotationOverlayRef}
+                interactionLayerRef={annotationSurfaceRef}
                 overlayContent={annotateOverlay}
                 pointerPanEnabled={pointerPanEnabled}
                 scrollPanEnabled={scrollPanEnabled}

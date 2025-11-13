@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { PanelHeader } from './panel-header';
@@ -13,11 +13,11 @@ import type {
   IssueUser,
 } from '@/features/issues/types';
 import type { AnnotationThread } from '@/features/annotations';
-import { AnnotationCommentsPanel } from '@/features/annotations';
+import { AnnotationAnnotationsPanel } from '@/features/annotations';
 
 type AnnotationThreadWithMeta = AnnotationThread<IssueUser>;
 
-type DetailsPanelTab = 'general' | 'comments';
+type DetailsPanelTab = 'general' | 'annotations';
 
 interface IssueDetailsPanelProps {
   issueData: IssueDetailData;
@@ -44,6 +44,8 @@ interface IssueDetailsPanelProps {
   isPanelCollapsed?: boolean;
   onPanelToggle?: () => void;
   isMobile?: boolean;
+  onPanelTabChange?: (tab: DetailsPanelTab) => void;
+  hideThreadPreview?: boolean;
 }
 
 export default function IssueDetailsPanel({
@@ -69,8 +71,18 @@ export default function IssueDetailsPanel({
   isPanelCollapsed,
   onPanelToggle,
   isMobile = false,
+  onPanelTabChange,
+  hideThreadPreview = false,
 }: IssueDetailsPanelProps) {
   const [panelTab, setPanelTab] = useState<DetailsPanelTab>('general');
+
+  // Auto-switch to annotations tab when an annotation is selected
+  useEffect(() => {
+    if (activeAnnotationId && panelTab !== 'annotations') {
+      setPanelTab('annotations');
+      onPanelTabChange?.('annotations');
+    }
+  }, [activeAnnotationId, panelTab, onPanelTabChange]);
   
   return (
     <div 
@@ -99,7 +111,7 @@ export default function IssueDetailsPanel({
         >
           <TabsList className="h-10 w-full justify-start rounded-none border-b px-6">
             <TabsTrigger value="general" className="h-full">General</TabsTrigger>
-            <TabsTrigger value="comments" className="h-full">Comments</TabsTrigger>
+            <TabsTrigger value="annotations" className="h-full">Annotations</TabsTrigger>
           </TabsList>
 
           <TabsContent
@@ -133,14 +145,15 @@ export default function IssueDetailsPanel({
           </TabsContent>
 
           <TabsContent
-            value="comments"
+            value="annotations"
             className="flex flex-1 min-h-0 data-[state=inactive]:hidden focus-visible:outline-none"
           >
-            <AnnotationCommentsPanel
+            <AnnotationAnnotationsPanel
               annotations={annotations}
               activeAnnotationId={activeAnnotationId}
               onAnnotationSelect={onAnnotationSelect}
               isMobile={isMobile}
+              hideThreadPreview={hideThreadPreview}
             />
           </TabsContent>
         </Tabs>
