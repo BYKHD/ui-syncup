@@ -567,7 +567,7 @@ export default function IssueAttachmentsView({
 
       <div className="relative flex-1 min-h-0 overflow-hidden">
         {viewMode === 'annotate' && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-6 z-20 flex flex-col items-center gap-3 px-4">
+          <div className="pointer-events-none absolute inset-x-0 bottom-6 z-20 flex flex-col items-start gap-3 px-4">
             <AnnotationToolbar
               className="pointer-events-auto"
               activeTool={activeAnnotationTool}

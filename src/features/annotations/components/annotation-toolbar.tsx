@@ -52,25 +52,7 @@ export function AnnotationToolbar({
 }: AnnotationToolbarProps) {
   return (
     <TooltipProvider delayDuration={200}>
-      <div className={cn('inline-flex flex-col items-center gap-3', className)}>
-        {/* Keyboard Shortcuts Hint - Show when edit mode is off */}
-        <AnimatePresence mode="wait">
-          {!editModeEnabled && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92, y: -8 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.92, y: -8 }}
-              transition={{
-                duration: 0.3,
-                ease: [0.34, 1.56, 0.64, 1], // Spring-like easing
-                opacity: { duration: 0.25 }
-              }}
-              className="rounded-2xl border border-dashed border-border/70 bg-card/95 px-4 py-2 text-xs text-muted-foreground shadow-sm"
-            >
-              Edit mode is off. Press <span className="font-semibold">E</span> to start annotating.
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <div className={cn('inline-flex flex-col items-start gap-3', className)}>
 
         {/* Toolbar Controls */}
         <div className="inline-flex items-center gap-2">
@@ -105,16 +87,33 @@ export function AnnotationToolbar({
             </TooltipContent>
           </Tooltip>
         </div>
-
+        {/* Keyboard Shortcuts Hint - Show when edit mode is off */}
+        <AnimatePresence mode="wait">
+          {!editModeEnabled && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: -12, filter: 'blur(8px)' }}
+              animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, scale: 0.92, y: -12 ,filter: 'blur(8px)' }}
+              transition={{
+                duration: 0.5,
+                ease: [0.34, 1.56, 0.64, 1], // Spring-like easing
+                opacity: { duration: 0.25 }
+              }}
+              className="absolute left-18 rounded-2xl border border-dashed border-border/70 bg-card/95 px-4 py-2 text-xs text-muted-foreground shadow-sm"
+            >
+              Edit mode is off. Press <span className="font-semibold">E</span> to start annotating.
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* Annotation Tools - Show/Hide with Animation */}
         <AnimatePresence mode="wait">
           {editModeEnabled && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.88, x: -12, filter: 'blur(8px)' }}
-              animate={{ opacity: 1, scale: 1, x: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, scale: 0.88, x: -12, filter: 'blur(8px)' }}
+              initial={{ opacity: 0, scale: 0.88, y: 12, filter: 'blur(8px)' }}
+              animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, scale: 0.88, y: 12, filter: 'blur(8px)' }}
               transition={{
-                duration: 0.35,
+                duration: 0.5,
                 ease: [0.25, 0.46, 0.45, 0.94], // Smooth cubic-bezier easing
                 filter: { duration: 0.25 }
               }}

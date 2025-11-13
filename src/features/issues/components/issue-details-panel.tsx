@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { PanelHeader } from './panel-header';
@@ -75,14 +75,40 @@ export default function IssueDetailsPanel({
   hideThreadPreview = false,
 }: IssueDetailsPanelProps) {
   const [panelTab, setPanelTab] = useState<DetailsPanelTab>('general');
+  const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(true);
+  const prevAnnotationId = useRef<string | null>(null);
 
-  // Auto-switch to annotations tab when an annotation is selected
+  // Auto-switch to annotations tab when an annotation is selected, but let users stay on General
   useEffect(() => {
-    if (activeAnnotationId && panelTab !== 'annotations') {
+    if (!activeAnnotationId) {
+      prevAnnotationId.current = null;
+      setAutoSwitchEnabled(true);
+      return;
+    }
+
+    const isNewAnnotation = prevAnnotationId.current !== activeAnnotationId;
+    if (isNewAnnotation && !autoSwitchEnabled) {
+      setAutoSwitchEnabled(true);
+    }
+
+    if (autoSwitchEnabled && panelTab !== 'annotations') {
       setPanelTab('annotations');
       onPanelTabChange?.('annotations');
     }
-  }, [activeAnnotationId, panelTab, onPanelTabChange]);
+
+    prevAnnotationId.current = activeAnnotationId;
+  }, [activeAnnotationId, autoSwitchEnabled, panelTab, onPanelTabChange]);
+
+  const handleTabChange = (value: string) => {
+    const tab = value as DetailsPanelTab;
+    setPanelTab(tab);
+    if (tab === 'general') {
+      setAutoSwitchEnabled(false);
+    } else if (tab === 'annotations') {
+      setAutoSwitchEnabled(true);
+    }
+    onPanelTabChange?.(tab);
+  };
   
   return (
     <div 
@@ -106,7 +132,7 @@ export default function IssueDetailsPanel({
       <div className="flex flex-1 min-h-0 flex-col">
         <Tabs
           value={panelTab}
-          onValueChange={(value) => setPanelTab(value as DetailsPanelTab)}
+          onValueChange={handleTabChange}
           className="flex flex-1 min-h-0 flex-col gap-0"
         >
           <TabsList className="h-10 w-full justify-start rounded-none border-b px-6">
