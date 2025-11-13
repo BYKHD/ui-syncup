@@ -3,7 +3,10 @@ import {
   ANNOTATION_TOOL_IDS,
   type AnnotationHistoryEntry,
   type AnnotationToolId,
+  type AnnotationSnapshot,
+  type AnnotationActionType,
 } from '../types';
+import { createHistoryEntry, createSnapshot, addToHistory } from '../utils/history-manager';
 
 const HISTORY_LIMIT = 50;
 
@@ -30,6 +33,8 @@ export interface UseAnnotationToolsOptions {
   initialTool?: AnnotationToolId;
   initialEditMode?: boolean;
   enableKeyboardShortcuts?: boolean;
+  onUndo?: (entry: AnnotationHistoryEntry) => void;
+  onRedo?: (entry: AnnotationHistoryEntry) => void;
 }
 
 export interface AnnotationToolShortcut {
@@ -42,6 +47,8 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
     initialTool = 'cursor',
     initialEditMode = false,
     enableKeyboardShortcuts = true,
+    onUndo,
+    onRedo,
   } = options;
 
   const [activeTool, setActiveTool] = useState<AnnotationToolId>(initialTool);
@@ -63,31 +70,48 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
   }, []);
 
   const pushHistory = useCallback((entry: AnnotationHistoryEntry) => {
-    setHistory((prev) => {
-      const nextHistory = [...prev, entry].slice(-HISTORY_LIMIT);
-      return nextHistory;
-    });
+    setHistory((prev) => addToHistory(prev, entry));
     setRedoStack([]);
   }, []);
 
   const undo = useCallback(() => {
+    let entryToUndo: AnnotationHistoryEntry | null = null;
+
     setHistory((prev) => {
       if (!prev.length) return prev;
       const nextHistory = prev.slice(0, -1);
-      const popped = prev[prev.length - 1];
-      setRedoStack((future) => [popped, ...future]);
+      const entry = prev[prev.length - 1];
+      entryToUndo = entry;
+      setRedoStack((future) => [entry, ...future]);
       return nextHistory;
     });
-  }, []);
+
+    // Call onUndo after state update completes
+    if (entryToUndo) {
+      queueMicrotask(() => {
+        onUndo?.(entryToUndo!);
+      });
+    }
+  }, [onUndo]);
 
   const redo = useCallback(() => {
+    let entryToRedo: AnnotationHistoryEntry | null = null;
+
     setRedoStack((prev) => {
       if (!prev.length) return prev;
-      const [head, ...rest] = prev;
-      setHistory((hist) => [...hist, head].slice(-HISTORY_LIMIT));
+      const [entry, ...rest] = prev;
+      entryToRedo = entry;
+      setHistory((hist) => addToHistory(hist, entry));
       return rest;
     });
-  }, []);
+
+    // Call onRedo after state update completes
+    if (entryToRedo) {
+      queueMicrotask(() => {
+        onRedo?.(entryToRedo!);
+      });
+    }
+  }, [onRedo]);
 
   const resetHistory = useCallback(() => {
     setHistory([]);

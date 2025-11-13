@@ -30,14 +30,24 @@ export type {
   AnnotationHistoryEntry,
   AnnotationShape,
   AnnotationDraft,
+  AnnotationActionType,
+  AnnotationSnapshot,
 } from './types';
 export { ANNOTATION_TOOL_IDS } from './types';
 
 // Utils
 export { mapAttachmentsToAnnotationThreads } from './utils';
 export type { AnnotatedAttachment } from './utils';
+export {
+  createHistoryEntry,
+  createSnapshot,
+  addToHistory,
+  shapesAreEqual,
+} from './utils/history-manager';
 
 // Hooks
 export { useAnnotationTools } from './hooks/use-annotation-tools';
 export { useAnnotationDrafts, draftToAnnotation } from './hooks/use-annotation-drafts';
 export type { UseAnnotationDraftsOptions, UseAnnotationDraftsReturn } from './hooks/use-annotation-drafts';
+export { useAnnotationsWithHistory } from './hooks/use-annotations-with-history';
+export type { UseAnnotationsWithHistoryOptions } from './hooks/use-annotations-with-history';

@@ -9,5 +9,7 @@ export type {
   AnnotationHistoryEntry,
   AnnotationShape,
   AnnotationDraft,
+  AnnotationActionType,
+  AnnotationSnapshot,
 } from './annotation';
 export { ANNOTATION_TOOL_IDS } from './annotation';

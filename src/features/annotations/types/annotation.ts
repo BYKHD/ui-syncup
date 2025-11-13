@@ -48,12 +48,6 @@ export type AnnotationThread<A extends AnnotationAuthor = AnnotationAuthor> =
 export const ANNOTATION_TOOL_IDS = ['cursor','pin', 'box'] as const;
 export type AnnotationToolId = (typeof ANNOTATION_TOOL_IDS)[number];
 
-export interface AnnotationHistoryEntry {
-  id: string;
-  label: string;
-  timestamp: number;
-}
-
 export type AnnotationShape =
   | { type: 'pin'; position: AnnotationPosition }
   | { type: 'box'; start: AnnotationPosition; end: AnnotationPosition };
@@ -63,4 +57,24 @@ export interface AnnotationDraft {
   tool: AnnotationToolId;
   shape: AnnotationShape;
   createdAt: number;
+}
+
+// ============================================================================
+// UNDO/REDO HISTORY TYPES
+// ============================================================================
+
+export type AnnotationActionType = 'create' | 'move' | 'resize' | 'delete';
+
+export interface AnnotationSnapshot {
+  id: string;
+  shape: AnnotationShape;
+}
+
+export interface AnnotationHistoryEntry {
+  id: string;
+  action: AnnotationActionType;
+  timestamp: number;
+  annotationId: string;
+  snapshot: AnnotationSnapshot;
+  previousSnapshot?: AnnotationSnapshot; // For move/resize operations
 }
