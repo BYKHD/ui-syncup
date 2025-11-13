@@ -26,6 +26,12 @@ export const MOCK_ATTACHMENT_USERS: IssueUser[] = [
     email: 'emma@example.com',
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma',
   },
+  {
+    id: 'annot_author_4',
+    name: 'James Park',
+    email: 'james@example.com',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=James',
+  },
 ];
 
 type AnnotationFactoryOverrides = Partial<AttachmentAnnotation<IssueUser>> & {
@@ -103,6 +109,20 @@ export const MOCK_CPM101_ANNOTATIONS: AttachmentAnnotation<IssueUser>[] = [
         message: 'Copy that—will tighten spacing once we finalize type ramp.',
         createdAt: new Date(Date.now() - 75 * 60 * 1000).toISOString(),
       },
+      {
+        id: 'annot_cpm101_badge_spacing_comment_3',
+        annotationId: 'annot_cpm101_badge_spacing',
+        author: MOCK_ATTACHMENT_USERS[3],
+        message: 'Also noticed the text color contrast is a bit low. Should we bump it to meet WCAG AA?',
+        createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'annot_cpm101_badge_spacing_comment_4',
+        annotationId: 'annot_cpm101_badge_spacing',
+        author: MOCK_ATTACHMENT_USERS[1],
+        message: 'Good catch! Let\'s use the text/on-primary token instead.',
+        createdAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+      },
     ],
   },
   // Box annotation example - covering a component area
@@ -128,6 +148,20 @@ export const MOCK_CPM101_ANNOTATIONS: AttachmentAnnotation<IssueUser>[] = [
         message: 'Should use shadow/elevation-card not the modal drop shadow.',
         createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
       },
+      {
+        id: 'annot_cpm101_card_shadow_comment_2',
+        annotationId: 'annot_cpm101_card_shadow',
+        author: MOCK_ATTACHMENT_USERS[0],
+        message: 'Confirmed! The shadow is way too prominent on hover. Will update to use elevation-1.',
+        createdAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'annot_cpm101_card_shadow_comment_3',
+        annotationId: 'annot_cpm101_card_shadow',
+        author: MOCK_ATTACHMENT_USERS[2],
+        message: 'Perfect, that should fix it. Let me know when the update is ready for review.',
+        createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+      },
     ],
   },
   // Pin annotation example - typography issue
@@ -151,6 +185,13 @@ export const MOCK_CPM101_ANNOTATIONS: AttachmentAnnotation<IssueUser>[] = [
         author: MOCK_ATTACHMENT_USERS[0],
         message: 'Header should use font-weight: 600 (semibold) instead of 700 (bold).',
         createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'annot_cpm101_typography_comment_2',
+        annotationId: 'annot_cpm101_typography',
+        author: MOCK_ATTACHMENT_USERS[1],
+        message: 'Agreed, and the line-height looks a bit tight too. Should be 1.5 per our type scale.',
+        createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
       },
     ],
   },
@@ -177,9 +218,30 @@ export const MOCK_CPM101_ANNOTATIONS: AttachmentAnnotation<IssueUser>[] = [
         message: 'The spacing between elements should be 24px according to our design tokens.',
         createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
       },
+      {
+        id: 'annot_cpm101_content_alignment_comment_2',
+        annotationId: 'annot_cpm101_content_alignment',
+        author: MOCK_ATTACHMENT_USERS[3],
+        message: 'I see 16px being used instead. Let me update the component to use spacing-6 token.',
+        createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'annot_cpm101_content_alignment_comment_3',
+        annotationId: 'annot_cpm101_content_alignment',
+        author: MOCK_ATTACHMENT_USERS[2],
+        message: 'Also check the horizontal alignment—items don\'t seem centered properly.',
+        createdAt: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'annot_cpm101_content_alignment_comment_4',
+        annotationId: 'annot_cpm101_content_alignment',
+        author: MOCK_ATTACHMENT_USERS[3],
+        message: 'Will fix both spacing and alignment in the same PR. Thanks for catching that!',
+        createdAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+      },
     ],
   },
-  // Box annotation example - icon sizing
+  // Box annotation example - icon sizing (no comments yet - empty state)
   {
     id: 'annot_cpm101_icon_size',
     attachmentId: 'att_cpm101_as_is',
@@ -194,13 +256,57 @@ export const MOCK_CPM101_ANNOTATIONS: AttachmentAnnotation<IssueUser>[] = [
       start: { x: 0.12, y: 0.17 },
       end: { x: 0.18, y: 0.23 },
     },
+    comments: [],
+  },
+  // Pin annotation example - color inconsistency
+  {
+    id: 'annot_cpm101_color_mismatch',
+    attachmentId: 'att_cpm101_as_is',
+    label: '6',
+    description: 'Button color doesn\'t match brand guidelines.',
+    x: 0.68,
+    y: 0.35,
+    author: MOCK_ATTACHMENT_USERS[0],
+    createdAt: new Date(Date.now() - 120 * 60 * 1000).toISOString(),
+    shape: {
+      type: 'pin',
+      position: { x: 0.68, y: 0.35 },
+    },
     comments: [
       {
-        id: 'annot_cpm101_icon_size_comment_1',
-        annotationId: 'annot_cpm101_icon_size',
+        id: 'annot_cpm101_color_mismatch_comment_1',
+        annotationId: 'annot_cpm101_color_mismatch',
+        author: MOCK_ATTACHMENT_USERS[0],
+        message: 'Primary button should use brand-primary-500, not blue-600.',
+        createdAt: new Date(Date.now() - 115 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'annot_cpm101_color_mismatch_comment_2',
+        annotationId: 'annot_cpm101_color_mismatch',
         author: MOCK_ATTACHMENT_USERS[2],
-        message: 'Icons should be 24px, currently showing at 20px.',
-        createdAt: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
+        message: 'Looks like a leftover from the old design system. I\'ll update it.',
+        createdAt: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'annot_cpm101_color_mismatch_comment_3',
+        annotationId: 'annot_cpm101_color_mismatch',
+        author: MOCK_ATTACHMENT_USERS[0],
+        message: 'Thanks! Also check the hover and active states while you\'re at it.',
+        createdAt: new Date(Date.now() - 70 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'annot_cpm101_color_mismatch_comment_4',
+        annotationId: 'annot_cpm101_color_mismatch',
+        author: MOCK_ATTACHMENT_USERS[2],
+        message: 'Will do. Updating all button states to use the new token system.',
+        createdAt: new Date(Date.now() - 50 * 60 * 1000).toISOString(),
+      },
+      {
+        id: 'annot_cpm101_color_mismatch_comment_5',
+        annotationId: 'annot_cpm101_color_mismatch',
+        author: MOCK_ATTACHMENT_USERS[3],
+        message: 'Don\'t forget the disabled state too—needs proper opacity token.',
+        createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
       },
     ],
   },

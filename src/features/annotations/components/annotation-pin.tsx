@@ -32,10 +32,15 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   const lastPositionRef = useRef<AnnotationPosition | null>(null);
 
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
-    if (!interactive) return;
     event.stopPropagation();
     event.preventDefault();
+
+    // Always allow selection, even in non-interactive (view) mode
     onSelect?.(annotation.id);
+
+    // Only enable dragging in interactive (edit) mode
+    if (!interactive) return;
+
     event.currentTarget.setPointerCapture(event.pointerId);
     dragStartRef.current = { x: event.clientX, y: event.clientY };
     isDraggingRef.current = false;
@@ -99,7 +104,8 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
       className={cn(
         'group absolute flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-xs font-semibold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
         isActive ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background/90 text-foreground',
-        !interactive && 'opacity-80',
+        interactive ? 'cursor-move' : 'cursor-pointer',
+        !interactive && 'hover:border-primary/50',
       )}
       style={{
         left: `${annotation.x * 100}%`,

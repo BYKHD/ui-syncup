@@ -95,10 +95,15 @@ export function AnnotationBox({
 
   const handlePointerDown = useCallback(
     (event: PointerEvent<HTMLDivElement>, handle: DragHandle) => {
-      if (!interactive) return;
       event.stopPropagation();
       event.preventDefault();
+
+      // Always allow selection, even in non-interactive (view) mode
       onSelect?.(annotation.id);
+
+      // Only enable dragging/resizing in interactive (edit) mode
+      if (!interactive) return;
+
       setActiveHandle(handle);
       dragStartRef.current = { x: event.clientX, y: event.clientY };
       isDraggingRef.current = false;
@@ -175,7 +180,7 @@ export function AnnotationBox({
         className={cn(
           'absolute inset-0 border-2 transition-colors',
           isActive ? 'border-primary' : 'border-muted-foreground/50',
-          interactive && 'cursor-move hover:border-primary/80',
+          interactive ? 'cursor-move hover:border-primary/80' : 'cursor-pointer hover:border-primary/50',
         )}
         onPointerDown={(e) => handlePointerDown(e, 'box')}
         onPointerMove={handlePointerMove}
