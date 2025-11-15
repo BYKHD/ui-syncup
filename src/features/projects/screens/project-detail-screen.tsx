@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { IssuesCreateDialog } from "@/features/issues/components/issues-create-dialog";
+import { IssuesCreateDialog, type ImageData } from "@/features/issues/components/issues-create-dialog";
 import { ProjectMemberManagerDialog } from "../components/project-member-manager-dialog";
 import { ProjectSettingsDialog } from "../components/project-settings-dialog";
 import { ProjectLeaveButton } from "../components/project-leave-button";
@@ -49,6 +49,8 @@ export default function ProjectDetailScreen({
     description: "",
     type: null as IssueTypeValue,
     priority: null as IssuePriorityValue,
+    asIsImage: null as ImageData | null,
+    toBeImage: null as ImageData | null,
   });
   const [issueErrors, setIssueErrors] = useState<Record<string, string>>({});
   const [isSubmittingIssue, setIsSubmittingIssue] = useState(false);
@@ -96,6 +98,10 @@ export default function ProjectDetailScreen({
     if (!issueFormData.priority) {
       errors.priority = "Priority is required";
     }
+    // Note: Images are optional, but you can make them required by uncommenting:
+    // if (!issueFormData.asIsImage) {
+    //   errors.asIsImage = "As-is image is required";
+    // }
 
     if (Object.keys(errors).length > 0) {
       setIssueErrors(errors);
@@ -104,6 +110,7 @@ export default function ProjectDetailScreen({
 
     setIsSubmittingIssue(true);
     // TODO: wire POST /api/projects/:id/issues
+    // TODO: Upload images and annotations
     await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
     setIsSubmittingIssue(false);
     setIssueDialogOpen(false);
@@ -112,6 +119,8 @@ export default function ProjectDetailScreen({
       description: "",
       type: null,
       priority: null,
+      asIsImage: null,
+      toBeImage: null,
     });
   };
 
@@ -122,6 +131,8 @@ export default function ProjectDetailScreen({
       description: "",
       type: null,
       priority: null,
+      asIsImage: null,
+      toBeImage: null,
     });
     setIssueErrors({});
   };
@@ -304,6 +315,12 @@ export default function ProjectDetailScreen({
             }
             onPriorityChange={(value) =>
               setIssueFormData((prev) => ({ ...prev, priority: value }))
+            }
+            onAsIsImageChange={(image) =>
+              setIssueFormData((prev) => ({ ...prev, asIsImage: image }))
+            }
+            onToBeImageChange={(image) =>
+              setIssueFormData((prev) => ({ ...prev, toBeImage: image }))
             }
             onSubmit={handleIssueSubmit}
             onCancel={handleIssueCancel}
