@@ -9,6 +9,7 @@ export * from './project-activity.fixtures';
 export * from './project-invitation.fixtures';
 export * from './issue.fixtures';
 export * from './attachment.fixtures';
+export * from './annotation.fixtures';
 export * from './activity.fixtures';
 export * from './team.fixtures';
 export * from './team-member.fixtures';

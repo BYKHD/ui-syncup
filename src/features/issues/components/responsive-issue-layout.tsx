@@ -9,7 +9,7 @@ import React, {
   useCallback,
   useRef,
 } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useDragControls, PanInfo } from "motion/react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -31,8 +31,10 @@ import type {
   IssuePermissions,
   ActivityEntry,
   IssueAttachment,
-  AttachmentAnnotation,
+  IssueUser,
 } from "@/features/issues/types";
+import type { AnnotationPosition, AnnotationThread } from "@/features/annotations";
+import { mapAttachmentsToAnnotationThreads, AnnotationThreadPreview } from "@/features/annotations";
 
 // Motion configuration constants
 const motionPresets = {
@@ -47,24 +49,7 @@ const performanceProps = {
   layoutId: undefined as string | undefined,
 };
 
-type AnnotationThread = AttachmentAnnotation & {
-  attachmentName?: string;
-  attachmentVariant?: IssueAttachment["reviewVariant"];
-  attachmentPreview?: string | null;
-};
-
-const mapAttachmentsToAnnotations = (
-  sources: IssueAttachment[]
-): AnnotationThread[] => {
-  return sources.flatMap((attachment) =>
-    (attachment.annotations ?? []).map((annotation) => ({
-      ...annotation,
-      attachmentName: attachment.fileName,
-      attachmentVariant: attachment.reviewVariant,
-      attachmentPreview: attachment.thumbnailUrl ?? attachment.url,
-    }))
-  );
-};
+type IssueAnnotationThread = AnnotationThread<IssueUser>;
 
 // Lazy load heavy components for better performance
 const IssueAttachmentView = lazy(() => import("./optimized-attachment-view"));
@@ -121,8 +106,8 @@ export default function ResponsiveIssueLayout({
   onToggleShortcutsHelp,
   shortcuts = [],
 }: ResponsiveIssueLayoutProps) {
-  const annotationSeed = useMemo(
-    () => mapAttachmentsToAnnotations(attachments),
+  const annotationSeed = useMemo<IssueAnnotationThread[]>(
+    () => mapAttachmentsToAnnotationThreads<IssueUser>(attachments),
     [attachments]
   );
   const isMobile = useIsMobile();
@@ -140,10 +125,14 @@ export default function ResponsiveIssueLayout({
     return width < 992;
   });
   const [annotationThreads, setAnnotationThreads] =
-    useState<AnnotationThread[]>(annotationSeed);
+    useState<IssueAnnotationThread[]>(annotationSeed);
   const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(
-    annotationSeed[0]?.id ?? null
+    null
   );
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [prevThreadId, setPrevThreadId] = useState<string | null>(null);
+  const dragControls = useDragControls();
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   // Track previous width to detect threshold crossings
   const prevWidthRef = useRef<number>(
@@ -191,13 +180,25 @@ export default function ResponsiveIssueLayout({
 
   useEffect(() => {
     setAnnotationThreads(annotationSeed);
-    setActiveAnnotationId((prev) => {
-      if (prev && annotationSeed.some((annotation) => annotation.id === prev)) {
-        return prev;
-      }
-      return annotationSeed[0]?.id ?? null;
-    });
+    setActiveAnnotationId((prev) =>
+      prev && annotationSeed.some((annotation) => annotation.id === prev)
+        ? prev
+        : null
+    );
   }, [annotationSeed]);
+
+  // Auto-open sheet when annotation is selected (mobile only)
+  useEffect(() => {
+    if (!isMobile) return;
+
+    if (activeAnnotationId && !isSheetOpen) {
+      setIsSheetOpen(true);
+      setPrevThreadId(activeAnnotationId);
+    } else if (activeAnnotationId && isSheetOpen && activeAnnotationId !== prevThreadId) {
+      // Thread changed while sheet is open - trigger swap animation
+      setPrevThreadId(activeAnnotationId);
+    }
+  }, [activeAnnotationId, isSheetOpen, prevThreadId, isMobile]);
 
   // Handle swipe gestures for mobile tab switching
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -231,14 +232,57 @@ export default function ResponsiveIssueLayout({
 
   const handleAnnotationSelect = useCallback((annotationId: string) => {
     setActiveAnnotationId(annotationId);
+
+    // Desktop: expand panel if collapsed and switch to annotations tab
+    if (!isMobile && isPanelCollapsed) {
+      setIsPanelCollapsed(false);
+    }
+  }, [isMobile, isPanelCollapsed]);
+
+  const handleSheetClose = useCallback(() => {
+    setIsSheetOpen(false);
+    setActiveAnnotationId(null);
   }, []);
+
+  const handleDragEnd = useCallback(
+    (event: any, info: PanInfo) => {
+      const threshold = 100;
+      if (info.offset.y > threshold) {
+        handleSheetClose();
+      }
+    },
+    [handleSheetClose]
+  );
 
   const handleAnnotationMove = useCallback(
     (annotationId: string, coords: { x: number; y: number }) => {
       setAnnotationThreads((prev) =>
         prev.map((annotation) =>
           annotation.id === annotationId
-            ? { ...annotation, x: coords.x, y: coords.y }
+            ? {
+                ...annotation,
+                x: coords.x,
+                y: coords.y,
+                shape: { type: 'pin', position: { x: coords.x, y: coords.y } },
+              }
+            : annotation
+        )
+      );
+    },
+    []
+  );
+
+  const handleBoxAnnotationMove = useCallback(
+    (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => {
+      setAnnotationThreads((prev) =>
+        prev.map((annotation) =>
+          annotation.id === annotationId
+            ? {
+                ...annotation,
+                shape: { type: "box", start, end },
+                x: (start.x + end.x) / 2,
+                y: (start.y + end.y) / 2,
+              }
             : annotation
         )
       );
@@ -360,6 +404,7 @@ export default function ResponsiveIssueLayout({
                     activeAnnotationId={activeAnnotationId}
                     onAnnotationSelect={handleAnnotationSelect}
                     onAnnotationMove={handleAnnotationMove}
+                    onBoxAnnotationMove={handleBoxAnnotationMove}
                   />
                 </Suspense>
               </motion.div>
@@ -405,12 +450,58 @@ export default function ResponsiveIssueLayout({
                     annotations={annotationThreads}
                     activeAnnotationId={activeAnnotationId}
                     onAnnotationSelect={handleAnnotationSelect}
+                    isMobile={isMobile}
+                    hideThreadPreview={true}
                   />
                 </Suspense>
               </motion.div>
             )}
           </AnimatePresence>
         </Tabs>
+
+        {/* Mobile Thread Preview Sheet - Overlays at viewport level */}
+        <AnimatePresence mode="wait">
+          {isSheetOpen && activeAnnotationId && (() => {
+            const selectedThread = annotationThreads.find((a) => a.id === activeAnnotationId);
+            return selectedThread ? (
+              <>
+                {/* Backdrop */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="fixed inset-0 bg-black/40 z-40"
+                  onClick={handleSheetClose}
+                  aria-hidden="true"
+                />
+
+                {/* Sheet Container */}
+                <motion.div
+                  key={selectedThread.id}
+                  ref={sheetRef}
+                  initial={{ y: '100%' }}
+                  animate={{ y: 0 }}
+                  exit={{ y: '100%' }}
+                  transition={{
+                    type: 'spring',
+                    damping: 30,
+                    stiffness: 300,
+                  }}
+                  drag="y"
+                  dragControls={dragControls}
+                  dragConstraints={{ top: 0, bottom: 0 }}
+                  dragElastic={{ top: 0, bottom: 0.2 }}
+                  onDragEnd={handleDragEnd}
+                  className="fixed inset-x-0 bottom-0 z-50 flex flex-col bg-background shadow-lg rounded-t-2xl border-t h-[85vh] max-h-[85vh]"
+                  style={{ touchAction: 'none' }}
+                >
+                  <AnnotationThreadPreview thread={selectedThread} onClose={handleSheetClose} />
+                </motion.div>
+              </>
+            ) : null;
+          })()}
+        </AnimatePresence>
 
         {/* Keyboard shortcuts help */}
         <Dialog open={showShortcutsHelp} onOpenChange={onToggleShortcutsHelp}>
@@ -500,6 +591,7 @@ export default function ResponsiveIssueLayout({
             activeAnnotationId={activeAnnotationId}
             onAnnotationSelect={handleAnnotationSelect}
             onAnnotationMove={handleAnnotationMove}
+            onBoxAnnotationMove={handleBoxAnnotationMove}
           />
         </Suspense>
         
@@ -549,6 +641,10 @@ export default function ResponsiveIssueLayout({
             onAnnotationSelect={handleAnnotationSelect}
             isPanelCollapsed={isPanelCollapsed}
             onPanelToggle={() => setIsPanelCollapsed(!isPanelCollapsed)}
+            isMobile={isMobile}
+            onPanelTabChange={() => {
+              // Desktop auto-switch to annotations tab handled in IssueDetailsPanel useEffect
+            }}
           />
         </Suspense>
       </motion.div>

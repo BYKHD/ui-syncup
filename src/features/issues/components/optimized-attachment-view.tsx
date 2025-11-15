@@ -10,16 +10,23 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { AlertCircle, RefreshCw, FileText, Upload, PenLine, Columns2 } from 'lucide-react';
+import {
+  AnnotationLayer,
+  AnnotationToolbar,
+  AnnotationCanvas,
+  useAnnotationTools,
+  useAnnotationDrafts,
+  useAnnotationSave,
+  draftToAnnotation,
+  createHistoryEntry,
+  createSnapshot,
+} from '@/features/annotations';
+import type { AttachmentAnnotation, AnnotationPosition, AnnotationHistoryEntry } from '@/features/annotations';
 import { CenteredCanvasView } from './centered-canvas-view';
 import { ImageCanvas } from './image-canvas';
 import { ZoomControls } from './zoom-controls';
-import type {
-  IssueAttachment,
-  CanvasViewState,
-  AttachmentAnnotation,
-} from '@/features/issues/types';
+import type { IssueAttachment, CanvasViewState } from '@/features/issues/types';
 
 const VIEW_MODES = [
   { id: 'annotate', label: 'Annotate', icon: PenLine },
@@ -27,8 +34,6 @@ const VIEW_MODES = [
 ] as const;
 
 type AttachmentViewMode = (typeof VIEW_MODES)[number]['id'];
-
-type AnnotationMovePayload = { x: number; y: number };
 
 interface IssueAttachmentsViewProps {
   issueId: string;
@@ -39,11 +44,13 @@ interface IssueAttachmentsViewProps {
   annotationThreads?: AttachmentAnnotation[];
   activeAnnotationId?: string | null;
   onAnnotationSelect?: (annotationId: string) => void;
-  onAnnotationMove?: (annotationId: string, position: AnnotationMovePayload) => void;
+  onAnnotationMove?: (annotationId: string, position: AnnotationPosition) => void;
+  onBoxAnnotationMove?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
 }
 
 
 export default function IssueAttachmentsView({
+  issueId,
   attachments,
   isLoading = false,
   error = null,
@@ -52,6 +59,7 @@ export default function IssueAttachmentsView({
   activeAnnotationId = null,
   onAnnotationSelect,
   onAnnotationMove,
+  onBoxAnnotationMove,
 }: IssueAttachmentsViewProps) {
   const imageAttachments = useMemo(
     () => attachments.filter((att) => att.fileType.startsWith('image/')),
@@ -80,6 +88,162 @@ export default function IssueAttachmentsView({
   });
 
   const annotationOverlayRef = useRef<HTMLDivElement | null>(null);
+  const annotationSurfaceRef = useRef<HTMLDivElement | null>(null);
+
+  // Track drag state to only create history on completion (not during drag)
+  const annotationDragState = useRef<{
+    annotationId: string;
+    initialShape: import('@/features/annotations').AnnotationShape;
+    isDragging: boolean;
+  } | null>(null);
+
+  // Handler for undo operations
+  const handleAnnotationUndo = useCallback((entry: AnnotationHistoryEntry) => {
+    const { action, annotationId, previousSnapshot } = entry;
+
+    console.log('🔙 Undo:', action, annotationId);
+
+    // For now, just log - you need to wire this to your actual annotation state
+    // In a real implementation, you'd update the annotations via onAnnotationMove or similar
+    if (action === 'create') {
+      console.log('→ Would remove annotation:', annotationId);
+      // TODO: Call parent's onAnnotationDelete or similar
+    } else if ((action === 'move' || action === 'resize') && previousSnapshot) {
+      console.log('→ Would restore previous shape:', previousSnapshot.shape);
+      // TODO: Call onAnnotationMove or onBoxAnnotationMove with previous position
+      if (previousSnapshot.shape.type === 'pin') {
+        onAnnotationMove?.(annotationId, previousSnapshot.shape.position);
+      } else if (previousSnapshot.shape.type === 'box') {
+        onBoxAnnotationMove?.(annotationId, previousSnapshot.shape.start, previousSnapshot.shape.end);
+      }
+    }
+  }, [onAnnotationMove, onBoxAnnotationMove]);
+
+  // Handler for redo operations
+  const handleAnnotationRedo = useCallback((entry: AnnotationHistoryEntry) => {
+    const { action, annotationId, snapshot } = entry;
+
+    console.log('🔜 Redo:', action, annotationId);
+
+    if ((action === 'move' || action === 'resize') && snapshot) {
+      console.log('→ Would restore new shape:', snapshot.shape);
+      // TODO: Call onAnnotationMove or onBoxAnnotationMove with new position
+      if (snapshot.shape.type === 'pin') {
+        onAnnotationMove?.(annotationId, snapshot.shape.position);
+      } else if (snapshot.shape.type === 'box') {
+        onBoxAnnotationMove?.(annotationId, snapshot.shape.start, snapshot.shape.end);
+      }
+    }
+  }, [onAnnotationMove, onBoxAnnotationMove]);
+
+  const {
+    tools: annotationToolbarTools,
+    activeTool: activeAnnotationTool,
+    editModeEnabled: annotationEditModeEnabled,
+    canUndo: annotationCanUndo,
+    canRedo: annotationCanRedo,
+    selectTool: selectAnnotationTool,
+    toggleEditMode: toggleAnnotationEditMode,
+    undo: undoAnnotationHistory,
+    redo: redoAnnotationHistory,
+    pushHistory: pushAnnotationHistory,
+    handToolActive,
+  } = useAnnotationTools({
+    initialTool: 'cursor',
+    initialEditMode: false,
+    onUndo: handleAnnotationUndo,  // ← NOW CONNECTED!
+    onRedo: handleAnnotationRedo,  // ← NOW CONNECTED!
+  });
+
+  // Reset to cursor tool when edit mode is enabled
+  useEffect(() => {
+    if (annotationEditModeEnabled) {
+      selectAnnotationTool('cursor');
+    }
+  }, [annotationEditModeEnabled, selectAnnotationTool]);
+
+  useEffect(() => {
+    if (
+      viewMode !== 'annotate' ||
+      activeAnnotationTool !== 'cursor' ||
+      !onAnnotationSelect ||
+      !activeAnnotationId
+    ) {
+      return;
+    }
+
+    const interactionNode = annotationSurfaceRef.current;
+    if (!interactionNode) return;
+
+    const handleBackgroundPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node) || !interactionNode.contains(target)) {
+        return;
+      }
+
+      if (target instanceof HTMLElement) {
+        if (
+          target.closest('[data-annotation-pin]') ||
+          target.closest('[data-annotation-box]') ||
+          target.closest('[data-annotation-comment-input]')
+        ) {
+          return;
+        }
+      }
+
+      onAnnotationSelect(null);
+    };
+
+    interactionNode.addEventListener('pointerdown', handleBackgroundPointerDown);
+    return () => {
+      interactionNode.removeEventListener('pointerdown', handleBackgroundPointerDown);
+    };
+  }, [viewMode, activeAnnotationTool, onAnnotationSelect, activeAnnotationId]);
+
+  // Save state management for annotation persistence
+  const { saveState, saveAnnotationPosition: saveAnnotationAPI, createNewAnnotation, isSaving } = useAnnotationSave({
+    onSaveSuccess: (annotation) => {
+      console.info('✅ Annotation saved successfully:', annotation);
+      // TODO: Update local annotation state or refetch from parent
+    },
+    onSaveError: (error) => {
+      console.error('❌ Failed to save annotation:', error);
+      // Error state is already tracked in saveState, will show in indicator
+    },
+  });
+
+  // Draft management for new annotations
+  const { createDraft, updateDraft, commitDraft, cancelDraft } = useAnnotationDrafts({
+    onCommit: async (draft, message) => {
+      // Generate incremental numeric label (1, 2, 3, etc.)
+      const nextLabel = String(currentAnnotations.length + 1);
+
+      console.info('📝 Creating new annotation:', {
+        draft,
+        message,
+        label: nextLabel,
+        attachmentId: selectedAttachment?.id,
+      });
+
+      // Record in history
+      recordAnnotationHistory('create', draft.id, draft.shape);
+
+      // Save to mock API
+      if (selectedAttachment) {
+        await createNewAnnotation({
+          issueId,
+          attachmentId: selectedAttachment.id,
+          shape: draft.shape,
+          label: nextLabel,
+          description: message,
+        });
+      }
+    },
+  });
+  const isAnnotationView = viewMode === 'annotate';
+  const isAnnotationInteractive = annotationEditModeEnabled && isAnnotationView;
+  const pointerPanEnabled = !isAnnotationView || !annotationEditModeEnabled || handToolActive;
+  const scrollPanEnabled = isAnnotationView;
 
   useEffect(() => {
     if (!imageAttachments.length) return;
@@ -105,6 +269,25 @@ export default function IssueAttachmentsView({
       ),
     [annotationThreads, selectedAttachment]
   );
+  const recordAnnotationHistory = useCallback(
+    (action: 'create' | 'move' | 'resize' | 'delete', annotationId: string, shape?: any) => {
+      // Simplified history tracking - for demo purposes only
+      // In a real implementation, you should track actual snapshots
+      if (!shape) return;
+
+      pushAnnotationHistory({
+        id: `${action}_${annotationId}_${Date.now()}`,
+        action,
+        timestamp: Date.now(),
+        annotationId,
+        snapshot: {
+          id: annotationId,
+          shape,
+        },
+      });
+    },
+    [pushAnnotationHistory]
+  );
 
   const handleCanvasStateChange = useCallback((updates: Partial<CanvasViewState>) => {
     setCanvasState((prev) => ({ ...prev, ...updates }));
@@ -113,16 +296,136 @@ export default function IssueAttachmentsView({
   const handleAnnotationSelect = useCallback(
     (annotationId: string) => {
       setViewMode('annotate');
+      // Note: Select isn't tracked in history - only create/move/resize/delete
       onAnnotationSelect?.(annotationId);
     },
     [onAnnotationSelect]
   );
 
   const handleAnnotationMove = useCallback(
-    (annotationId: string, payload: AnnotationMovePayload) => {
+    (annotationId: string, payload: AnnotationPosition) => {
+      // Track initial state on first move of a NEW drag operation
+      if (!annotationDragState.current) {
+        // Read the most current annotation state from annotationThreads
+        // Use annotationThreads directly to avoid stale closure over currentAnnotations
+        const annotation = (annotationThreads || [])
+          .filter(ann => ann.attachmentId === selectedAttachment?.id)
+          .find(ann => ann.id === annotationId);
+
+        if (annotation && annotationEditModeEnabled) {
+          const initialShape = annotation.shape || { type: 'pin' as const, position: { x: annotation.x, y: annotation.y } };
+          annotationDragState.current = {
+            annotationId,
+            initialShape: { ...initialShape },
+            isDragging: true,
+          };
+        }
+      }
+
+      // Always apply the move immediately (for smooth dragging)
       onAnnotationMove?.(annotationId, payload);
     },
-    [onAnnotationMove]
+    [annotationThreads, selectedAttachment?.id, annotationEditModeEnabled, onAnnotationMove]
+  );
+
+  // Callback when pin drag completes
+  const handleAnnotationMoveComplete = useCallback(
+    async (annotationId: string, finalPosition: AnnotationPosition) => {
+      if (!annotationDragState.current || !annotationEditModeEnabled) return;
+
+      const { initialShape } = annotationDragState.current;
+      const finalShape: import('@/features/annotations').AnnotationShape = { type: 'pin', position: finalPosition };
+
+      // Only create history if position actually changed
+      const hasChanged = JSON.stringify(initialShape) !== JSON.stringify(finalShape);
+      if (hasChanged) {
+        const previousSnapshot = createSnapshot(annotationId, initialShape);
+        const newSnapshot = createSnapshot(annotationId, finalShape);
+        const historyEntry = createHistoryEntry('move', annotationId, newSnapshot, previousSnapshot);
+        pushAnnotationHistory(historyEntry);
+
+        // Save to API
+        if (selectedAttachment) {
+          await saveAnnotationAPI({
+            issueId,
+            attachmentId: selectedAttachment.id,
+            annotationId,
+            shape: finalShape,
+          });
+        }
+      }
+
+      // Clear drag state
+      annotationDragState.current = null;
+    },
+    [annotationEditModeEnabled, pushAnnotationHistory, selectedAttachment, issueId, saveAnnotationAPI]
+  );
+
+  // Handler for box annotation movements (move/resize)
+  const handleBoxAnnotationMove = useCallback(
+    (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => {
+      // Track initial state on first move of a NEW drag operation
+      if (!annotationDragState.current) {
+        // Read the most current annotation state from annotationThreads
+        // Use annotationThreads directly to avoid stale closure over currentAnnotations
+        const annotation = (annotationThreads || [])
+          .filter(ann => ann.attachmentId === selectedAttachment?.id)
+          .find(ann => ann.id === annotationId);
+
+        if (annotation && annotationEditModeEnabled) {
+          const initialShape = annotation.shape || { type: 'box' as const, start, end };
+          annotationDragState.current = {
+            annotationId,
+            initialShape: { ...initialShape },
+            isDragging: true,
+          };
+        }
+      }
+
+      // Always apply the move/resize immediately (for smooth dragging)
+      if (onBoxAnnotationMove) {
+        onBoxAnnotationMove(annotationId, start, end);
+      } else {
+        // Fallback: use center point for legacy handlers
+        const centerX = (start.x + end.x) / 2;
+        const centerY = (start.y + end.y) / 2;
+        onAnnotationMove?.(annotationId, { x: centerX, y: centerY });
+      }
+    },
+    [annotationThreads, selectedAttachment?.id, annotationEditModeEnabled, onAnnotationMove, onBoxAnnotationMove]
+  );
+
+  // Callback when box drag/resize completes
+  const handleBoxAnnotationMoveComplete = useCallback(
+    async (annotationId: string, finalStart: AnnotationPosition, finalEnd: AnnotationPosition) => {
+      if (!annotationDragState.current || !annotationEditModeEnabled) return;
+
+      const { initialShape } = annotationDragState.current;
+      const finalShape: import('@/features/annotations').AnnotationShape = { type: 'box', start: finalStart, end: finalEnd };
+
+      // Only create history if position actually changed
+      const hasChanged = JSON.stringify(initialShape) !== JSON.stringify(finalShape);
+      if (hasChanged) {
+        const previousSnapshot = createSnapshot(annotationId, initialShape);
+        const newSnapshot = createSnapshot(annotationId, finalShape);
+        const historyEntry = createHistoryEntry('resize', annotationId, newSnapshot, previousSnapshot);
+        pushAnnotationHistory(historyEntry);
+
+        // Save to API
+        if (selectedAttachment) {
+          await saveAnnotationAPI({
+            issueId,
+            attachmentId: selectedAttachment.id,
+            annotationId,
+            shape: finalShape,
+          });
+        }
+      }
+
+      // Clear drag state
+      annotationDragState.current = null;
+    },
+    [annotationEditModeEnabled, pushAnnotationHistory, selectedAttachment, issueId, saveAnnotationAPI]
   );
 
   // Error state
@@ -205,15 +508,38 @@ export default function IssueAttachmentsView({
     );
   }
 
-  const annotateOverlay = currentAnnotations.length ? (
-    <AnnotationLayer
-      annotations={currentAnnotations}
-      overlayRef={annotationOverlayRef}
-      activeAnnotationId={activeAnnotationId}
-      onSelect={handleAnnotationSelect}
-      onMove={handleAnnotationMove}
-    />
-  ) : null;
+  const annotateOverlay =
+    currentAnnotations.length || isAnnotationInteractive ? (
+      <>
+        {currentAnnotations.length > 0 && (
+          <AnnotationLayer
+            annotations={currentAnnotations}
+            overlayRef={annotationOverlayRef}
+            activeAnnotationId={activeAnnotationId}
+            interactive={isAnnotationInteractive}
+            onSelect={handleAnnotationSelect}
+            onMove={handleAnnotationMove}
+            onBoxMove={handleBoxAnnotationMove}
+            onMoveComplete={handleAnnotationMoveComplete}
+            onBoxMoveComplete={handleBoxAnnotationMoveComplete}
+          />
+        )}
+        {isAnnotationInteractive && (
+          <AnnotationCanvas
+            overlayRef={annotationOverlayRef}
+            activeTool={activeAnnotationTool}
+            editModeEnabled={annotationEditModeEnabled}
+            handToolActive={handToolActive}
+            onDraftCreate={createDraft}
+            onDraftUpdate={updateDraft}
+            onDraftCommit={commitDraft}
+            onDraftCancel={cancelDraft}
+            requireCommentForPin={true}
+            requireCommentForBox={true}
+          />
+        )}
+      </>
+    ) : null;
 
   return (
     <div className="relative flex h-full w-full flex-col bg-muted/30">
@@ -240,6 +566,22 @@ export default function IssueAttachmentsView({
       </header>
 
       <div className="relative flex-1 min-h-0 overflow-hidden">
+        {viewMode === 'annotate' && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-6 z-20 flex flex-col items-start gap-3 px-4">
+            <AnnotationToolbar
+              className="pointer-events-auto"
+              activeTool={activeAnnotationTool}
+              tools={annotationToolbarTools}
+              editModeEnabled={annotationEditModeEnabled}
+              canUndo={annotationCanUndo}
+              canRedo={annotationCanRedo}
+              onToolChange={selectAnnotationTool}
+              onToggleEditMode={(next) => toggleAnnotationEditMode(next)}
+              onUndo={undoAnnotationHistory}
+              onRedo={redoAnnotationHistory}
+            />
+          </div>
+        )}
         <AnimatePresence mode="wait">
           {viewMode === 'annotate' && selectedAttachment ? (
             <motion.div
@@ -256,7 +598,12 @@ export default function IssueAttachmentsView({
                 canvasState={canvasState}
                 onCanvasStateChange={handleCanvasStateChange}
                 overlayRef={annotationOverlayRef}
+                interactionLayerRef={annotationSurfaceRef}
                 overlayContent={annotateOverlay}
+                pointerPanEnabled={pointerPanEnabled}
+                scrollPanEnabled={scrollPanEnabled}
+                saveStatus={saveState.status}
+                saveError={saveState.error}
               />
 
             </motion.div>
@@ -280,93 +627,6 @@ export default function IssueAttachmentsView({
         </AnimatePresence>
       </div>
     </div>
-  );
-}
-
-interface AnnotationLayerProps {
-  annotations: AttachmentAnnotation[];
-  overlayRef: React.RefObject<HTMLDivElement | null>;
-  activeAnnotationId: string | null;
-  onSelect: (annotationId: string) => void;
-  onMove: (annotationId: string, position: AnnotationMovePayload) => void;
-}
-
-function AnnotationLayer({ annotations, overlayRef, activeAnnotationId, onSelect, onMove }: AnnotationLayerProps) {
-  if (!annotations.length) {
-    return null;
-  }
-
-  return (
-    <div className="relative h-full w-full">
-      {annotations.map((annotation) => (
-        <AnnotationPin
-          key={annotation.id}
-          annotation={annotation}
-          overlayRef={overlayRef}
-          isActive={annotation.id === activeAnnotationId}
-          onSelect={onSelect}
-          onMove={onMove}
-        />
-      ))}
-    </div>
-  );
-}
-
-interface AnnotationPinProps {
-  annotation: AttachmentAnnotation;
-  overlayRef: React.RefObject<HTMLDivElement | null>;
-  isActive: boolean;
-  onSelect: (annotationId: string) => void;
-  onMove: (annotationId: string, position: AnnotationMovePayload) => void;
-}
-
-function AnnotationPin({ annotation, overlayRef, isActive, onSelect, onMove }: AnnotationPinProps) {
-  const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    event.preventDefault();
-    onSelect(annotation.id);
-    (event.currentTarget as HTMLButtonElement).setPointerCapture(event.pointerId);
-  };
-
-  const handlePointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
-    if (!(event.currentTarget as HTMLButtonElement).hasPointerCapture(event.pointerId)) {
-      return;
-    }
-
-    event.preventDefault();
-    const overlay = overlayRef.current;
-    if (!overlay) return;
-    const rect = overlay.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / rect.width;
-    const y = (event.clientY - rect.top) / rect.height;
-    const clampedX = Math.min(Math.max(x, 0), 1);
-    const clampedY = Math.min(Math.max(y, 0), 1);
-    onMove(annotation.id, { x: clampedX, y: clampedY });
-  };
-
-  const handlePointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
-    if ((event.currentTarget as HTMLButtonElement).hasPointerCapture(event.pointerId)) {
-      (event.currentTarget as HTMLButtonElement).releasePointerCapture(event.pointerId);
-    }
-  };
-
-  return (
-    <motion.button
-      type="button"
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      className={`group absolute flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-xs font-semibold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-        isActive ? 'bg-primary text-primary-foreground border-primary' : 'bg-background/90 text-foreground border-border'
-      }`}
-      style={{
-        left: `${annotation.x * 100}%`,
-        top: `${annotation.y * 100}%`,
-      }}
-      aria-label={`Annotation ${annotation.label}`}
-    >
-      {annotation.label}
-    </motion.button>
   );
 }
 

@@ -118,11 +118,9 @@ export function PanelHeader({
                   exit={{ opacity: 0, x: 8 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      variant="outline"
-                      className="rounded-full"
-                      size="icon-sm"
+                  <motion.div whileHover={{ scale: 1.05, x: collapsed ? -4 : 4 }} whileTap={{ scale: 0.95 }}>
+                    <div
+                      className="rounded-full inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all ounded-full border bg-card shadow-xs hover:bg-card hover:text-accent-foreground dark:border-input  size-8"
                       onClick={onPanelToggle}
                       aria-label={
                         collapsed ? "Show details panel" : "Hide details panel"
@@ -133,7 +131,7 @@ export function PanelHeader({
                       ) : (
                         <PanelRightClose className="h-4 w-4" />
                       )}
-                    </Button>
+                    </div>
                   </motion.div>
                 </motion.div>
               )}

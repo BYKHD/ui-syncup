@@ -2,6 +2,8 @@
 
 import { useState, type ReactNode, type RefObject } from "react";
 import type { IssueAttachment, CanvasViewState } from "@/features/issues/types";
+import type { AnnotationSaveStatus } from "@/features/annotations/types";
+import { CanvasStateIndicator } from "./canvas-state-indicator";
 import { ImageCanvas } from "./image-canvas";
 import { VideoPlayer } from "./video-player";
 import { ZoomControls } from "./zoom-controls";
@@ -12,6 +14,11 @@ interface CenteredCanvasViewProps {
   onCanvasStateChange: (updates: Partial<CanvasViewState>) => void;
   overlayContent?: ReactNode;
   overlayRef?: RefObject<HTMLDivElement | null>;
+  interactionLayerRef?: RefObject<HTMLDivElement | null>;
+  pointerPanEnabled?: boolean;
+  scrollPanEnabled?: boolean;
+  saveStatus?: AnnotationSaveStatus;
+  saveError?: string;
 }
 
 export function CenteredCanvasView({
@@ -19,7 +26,12 @@ export function CenteredCanvasView({
   canvasState,
   onCanvasStateChange,
   overlayContent,
-  overlayRef
+  overlayRef,
+  interactionLayerRef,
+  pointerPanEnabled = true,
+  scrollPanEnabled = true,
+  saveStatus,
+  saveError,
 }: CenteredCanvasViewProps) {
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | undefined>();
 
@@ -47,11 +59,11 @@ export function CenteredCanvasView({
   };
 
   return (
-    <div className="relative h-full w-full flex flex-col">
+    <div className="relative h-full w-full flex flex-col select-none">
       {/* Main canvas area - takes up most of the space */}
       <div className="flex-1 relative overflow-hidden">
         {/* Layered canvas structure for future annotation support */}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0" ref={interactionLayerRef}>
           {/* Background pattern */}
           <div
             className="absolute inset-0 z-0 opacity-70"
@@ -83,6 +95,8 @@ export function CenteredCanvasView({
                 onImageLoad={setImageDimensions}
                 overlayRef={overlayRef}
                 overlayContent={overlayContent}
+                pointerPanEnabled={pointerPanEnabled}
+                scrollPanEnabled={scrollPanEnabled}
               />
             )}
           </div>
@@ -107,14 +121,13 @@ export function CenteredCanvasView({
         )}
       </div>
 
-      {/* Future annotation support indicator - only for images */}
+      {/* State indicator */}
       {attachment.fileType.startsWith('image/') && overlayContent && (
-        <div className="absolute top-4 left-4 z-10">
-          <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-md px-3 py-1.5 text-xs text-muted-foreground border flex items-center gap-2">
-            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-            <span>Drag pins to reposition annotations</span>
-          </div>
-        </div>
+        <CanvasStateIndicator
+          pointerPanEnabled={pointerPanEnabled}
+          saveStatus={saveStatus}
+          saveError={saveError}
+        />
       )}
     </div>
   );

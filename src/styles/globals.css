@@ -1,10 +1,14 @@
-@import "./tokens.css";
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-annotation: var(--annotation);
+  --color-annotation-lite: var(--annotation-lite);
+  --color-annotation-bold: var(--annotation-bold);
+  --color-annotation-foreground: var(--annotation-foreground);
+
   --color-background: var(--background);
   --color-background-alt: var(--background-alt);
   --color-foreground: var(--foreground);
@@ -86,6 +90,11 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Annotation Color */
+  --annotation: oklch(64.6% 0.222 41.116);
+  --annotation-bold:oklch(55.3% 0.195 38.402);
+  --annotation-lite:oklch(95.4% 0.038 75.164);
+  --annotation-foreground:oklch(0.985 0 0);
 }
 
 .dark {
@@ -125,6 +134,11 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  /* Annotation Color */
+  --annotation: oklch(83.7% 0.128 66.29);
+  --annotation-bold:oklch(75% 0.183 55.934);
+  --annotation-lite:oklch(40.8% 0.123 38.172);
+  --annotation-foreground:oklch(0 0 0);
 }
 
 @layer base {

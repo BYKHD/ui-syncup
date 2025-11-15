@@ -2,83 +2,8 @@
 // ATTACHMENT MOCK FIXTURES
 // ============================================================================
 
-import type {
-  IssueAttachment,
-  IssueUser,
-  AttachmentAnnotation,
-} from '@/features/issues/types';
-
-// Mock users for attachments
-const MOCK_ATTACHMENT_USERS: IssueUser[] = [
-  {
-    id: 'user_1',
-    name: 'Sarah Chen',
-    email: 'sarah@example.com',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
-  },
-  {
-    id: 'user_2',
-    name: 'Mike Johnson',
-    email: 'mike@example.com',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mike',
-  },
-  {
-    id: 'user_3',
-    name: 'Emma Williams',
-    email: 'emma@example.com',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma',
-  },
-];
-
-const CPM101_ANNOTATIONS: AttachmentAnnotation[] = [
-  {
-    id: 'annot_cpm101_badge_spacing',
-    attachmentId: 'att_cpm101_as_is',
-    label: '01',
-    description: 'Badge spacing is off and text is overflowing outside CTA.',
-    status: 'open',
-    x: 0.32,
-    y: 0.41,
-    author: MOCK_ATTACHMENT_USERS[1],
-    createdAt: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
-    comments: [
-      {
-        id: 'annot_cpm101_badge_spacing_comment_1',
-        annotationId: 'annot_cpm101_badge_spacing',
-        author: MOCK_ATTACHMENT_USERS[1],
-        message: 'CTA badge caps at 8px padding per token. Please align with design spec.',
-        createdAt: new Date(Date.now() - 85 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'annot_cpm101_badge_spacing_comment_2',
-        annotationId: 'annot_cpm101_badge_spacing',
-        author: MOCK_ATTACHMENT_USERS[0],
-        message: 'Copy that—will tighten spacing once we finalize type ramp.',
-        createdAt: new Date(Date.now() - 75 * 60 * 1000).toISOString(),
-      },
-    ],
-  },
-  {
-    id: 'annot_cpm101_card_shadow',
-    attachmentId: 'att_cpm101_as_is',
-    label: '02',
-    description: 'Shadow token mismatch makes the hover state look heavy.',
-    status: 'in_review',
-    x: 0.62,
-    y: 0.58,
-    author: MOCK_ATTACHMENT_USERS[2],
-    createdAt: new Date(Date.now() - 65 * 60 * 1000).toISOString(),
-    comments: [
-      {
-        id: 'annot_cpm101_card_shadow_comment_1',
-        annotationId: 'annot_cpm101_card_shadow',
-        author: MOCK_ATTACHMENT_USERS[2],
-        message: 'Should use shadow/elevation-card not the modal drop shadow.',
-        createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-      },
-    ],
-  },
-];
+import type { IssueAttachment } from '@/features/issues/types';
+import { MOCK_ATTACHMENT_USERS, MOCK_CPM101_ANNOTATIONS } from './annotation.fixtures';
 
 // Mock attachments for different issues
 // Each issue should have only one "as-is" image attachment
@@ -96,7 +21,7 @@ export const MOCK_ATTACHMENTS: IssueAttachment[] = [
     uploadedBy: MOCK_ATTACHMENT_USERS[0],
     createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
     reviewVariant: 'as_is',
-    annotations: CPM101_ANNOTATIONS,
+    annotations: MOCK_CPM101_ANNOTATIONS,
   },
   {
     id: 'att_cpm101_to_be',
