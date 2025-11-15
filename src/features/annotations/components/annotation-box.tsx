@@ -8,6 +8,36 @@ import { cn } from '@/lib/utils';
 
 const BOX_DRAG_THRESHOLD_PX = 4;
 
+const getAnnotationBoxBorderClassName = ({
+  isActive,
+  interactive,
+}: {
+  isActive: boolean;
+  interactive: boolean;
+}) =>
+  cn(
+    'absolute inset-0  transition-colors',
+    isActive ? 'border-annotation border-2' : 'border-annotation/50 border-2',
+    interactive ? 'cursor-move' : 'cursor-pointer',
+  );
+
+const getAnnotationBoxLabelClassName = (isActive: boolean,interactive: boolean) =>
+  cn(
+    'absolute -top-4 left-2 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-xs font-semibold shadow-sm backdrop-blur',
+    isActive
+      ? 'border-2 border-annotation-bold bg-annotation-bold text-annotation-foreground'
+      : 'border-2 border-white bg-annotation text-annotation-foreground',
+    interactive ? 'cursor-move' : 'cursor-pointer',
+      
+  );
+
+const getAnnotationBoxHandleClassName = (positionClasses: string, cursorClasses: string) =>
+  cn(
+    'absolute h-3 w-3 rounded-full border-2 border-annotation bg-background shadow-sm transition-all',
+    positionClasses,
+    cursorClasses,
+  );
+
 export interface BoxAnnotation {
   id: string;
   label: string;
@@ -177,30 +207,21 @@ export function AnnotationBox({
     >
       {/* Box Border */}
       <div
-        className={cn(
-          'absolute inset-0 border-2 transition-colors',
-          isActive ? 'border-primary' : 'border-muted-foreground/50',
-          interactive ? 'cursor-move hover:border-primary/80' : 'cursor-pointer hover:border-primary/50',
-        )}
+        className={getAnnotationBoxBorderClassName({ isActive, interactive })}
         onPointerDown={(e) => handlePointerDown(e, 'box')}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        style={{
-          backgroundColor: isActive ? 'rgba(var(--primary-rgb, 0, 0, 0), 0.05)' : 'transparent',
-        }}
       />
 
       {/* Label Badge */}
       <motion.div
-        className={cn(
-          'absolute -top-8 left-0 flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-semibold shadow-sm backdrop-blur',
-          isActive
-            ? 'border-primary bg-primary text-primary-foreground'
-            : 'border-border bg-background/90 text-foreground',
-        )}
+        className={getAnnotationBoxLabelClassName(isActive, interactive)}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
+        onPointerDown={(e) => handlePointerDown(e, 'box')}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
       >
         {annotation.label}
       </motion.div>
@@ -210,10 +231,7 @@ export function AnnotationBox({
         <>
           {/* Top-Left */}
           <div
-            className={cn(
-              'absolute -left-1.5 -top-1.5 h-3 w-3 rounded-full border-2 border-primary bg-background shadow-sm transition-all',
-              'cursor-nwse-resize hover:scale-125',
-            )}
+            className={getAnnotationBoxHandleClassName('-left-1.5 -top-1.5', 'cursor-nwse-resize hover:scale-125')}
             onPointerDown={(e) => handlePointerDown(e, 'top-left')}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -221,10 +239,7 @@ export function AnnotationBox({
 
           {/* Top-Right */}
           <div
-            className={cn(
-              'absolute -right-1.5 -top-1.5 h-3 w-3 rounded-full border-2 border-primary bg-background shadow-sm transition-all',
-              'cursor-nesw-resize hover:scale-125',
-            )}
+            className={getAnnotationBoxHandleClassName('-right-1.5 -top-1.5', 'cursor-nesw-resize hover:scale-125')}
             onPointerDown={(e) => handlePointerDown(e, 'top-right')}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -232,10 +247,7 @@ export function AnnotationBox({
 
           {/* Bottom-Left */}
           <div
-            className={cn(
-              'absolute -bottom-1.5 -left-1.5 h-3 w-3 rounded-full border-2 border-primary bg-background shadow-sm transition-all',
-              'cursor-nesw-resize hover:scale-125',
-            )}
+            className={getAnnotationBoxHandleClassName('-bottom-1.5 -left-1.5', 'cursor-nesw-resize hover:scale-125')}
             onPointerDown={(e) => handlePointerDown(e, 'bottom-left')}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -243,10 +255,7 @@ export function AnnotationBox({
 
           {/* Bottom-Right */}
           <div
-            className={cn(
-              'absolute -bottom-1.5 -right-1.5 h-3 w-3 rounded-full border-2 border-primary bg-background shadow-sm transition-all',
-              'cursor-nwse-resize hover:scale-125',
-            )}
+            className={getAnnotationBoxHandleClassName('-bottom-1.5 -right-1.5', 'cursor-nwse-resize hover:scale-125')}
             onPointerDown={(e) => handlePointerDown(e, 'bottom-right')}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}

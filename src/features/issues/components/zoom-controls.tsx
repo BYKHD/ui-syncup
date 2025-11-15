@@ -42,7 +42,7 @@ export function ZoomControls({
   return (
     <TooltipProvider>
       <motion.div
-        className="flex items-center gap-2 rounded-lg border bg-background/95 p-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        className="flex items-center gap-2 rounded-xl border bg-background/95 p-1 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/60"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}

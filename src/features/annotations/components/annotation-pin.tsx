@@ -8,6 +8,19 @@ import { cn } from '@/lib/utils';
 
 const PIN_DRAG_THRESHOLD_PX = 4;
 
+const getAnnotationPinClassName = ({
+  isActive,
+  interactive,
+}: {
+  isActive: boolean;
+  interactive: boolean;
+}) =>
+  cn(
+    'group absolute flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-xs font-semibold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+    isActive ? 'border-annotation-bold bg-annotation-bold text-annotation-foreground' : 'border-2 border-white bg-annotation text-annotation-foreground',
+    interactive ? 'cursor-move' : 'cursor-pointer',
+  );
+
 export interface AnnotationPinProps<A extends AttachmentAnnotation = AttachmentAnnotation> {
   annotation: A;
   overlayRef: RefObject<HTMLDivElement | null>;
@@ -101,12 +114,10 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      className={cn(
-        'group absolute flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-xs font-semibold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-        isActive ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background/90 text-foreground',
-        interactive ? 'cursor-move' : 'cursor-pointer',
-        !interactive && 'hover:border-primary/50',
-      )}
+      className={getAnnotationPinClassName({ isActive, interactive })}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 }}
       style={{
         left: `${annotation.x * 100}%`,
         top: `${annotation.y * 100}%`,

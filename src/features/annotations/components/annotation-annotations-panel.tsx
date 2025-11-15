@@ -7,6 +7,7 @@ import { MessageSquare, Pin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AnnotationThread } from '../types';
 import { AnnotationThreadPreview } from './annotation-thread-preview';
+import { RiChatUnreadLine } from '@remixicon/react';
 
 export interface AnnotationAnnotationsPanelProps<A extends AnnotationThread = AnnotationThread> {
   annotations?: A[];
@@ -92,7 +93,7 @@ export function AnnotationAnnotationsPanel<A extends AnnotationThread>({
       <div className="flex h-full flex-col">
         <div className="border-b p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <MessageSquare className="h-4 w-4" />
+            <RiChatUnreadLine className="h-4 w-4" />
             <span>Annotation ({annotations.length})</span>
           </div>
         </div>
@@ -119,10 +120,10 @@ export function AnnotationAnnotationsPanel<A extends AnnotationThread>({
                   <div className="flex items-start gap-2.5">
                     <div
                       className={cn(
-                        'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold',
+                        'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold shadow-sm',
                         isActive
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-muted-foreground bg-muted text-muted-foreground',
+                          ? 'border-annotation-bold bg-annotation-bold text-annotation-foreground'
+                          : 'border-2 border-white bg-annotation text-annotation-foreground',
                       )}
                     >
                       {annotation.label}

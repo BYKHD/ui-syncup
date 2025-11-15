@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, Send, X } from 'lucide-react';
+import { Send, X } from 'lucide-react';
 import type { AnnotationThread, AnnotationComment, AnnotationAuthor } from '../types';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -67,19 +67,21 @@ export function AnnotationThreadPreview<T extends AnnotationAuthor = AnnotationA
       <div className="border-b px-4 py-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0 space-y-1.5">
-            <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary bg-primary/10 text-xs font-semibold text-primary">
+            <div className="flex items-top gap-2">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-white bg-annotation shadow-sm text-xs font-semibold text-annotation-foreground">
                 {thread.label}
               </div>
-              <h3 className="text-sm font-semibold text-foreground line-clamp-1">
+              <div className="flex flex-col items-start gap-1.5 text-xs text-muted-foreground">
+              
+              <h3 className="text-sm font-semibold text-foreground">
                 {thread.description || 'Annotation thread'}
               </h3>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <MessageSquare className="h-3.5 w-3.5" />
               <span>
                 {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
               </span>
+
+            </div>
+            
             </div>
           </div>
           <Button

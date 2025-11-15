@@ -462,7 +462,7 @@ export function AnnotationCanvas({
       case 'pin':
         return (
           <div
-            className="pointer-events-none absolute h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-dashed border-primary bg-primary/20 shadow-lg"
+            className="pointer-events-none absolute h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-dashed border-annotation bg-annotation/20 shadow-lg"
             style={{
               left: `${currentPosition.x * 100}%`,
               top: `${currentPosition.y * 100}%`,
@@ -480,7 +480,7 @@ export function AnnotationCanvas({
 
         return (
           <div
-            className="pointer-events-none absolute border-2 border-dashed border-primary bg-primary/10 shadow-lg"
+            className="pointer-events-none absolute border-2 border-dashed border-annotation bg-annotation/10 shadow-lg"
             style={{
               left: `${x1 * 100}%`,
               top: `${y1 * 100}%`,
@@ -512,7 +512,7 @@ export function AnnotationCanvas({
 
       return (
         <div
-          className="pointer-events-none absolute border-2 border-primary bg-primary/10 shadow-lg"
+          className="pointer-events-none absolute border-2 border-annotation bg-annotation/10 shadow-lg"
           style={{
             left: `${x1 * 100}%`,
             top: `${y1 * 100}%`,
@@ -526,7 +526,7 @@ export function AnnotationCanvas({
 
       return (
         <div
-          className="pointer-events-none absolute h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-primary/20 shadow-lg"
+          className="pointer-events-none absolute h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-annotation bg-annotation/20 shadow-lg"
           style={{
             left: `${position.x * 100}%`,
             top: `${position.y * 100}%`,
