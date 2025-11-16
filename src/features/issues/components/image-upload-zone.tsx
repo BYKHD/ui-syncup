@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState, useEffect } from "react";
-import { RiImageAddLine, RiUploadCloud2Line } from "@remixicon/react";
+import { RiImageAddLine } from "@remixicon/react";
 import { cn } from "@/lib/utils";
 
 interface ImageUploadZoneProps {
@@ -36,7 +36,7 @@ export function ImageUploadZone({
     "to-be": {
       title: "To-Be Image",
       description: "Expected/corrected UI reference",
-      icon: RiUploadCloud2Line,
+      icon: RiImageAddLine,
       helpText: "Upload a design mockup or expected result",
     },
   };

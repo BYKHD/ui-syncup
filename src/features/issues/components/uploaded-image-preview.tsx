@@ -14,6 +14,9 @@ import {
   type AnnotationDraft,
   type AttachmentAnnotation,
 } from "@/features/annotations";
+import { ImageCanvas } from "./image-canvas";
+import { ZoomControls } from "./zoom-controls";
+import type { CanvasViewState } from "@/features/issues/types";
 
 interface ImageMetadata {
   file: File;
@@ -28,6 +31,8 @@ interface UploadedImagePreviewProps {
   annotations?: AttachmentAnnotation[];
   onAnnotationsChange?: (annotations: AttachmentAnnotation[]) => void;
   onRemove: () => void;
+  activeAnnotationId?: string | null;
+  onAnnotationSelect?: (annotationId: string) => void;
   className?: string;
 }
 
@@ -37,11 +42,21 @@ export function UploadedImagePreview({
   annotations = [],
   onAnnotationsChange,
   onRemove,
+  activeAnnotationId,
+  onAnnotationSelect,
   className,
 }: UploadedImagePreviewProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [nextAnnotationLabel, setNextAnnotationLabel] = useState("A");
+
+  // Canvas state for zoom and pan (only for as-is variant)
+  const [canvasState, setCanvasState] = useState<CanvasViewState>({
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+    fitMode: "fit",
+  });
 
   // Annotation system hooks (only for as-is variant)
   const {
@@ -77,18 +92,18 @@ export function UploadedImagePreview({
     },
   });
 
-  // Generate next annotation label
+  // Generate next annotation label (numeric sequence)
   useEffect(() => {
     if (annotations.length === 0) {
-      setNextAnnotationLabel("A");
+      setNextAnnotationLabel("1");
     } else {
       const lastLabel = annotations[annotations.length - 1].label;
-      const nextCode = lastLabel.charCodeAt(0) + 1;
-      // Cycle A-Z, then start with numbers
-      if (nextCode > 90) {
-        setNextAnnotationLabel("1");
+      const currentNumber = parseInt(lastLabel, 10);
+      if (!isNaN(currentNumber)) {
+        setNextAnnotationLabel(String(currentNumber + 1));
       } else {
-        setNextAnnotationLabel(String.fromCharCode(nextCode));
+        // Fallback if label is not a number
+        setNextAnnotationLabel(String(annotations.length + 1));
       }
     }
   }, [annotations.length]);
@@ -170,6 +185,57 @@ export function UploadedImagePreview({
     [annotations, pushHistory]
   );
 
+  const handleBoxAnnotationMove = useCallback(
+    (
+      annotationId: string,
+      start: { x: number; y: number },
+      end: { x: number; y: number }
+    ) => {
+      if (!onAnnotationsChange) return;
+
+      const updated = annotations.map((a) =>
+        a.id === annotationId
+          ? {
+              ...a,
+              shape: { type: "box" as const, start, end },
+              x: (start.x + end.x) / 2,
+              y: (start.y + end.y) / 2,
+            }
+          : a
+      );
+      onAnnotationsChange(updated);
+    },
+    [annotations, onAnnotationsChange]
+  );
+
+  const handleBoxAnnotationMoveComplete = useCallback(
+    (
+      annotationId: string,
+      start: { x: number; y: number },
+      end: { x: number; y: number }
+    ) => {
+      const annotation = annotations.find((a) => a.id === annotationId);
+      if (annotation && annotation.shape) {
+        const previousSnapshot = createSnapshot(annotationId, annotation.shape);
+        const newSnapshot = createSnapshot(annotationId, {
+          type: "box",
+          start,
+          end,
+        });
+        const entry = createHistoryEntry("resize", annotationId, newSnapshot, previousSnapshot);
+        pushHistory(entry);
+      }
+    },
+    [annotations, pushHistory]
+  );
+
+  const handleAnnotationSelect = useCallback(
+    (annotationId: string) => {
+      onAnnotationSelect?.(annotationId);
+    },
+    [onAnnotationSelect]
+  );
+
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -179,9 +245,9 @@ export function UploadedImagePreview({
   const isAsIs = variant === "as-is";
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("space-y-0 h-full flex flex-col", className)}>
       {/* Header */}
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-2 px-6 py-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h4 className="text-sm font-medium truncate">
@@ -213,15 +279,46 @@ export function UploadedImagePreview({
       {/* Image Preview with Annotation (as-is) or Simple Preview (to-be) */}
       <div
         className={cn(
-          "relative rounded-lg border bg-muted/30 overflow-hidden",
-          isAsIs ? "min-h-[300px] sm:min-h-[400px]" : "min-h-[150px] sm:min-h-[200px]"
+          "relative bg-muted/30 overflow-hidden flex-1 min-h-0",
+          isAsIs ? "" : "rounded-lg border min-h-[150px] sm:min-h-[200px]"
         )}
       >
         {isAsIs ? (
           <>
-            {/* Annotation Toolbar */}
+            {/* Zoom Controls - Top Right */}
             {imageLoaded && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30">
+              <div className="absolute top-4 right-4 z-30">
+                <ZoomControls
+                  zoomLevel={canvasState.zoom}
+                  fitMode={canvasState.fitMode}
+                  onRecenterView={() =>
+                    setCanvasState((prev) => ({ ...prev, panX: 0, panY: 0 }))
+                  }
+                  onZoomIn={() =>
+                    setCanvasState((prev) => ({
+                      ...prev,
+                      zoom: Math.min(prev.zoom * 1.5, 5),
+                    }))
+                  }
+                  onZoomOut={() =>
+                    setCanvasState((prev) => ({
+                      ...prev,
+                      zoom: Math.max(prev.zoom / 1.5, 0.1),
+                    }))
+                  }
+                  onFitToCanvas={() =>
+                    setCanvasState((prev) => ({ ...prev, fitMode: "fit", zoom: 1 }))
+                  }
+                  onActualSize={() =>
+                    setCanvasState({ zoom: 1, panX: 0, panY: 0, fitMode: "actual" })
+                  }
+                />
+              </div>
+            )}
+
+            {/* Annotation Toolbar - Bottom */}
+            {imageLoaded && (
+              <div className="absolute inset-x-0 bottom-6 z-20 flex flex-col items-start gap-3 px-4 w-full">
                 <AnnotationToolbar
                   tools={tools}
                   activeTool={activeTool}
@@ -236,59 +333,54 @@ export function UploadedImagePreview({
               </div>
             )}
 
-            {/* Image Container with Annotation Layers */}
-            <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
-              <div className="relative max-w-full max-h-[400px] sm:max-h-[600px]">
-                {/* Base Image */}
-                <img
-                  src={image.preview}
-                  alt="As-is preview"
-                  className="max-w-full max-h-[400px] sm:max-h-[600px] w-auto h-auto object-contain"
-                  onLoad={() => setImageLoaded(true)}
-                  style={{ display: imageLoaded ? "block" : "none" }}
-                />
-
-                {/* Loading placeholder */}
-                {!imageLoaded && (
-                  <div className="w-full h-64 flex items-center justify-center text-sm text-muted-foreground">
-                    Loading image...
-                  </div>
-                )}
-
-                {/* Annotation Overlay */}
-                {imageLoaded && (
-                  <div
-                    ref={overlayRef}
-                    className="absolute inset-0 pointer-events-none"
-                  >
+            {/* Image Canvas with Zoom & Pan */}
+            <div className="relative w-full h-full">
+              <ImageCanvas
+                src={image.preview}
+                alt="As-is preview"
+                zoomLevel={canvasState.zoom}
+                panOffset={{ x: canvasState.panX, y: canvasState.panY }}
+                fitMode={canvasState.fitMode}
+                onZoomChange={(zoom) =>
+                  setCanvasState((prev) => ({ ...prev, zoom }))
+                }
+                onPanChange={(pan) =>
+                  setCanvasState((prev) => ({ ...prev, panX: pan.x, panY: pan.y }))
+                }
+                onImageLoad={() => setImageLoaded(true)}
+                overlayRef={overlayRef}
+                overlayContent={
+                  <>
                     {/* Existing Annotations Layer */}
-                    <div className="absolute inset-0 pointer-events-auto">
-                      <AnnotationLayer
-                        annotations={annotations}
-                        overlayRef={overlayRef}
-                        activeAnnotationId={null}
-                        interactive={editModeEnabled && !handToolActive}
-                        onSelect={() => {}}
-                        onMove={handleAnnotationMove}
-                        onMoveComplete={handleAnnotationMoveComplete}
-                      />
-                    </div>
+                    <AnnotationLayer
+                      annotations={annotations}
+                      overlayRef={overlayRef}
+                      activeAnnotationId={activeAnnotationId}
+                      interactive={editModeEnabled && !handToolActive}
+                      onSelect={handleAnnotationSelect}
+                      onMove={handleAnnotationMove}
+                      onBoxMove={handleBoxAnnotationMove}
+                      onMoveComplete={handleAnnotationMoveComplete}
+                      onBoxMoveComplete={handleBoxAnnotationMoveComplete}
+                    />
 
                     {/* Annotation Canvas for Creating New Annotations */}
-                    <div className="absolute inset-0 pointer-events-auto">
+                    {editModeEnabled && activeTool !== "cursor" && (
                       <AnnotationCanvas
                         overlayRef={overlayRef}
                         activeTool={activeTool}
                         editModeEnabled={editModeEnabled}
                         onDraftCommit={handleDraftCommit}
                         handToolActive={handToolActive}
-                        requireCommentForPin={false}
-                        requireCommentForBox={false}
+                        requireCommentForPin={true}
+                        requireCommentForBox={true}
                       />
-                    </div>
-                  </div>
-                )}
-              </div>
+                    )}
+                  </>
+                }
+                pointerPanEnabled={!editModeEnabled || handToolActive}
+                scrollPanEnabled={true}
+              />
             </div>
           </>
         ) : (
@@ -297,7 +389,7 @@ export function UploadedImagePreview({
             <img
               src={image.preview}
               alt="To-be preview"
-              className="max-w-full max-h-[200px] sm:max-h-[300px] w-auto h-auto object-contain rounded"
+              className="w-full h-full max-w-full max-h-full object-contain rounded"
               onLoad={() => setImageLoaded(true)}
             />
             {!imageLoaded && (
@@ -309,18 +401,6 @@ export function UploadedImagePreview({
         )}
       </div>
 
-      {/* Annotation Instructions for as-is */}
-      {isAsIs && imageLoaded && (
-        <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 rounded p-3">
-          <p className="font-medium">💡 Annotation Tips:</p>
-          <ul className="list-disc list-inside space-y-0.5 ml-2">
-            <li>Click the <strong>Pin</strong> or <strong>Box</strong> tool to start annotating</li>
-            <li>Click on the image to place a pin, or drag to create a box</li>
-            <li>You can move annotations after creation</li>
-            <li>Use keyboard shortcuts: <kbd className="px-1 py-0.5 bg-background rounded text-xs">1</kbd> Cursor, <kbd className="px-1 py-0.5 bg-background rounded text-xs">2</kbd> Pin, <kbd className="px-1 py-0.5 bg-background rounded text-xs">3</kbd> Box</li>
-          </ul>
-        </div>
-      )}
     </div>
   );
 }

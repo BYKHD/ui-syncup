@@ -27,7 +27,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import type { IssuePriority, IssueType } from "@/features/issues/types";
 import type { AttachmentAnnotation } from "@/features/annotations";
-import { X } from "lucide-react";
+import { X, MessageSquare } from "lucide-react";
 
 type IssuePriorityValue = IssuePriority | null;
 type IssueTypeValue = IssueType | null;
@@ -91,6 +91,7 @@ export function IssuesCreateDialog({
   const isMobile = useIsMobile();
   const [isLoadingAsIs, setIsLoadingAsIs] = useState(false);
   const [isLoadingToBe, setIsLoadingToBe] = useState(false);
+  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
 
   // Extract image dimensions using Image API
   const extractImageMetadata = async (file: File): Promise<{ width: number; height: number }> => {
@@ -175,6 +176,10 @@ export function IssuesCreateDialog({
     }
   };
 
+  const handleAnnotationSelect = (annotationId: string) => {
+    setActiveAnnotationId(annotationId);
+  };
+
   // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
@@ -192,7 +197,7 @@ export function IssuesCreateDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent
         className={cn(
-          "flex flex-col gap-0 p-0",
+          "flex flex-col gap-0 p-0 overflow-hidden",
           isMobile
             ? "w-[95vw] max-h-[95vh]"
             : "w-[95vw] sm:max-w-6xl max-h-[90vh]"
@@ -205,27 +210,34 @@ export function IssuesCreateDialog({
           </p>
         </DialogHeader>
 
-        <form onSubmit={onSubmit} noValidate className="flex flex-col flex-1 min-h-0">
+        <form
+          onSubmit={onSubmit}
+          noValidate
+          className="flex flex-col flex-1 min-h-0 overflow-hidden"
+        >
           {/* Two-Panel Layout: Desktop Horizontal, Mobile Vertical */}
-          <div className={cn(
-            "flex flex-1 min-h-0",
-            isMobile ? "flex-col" : "flex-row"
-          )}>
+          <div
+            id="issues-create-dialog-body"
+            className={cn(
+              "flex flex-1 min-h-0 overflow-hidden",
+              isMobile ? "flex-col" : "flex-row"
+            )}
+          >
             {/* LEFT PANEL: As-Is Image Canvas */}
             <div className={cn(
               "flex flex-col bg-muted/30",
-              isMobile ? "min-h-[400px] border-b" : "flex-1 border-r"
+              isMobile ? "min-h-[400px] border-b" : "flex-1 border-r min-h-0"
             )}>
               {formData.asIsImage ? (
-                <div className="relative h-full">
-                  <UploadedImagePreview
-                    variant="as-is"
-                    image={formData.asIsImage}
-                    annotations={formData.asIsImage.annotations}
-                    onAnnotationsChange={handleAsIsAnnotationsChange}
-                    onRemove={handleAsIsImageRemove}
-                  />
-                </div>
+                <UploadedImagePreview
+                  variant="as-is"
+                  image={formData.asIsImage}
+                  annotations={formData.asIsImage.annotations}
+                  onAnnotationsChange={handleAsIsAnnotationsChange}
+                  onRemove={handleAsIsImageRemove}
+                  activeAnnotationId={activeAnnotationId}
+                  onAnnotationSelect={handleAnnotationSelect}
+                />
               ) : (
                 <div className="flex items-center justify-center h-full p-6">
                   <div className="w-full max-w-md">
@@ -247,7 +259,7 @@ export function IssuesCreateDialog({
 
             {/* RIGHT PANEL: Form Fields */}
             <div className={cn(
-              "flex flex-col bg-background",
+              "flex flex-col bg-background overflow-auto",
               isMobile ? "flex-1" : "w-[380px]"
             )}>
               <ScrollArea className="flex-1">
@@ -376,6 +388,75 @@ export function IssuesCreateDialog({
                       )}
                     </Field>
                   </div>
+
+                  {/* Divider */}
+                  {formData.asIsImage && formData.asIsImage.annotations.length > 0 && (
+                    <div className="border-t" />
+                  )}
+
+                  {/* Annotations List */}
+                  {formData.asIsImage && formData.asIsImage.annotations.length > 0 && (
+                    <div className="space-y-3">
+                      <div>
+                        <h3 className="text-sm font-semibold mb-1">
+                          Annotations ({formData.asIsImage.annotations.length})
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          Click to highlight on canvas
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        {formData.asIsImage.annotations.map((annotation) => {
+                          const commentCount = annotation.comments?.length ?? 0;
+                          const isActive = annotation.id === activeAnnotationId;
+
+                          return (
+                            <button
+                              key={annotation.id}
+                              type="button"
+                              onClick={() => handleAnnotationSelect(annotation.id)}
+                              className={cn(
+                                "w-full rounded-lg border p-3 text-left transition-all",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
+                                isActive
+                                  ? "border-primary bg-primary/10 shadow-sm"
+                                  : "border-border bg-background hover:border-primary/50 hover:bg-accent/50"
+                              )}
+                              aria-pressed={isActive}
+                              aria-label={`View annotation ${annotation.label}`}
+                            >
+                              <div className="flex items-start gap-2.5">
+                                <div
+                                  className={cn(
+                                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold shadow-sm",
+                                    isActive
+                                      ? "border-annotation-bold bg-annotation-bold text-annotation-foreground"
+                                      : "border-2 border-white bg-annotation text-annotation-foreground"
+                                  )}
+                                >
+                                  {annotation.label}
+                                </div>
+                                <div className="flex-1 min-w-0 space-y-1">
+                                  <p className="text-sm font-medium line-clamp-2">
+                                    {annotation.description || "Untitled annotation"}
+                                  </p>
+                                  {commentCount > 0 && (
+                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                      <MessageSquare className="h-3 w-3" />
+                                      <span>
+                                        {commentCount} {commentCount === 1 ? "comment" : "comments"}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </div>
