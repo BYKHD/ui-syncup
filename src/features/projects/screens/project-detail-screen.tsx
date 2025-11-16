@@ -82,6 +82,17 @@ export default function ProjectDetailScreen({
   const [isMembersLoading, setIsMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
 
+  // Helper to clear specific field error
+  const clearFieldError = (field: string) => {
+    if (issueErrors[field]) {
+      setIssueErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
   // Issue dialog handlers
   const handleIssueSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -98,10 +109,12 @@ export default function ProjectDetailScreen({
     if (!issueFormData.priority) {
       errors.priority = "Priority is required";
     }
-    // Note: Images are optional, but you can make them required by uncommenting:
-    // if (!issueFormData.asIsImage) {
-    //   errors.asIsImage = "As-is image is required";
-    // }
+    if (!issueFormData.asIsImage) {
+      errors.asIsImage = "As-is image is required";
+    }
+    if (!issueFormData.toBeImage) {
+      errors.toBeImage = "To-be image is required";
+    }
 
     if (Object.keys(errors).length > 0) {
       setIssueErrors(errors);
@@ -304,24 +317,30 @@ export default function ProjectDetailScreen({
             formData={issueFormData}
             errors={issueErrors}
             isSubmitting={isSubmittingIssue}
-            onTitleChange={(value) =>
-              setIssueFormData((prev) => ({ ...prev, title: value }))
-            }
-            onDescriptionChange={(value) =>
-              setIssueFormData((prev) => ({ ...prev, description: value }))
-            }
-            onTypeChange={(value) =>
-              setIssueFormData((prev) => ({ ...prev, type: value }))
-            }
-            onPriorityChange={(value) =>
-              setIssueFormData((prev) => ({ ...prev, priority: value }))
-            }
-            onAsIsImageChange={(image) =>
-              setIssueFormData((prev) => ({ ...prev, asIsImage: image }))
-            }
-            onToBeImageChange={(image) =>
-              setIssueFormData((prev) => ({ ...prev, toBeImage: image }))
-            }
+            onTitleChange={(value) => {
+              setIssueFormData((prev) => ({ ...prev, title: value }));
+              if (value.trim()) clearFieldError("title");
+            }}
+            onDescriptionChange={(value) => {
+              setIssueFormData((prev) => ({ ...prev, description: value }));
+              if (value.trim()) clearFieldError("description");
+            }}
+            onTypeChange={(value) => {
+              setIssueFormData((prev) => ({ ...prev, type: value }));
+              if (value) clearFieldError("type");
+            }}
+            onPriorityChange={(value) => {
+              setIssueFormData((prev) => ({ ...prev, priority: value }));
+              if (value) clearFieldError("priority");
+            }}
+            onAsIsImageChange={(image) => {
+              setIssueFormData((prev) => ({ ...prev, asIsImage: image }));
+              if (image) clearFieldError("asIsImage");
+            }}
+            onToBeImageChange={(image) => {
+              setIssueFormData((prev) => ({ ...prev, toBeImage: image }));
+              if (image) clearFieldError("toBeImage");
+            }}
             onSubmit={handleIssueSubmit}
             onCancel={handleIssueCancel}
           >

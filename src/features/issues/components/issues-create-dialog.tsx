@@ -1,6 +1,6 @@
 "use client";
 
-import { PropsWithChildren, useEffect, useState } from "react";
+import { PropsWithChildren, useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -92,6 +92,7 @@ export function IssuesCreateDialog({
   const [isLoadingAsIs, setIsLoadingAsIs] = useState(false);
   const [isLoadingToBe, setIsLoadingToBe] = useState(false);
   const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Extract image dimensions using Image API
   const extractImageMetadata = async (file: File): Promise<{ width: number; height: number }> => {
@@ -180,6 +181,17 @@ export function IssuesCreateDialog({
     setActiveAnnotationId(annotationId);
   };
 
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      // Reset height to auto to get the correct scrollHeight
+      textarea.style.height = "auto";
+      // Set the height to match the content
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [formData.description]);
+
   // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
@@ -237,21 +249,17 @@ export function IssuesCreateDialog({
                   onRemove={handleAsIsImageRemove}
                   activeAnnotationId={activeAnnotationId}
                   onAnnotationSelect={handleAnnotationSelect}
+                  className="select-none"
                 />
               ) : (
                 <div className="flex items-center justify-center h-full p-6">
-                  <div className="w-full max-w-md">
+                  <div className="w-full max-w-md space-y-2">
                     <ImageUploadZone
                       variant="as-is"
                       onImageSelect={handleAsIsImageSelect}
                       disabled={isLoadingAsIs}
                       error={errors.asIsImage}
                     />
-                    {errors.asIsImage && (
-                      <p className="mt-2 text-sm text-destructive text-center">
-                        {errors.asIsImage}
-                      </p>
-                    )}
                   </div>
                 </div>
               )}
@@ -265,10 +273,10 @@ export function IssuesCreateDialog({
               <ScrollArea className="flex-1">
                 <div className="space-y-6 p-4 sm:p-6">
                   {/* Title & Description */}
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     <Field>
-                      <FieldLabel className="text-sm font-semibold">
-                        Title <span className="text-destructive">*</span>
+                      <FieldLabel className="sr-only text-sm font-semibold">
+                        Title 
                       </FieldLabel>
                       <FieldContent>
                         <Input
@@ -279,7 +287,7 @@ export function IssuesCreateDialog({
                           aria-invalid={!!errors.title}
                           maxLength={80}
                           autoFocus
-                          className="font-medium"
+                          className="bg-transparent dark:bg-transparent border-none rounded-none w-full shadow-none outline-none px-0 h-auto focus-visible:ring-0 overflow-hidden md:text-lg font-medium text-ellipsis whitespace-normal break-words"
                         />
                       </FieldContent>
                       {errors.title && (
@@ -290,12 +298,13 @@ export function IssuesCreateDialog({
                     </Field>
 
                     <Field>
-                      <FieldLabel className="text-sm font-semibold">
-                        Description <span className="text-destructive">*</span>
+                      <FieldLabel className="sr-only text-sm font-semibold">
+                        Description 
                       </FieldLabel>
                       <Textarea
+                        ref={textareaRef}
                         placeholder="Describe the issue and expected behavior"
-                        className="resize-none min-h-24"
+                        className="bg-transparent dark:bg-transparent border-none rounded-none w-full shadow-none outline-none resize-none px-0 min-h-24 focus-visible:ring-0 break-words whitespace-normal overflow-wrap"
                         value={formData.description}
                         onChange={(e) => onDescriptionChange(e.target.value)}
                         aria-invalid={!!errors.description}
@@ -356,15 +365,8 @@ export function IssuesCreateDialog({
 
                   {/* Expected Result (To-Be Image) */}
                   <div className="space-y-3">
-                    <div>
-                      <h3 className="text-sm font-semibold mb-1">Expected Result</h3>
-                      <p className="text-xs text-muted-foreground">
-                        Upload a reference showing the expected UI
-                      </p>
-                    </div>
-
                     <Field>
-                      <FieldLabel className="sr-only">To-Be Image</FieldLabel>
+                      <FieldLabel className="sr-only">Expected Result</FieldLabel>
                       <FieldContent>
                         {formData.toBeImage ? (
                           <CompactImagePreview
@@ -381,11 +383,6 @@ export function IssuesCreateDialog({
                           />
                         )}
                       </FieldContent>
-                      {errors.toBeImage && !formData.toBeImage && (
-                        <FieldDescription className="text-destructive">
-                          {errors.toBeImage}
-                        </FieldDescription>
-                      )}
                     </Field>
                   </div>
 

@@ -28,14 +28,14 @@ export function ImageUploadZone({
 
   const variantConfig = {
     "as-is": {
-      title: "As-Is Image",
+      title: "What Does It Look Like Now?",
       description: "Current/buggy UI in production",
       icon: RiImageAddLine,
       helpText: "Upload a screenshot of the current issue",
     },
     "to-be": {
-      title: "To-Be Image",
-      description: "Expected/corrected UI reference",
+      title: "Expected Result",
+      description: "Reference for the corrected UI",
       icon: RiImageAddLine,
       helpText: "Upload a design mockup or expected result",
     },
