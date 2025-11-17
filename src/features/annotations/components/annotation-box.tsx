@@ -150,7 +150,8 @@ export function AnnotationBox({
       onSelect?.(annotation.id);
 
       // Only enable dragging/resizing in interactive (edit) mode
-      if (!interactive) return;
+      // Ignore right-clicks (button !== 0) to allow context menu
+      if (!interactive || event.button !== 0) return;
 
       setActiveHandle(handle);
       dragStartRef.current = { x: event.clientX, y: event.clientY };
