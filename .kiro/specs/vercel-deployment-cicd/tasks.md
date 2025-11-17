@@ -28,13 +28,13 @@
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
 - [ ] 5. Configure external service integrations
-- [ ] 5.1 Implement Cloudflare R2 storage client
+- [x] 5.1 Implement Cloudflare R2 storage client
   - Create `src/lib/storage.ts` with S3-compatible client configuration
   - Implement storage client factory function that reads R2 credentials from environment
   - Add TypeScript types for storage operations
   - _Requirements: 5.1, 4.3_
 
-- [ ] 5.2 Implement Supabase database client
+- [x] 5.2 Implement Supabase database client
   - Create `src/lib/db.ts` with Drizzle ORM and Postgres client configuration
   - Implement database client that reads connection string from environment
   - Configure SSL settings based on environment (production vs development)
