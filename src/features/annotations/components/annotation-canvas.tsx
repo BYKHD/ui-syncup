@@ -4,6 +4,12 @@ import { useState, useCallback, useEffect, type PointerEvent, type RefObject } f
 import type { AnnotationToolId, AnnotationPosition, AnnotationDraft } from '../types';
 import { AnnotationCommentInput } from './annotation-comment-input';
 import { cn } from '@/lib/utils';
+import {
+  calculateCommentInputPosition,
+  COMMENT_INPUT_WIDTH,
+  COMMENT_INPUT_HEIGHT,
+  PADDING,
+} from '../utils/position-comment-input';
 
 export interface AnnotationCanvasProps {
   overlayRef: RefObject<HTMLDivElement | null>;
@@ -33,9 +39,7 @@ interface PendingCommentState {
   targetBounds?: { x: number; y: number; width: number; height: number }; // Annotation bounds in pixels (for click-outside detection)
 }
 
-const COMMENT_INPUT_WIDTH = 320; // 80 * 4 = 320px (w-80)
-const COMMENT_INPUT_HEIGHT = 200; // Approximate height
-const PADDING = 16; // Padding from edges
+// Constants moved to shared utility file
 
 export function AnnotationCanvas({
   overlayRef,
@@ -75,104 +79,42 @@ export function AnnotationCanvas({
 
       const rect = overlay.getBoundingClientRect();
 
+      // Convert draft to annotation-like object for the utility function
+      const annotation = {
+        id: draft.id,
+        shape: draft.shape,
+        description: '',
+        label: '',
+        createdAt: draft.createdAt,
+      };
+
+      // Use the shared utility function to calculate position
+      const position = calculateCommentInputPosition(annotation, {
+        width: rect.width,
+        height: rect.height,
+      });
+
+      // Calculate target bounds for click-outside detection
       if (draft.shape.type === 'box') {
         const { start, end } = draft.shape;
-
-        // Calculate box bounds in pixels (can be outside image bounds)
         const x1 = Math.min(start.x, end.x) * rect.width;
         const y1 = Math.min(start.y, end.y) * rect.height;
         const x2 = Math.max(start.x, end.x) * rect.width;
         const y2 = Math.max(start.y, end.y) * rect.height;
-        const boxWidth = x2 - x1;
-        const boxHeight = y2 - y1;
-
-        // Clamp box bounds to visible area for space calculation
-        const visibleX1 = Math.max(0, Math.min(rect.width, x1));
-        const visibleY1 = Math.max(0, Math.min(rect.height, y1));
-        const visibleX2 = Math.max(0, Math.min(rect.width, x2));
-        const visibleY2 = Math.max(0, Math.min(rect.height, y2));
-
-        // Available space in each direction (from visible portion of box)
-        const spaceRight = rect.width - visibleX2;
-        const spaceLeft = visibleX1;
-        const spaceBottom = rect.height - visibleY2;
-        const spaceTop = visibleY1;
-
-        let x = visibleX2; // Default to right of box
-        let y = visibleY1; // Default to top of box
-
-        // Priority: Right > Left > Bottom > Top
-        if (spaceRight >= COMMENT_INPUT_WIDTH + PADDING) {
-          // Position to the right
-          x = visibleX2 + PADDING;
-          y = Math.max(PADDING, Math.min(visibleY1, rect.height - COMMENT_INPUT_HEIGHT - PADDING));
-        } else if (spaceLeft >= COMMENT_INPUT_WIDTH + PADDING) {
-          // Position to the left
-          x = visibleX1 - COMMENT_INPUT_WIDTH - PADDING;
-          y = Math.max(PADDING, Math.min(visibleY1, rect.height - COMMENT_INPUT_HEIGHT - PADDING));
-        } else if (spaceBottom >= COMMENT_INPUT_HEIGHT + PADDING) {
-          // Position below
-          x = Math.max(PADDING, Math.min(visibleX1, rect.width - COMMENT_INPUT_WIDTH - PADDING));
-          y = visibleY2 + PADDING;
-        } else if (spaceTop >= COMMENT_INPUT_HEIGHT + PADDING) {
-          // Position above
-          x = Math.max(PADDING, Math.min(visibleX1, rect.width - COMMENT_INPUT_WIDTH - PADDING));
-          y = visibleY1 - COMMENT_INPUT_HEIGHT - PADDING;
-        } else {
-          // Fallback: center on screen
-          x = Math.max(PADDING, (rect.width - COMMENT_INPUT_WIDTH) / 2);
-          y = Math.max(PADDING, (rect.height - COMMENT_INPUT_HEIGHT) / 2);
-        }
 
         return {
-          position: { x, y },
-          targetBounds: { x: x1, y: y1, width: boxWidth, height: boxHeight },
+          position,
+          targetBounds: { x: x1, y: y1, width: x2 - x1, height: y2 - y1 },
         };
       } else if (draft.shape.type === 'pin') {
-        const { position } = draft.shape;
-
-        // Calculate pin position in pixels
-        const pinX = position.x * rect.width;
-        const pinY = position.y * rect.height;
-
-        // Pin size (approx 36px = 9 * 4)
+        const { position: pinPos } = draft.shape;
+        const pinX = pinPos.x * rect.width;
+        const pinY = pinPos.y * rect.height;
         const pinSize = 36;
         const pinRadius = pinSize / 2;
 
-        // Available space in each direction from pin
-        const spaceRight = rect.width - pinX;
-        const spaceLeft = pinX;
-        const spaceBottom = rect.height - pinY;
-        const spaceTop = pinY;
-
-        let x = pinX + pinRadius + PADDING; // Default to right of pin
-        let y = pinY - COMMENT_INPUT_HEIGHT / 2; // Vertically centered on pin
-
-        // Priority: Right > Left > Bottom > Top
-        if (spaceRight >= COMMENT_INPUT_WIDTH + pinRadius + PADDING * 2) {
-          // Position to the right
-          x = pinX + pinRadius + PADDING;
-          y = Math.max(PADDING, Math.min(pinY - COMMENT_INPUT_HEIGHT / 2, rect.height - COMMENT_INPUT_HEIGHT - PADDING));
-        } else if (spaceLeft >= COMMENT_INPUT_WIDTH + pinRadius + PADDING * 2) {
-          // Position to the left
-          x = pinX - pinRadius - COMMENT_INPUT_WIDTH - PADDING;
-          y = Math.max(PADDING, Math.min(pinY - COMMENT_INPUT_HEIGHT / 2, rect.height - COMMENT_INPUT_HEIGHT - PADDING));
-        } else if (spaceBottom >= COMMENT_INPUT_HEIGHT + pinRadius + PADDING * 2) {
-          // Position below
-          x = Math.max(PADDING, Math.min(pinX - COMMENT_INPUT_WIDTH / 2, rect.width - COMMENT_INPUT_WIDTH - PADDING));
-          y = pinY + pinRadius + PADDING;
-        } else if (spaceTop >= COMMENT_INPUT_HEIGHT + pinRadius + PADDING * 2) {
-          // Position above
-          x = Math.max(PADDING, Math.min(pinX - COMMENT_INPUT_WIDTH / 2, rect.width - COMMENT_INPUT_WIDTH - PADDING));
-          y = pinY - pinRadius - COMMENT_INPUT_HEIGHT - PADDING;
-        } else {
-          // Fallback: center on screen
-          x = Math.max(PADDING, (rect.width - COMMENT_INPUT_WIDTH) / 2);
-          y = Math.max(PADDING, (rect.height - COMMENT_INPUT_HEIGHT) / 2);
-        }
-
         return {
-          position: { x, y },
+          position,
           targetBounds: { x: pinX - pinRadius, y: pinY - pinRadius, width: pinSize, height: pinSize },
         };
       }

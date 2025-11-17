@@ -10,6 +10,7 @@ import {
   AnnotationToolbar,
   AnnotationCommentInput,
   useAnnotationTools,
+  useAnnotationEditState,
   createHistoryEntry,
   createSnapshot,
   type AnnotationDraft,
@@ -51,9 +52,8 @@ export function UploadedImagePreview({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [nextAnnotationLabel, setNextAnnotationLabel] = useState("A");
 
-  // Edit dialog state
-  const [editingAnnotation, setEditingAnnotation] = useState<AttachmentAnnotation | null>(null);
-  const [showEditDialog, setShowEditDialog] = useState(false);
+  // Edit dialog state management
+  const { editState, openEdit, closeEdit, submitEdit } = useAnnotationEditState();
 
   // Canvas state for zoom and pan (only for as-is variant)
   const [canvasState, setCanvasState] = useState<CanvasViewState>({
@@ -97,11 +97,7 @@ export function UploadedImagePreview({
       onAnnotationsChange(updated);
     },
     onEdit: (annotationId: string) => {
-      const annotation = annotations.find((a) => a.id === annotationId);
-      if (annotation) {
-        setEditingAnnotation(annotation);
-        setShowEditDialog(true);
-      }
+      openEdit(annotationId, annotations, overlayRef);
     },
     onDelete: (annotationId: string) => {
       if (!onAnnotationsChange) return;
@@ -124,17 +120,6 @@ export function UploadedImagePreview({
     },
   });
 
-  // Edit annotation handler
-  const handleAnnotationEdit = useCallback(
-    (annotationId: string) => {
-      const annotation = annotations.find((a) => a.id === annotationId);
-      if (annotation) {
-        setEditingAnnotation(annotation);
-        setShowEditDialog(true);
-      }
-    },
-    [annotations]
-  );
 
   // Delete annotation handler with label re-sequencing
   const handleAnnotationDelete = useCallback(
@@ -304,28 +289,30 @@ export function UploadedImagePreview({
     [onAnnotationSelect]
   );
 
+  // Edit annotation handler for AnnotationLayer
+  const handleAnnotationEdit = useCallback(
+    (annotationId: string) => {
+      openEdit(annotationId, annotations, overlayRef);
+    },
+    [openEdit, annotations, overlayRef]
+  );
+
   // Handle edit submit
   const handleEditSubmit = useCallback(
     (newDescription: string) => {
-      if (editingAnnotation && onAnnotationsChange) {
+      if (!onAnnotationsChange) return;
+      submitEdit(newDescription, (annotationId, updates) => {
         const updated = annotations.map((a) =>
-          a.id === editingAnnotation.id
-            ? { ...a, description: newDescription }
+          a.id === annotationId
+            ? { ...a, ...updates }
             : a
         );
         onAnnotationsChange(updated);
-        setShowEditDialog(false);
-        setEditingAnnotation(null);
-      }
+      });
     },
-    [editingAnnotation, annotations, onAnnotationsChange]
+    [submitEdit, annotations, onAnnotationsChange]
   );
 
-  // Handle edit cancel
-  const handleEditCancel = useCallback(() => {
-    setShowEditDialog(false);
-    setEditingAnnotation(null);
-  }, []);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
@@ -495,19 +482,17 @@ export function UploadedImagePreview({
         )}
       </div>
 
-      {/* Edit Annotation Dialog */}
-      {showEditDialog && editingAnnotation && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <AnnotationCommentInput
-            defaultValue={editingAnnotation.description}
-            title={`Edit Annotation ${editingAnnotation.label}`}
-            placeholder="Update annotation description..."
-            onSubmit={handleEditSubmit}
-            onCancel={handleEditCancel}
-            className="shadow-2xl"
-            autoFocus
-          />
-        </div>
+      {/* Edit Annotation Popover */}
+      {editState.showEditDialog && editState.editingAnnotation && editState.editPopoverPosition && (
+        <AnnotationCommentInput
+          position={editState.editPopoverPosition}
+          defaultValue={editState.editingAnnotation.description}
+          title={`Edit Annotation ${editState.editingAnnotation.label}`}
+          placeholder="Update annotation description..."
+          onSubmit={handleEditSubmit}
+          onCancel={closeEdit}
+          autoFocus
+        />
       )}
     </div>
   );

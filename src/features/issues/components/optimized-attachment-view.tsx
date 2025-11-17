@@ -15,9 +15,11 @@ import {
   AnnotationLayer,
   AnnotationToolbar,
   AnnotationCanvas,
+  AnnotationCommentInput,
   useAnnotationTools,
   useAnnotationDrafts,
   useAnnotationSave,
+  useAnnotationEditState,
   draftToAnnotation,
   createHistoryEntry,
   createSnapshot,
@@ -47,6 +49,7 @@ interface IssueAttachmentsViewProps {
   onAnnotationMove?: (annotationId: string, position: AnnotationPosition) => void;
   onBoxAnnotationMove?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
   onAnnotationEdit?: (annotationId: string) => void;
+  onAnnotationUpdate?: (annotationId: string, updates: Partial<AttachmentAnnotation>) => void;
   onAnnotationDelete?: (annotationId: string) => void;
 }
 
@@ -63,6 +66,7 @@ export default function IssueAttachmentsView({
   onAnnotationMove,
   onBoxAnnotationMove,
   onAnnotationEdit,
+  onAnnotationUpdate,
   onAnnotationDelete,
 }: IssueAttachmentsViewProps) {
   const imageAttachments = useMemo(
@@ -100,6 +104,9 @@ export default function IssueAttachmentsView({
     initialShape: import('@/features/annotations').AnnotationShape;
     isDragging: boolean;
   } | null>(null);
+
+  // Edit dialog state management
+  const { editState, openEdit, closeEdit, submitEdit } = useAnnotationEditState();
 
   // Handler for undo operations
   const handleAnnotationUndo = useCallback((entry: AnnotationHistoryEntry) => {
@@ -155,9 +162,34 @@ export default function IssueAttachmentsView({
   } = useAnnotationTools({
     initialTool: 'cursor',
     initialEditMode: false,
-    onUndo: handleAnnotationUndo,  // ← NOW CONNECTED!
-    onRedo: handleAnnotationRedo,  // ← NOW CONNECTED!
+    onUndo: handleAnnotationUndo,
+    onRedo: handleAnnotationRedo,
+    onEdit: (annotationId: string) => {
+      openEdit(annotationId, annotationThreads, annotationOverlayRef);
+      onAnnotationEdit?.(annotationId);
+    },
+    onDelete: (annotationId: string) => {
+      onAnnotationDelete?.(annotationId);
+    },
   });
+
+  // Edit submission handler
+  const handleEditSubmit = useCallback(
+    (newDescription: string) => {
+      if (!onAnnotationUpdate) return;
+      submitEdit(newDescription, onAnnotationUpdate);
+    },
+    [submitEdit, onAnnotationUpdate]
+  );
+
+  // Edit annotation handler for AnnotationLayer
+  const handleAnnotationEdit = useCallback(
+    (annotationId: string) => {
+      openEdit(annotationId, annotationThreads, annotationOverlayRef);
+      onAnnotationEdit?.(annotationId);
+    },
+    [openEdit, annotationThreads, annotationOverlayRef, onAnnotationEdit]
+  );
 
   // Reset to cursor tool when edit mode is enabled
   useEffect(() => {
@@ -526,7 +558,7 @@ export default function IssueAttachmentsView({
             onBoxMove={handleBoxAnnotationMove}
             onMoveComplete={handleAnnotationMoveComplete}
             onBoxMoveComplete={handleBoxAnnotationMoveComplete}
-            onEdit={onAnnotationEdit}
+            onEdit={handleAnnotationEdit}
             onDelete={onAnnotationDelete}
           />
         )}
@@ -542,6 +574,18 @@ export default function IssueAttachmentsView({
             onDraftCancel={cancelDraft}
             requireCommentForPin={true}
             requireCommentForBox={true}
+          />
+        )}
+        {/* Edit Annotation Popover */}
+        {editState.showEditDialog && editState.editingAnnotation && editState.editPopoverPosition && (
+          <AnnotationCommentInput
+            position={editState.editPopoverPosition}
+            defaultValue={editState.editingAnnotation.description}
+            title={`Edit Annotation ${editState.editingAnnotation.label}`}
+            placeholder="Update annotation description..."
+            onSubmit={handleEditSubmit}
+            onCancel={closeEdit}
+            autoFocus
           />
         )}
       </>

@@ -33,7 +33,7 @@ import type {
   IssueAttachment,
   IssueUser,
 } from "@/features/issues/types";
-import type { AnnotationPosition, AnnotationThread } from "@/features/annotations";
+import type { AnnotationPosition, AnnotationThread, AttachmentAnnotation } from "@/features/annotations";
 import { mapAttachmentsToAnnotationThreads, AnnotationThreadPreview } from "@/features/annotations";
 
 // Motion configuration constants
@@ -292,9 +292,22 @@ export default function ResponsiveIssueLayout({
 
   const handleAnnotationEdit = useCallback(
     (annotationId: string) => {
-      // TODO: Implement edit dialog/sheet for annotation
-      // For now, just log the edit action
-      console.log('Edit annotation:', annotationId);
+      // Edit UI is handled in optimized-attachment-view
+      // This callback is for future tracking/analytics if needed
+      console.log('Edit annotation initiated:', annotationId);
+    },
+    []
+  );
+
+  const handleAnnotationUpdate = useCallback(
+    (annotationId: string, updates: Partial<AttachmentAnnotation>) => {
+      setAnnotationThreads((prev) =>
+        prev.map((annotation) =>
+          annotation.id === annotationId
+            ? ({ ...annotation, ...updates } as IssueAnnotationThread)
+            : annotation
+        )
+      );
     },
     []
   );
@@ -435,6 +448,7 @@ export default function ResponsiveIssueLayout({
                     onAnnotationMove={handleAnnotationMove}
                     onBoxAnnotationMove={handleBoxAnnotationMove}
                     onAnnotationEdit={handleAnnotationEdit}
+                    onAnnotationUpdate={handleAnnotationUpdate}
                     onAnnotationDelete={handleAnnotationDelete}
                   />
                 </Suspense>
@@ -624,6 +638,7 @@ export default function ResponsiveIssueLayout({
             onAnnotationMove={handleAnnotationMove}
             onBoxAnnotationMove={handleBoxAnnotationMove}
             onAnnotationEdit={handleAnnotationEdit}
+            onAnnotationUpdate={handleAnnotationUpdate}
             onAnnotationDelete={handleAnnotationDelete}
           />
         </Suspense>

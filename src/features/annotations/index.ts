@@ -56,3 +56,5 @@ export { useAnnotationsWithHistory } from './hooks/use-annotations-with-history'
 export type { UseAnnotationsWithHistoryOptions } from './hooks/use-annotations-with-history';
 export { useAnnotationSave } from './hooks/use-annotation-save';
 export type { UseAnnotationSaveOptions, UseAnnotationSaveReturn } from './hooks/use-annotation-save';
+export { useAnnotationEditState } from './hooks/use-annotation-edit-state';
+export type { AnnotationEditState, UseAnnotationEditStateReturn } from './hooks/use-annotation-edit-state';
