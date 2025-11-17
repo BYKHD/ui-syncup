@@ -927,41 +927,842 @@ vercel env pull .env.local
 
 ## Monitoring & Maintenance
 
-### Daily Checks
+### Vercel Analytics Setup
 
-- [ ] Review Vercel deployment status
-- [ ] Check error logs in Vercel Dashboard
-- [ ] Monitor performance metrics (Web Vitals)
-- [ ] Review preview deployment usage
+Vercel Analytics provides real-time insights into application performance, user behavior, and errors. Enable it to monitor production health and identify issues before they impact users.
 
-### Weekly Checks
+#### Enabling Vercel Analytics
 
-- [ ] Review environment variable expiry (if applicable)
-- [ ] Check security alerts (Dependabot, npm audit)
-- [ ] Review and clean up old preview deployments
-- [ ] Monitor bandwidth and function invocation usage
+**Via Vercel Dashboard**:
 
-### Monthly Checks
+1. Navigate to your project in Vercel Dashboard
+2. Go to **Analytics** tab
+3. Click **"Enable Analytics"**
+4. Choose analytics tier:
+   - **Web Analytics** (Free): Page views, unique visitors, top pages
+   - **Speed Insights** (Free): Core Web Vitals, performance metrics
+   - **Audience** (Pro): Geographic data, device types, referrers
 
-- [ ] Rotate secrets (database passwords, API keys)
-- [ ] Review access permissions (Vercel team members)
-- [ ] Update dependencies (`bun update`)
-- [ ] Review and optimize costs
-- [ ] Audit environment variables across all scopes
+**Via Environment Variable**:
 
-### Cost Optimization
+```bash
+# Add to production environment
+vercel env add NEXT_PUBLIC_ENABLE_ANALYTICS production
 
-**Vercel Usage**:
-- Monitor bandwidth usage in Vercel Dashboard
-- Optimize image delivery (use Next.js Image component)
-- Use edge caching effectively (`Cache-Control` headers)
-- Clean up old preview deployments regularly
+# Set value to "true"
+```
+
+**In Application Code**:
+
+```typescript
+// src/app/layout.tsx
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        {process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true' && (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        )}
+      </body>
+    </html>
+  )
+}
+```
+
+#### Analytics Features
+
+**Web Analytics**:
+- **Page Views**: Track which pages are most visited
+- **Unique Visitors**: Monitor user growth and retention
+- **Top Pages**: Identify popular content
+- **Referrers**: Understand traffic sources
+- **Real-time**: See live visitor activity
+
+**Speed Insights**:
+- **Core Web Vitals**: LCP, FID, CLS metrics
+- **Performance Score**: Overall site performance rating
+- **Page Load Times**: P50, P75, P95 percentiles
+- **Device Breakdown**: Performance by device type
+- **Geographic Data**: Performance by region
+
+**Error Tracking** (Pro):
+- **Runtime Errors**: JavaScript errors in production
+- **Error Frequency**: Track error occurrence over time
+- **Error Context**: Stack traces, user agents, URLs
+- **Error Grouping**: Automatically group similar errors
+
+#### Accessing Analytics
+
+1. **Vercel Dashboard**:
+   - Navigate to project → Analytics tab
+   - View real-time and historical data
+   - Filter by date range, page, device
+
+2. **Analytics API** (Pro):
+   ```bash
+   # Get analytics data programmatically
+   curl -H "Authorization: Bearer $VERCEL_TOKEN" \
+        "https://api.vercel.com/v1/analytics?projectId=$PROJECT_ID"
+   ```
+
+3. **Custom Dashboards**:
+   - Export data to external tools (Datadog, Grafana)
+   - Create custom visualizations
+   - Set up automated reports
+
+### Accessing Deployment Logs
+
+Deployment logs help diagnose build failures, runtime errors, and performance issues.
+
+#### Via Vercel Dashboard
+
+1. **Build Logs**:
+   - Navigate to **Deployments** tab
+   - Click on a deployment
+   - View **Build Logs** section
+   - Shows: dependency installation, build output, errors
+
+2. **Function Logs** (Runtime):
+   - Navigate to **Deployments** → Select deployment
+   - Click **Functions** tab
+   - View logs for each serverless function
+   - Shows: API requests, errors, console output
+
+3. **Real-time Logs**:
+   - Navigate to **Logs** tab (Pro feature)
+   - View live stream of all function invocations
+   - Filter by: function, status code, time range
+   - Search logs by keyword
+
+#### Via Vercel CLI
+
+```bash
+# View logs for latest deployment
+vercel logs
+
+# View logs for specific deployment
+vercel logs <deployment-url>
+
+# Follow logs in real-time
+vercel logs --follow
+
+# Filter logs by function
+vercel logs --output=<function-name>
+
+# View logs from last N minutes
+vercel logs --since=10m
+
+# View logs until specific time
+vercel logs --until=2024-01-01T12:00:00Z
+
+# Output logs as JSON
+vercel logs --output=json
+```
+
+#### Log Retention
+
+| Plan | Retention Period | Real-time Logs |
+|------|------------------|----------------|
+| Hobby | 1 hour | ❌ |
+| Pro | 1 day | ✅ |
+| Enterprise | 7 days | ✅ |
+
+**Recommendation**: For longer retention, export logs to external service (Datadog, Logtail, Papertrail).
+
+#### Exporting Logs
+
+**To External Service**:
+
+```typescript
+// src/lib/logger.ts
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger({
+  service: 'ui-syncup',
+  environment: process.env.VERCEL_ENV,
+  // Send to external service
+  transports: [
+    new ExternalLogTransport({
+      apiKey: process.env.LOG_SERVICE_API_KEY,
+      endpoint: 'https://logs.example.com/ingest',
+    }),
+  ],
+})
+
+export default logger
+```
+
+**Via Vercel Log Drains** (Enterprise):
+- Navigate to Project Settings → Log Drains
+- Add drain endpoint (Datadog, Splunk, etc.)
+- Configure authentication and filters
+
+### Error Tracking
+
+Monitor and respond to production errors quickly to maintain application reliability.
+
+#### Built-in Error Tracking (Vercel Pro)
+
+**Enable Error Tracking**:
+1. Navigate to project → Analytics → Errors
+2. View error frequency, affected users, stack traces
+3. Group similar errors automatically
+4. Set up error alerts (see Alerting section)
+
+**Error Details**:
+- **Stack Trace**: Full error stack with source maps
+- **User Context**: Browser, OS, device, location
+- **Request Context**: URL, method, headers
+- **Frequency**: Error count over time
+- **First/Last Seen**: When error first and last occurred
+
+#### External Error Tracking
+
+For more advanced features, integrate with dedicated error tracking services:
+
+**Sentry Integration**:
+
+```bash
+# Install Sentry SDK
+bun add @sentry/nextjs
+
+# Initialize Sentry
+bunx @sentry/wizard@latest -i nextjs
+```
+
+```typescript
+// sentry.client.config.ts
+import * as Sentry from '@sentry/nextjs'
+
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  environment: process.env.VERCEL_ENV,
+  tracesSampleRate: 1.0,
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+})
+```
+
+**Other Options**:
+- **Rollbar**: Lightweight error tracking
+- **Bugsnag**: Error monitoring with release tracking
+- **LogRocket**: Session replay with error tracking
+- **Datadog**: Full observability platform
+
+#### Error Response Workflow
+
+1. **Detection**: Error occurs in production
+2. **Alert**: Team notified via Slack/email (see Alerting)
+3. **Triage**: Assess severity and impact
+4. **Investigation**: Review logs, stack traces, user reports
+5. **Fix**: Deploy hotfix or schedule fix in next release
+6. **Verification**: Confirm error resolved
+7. **Post-mortem**: Document root cause and prevention
+
+### Alerting & Notifications
+
+Set up proactive alerts to catch issues before they impact users.
+
+#### Vercel Deployment Notifications
+
+**Configure in Dashboard**:
+
+1. Navigate to Project Settings → Notifications
+2. Enable notifications for:
+   - ✅ **Deployment Started**: Know when builds begin
+   - ✅ **Deployment Ready**: Confirm successful deployments
+   - ✅ **Deployment Failed**: Immediate alert on build failures
+   - ✅ **Deployment Promoted**: Track production promotions
+   - ✅ **Deployment Canceled**: Know when deployments are stopped
+
+3. Add notification channels:
+
+**Slack Integration**:
+```bash
+# Add Slack webhook
+1. Go to Slack → Apps → Incoming Webhooks
+2. Create webhook for #deployments channel
+3. Copy webhook URL
+4. In Vercel: Settings → Notifications → Add Slack
+5. Paste webhook URL
+```
+
+**Discord Integration**:
+```bash
+# Add Discord webhook
+1. Go to Discord → Server Settings → Integrations → Webhooks
+2. Create webhook for #deployments channel
+3. Copy webhook URL
+4. In Vercel: Settings → Notifications → Add Discord
+5. Paste webhook URL
+```
+
+**Email Notifications**:
+- Add team member emails in Notifications settings
+- Configure per-user notification preferences
+
+#### Performance Alerts (Pro)
+
+**Core Web Vitals Alerts**:
+
+1. Navigate to Analytics → Speed Insights
+2. Click **"Set up alerts"**
+3. Configure thresholds:
+   - **LCP** (Largest Contentful Paint): Alert if > 2.5s
+   - **FID** (First Input Delay): Alert if > 100ms
+   - **CLS** (Cumulative Layout Shift): Alert if > 0.1
+
+4. Set notification channels (Slack, email)
+
+**Custom Performance Alerts**:
+
+```typescript
+// src/lib/performance.ts
+import { sendAlert } from '@/lib/alerts'
+
+export function trackPerformance(metric: string, value: number, threshold: number) {
+  if (value > threshold) {
+    sendAlert({
+      type: 'performance',
+      metric,
+      value,
+      threshold,
+      severity: 'warning',
+      message: `${metric} exceeded threshold: ${value}ms > ${threshold}ms`,
+    })
+  }
+}
+
+// Usage in API route
+export async function GET() {
+  const start = Date.now()
+  const data = await fetchData()
+  const duration = Date.now() - start
+  
+  trackPerformance('api_response_time', duration, 500)
+  
+  return Response.json(data)
+}
+```
+
+#### Error Rate Alerts
+
+**Vercel Error Alerts** (Pro):
+
+1. Navigate to Analytics → Errors
+2. Click **"Configure alerts"**
+3. Set thresholds:
+   - Alert if error rate > 5% of requests
+   - Alert if new error type appears
+   - Alert if error affects > 100 users
+
+**Custom Error Alerts**:
+
+```typescript
+// src/lib/error-tracking.ts
+import { sendAlert } from '@/lib/alerts'
+
+let errorCount = 0
+let requestCount = 0
+
+export function trackError(error: Error, context: any) {
+  errorCount++
+  requestCount++
+  
+  const errorRate = errorCount / requestCount
+  
+  if (errorRate > 0.05) { // 5% error rate
+    sendAlert({
+      type: 'error_rate',
+      rate: errorRate,
+      severity: 'critical',
+      message: `Error rate exceeded 5%: ${(errorRate * 100).toFixed(2)}%`,
+      context,
+    })
+  }
+}
+```
+
+#### External Service Alerts
+
+**Supabase Alerts**:
+- Navigate to Supabase Dashboard → Settings → Alerts
+- Configure alerts for:
+  - Database CPU usage > 80%
+  - Connection pool exhaustion
+  - Storage quota > 90%
+  - API rate limit approaching
+
+**Cloudflare R2 Alerts**:
+- Set up billing alerts in Cloudflare Dashboard
+- Monitor storage usage and bandwidth
+- Alert on quota approaching limits
+
+**Custom Health Check Alerts**:
+
+```typescript
+// src/lib/health-check-monitor.ts
+import { sendAlert } from '@/lib/alerts'
+
+export async function monitorHealth() {
+  try {
+    const response = await fetch('https://ui-syncup.com/api/health')
+    const data = await response.json()
+    
+    if (data.status !== 'ok') {
+      sendAlert({
+        type: 'health_check',
+        severity: 'critical',
+        message: 'Health check failed',
+        details: data,
+      })
+    }
+  } catch (error) {
+    sendAlert({
+      type: 'health_check',
+      severity: 'critical',
+      message: 'Health check endpoint unreachable',
+      error: error.message,
+    })
+  }
+}
+
+// Run every 5 minutes via cron job or external monitor
+```
+
+#### Alert Severity Levels
+
+| Severity | Response Time | Examples |
+|----------|--------------|----------|
+| **Critical** | Immediate (< 5 min) | Production down, data loss, security breach |
+| **High** | < 30 minutes | Error rate spike, performance degradation |
+| **Medium** | < 2 hours | Build failures, preview deployment issues |
+| **Low** | Next business day | Deprecation warnings, minor bugs |
+
+#### On-Call Rotation
+
+**Set up on-call schedule**:
+1. Define on-call rotation (weekly, bi-weekly)
+2. Use PagerDuty, Opsgenie, or similar for escalation
+3. Document on-call procedures and runbooks
+4. Ensure on-call engineer has access to:
+   - Vercel Dashboard
+   - External service dashboards
+   - Deployment credentials
+   - Team communication channels
+
+### Monitoring Checklist
+
+Use these checklists to maintain system health and catch issues early.
+
+#### Daily Monitoring Tasks (5-10 minutes)
+
+**Deployment Health**:
+- [ ] Check Vercel Dashboard for failed deployments
+- [ ] Review latest production deployment status
+- [ ] Verify no stuck or pending deployments
+
+**Error Monitoring**:
+- [ ] Review error logs in Vercel Analytics (if Pro)
+- [ ] Check for new error types or spikes
+- [ ] Verify error rate < 1% of requests
+
+**Performance Metrics**:
+- [ ] Check Core Web Vitals in Speed Insights
+- [ ] Verify LCP < 2.5s, FID < 100ms, CLS < 0.1
+- [ ] Review API response times (p95 < 500ms)
+
+**User Activity**:
+- [ ] Check Web Analytics for traffic patterns
+- [ ] Verify no unusual drops in traffic
+- [ ] Review top pages and user flows
+
+**Quick Health Check**:
+```bash
+# Run daily health check script
+curl https://ui-syncup.com/api/health | jq
+```
+
+#### Weekly Monitoring Tasks (30-60 minutes)
+
+**Deployment Review**:
+- [ ] Review all deployments from past week
+- [ ] Check preview deployment usage and cleanup old ones
+- [ ] Verify branch protection rules are enforced
+- [ ] Review deployment frequency and patterns
+
+**Security & Dependencies**:
+- [ ] Check Dependabot alerts in GitHub
+- [ ] Run `bun audit` for security vulnerabilities
+- [ ] Review and merge security patches
+- [ ] Check for outdated dependencies
+
+**Performance Analysis**:
+- [ ] Review weekly performance trends
+- [ ] Identify slow pages or API endpoints
+- [ ] Check for performance regressions
+- [ ] Review bandwidth usage trends
+
+**Error Analysis**:
+- [ ] Review top errors from past week
+- [ ] Identify recurring error patterns
+- [ ] Create tickets for unresolved errors
+- [ ] Verify fixes for previously reported errors
 
 **External Services**:
-- Monitor Supabase database size and connection pool usage
-- Optimize Cloudflare R2 storage (delete unused files)
-- Review API call patterns and implement rate limiting
-- Set up billing alerts in each service
+- [ ] Check Supabase database size and growth
+- [ ] Review Cloudflare R2 storage usage
+- [ ] Verify API rate limits not approaching
+- [ ] Check connection pool usage
+
+**Cost Review**:
+- [ ] Review Vercel usage (bandwidth, functions)
+- [ ] Check Supabase usage and costs
+- [ ] Review Cloudflare R2 storage costs
+- [ ] Identify cost optimization opportunities
+
+#### Monthly Monitoring Tasks (2-4 hours)
+
+**Security Maintenance**:
+- [ ] Rotate secrets (database passwords, API keys)
+- [ ] Review access permissions (Vercel team members)
+- [ ] Audit environment variables across all scopes
+- [ ] Review and update security headers
+- [ ] Check SSL certificate expiry
+
+**Dependency Updates**:
+- [ ] Update all dependencies: `bun update`
+- [ ] Test updated dependencies in preview environment
+- [ ] Review breaking changes in major updates
+- [ ] Update lock files and commit changes
+
+**Performance Optimization**:
+- [ ] Run Lighthouse audits on key pages
+- [ ] Identify and optimize slow queries
+- [ ] Review and optimize bundle sizes
+- [ ] Implement caching improvements
+- [ ] Optimize images and assets
+
+**Cost Optimization**:
+- [ ] Review monthly costs across all services
+- [ ] Identify unused resources and clean up
+- [ ] Optimize database queries and indexes
+- [ ] Review and adjust caching strategies
+- [ ] Negotiate pricing with service providers (if applicable)
+
+**Documentation Updates**:
+- [ ] Update deployment documentation
+- [ ] Document new procedures or changes
+- [ ] Update runbooks for common issues
+- [ ] Review and update team onboarding docs
+
+**Capacity Planning**:
+- [ ] Review traffic growth trends
+- [ ] Forecast resource needs for next quarter
+- [ ] Plan for scaling if needed
+- [ ] Review and adjust rate limits
+
+**Backup & Disaster Recovery**:
+- [ ] Verify database backups are running
+- [ ] Test backup restoration process
+- [ ] Review disaster recovery procedures
+- [ ] Update emergency contact list
+
+### Cost Optimization Guidelines
+
+Optimize costs across Vercel and external services while maintaining performance and reliability.
+
+#### Vercel Cost Optimization
+
+**Bandwidth Optimization**:
+
+1. **Optimize Images**:
+   ```typescript
+   // Use Next.js Image component
+   import Image from 'next/image'
+   
+   <Image
+     src="/hero.jpg"
+     alt="Hero"
+     width={1200}
+     height={600}
+     quality={85}  // Reduce quality slightly
+     priority      // Preload critical images
+   />
+   ```
+
+2. **Enable Compression**:
+   ```typescript
+   // next.config.ts
+   const nextConfig = {
+     compress: true,  // Enable gzip compression
+   }
+   ```
+
+3. **Use Edge Caching**:
+   ```typescript
+   // API route with caching
+   export async function GET() {
+     const data = await fetchData()
+     
+     return Response.json(data, {
+       headers: {
+         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+       },
+     })
+   }
+   ```
+
+4. **Optimize Static Assets**:
+   - Minify CSS and JavaScript
+   - Use WebP/AVIF image formats
+   - Lazy load non-critical resources
+   - Remove unused dependencies
+
+**Function Invocation Optimization**:
+
+1. **Reduce Cold Starts**:
+   ```typescript
+   // Keep functions warm with minimal code
+   export const config = {
+     maxDuration: 10,  // Reduce timeout for simple functions
+   }
+   ```
+
+2. **Batch Operations**:
+   ```typescript
+   // Batch multiple operations in single function call
+   export async function POST(request: Request) {
+     const { operations } = await request.json()
+     const results = await Promise.all(operations.map(op => processOperation(op)))
+     return Response.json(results)
+   }
+   ```
+
+3. **Use Edge Functions** (when appropriate):
+   ```typescript
+   // Edge runtime for simple, fast operations
+   export const runtime = 'edge'
+   
+   export async function GET() {
+     return Response.json({ status: 'ok' })
+   }
+   ```
+
+**Preview Deployment Cleanup**:
+
+```bash
+# List all deployments
+vercel ls
+
+# Remove old preview deployments (older than 7 days)
+vercel ls --max-age=7d | grep -v "Production" | xargs -I {} vercel rm {} --yes
+
+# Automate cleanup with GitHub Action
+# .github/workflows/cleanup-previews.yml
+name: Cleanup Old Previews
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - run: vercel ls --max-age=7d | grep -v "Production" | xargs -I {} vercel rm {} --yes
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+```
+
+**Plan Optimization**:
+- Monitor usage against plan limits
+- Upgrade only when consistently hitting limits
+- Consider Enterprise plan for high-traffic apps
+- Use preview deployments sparingly for large teams
+
+#### Supabase Cost Optimization
+
+**Database Optimization**:
+
+1. **Optimize Queries**:
+   ```typescript
+   // Use indexes for frequently queried columns
+   // Add in migration
+   CREATE INDEX idx_issues_project_id ON issues(project_id);
+   CREATE INDEX idx_issues_status ON issues(status);
+   
+   // Use query optimization
+   const { data } = await supabase
+     .from('issues')
+     .select('id, title, status')  // Select only needed columns
+     .eq('project_id', projectId)
+     .limit(50)  // Limit results
+   ```
+
+2. **Connection Pooling**:
+   ```typescript
+   // Use pooled connection for serverless
+   DATABASE_URL="postgresql://...?pgbouncer=true"
+   
+   // Use direct connection only for migrations
+   DIRECT_URL="postgresql://..."
+   ```
+
+3. **Clean Up Old Data**:
+   ```sql
+   -- Archive old issues
+   DELETE FROM issues WHERE status = 'archived' AND updated_at < NOW() - INTERVAL '1 year';
+   
+   -- Vacuum database to reclaim space
+   VACUUM FULL;
+   ```
+
+**Storage Optimization**:
+
+1. **Implement Storage Policies**:
+   ```sql
+   -- Delete files older than 90 days
+   CREATE POLICY "Delete old files"
+   ON storage.objects
+   FOR DELETE
+   USING (created_at < NOW() - INTERVAL '90 days');
+   ```
+
+2. **Compress Files Before Upload**:
+   ```typescript
+   // Compress images before uploading
+   import sharp from 'sharp'
+   
+   const compressed = await sharp(buffer)
+     .resize(1920, 1080, { fit: 'inside' })
+     .webp({ quality: 85 })
+     .toBuffer()
+   ```
+
+**Monitoring & Alerts**:
+- Set up billing alerts at 50%, 75%, 90% of quota
+- Monitor database size growth trends
+- Review slow queries and optimize
+- Use read replicas for read-heavy workloads (Pro+)
+
+#### Cloudflare R2 Cost Optimization
+
+**Storage Optimization**:
+
+1. **Lifecycle Policies**:
+   ```bash
+   # Delete files older than 90 days
+   # Configure in Cloudflare Dashboard → R2 → Bucket → Lifecycle
+   ```
+
+2. **Deduplicate Files**:
+   ```typescript
+   // Use content-based hashing to avoid duplicates
+   import crypto from 'crypto'
+   
+   function getFileHash(buffer: Buffer): string {
+     return crypto.createHash('sha256').update(buffer).digest('hex')
+   }
+   
+   // Check if file exists before uploading
+   const hash = getFileHash(fileBuffer)
+   const existingFile = await checkFileExists(hash)
+   if (existingFile) {
+     return existingFile.url  // Reuse existing file
+   }
+   ```
+
+3. **Compress Files**:
+   ```typescript
+   // Compress before uploading
+   import { gzip } from 'zlib'
+   import { promisify } from 'util'
+   
+   const gzipAsync = promisify(gzip)
+   const compressed = await gzipAsync(buffer)
+   ```
+
+**Bandwidth Optimization**:
+
+1. **Use CDN Caching**:
+   ```typescript
+   // Set cache headers on R2 objects
+   await r2.putObject({
+     Bucket: bucket,
+     Key: key,
+     Body: buffer,
+     CacheControl: 'public, max-age=31536000',  // 1 year
+   })
+   ```
+
+2. **Optimize Image Delivery**:
+   - Use Cloudflare Images for automatic optimization
+   - Serve responsive images (multiple sizes)
+   - Use modern formats (WebP, AVIF)
+
+**Cost Monitoring**:
+- Monitor storage usage and growth
+- Track bandwidth usage patterns
+- Set up billing alerts
+- Review and delete unused files regularly
+
+#### General Cost Optimization Strategies
+
+**Monitoring & Alerting**:
+```typescript
+// Set up cost alerts
+const COST_THRESHOLDS = {
+  vercel: 100,      // $100/month
+  supabase: 50,     // $50/month
+  cloudflare: 25,   // $25/month
+}
+
+async function checkCosts() {
+  const costs = await fetchCurrentCosts()
+  
+  for (const [service, cost] of Object.entries(costs)) {
+    if (cost > COST_THRESHOLDS[service]) {
+      sendAlert({
+        type: 'cost_alert',
+        service,
+        cost,
+        threshold: COST_THRESHOLDS[service],
+        message: `${service} costs exceeded threshold: $${cost} > $${COST_THRESHOLDS[service]}`,
+      })
+    }
+  }
+}
+```
+
+**Resource Tagging**:
+- Tag resources by environment (production, preview)
+- Tag by feature or team
+- Track costs per tag
+- Identify cost centers
+
+**Regular Reviews**:
+- Monthly cost review meetings
+- Quarterly cost optimization sprints
+- Annual service provider negotiations
+- Continuous monitoring and optimization
+
+**Cost Optimization Checklist**:
+- [ ] Enable compression and caching
+- [ ] Optimize images and assets
+- [ ] Clean up unused resources
+- [ ] Implement lifecycle policies
+- [ ] Monitor usage trends
+- [ ] Set up billing alerts
+- [ ] Review and optimize queries
+- [ ] Use appropriate service tiers
+- [ ] Implement rate limiting
+- [ ] Regular cost audits
 
 ### Useful Commands
 
