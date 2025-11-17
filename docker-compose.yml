@@ -41,6 +41,8 @@ services:
 
   minio:
     image: minio/minio:latest
+    container_name: ui-syncup-minio
+    restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: devminio
@@ -49,12 +51,21 @@ services:
       - "9000:9000"   # S3 API
       - "9001:9001"   # Web console
     volumes:
-      - ./.data/minio:/data
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ui-syncup-network
 
 volumes:
   postgres_data:
     driver: local
   pgadmin_data:
+    driver: local
+  minio_data:
     driver: local
 
 networks:
