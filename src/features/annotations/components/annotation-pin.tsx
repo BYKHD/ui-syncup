@@ -2,9 +2,13 @@
 
 import { motion } from 'motion/react';
 import type { PointerEvent, RefObject } from 'react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { AttachmentAnnotation, AnnotationPosition } from '../types';
 import { cn } from '@/lib/utils';
+import { useLongPress } from '@/hooks/use-long-press';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { AnnotationContextMenu } from './annotation-context-menu';
+import { AnnotationActionSheet } from './annotation-action-sheet';
 
 const PIN_DRAG_THRESHOLD_PX = 4;
 
@@ -26,9 +30,12 @@ export interface AnnotationPinProps<A extends AttachmentAnnotation = AttachmentA
   overlayRef: RefObject<HTMLDivElement | null>;
   isActive?: boolean;
   interactive?: boolean;
+  handToolActive?: boolean; // Disable context menu when hand tool is active
   onSelect?: (annotationId: string) => void;
   onMove?: (annotationId: string, position: AnnotationPosition) => void;
   onMoveComplete?: (annotationId: string, position: AnnotationPosition) => void;
+  onEdit?: (annotationId: string) => void;
+  onDelete?: (annotationId: string) => void;
 }
 
 export function AnnotationPin<A extends AttachmentAnnotation>({
@@ -36,13 +43,24 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   overlayRef,
   isActive = false,
   interactive = true,
+  handToolActive = false,
   onSelect,
   onMove,
   onMoveComplete,
+  onEdit,
+  onDelete,
 }: AnnotationPinProps<A>) {
+  const isMobile = useIsMobile();
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
   const lastPositionRef = useRef<AnnotationPosition | null>(null);
+
+  // Context menu state (desktop)
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+
+  // Action sheet state (mobile)
+  const [actionSheetOpen, setActionSheetOpen] = useState(false);
 
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -108,24 +126,97 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     lastPositionRef.current = null;
   };
 
+  // Context menu handler (desktop right-click)
+  const handleContextMenu = (event: React.MouseEvent) => {
+    // Only show context menu in interactive mode and when not using hand tool
+    if (!interactive || handToolActive || !onEdit || !onDelete) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Select annotation
+    onSelect?.(annotation.id);
+
+    // Show context menu at cursor position
+    setContextMenuPosition({ x: event.clientX, y: event.clientY });
+    setContextMenuOpen(true);
+  };
+
+  // Long press handler (mobile)
+  const longPressHandlers = useLongPress({
+    onLongPress: () => {
+      // Only trigger on mobile in interactive mode and when not using hand tool
+      if (!isMobile || !interactive || handToolActive || !onEdit || !onDelete) return;
+
+      // Select annotation
+      onSelect?.(annotation.id);
+
+      // Show action sheet
+      setActionSheetOpen(true);
+    },
+    threshold: 500,
+    moveThreshold: 10,
+    enabled: isMobile && interactive && !handToolActive && !!onEdit && !!onDelete,
+  });
+
+  // Edit handler
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(annotation.id);
+    }
+  };
+
+  // Delete handler
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(annotation.id);
+    }
+  };
+
   return (
-    <motion.button
-      type="button"
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      className={getAnnotationPinClassName({ isActive, interactive })}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
-      style={{
-        left: `${annotation.x * 100}%`,
-        top: `${annotation.y * 100}%`,
-      }}
-      aria-label={`Annotation ${annotation.label}`}
-      data-annotation-pin="true"
-    >
-      {annotation.label}
-    </motion.button>
+    <>
+      <motion.button
+        type="button"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onContextMenu={handleContextMenu}
+        {...(isMobile ? longPressHandlers : {})}
+        className={getAnnotationPinClassName({ isActive, interactive })}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        style={{
+          left: `${annotation.x * 100}%`,
+          top: `${annotation.y * 100}%`,
+        }}
+        aria-label={`Annotation ${annotation.label}`}
+        data-annotation-pin="true"
+      >
+        {annotation.label}
+      </motion.button>
+
+      {/* Desktop context menu */}
+      {!isMobile && (
+        <AnnotationContextMenu
+          open={contextMenuOpen}
+          onOpenChange={setContextMenuOpen}
+          position={contextMenuPosition}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      )}
+
+      {/* Mobile action sheet */}
+      {isMobile && (
+        <AnnotationActionSheet
+          open={actionSheetOpen}
+          onOpenChange={setActionSheetOpen}
+          annotationLabel={annotation.label}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      )}
+    </>
   );
 }

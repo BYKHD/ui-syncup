@@ -290,6 +290,35 @@ export default function ResponsiveIssueLayout({
     []
   );
 
+  const handleAnnotationEdit = useCallback(
+    (annotationId: string) => {
+      // TODO: Implement edit dialog/sheet for annotation
+      // For now, just log the edit action
+      console.log('Edit annotation:', annotationId);
+    },
+    []
+  );
+
+  const handleAnnotationDelete = useCallback(
+    (annotationId: string) => {
+      setAnnotationThreads((prev) => {
+        const filtered = prev.filter((a) => a.id !== annotationId);
+        // Re-sequence labels
+        const resequenced = filtered.map((annotation, index) => ({
+          ...annotation,
+          label: String(index + 1),
+        }));
+        return resequenced;
+      });
+
+      // Clear active annotation if it was deleted
+      if (activeAnnotationId === annotationId) {
+        setActiveAnnotationId(null);
+      }
+    },
+    [activeAnnotationId]
+  );
+
   const handleBackToIssues = () => {
     window.location.href = "/issues";
   };
@@ -405,6 +434,8 @@ export default function ResponsiveIssueLayout({
                     onAnnotationSelect={handleAnnotationSelect}
                     onAnnotationMove={handleAnnotationMove}
                     onBoxAnnotationMove={handleBoxAnnotationMove}
+                    onAnnotationEdit={handleAnnotationEdit}
+                    onAnnotationDelete={handleAnnotationDelete}
                   />
                 </Suspense>
               </motion.div>
@@ -592,6 +623,8 @@ export default function ResponsiveIssueLayout({
             onAnnotationSelect={handleAnnotationSelect}
             onAnnotationMove={handleAnnotationMove}
             onBoxAnnotationMove={handleBoxAnnotationMove}
+            onAnnotationEdit={handleAnnotationEdit}
+            onAnnotationDelete={handleAnnotationDelete}
           />
         </Suspense>
         

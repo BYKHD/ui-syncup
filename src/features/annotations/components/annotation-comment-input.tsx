@@ -13,6 +13,8 @@ export interface AnnotationCommentInputProps {
   placeholder?: string;
   autoFocus?: boolean;
   className?: string;
+  defaultValue?: string; // Pre-fill input for editing mode
+  title?: string; // Dynamic header text
 }
 
 export function AnnotationCommentInput({
@@ -22,8 +24,10 @@ export function AnnotationCommentInput({
   placeholder = 'Add a comment...',
   autoFocus = true,
   className,
+  defaultValue = '',
+  title = 'Add annotation comment',
 }: AnnotationCommentInputProps) {
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(defaultValue);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -75,7 +79,7 @@ export function AnnotationCommentInput({
         {/* Header */}
         <div className="flex items-center gap-2 text-sm font-medium text-foreground">
           <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          <span>Add annotation comment</span>
+          <span>{title}</span>
         </div>
 
         {/* Textarea */}

@@ -33,8 +33,11 @@ export interface UseAnnotationToolsOptions {
   initialTool?: AnnotationToolId;
   initialEditMode?: boolean;
   enableKeyboardShortcuts?: boolean;
+  activeAnnotationId?: string | null; // Currently selected annotation for edit/delete
   onUndo?: (entry: AnnotationHistoryEntry) => void;
   onRedo?: (entry: AnnotationHistoryEntry) => void;
+  onEdit?: (annotationId: string) => void;
+  onDelete?: (annotationId: string) => void;
 }
 
 export interface AnnotationToolShortcut {
@@ -47,8 +50,11 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
     initialTool = 'cursor',
     initialEditMode = false,
     enableKeyboardShortcuts = true,
+    activeAnnotationId = null,
     onUndo,
     onRedo,
+    onEdit,
+    onDelete,
   } = options;
 
   const [activeTool, setActiveTool] = useState<AnnotationToolId>(initialTool);
@@ -172,6 +178,20 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
         return;
       }
 
+      // Enter key: edit selected annotation
+      if (key === 'enter' && activeAnnotationId && editModeEnabled) {
+        event.preventDefault();
+        onEdit?.(activeAnnotationId);
+        return;
+      }
+
+      // Delete/Backspace key: delete selected annotation
+      if ((key === 'delete' || key === 'backspace') && activeAnnotationId && editModeEnabled) {
+        event.preventDefault();
+        onDelete?.(activeAnnotationId);
+        return;
+      }
+
       if (!editModeEnabled) return;
 
       const nextTool = tools.find((tool) => TOOL_SHORTCUTS[tool].includes(key));
@@ -183,7 +203,7 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [enableKeyboardShortcuts, editModeEnabled, redo, selectTool, toggleEditMode, tools, undo]);
+  }, [enableKeyboardShortcuts, editModeEnabled, activeAnnotationId, redo, selectTool, toggleEditMode, tools, undo, onEdit, onDelete]);
 
   useEffect(() => {
     if (!editModeEnabled) {

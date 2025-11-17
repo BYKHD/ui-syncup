@@ -46,6 +46,8 @@ interface IssueAttachmentsViewProps {
   onAnnotationSelect?: (annotationId: string) => void;
   onAnnotationMove?: (annotationId: string, position: AnnotationPosition) => void;
   onBoxAnnotationMove?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
+  onAnnotationEdit?: (annotationId: string) => void;
+  onAnnotationDelete?: (annotationId: string) => void;
 }
 
 
@@ -60,6 +62,8 @@ export default function IssueAttachmentsView({
   onAnnotationSelect,
   onAnnotationMove,
   onBoxAnnotationMove,
+  onAnnotationEdit,
+  onAnnotationDelete,
 }: IssueAttachmentsViewProps) {
   const imageAttachments = useMemo(
     () => attachments.filter((att) => att.fileType.startsWith('image/')),
@@ -522,6 +526,8 @@ export default function IssueAttachmentsView({
             onBoxMove={handleBoxAnnotationMove}
             onMoveComplete={handleAnnotationMoveComplete}
             onBoxMoveComplete={handleBoxAnnotationMoveComplete}
+            onEdit={onAnnotationEdit}
+            onDelete={onAnnotationDelete}
           />
         )}
         {isAnnotationInteractive && (

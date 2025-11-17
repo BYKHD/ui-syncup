@@ -8,6 +8,7 @@ import {
   AnnotationCanvas,
   AnnotationLayer,
   AnnotationToolbar,
+  AnnotationCommentInput,
   useAnnotationTools,
   createHistoryEntry,
   createSnapshot,
@@ -50,6 +51,10 @@ export function UploadedImagePreview({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [nextAnnotationLabel, setNextAnnotationLabel] = useState("A");
 
+  // Edit dialog state
+  const [editingAnnotation, setEditingAnnotation] = useState<AttachmentAnnotation | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+
   // Canvas state for zoom and pan (only for as-is variant)
   const [canvasState, setCanvasState] = useState<CanvasViewState>({
     zoom: 1,
@@ -72,6 +77,7 @@ export function UploadedImagePreview({
     redo,
     pushHistory,
   } = useAnnotationTools({
+    activeAnnotationId,
     onUndo: (entry) => {
       if (!onAnnotationsChange) return;
       const updated = annotations.map((a) =>
@@ -90,7 +96,69 @@ export function UploadedImagePreview({
       );
       onAnnotationsChange(updated);
     },
+    onEdit: (annotationId: string) => {
+      const annotation = annotations.find((a) => a.id === annotationId);
+      if (annotation) {
+        setEditingAnnotation(annotation);
+        setShowEditDialog(true);
+      }
+    },
+    onDelete: (annotationId: string) => {
+      if (!onAnnotationsChange) return;
+
+      // Remove the annotation
+      const filtered = annotations.filter((a) => a.id !== annotationId);
+
+      // Re-sequence labels to maintain sequential numbering (1, 2, 3...)
+      const resequenced = filtered.map((annotation, index) => ({
+        ...annotation,
+        label: String(index + 1),
+      }));
+
+      onAnnotationsChange(resequenced);
+
+      // Clear active annotation if it was deleted
+      if (activeAnnotationId === annotationId) {
+        onAnnotationSelect?.(null);
+      }
+    },
   });
+
+  // Edit annotation handler
+  const handleAnnotationEdit = useCallback(
+    (annotationId: string) => {
+      const annotation = annotations.find((a) => a.id === annotationId);
+      if (annotation) {
+        setEditingAnnotation(annotation);
+        setShowEditDialog(true);
+      }
+    },
+    [annotations]
+  );
+
+  // Delete annotation handler with label re-sequencing
+  const handleAnnotationDelete = useCallback(
+    (annotationId: string) => {
+      if (!onAnnotationsChange) return;
+
+      // Remove the annotation
+      const filtered = annotations.filter((a) => a.id !== annotationId);
+
+      // Re-sequence labels to maintain sequential numbering (1, 2, 3...)
+      const resequenced = filtered.map((annotation, index) => ({
+        ...annotation,
+        label: String(index + 1),
+      }));
+
+      onAnnotationsChange(resequenced);
+
+      // Clear active annotation if it was deleted
+      if (activeAnnotationId === annotationId) {
+        onAnnotationSelect?.(null);
+      }
+    },
+    [annotations, onAnnotationsChange, activeAnnotationId, onAnnotationSelect]
+  );
 
   // Generate next annotation label (numeric sequence)
   useEffect(() => {
@@ -236,6 +304,29 @@ export function UploadedImagePreview({
     [onAnnotationSelect]
   );
 
+  // Handle edit submit
+  const handleEditSubmit = useCallback(
+    (newDescription: string) => {
+      if (editingAnnotation && onAnnotationsChange) {
+        const updated = annotations.map((a) =>
+          a.id === editingAnnotation.id
+            ? { ...a, description: newDescription }
+            : a
+        );
+        onAnnotationsChange(updated);
+        setShowEditDialog(false);
+        setEditingAnnotation(null);
+      }
+    },
+    [editingAnnotation, annotations, onAnnotationsChange]
+  );
+
+  // Handle edit cancel
+  const handleEditCancel = useCallback(() => {
+    setShowEditDialog(false);
+    setEditingAnnotation(null);
+  }, []);
+
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -357,11 +448,14 @@ export function UploadedImagePreview({
                       overlayRef={overlayRef}
                       activeAnnotationId={activeAnnotationId}
                       interactive={editModeEnabled && !handToolActive}
+                      handToolActive={handToolActive}
                       onSelect={handleAnnotationSelect}
                       onMove={handleAnnotationMove}
                       onBoxMove={handleBoxAnnotationMove}
                       onMoveComplete={handleAnnotationMoveComplete}
                       onBoxMoveComplete={handleBoxAnnotationMoveComplete}
+                      onEdit={handleAnnotationEdit}
+                      onDelete={handleAnnotationDelete}
                     />
 
                     {/* Annotation Canvas for Creating New Annotations */}
@@ -401,6 +495,20 @@ export function UploadedImagePreview({
         )}
       </div>
 
+      {/* Edit Annotation Dialog */}
+      {showEditDialog && editingAnnotation && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <AnnotationCommentInput
+            defaultValue={editingAnnotation.description}
+            title={`Edit Annotation ${editingAnnotation.label}`}
+            placeholder="Update annotation description..."
+            onSubmit={handleEditSubmit}
+            onCancel={handleEditCancel}
+            className="shadow-2xl"
+            autoFocus
+          />
+        </div>
+      )}
     </div>
   );
 }

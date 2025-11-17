@@ -267,6 +267,25 @@ export function useAnnotationsWithHistory(options: UseAnnotationsWithHistoryOpti
   );
 
   /**
+   * Handle annotation description edit
+   * Note: Does not create history entry (description edits are not undoable in current implementation)
+   */
+  const handleAnnotationEdit = useCallback(
+    (annotationId: string, description: string) => {
+      setAnnotations((prev) => {
+        return prev.map((ann) => {
+          if (ann.id !== annotationId) return ann;
+          return {
+            ...ann,
+            description: description.trim(),
+          };
+        });
+      });
+    },
+    []
+  );
+
+  /**
    * Update annotations from external source (e.g., API)
    */
   const setAnnotationsFromExternal = useCallback((newAnnotations: AttachmentAnnotation[]) => {
@@ -280,6 +299,7 @@ export function useAnnotationsWithHistory(options: UseAnnotationsWithHistoryOpti
     handleBoxAnnotationMove,
     handleAnnotationCreate,
     handleAnnotationDelete,
+    handleAnnotationEdit,
     applyUndo,
     applyRedo,
   };
