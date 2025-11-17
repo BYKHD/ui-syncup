@@ -88,20 +88,134 @@ vercel env add NEXT_PUBLIC_APP_URL development
 
 ### Step 3: Configure Git Integration
 
-1. **Branch Protection Rules** (GitHub)
-   - Navigate to Repository Settings → Branches
-   - Add rule for `main` branch:
-     - ✅ Require pull request reviews (1 approval)
-     - ✅ Require status checks to pass
-     - ✅ Require branches to be up to date
-     - Add required checks: `quality-checks` (from CI workflow)
-     - ✅ Include administrators
+#### GitHub Branch Protection Settings
 
-2. **Deployment Settings** (Vercel)
-   - Project Settings → Git
-   - ✅ Enable "Automatic Deployments from Git"
-   - ✅ Enable "Preview Deployments" for all branches
-   - ✅ Enable "Production Deployments" for `main` branch only
+Branch protection rules ensure code quality and prevent accidental changes to critical branches. See `.github/branch-protection.yml` for the complete configuration reference.
+
+**Configure Main Branch Protection**:
+
+1. Navigate to **Repository Settings** → **Branches**
+2. Click **"Add branch protection rule"**
+3. Enter branch name pattern: `main`
+4. Configure the following settings:
+
+   **Pull Request Requirements**:
+   - ✅ **Require a pull request before merging**
+     - Required number of approvals: `1`
+     - ✅ Dismiss stale pull request approvals when new commits are pushed
+     - ⬜ Require review from Code Owners (optional)
+     - ⬜ Require approval of the most recent reviewable push (optional)
+
+   **Status Check Requirements**:
+   - ✅ **Require status checks to pass before merging**
+     - ✅ Require branches to be up to date before merging
+     - Add required status checks:
+       - `quality-checks` (GitHub Actions CI workflow)
+       - `Vercel – Production` (optional, for Vercel deployment verification)
+
+   **Additional Protections**:
+   - ✅ **Require conversation resolution before merging**
+   - ✅ **Do not allow bypassing the above settings** (enforce for administrators)
+   - ⬜ Require linear history (optional)
+   - ⬜ Require deployments to succeed before merging (optional)
+
+   **Rules Applied to Everyone**:
+   - ✅ **Include administrators** (recommended for production safety)
+
+5. Click **"Create"** to save the rule
+
+**Configure Develop Branch Protection** (Optional):
+
+If using a develop branch workflow, repeat the above steps with these modifications:
+- Branch name pattern: `develop`
+- Required approvals: `1`
+- ⬜ Require branches to be up to date (more flexible for development)
+- ⬜ Include administrators (allow force pushes for branch maintenance)
+
+**Verification**:
+```bash
+# Test branch protection
+git checkout main
+git push origin main  # Should fail if no PR
+
+# Create PR instead
+git checkout -b test/branch-protection
+git push origin test/branch-protection
+gh pr create --base main --head test/branch-protection
+```
+
+#### Vercel Deployment Settings
+
+Configure Vercel to automatically deploy from Git branches with proper environment separation.
+
+**Configure Git Integration**:
+
+1. Navigate to **Project Settings** → **Git** in Vercel Dashboard
+
+2. **Production Branch**:
+   - Set production branch to: `main`
+   - ✅ Enable "Automatic Production Deployments"
+   - This ensures only `main` branch deploys to production domain
+
+3. **Preview Deployments**:
+   - ✅ Enable "Automatic Preview Deployments"
+   - Deploy all branches: `All branches` (recommended)
+   - Or specify patterns: `develop`, `feature/*`, `hotfix/*`
+   - ✅ Enable "Preview Deployment Comments" on pull requests
+
+4. **Deployment Protection** (Pro/Enterprise):
+   - ✅ Enable "Deployment Protection" for production
+   - Require approval before production deployments
+   - Configure allowed deployers
+
+5. **Ignored Build Step** (Optional):
+   - Configure custom ignore conditions in `vercel.json`:
+   ```json
+   {
+     "git": {
+       "deploymentEnabled": {
+         "main": true,
+         "develop": true,
+         "feature/*": true
+       }
+     }
+   }
+   ```
+
+**Branch to Environment Mapping**:
+
+| Branch Pattern | Environment | Deployment Type | Domain |
+|---------------|-------------|-----------------|---------|
+| `main` | Production | Automatic | `ui-syncup.com` |
+| `develop` | Preview | Automatic | `develop-ui-syncup.vercel.app` |
+| `feature/*` | Preview | Automatic | `feature-xyz-ui-syncup.vercel.app` |
+| `hotfix/*` | Preview | Automatic | `hotfix-xyz-ui-syncup.vercel.app` |
+
+**Deployment Notifications**:
+
+1. Navigate to **Project Settings** → **Notifications**
+2. Configure notifications for:
+   - ✅ Deployment started
+   - ✅ Deployment ready
+   - ✅ Deployment failed
+   - ✅ Deployment promoted
+3. Add notification channels:
+   - Email
+   - Slack webhook
+   - Discord webhook
+
+**Verification**:
+```bash
+# Test automatic deployment
+git checkout -b test/auto-deploy
+echo "test" > test.txt
+git add test.txt
+git commit -m "test: verify auto deployment"
+git push origin test/auto-deploy
+
+# Check Vercel Dashboard for new preview deployment
+# Verify preview URL is posted as PR comment
+```
 
 ### Step 4: Configure Custom Domain (Production)
 
@@ -294,17 +408,149 @@ git checkout <commit-sha>
 vercel --prod
 ```
 
-### Deployment Checklist
+### Production Deployment Checklist
 
-Before deploying to production:
+Use this checklist before every production deployment to ensure quality and minimize risk.
 
+#### Pre-Deployment Checks
+
+**Code Quality**:
 - [ ] All CI checks pass (typecheck, lint, test, build)
-- [ ] Preview environment tested and verified
-- [ ] Database migrations reviewed and tested
+- [ ] No TypeScript errors or warnings
+- [ ] ESLint passes with no errors
+- [ ] All unit tests pass
+- [ ] Code coverage meets minimum threshold (≥80% for critical features)
+
+**Testing & Verification**:
+- [ ] Preview environment deployed and tested
+- [ ] Manual testing completed on preview URL
+- [ ] Cross-browser testing completed (Chrome, Firefox, Safari)
+- [ ] Mobile responsiveness verified
+- [ ] Accessibility checks passed (WCAG 2.1 AA)
+- [ ] Performance metrics acceptable (Lighthouse score ≥90)
+
+**Database & Migrations**:
+- [ ] Database migrations reviewed and approved
+- [ ] Migrations tested in preview environment
+- [ ] Migration rollback script prepared (if applicable)
+- [ ] Database backup created (if making schema changes)
+- [ ] Migration impact assessed (downtime, data loss risk)
+
+**Configuration**:
 - [ ] Environment variables verified (no missing values)
+- [ ] Production environment variables match requirements
+- [ ] Feature flags configured correctly
+- [ ] External service credentials validated
+- [ ] API rate limits and quotas checked
+
+**Documentation**:
+- [ ] CHANGELOG.md updated with changes
 - [ ] Breaking changes documented
-- [ ] Rollback plan prepared
-- [ ] Team notified of deployment
+- [ ] API changes documented (if applicable)
+- [ ] Deployment notes prepared
+- [ ] Rollback plan documented
+
+**Communication**:
+- [ ] Team notified of deployment window
+- [ ] Stakeholders informed of new features/changes
+- [ ] Support team briefed on changes
+- [ ] Status page updated (if maintenance required)
+
+**Security**:
+- [ ] Security vulnerabilities addressed (npm audit, Dependabot)
+- [ ] No secrets committed to repository
+- [ ] Authentication flows tested
+- [ ] Authorization rules verified
+- [ ] CORS configuration reviewed
+
+**Monitoring & Rollback**:
+- [ ] Monitoring dashboards ready
+- [ ] Error tracking configured
+- [ ] Rollback plan prepared and tested
+- [ ] Previous deployment URL identified
+- [ ] On-call engineer assigned
+
+#### During Deployment
+
+- [ ] Monitor build logs in Vercel Dashboard
+- [ ] Watch for build errors or warnings
+- [ ] Verify deployment completes successfully
+- [ ] Check deployment status changes to "Ready"
+
+#### Post-Deployment Verification
+
+**Immediate Checks** (within 5 minutes):
+- [ ] Health endpoint responds: `curl https://ui-syncup.com/api/health`
+- [ ] Homepage loads successfully
+- [ ] Authentication flow works (sign in/sign up)
+- [ ] Critical user flows tested (create issue, view project)
+- [ ] No JavaScript errors in browser console
+
+**Extended Monitoring** (within 30 minutes):
+- [ ] Error rates normal (check Vercel Analytics)
+- [ ] Response times acceptable (p95 < 500ms)
+- [ ] Database connections stable
+- [ ] External service integrations working (R2, Supabase, OAuth)
+- [ ] No spike in error logs
+
+**User Acceptance** (within 24 hours):
+- [ ] User feedback collected
+- [ ] No critical bugs reported
+- [ ] Performance metrics stable
+- [ ] Business metrics tracking correctly
+
+#### Rollback Criteria
+
+Initiate rollback immediately if:
+- [ ] Error rate increases by >50%
+- [ ] Critical functionality broken (auth, data access)
+- [ ] Performance degrades significantly (p95 > 2s)
+- [ ] Data corruption detected
+- [ ] Security vulnerability exposed
+
+#### Post-Deployment Tasks
+
+- [ ] Update deployment log with timestamp and version
+- [ ] Close related GitHub issues/PRs
+- [ ] Update project board/tracking system
+- [ ] Schedule post-mortem (if issues occurred)
+- [ ] Document lessons learned
+- [ ] Update runbooks (if procedures changed)
+
+---
+
+**Deployment Checklist Template**
+
+Copy this template for each production deployment:
+
+```markdown
+## Production Deployment - [YYYY-MM-DD]
+
+**Deployer**: [Your Name]
+**Version**: [v1.2.3 or commit SHA]
+**Deployment Time**: [HH:MM UTC]
+
+### Pre-Deployment
+- [ ] All checks completed
+- [ ] Team notified
+- [ ] Rollback plan ready
+
+### Deployment
+- [ ] Build successful
+- [ ] Deployment ready
+
+### Post-Deployment
+- [ ] Health check passed
+- [ ] Critical flows tested
+- [ ] Monitoring normal
+
+### Notes
+[Any special considerations or observations]
+
+### Rollback Plan
+Previous deployment: [URL]
+Rollback command: `vercel promote [deployment-url]`
+```
 
 ### Monitoring Deployment
 

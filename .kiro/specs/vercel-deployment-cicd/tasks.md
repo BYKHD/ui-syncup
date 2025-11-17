@@ -63,21 +63,21 @@
   - Include environment variable reference table with descriptions
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 2.3, 2.4, 2.5, 4.5_
 
-- [ ] 8. Configure branch protection and deployment rules
+- [x] 8. Configure branch protection and deployment rules
   - Create `.github/branch-protection.yml` configuration for main branch
   - Document GitHub branch protection settings (required status checks, required reviews)
   - Document Vercel deployment settings (production branch, automatic deployments)
   - Create deployment checklist for production releases
   - _Requirements: 2.1, 2.2, 3.4, 3.5_
 
-- [ ] 9. Set up local development environment
+- [x] 9. Set up local development environment
   - Update `docker-compose.yml` to align with production service configuration
   - Create local development setup documentation in `docs/LOCAL_DEVELOPMENT.md`
   - Document how to copy `.env.example` to `.env.local` and populate values
   - Document local service endpoints (app, database, storage)
   - _Requirements: 6.6_
 
-- [ ] 10. Create deployment verification tests
+- [x] 10. Create deployment verification tests
   - Create `tests/e2e/smoke-test.spec.ts` with Playwright tests for production verification
   - Implement health check endpoint test
   - Implement homepage load test
