@@ -1,6 +1,8 @@
 .DS_Store
 .env*
 !.env.example
+!.env.development
+!.env.production
 .npm
 .parcel-cache
 .pnp.*

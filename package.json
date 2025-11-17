@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ui": "playwright test"
+    "test:ui": "playwright test",
+    "validate-env": "bun run scripts/validate-env.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

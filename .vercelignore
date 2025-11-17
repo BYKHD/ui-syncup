@@ -1,0 +1,73 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+*.lcov
+.nyc_output
+tests
+__tests__
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+vitest.config.ts
+vitest.setup.ts
+playwright.config.ts
+
+# Development files
+.git
+.gitignore
+.eslintcache
+.stylelintcache
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Documentation
+*.md
+!README.md
+docs
+.github
+
+# Local environment files
+.env.local
+.env*.local
+
+# Build artifacts
+.next
+out
+dist
+build
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Database
+.data
+*.db
+*.sqlite
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Misc
+.temp
+.cache
+.parcel-cache
+tsconfig.tsbuildinfo
