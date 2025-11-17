@@ -85,7 +85,7 @@
   - Configure Playwright to run against production URL
   - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 11. Configure security headers and CORS
+- [x] 11. Configure security headers and CORS
   - Update `next.config.ts` with security headers (CORS, CSP)
   - Implement CORS configuration for API routes with environment-specific origins
   - Implement Content Security Policy with allowed domains for external services

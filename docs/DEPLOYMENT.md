@@ -7,6 +7,7 @@ This guide provides step-by-step procedures for deploying UI SyncUp to Vercel, m
 - [Prerequisites](#prerequisites)
 - [Initial Vercel Setup](#initial-vercel-setup)
 - [Environment Variables Reference](#environment-variables-reference)
+- [Security Configuration](#security-configuration)
 - [Regular Deployment Flow](#regular-deployment-flow)
 - [Rollback Procedures](#rollback-procedures)
 - [Emergency Procedures](#emergency-procedures)
@@ -238,6 +239,73 @@ git push origin main
 ```
 
 Monitor the deployment in Vercel Dashboard → Deployments.
+
+---
+
+## Security Configuration
+
+UI SyncUp implements comprehensive security headers and CORS policies to protect against common web vulnerabilities.
+
+### Security Features
+
+- **Content Security Policy (CSP)** - Restricts resource loading to prevent XSS attacks
+- **CORS** - Controls which origins can access the API
+- **Security Headers** - X-Frame-Options, X-Content-Type-Options, etc.
+- **HSTS** - Forces HTTPS in production
+
+### Configuration Files
+
+- `next.config.ts` - Global security headers
+- `src/proxy.ts` - Dynamic CSP and CORS preflight handling
+- `src/lib/cors.ts` - CORS utilities for API routes
+- `src/lib/security-headers.ts` - Centralized security header definitions
+
+### Allowed External Services
+
+The CSP is configured to allow connections to:
+
+- **Supabase** (`*.supabase.co`) - Database and authentication
+- **Cloudflare R2** (`*.r2.cloudflarestorage.com`) - Object storage
+- **Google OAuth** (`accounts.google.com`) - Authentication
+
+### Adding New External Services
+
+If you need to integrate a new external service:
+
+1. Update `src/lib/security-headers.ts`
+2. Add the domain to the appropriate CSP directive
+3. Test in preview environment
+4. Deploy to production
+
+**Example:**
+```typescript
+// In getCSPDirectives()
+'connect-src': [
+  "'self'",
+  'https://*.supabase.co',
+  'https://*.r2.cloudflarestorage.com',
+  'https://accounts.google.com',
+  'https://new-service.com', // Add new service here
+  // ...
+]
+```
+
+### Verifying Security Headers
+
+After deployment, verify headers are correctly applied:
+
+```bash
+# Check security headers
+curl -I https://ui-syncup.com
+
+# Test CORS
+curl -X OPTIONS \
+     -H "Origin: https://ui-syncup.com" \
+     -H "Access-Control-Request-Method: POST" \
+     https://ui-syncup.com/api/health
+```
+
+For detailed security configuration and troubleshooting, see [SECURITY.md](./SECURITY.md).
 
 ---
 

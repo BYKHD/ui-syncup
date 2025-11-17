@@ -1,294 +1,284 @@
+# Security Configuration
 
-# SECURITY.md
+This document describes the security headers and CORS configuration implemented in UI SyncUp.
 
-**Scope:** React (TypeScript) front‑end, Node.js (TypeScript) API, PostgreSQL. 
+## Overview
 
----
+The application implements multiple layers of security controls:
 
-## TL;DR (Developer Checklist)
+1. **Content Security Policy (CSP)** - Controls which resources can be loaded
+2. **CORS (Cross-Origin Resource Sharing)** - Controls which origins can access the API
+3. **Security Headers** - Additional browser security features
+4. **HSTS (HTTP Strict Transport Security)** - Forces HTTPS in production
 
-- [ ] **Zero‑trust client:** Never authorize in the UI; all authorization on the server.
-- [ ] **Sessions/JWT:** Use short‑lived tokens, rotate, and store session identifiers in **httpOnly, secure** cookies.
-- [ ] **Input validation:** Zod (or equivalent) at **every** boundary (env, request params, query/body, webhooks).
-- [ ] **CORS & CSRF:** Closed CORS by default; validate `Origin/Referer` or use anti‑CSRF tokens for cookie‑based auth.
-- [ ] **Headers & CSP:** HSTS, X‑Content‑Type‑Options, X‑Frame‑Options, Referrer‑Policy, Permissions‑Policy, strict CSP.
-- [ ] **Rate limit & body caps:** Cap request sizes, enable rate limit on login/signup/webhooks/exports.
-- [ ] **Secrets:** .env per environment, validated at boot; use a secret manager in staging/prod.
-- [ ] **PostgreSQL:** Least‑privilege roles, TLS to DB, parameterized queries, RLS for multi‑tenant data.
-- [ ] **DoS hardening:** Reverse proxy/WAF in front; Node timeouts tuned; avoid heavy work on request path.
-- [ ] **Logs & errors:** No stack traces or secrets to clients; structured logs with PII scrubbing.
-- [ ] **Supply chain:** Lockfile committed; `npm ci --ignore-scripts` in CI; automated dependency scanning.
-- [ ] **Backups & migrations:** Tested backups, PITR where possible; migrations reviewed via PR.
+## Implementation
 
----
+### Architecture
 
-## 1) Architecture & Threat Model
+Security headers are configured in three places:
 
-**Assumptions**
-- Public React SPA served via CDN or static host.
-- API behind reverse proxy (e.g., Nginx/Cloudflare/ALB).
-- PostgreSQL in a private network; connections only from API and admin bastion.
-- Attacker can control any request payload and browser state.
+1. **`next.config.ts`** - Global headers applied to all routes
+2. **`src/proxy.ts`** - Dynamic headers and CORS preflight handling
+3. **`src/lib/cors.ts`** - CORS utilities for API routes
+4. **`src/lib/security-headers.ts`** - Centralized security header definitions
 
-**Goals**
-- Prevent data leaks, auth bypass, tenant‑isolation breaks, supply‑chain compromise, and DoS.
+### Content Security Policy (CSP)
 
----
+CSP restricts which resources the browser can load, preventing XSS and data injection attacks.
 
-## 2) Authentication & Session Management
+**Configured Directives:**
 
-- **Session cookies** (recommended for browser apps):
-  - `httpOnly`, `secure`, `sameSite=strict` (or `lax` if you need cross‑site flows), `Path=/`.
-  - Store only a **random session ID**; map to server‑side session in DB/Redis. Rotate on privilege change/login.
-- **JWT (if required)**:
-  - Short expiry (≤15m) and refresh tokens in `httpOnly` cookie; rotate refresh tokens on each use.
-  - Use asymmetric signing (`RS256/EdDSA`); pin accepted `kid`s; reject unknown algorithms.
-- **CSRF** (cookie sessions):
-  - Validate **Origin/Referer** on state‑changing requests **and/or** use a CSRF token (double‑submit or synchronizer token).
-- **Password hashing**:
-  - `argon2id` (preferred) or `scrypt` with strong params; always use per‑user salt and pepper from secret storage.
-- **MFA / device bind** (optional but recommended for admins).
-
----
-
-## 3) Authorization (RBAC/ABAC)
-
-- Centralize roles & permissions (e.g., `src/config/roles.ts`).
-- Guard **every** handler on the server; the client can only hide UI affordances.
-- For multi‑tenant data, prefer **PostgreSQL Row‑Level Security (RLS)** to prevent cross‑tenant access even on query bugs.
-
-**RLS example (tenant isolation):**
-```sql
--- Table has tenant_id column; enable RLS
-ALTER TABLE public.issues ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY tenant_isolation ON public.issues
-  USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
+```typescript
+{
+  'default-src': ["'self'"],
+  'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'" /* dev only */],
+  'style-src': ["'self'", "'unsafe-inline'"],
+  'img-src': ["'self'", 'data:', 'https:', 'blob:'],
+  'font-src': ["'self'", 'data:'],
+  'connect-src': [
+    "'self'",
+    'https://*.supabase.co',
+    'https://*.r2.cloudflarestorage.com',
+    'https://accounts.google.com',
+    'http://localhost:*' /* dev only */,
+    'ws://localhost:*' /* dev only */
+  ],
+  'frame-ancestors': ["'none'"],
+  'base-uri': ["'self'"],
+  'form-action': ["'self'"],
+  'upgrade-insecure-requests': true /* production only */
+}
 ```
 
-At connection time, set `app.tenant_id` based on the verified session and use a dedicated **least‑privilege role**.
+**External Services Allowed:**
 
----
+- **Supabase** (`*.supabase.co`) - Database and authentication
+- **Cloudflare R2** (`*.r2.cloudflarestorage.com`) - Object storage
+- **Google OAuth** (`accounts.google.com`) - Authentication
 
-## 4) Input Validation & Output Encoding
+**Modifying CSP:**
 
-- Validate **all** incoming data with Zod: params, query, JSON, form, files, and third‑party webhooks.
-- Prefer `safeParse` and return 400 with machine‑readable error details.
-- React safely escapes HTML; avoid `dangerouslySetInnerHTML`. If rendering user HTML, sanitize (e.g., DOMPurify) and allowlist tags/attributes.
+To add a new external service:
 
----
+1. Edit `src/lib/security-headers.ts`
+2. Add the domain to the appropriate directive in `getCSPDirectives()`
+3. Test in development and preview environments before deploying to production
 
-## 5) API Server (Express/Fastify/Nest)
-
-- **Limits**: request body cap (e.g., 5–10MB), timeouts, and concurrency caps.
-- **Rate limiting**: token‑bucket per IP + user + route; stricter on auth endpoints.
-- **Security headers**: set via Helmet (Express) or appropriate hooks (Fastify). See **Headers & CSP**.
-- **Uploads**: stream to object storage; validate MIME/extension; generate new filenames; virus scan if accepting untrusted files.
-- **Errors**: generic messages for clients; map to `4xx/5xx` appropriately; never expose stack traces in prod.
-- **Background jobs**: offload heavy work to queues (BullMQ/RSMQ/SQS) to keep request paths fast.
-
-**Fastify baseline (TypeScript):**
-```ts
-import Fastify from "fastify";
-import fastifyHelmet from "@fastify/helmet";
-import rateLimit from "@fastify/rate-limit";
-
-const app = Fastify({ trustProxy: true, bodyLimit: 10 * 1024 * 1024 });
-
-await app.register(fastifyHelmet, {
-  contentSecurityPolicy: false, // manage CSP manually if you need nonces/hashes
-  crossOriginEmbedderPolicy: true,
-});
-await app.register(rateLimit, { max: 100, timeWindow: "1 minute" });
-
-app.addHook("onRequest", async (req, res) => {
-  // Enforce Origin/Referer on state-changing requests
-  if (["POST","PUT","PATCH","DELETE"].includes(req.method)) {
-    const origin = req.headers.origin || "";
-    const referer = req.headers.referer || "";
-    const host = req.headers.host || "";
-    const ok = [origin, referer].filter(Boolean).every(u => new URL(u).host === host);
-    if (!ok) return res.code(403).send({ error: "CSRF blocked" });
-  }
-});
-```
-
----
-
-## 6) CORS
-
-- Default **deny**. Allow only known origins (e.g., your SPA and admin).  
-- Set `credentials: true` only when needed; never combine `Access-Control-Allow-Origin: *` with cookies.
-
----
-
-## 7) HTTP Security Headers & CSP
-
-Set globally at the proxy/API and at the static host for the SPA:
-
-- `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
-
-**CSP (SPA production baseline):**
-```
-default-src 'self';
-base-uri 'self';
-form-action 'self';
-frame-ancestors 'none';
-img-src 'self' data: https:;
-connect-src 'self' https:;
-script-src 'self';
-style-src 'self' 'unsafe-inline';
-```
-Use nonces/hashes if you must allow inline scripts; extend `connect-src` for your API/telemetry endpoints.
-
----
-
-## 8) PostgreSQL Security
-
-- **Network:** private subnet; TLS required (`sslmode=require`) from API.  
-- **Roles:** distinct roles per environment and per access pattern (`app_rw`, `app_ro`, `migration`). Deny `SUPERUSER`.  
-- **Least privilege:** grant only needed privileges per schema/table; revoke defaults.  
-- **RLS:** enable for multi‑tenant tables. Prefer security **barrier views** if needed.  
-- **Queries:** parameterized/prepared statements (ORMs like Drizzle/Prisma do this by default).  
-- **Timeouts:** set `statement_timeout` (e.g., 5–10s) and `idle_in_transaction_session_timeout` (e.g., 30s).  
-- **Pooling:** use PgBouncer in transaction mode; keep Node pool small to avoid exhausting DB.  
-- **Backups:** automated daily + PITR; test restore regularly.  
-- **Migrations:** stored in `migrations/` or `drizzle/`, peer‑reviewed, and idempotent.  
-- **Auditing:** log DDL and failed login attempts; consider pgaudit if available.
-
-**Node PG (ssl + statement timeout):**
-```ts
-import { Pool } from "pg";
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: true },
-  statement_timeout: 10_000,
-  idle_in_transaction_session_timeout: 30_000,
-  max: 10,
-});
-```
-
----
-
-## 9) Secrets & Configuration
-
-- Validate env at boot with Zod; crash fast on missing/invalid values.
-- Separate `.env.local`, `.env.test`, `.env.production`; never commit real secrets.
-- Prefer a secret manager (e.g., AWS SSM/Secrets Manager, GCP Secret Manager, 1Password) for staging/prod.
-- Rotate keys periodically; remove unused secrets promptly.
-
-**Env schema (TypeScript + Zod):**
-```ts
-import { z } from "zod";
-
-const Env = z.object({
-  NODE_ENV: z.enum(["development","test","production"]),
-  PORT: z.coerce.number().int().positive().default(3000),
-  DATABASE_URL: z.string().url(),
-  SESSION_SECRET: z.string().min(32),
-  CORS_ORIGIN: z.string().url(),
-});
-export const env = Env.parse(process.env);
-```
-
----
-
-## 10) Files & Uploads
-
-- Validate size and MIME; block executables.  
-- Strip metadata for images where privacy matters.  
-- Store on object storage (S3/GCS) with short‑lived signed URLs; do **not** proxy raw uploads through the API if avoidable.
-
----
-
-## 11) Logging, Monitoring, and Errors
-
-- Structured logs (JSON) with correlation IDs.  
-- Scrub PII and secrets in logs.  
-- Centralize (Datadog, ELK, OpenTelemetry).  
-- Client‑facing errors are generic; server logs get the details.  
-- Alerts for spikes in 401/403/429/5xx, login failures, and DB errors.
-
----
-
-## 12) DoS & Operational Hardening
-
-- **Reverse proxy/WAF** in front; basic bot management if available.  
-- Tune Node: `requestTimeout`, `headersTimeout`, `keepAliveTimeout`; cap concurrent sockets.  
-- Use containers with a non‑root user; read‑only FS if possible; seccomp/apparmor profiles where supported.  
-- Resource limits (CPU/mem) and graceful shutdown with health checks.  
-- Queue long‑running tasks; avoid synchronous crypto/CPU hot‑paths on requests.
-
----
-
-## 13) Dependency & Supply‑Chain Security
-
-- Commit lockfile; use `npm ci --ignore-scripts` in CI.  
-- Dependabot/Renovate for updates; `npm audit`/OSS Index in CI.  
-- Pin transitive risk (e.g., resolutions) when needed; avoid abandoned libs.  
-- If publishing packages, use `"files"` allow‑list and `npm publish --dry-run` to verify bundle contents.
-
----
-
-## 14) Testing & Review
-
-- **Unit & integration** tests for auth, validation, RLS policies.  
-- **E2E** tests on preview (Playwright/Cypress).  
-- **DAST** on staging for auth flows.  
-- **Periodic** reviews against OWASP ASVS and company policy.
-
----
-
-## 15) Incident Response
-
-- Keep an on‑call rotation and runbooks for: data leak, credential theft, auth bypass, and DoS.  
-- Log preservation and legal/notification workflows documented.  
-- Post‑mortems with action items and deadlines.
-
----
-
-## Appendix: Useful Snippets
-
-**Express baseline (TypeScript):**
-```ts
-import express from "express";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
-
-const app = express();
-app.set("trust proxy", 1);
-app.use(helmet({ contentSecurityPolicy: false }));
-app.use(express.json({ limit: "10mb" }));
-app.use(rateLimit({ windowMs: 60_000, max: 100 }));
-```
-
-**Zod route validation helper:**
-```ts
-import { z } from "zod";
-export const schema = z.object({ title: z.string().min(1), priority: z.enum(["low","medium","high","critical"]) });
-
-app.post("/api/issues", (req, res) => {
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+```typescript
+// Example: Adding a new analytics service
+'connect-src': [
+  "'self'",
+  'https://*.supabase.co',
+  'https://*.r2.cloudflarestorage.com',
+  'https://accounts.google.com',
+  'https://analytics.example.com', // New service
   // ...
-});
+]
 ```
 
-**Cookie flags (session):**
-```ts
-res.cookie("sid", session.id, {
-  httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 1000
-});
+### CORS Configuration
+
+CORS controls which origins can make requests to the API.
+
+**Allowed Origins:**
+
+- **Production**: `NEXT_PUBLIC_APP_URL` environment variable
+- **Preview**: `*.vercel.app` wildcard
+- **Development**: `localhost:3000`, `localhost:3001`
+
+**CORS Headers:**
+
+```typescript
+{
+  'Access-Control-Allow-Credentials': 'true',
+  'Access-Control-Allow-Origin': '<origin>',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+  'Access-Control-Max-Age': '86400' // 24 hours
+}
 ```
 
----
+**Using CORS in API Routes:**
 
-### Ownership
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { withCors } from '@/lib/cors';
 
-- **Security owner:** Tech Lead / Platform Team  
-- **Review cadence:** Quarterly and after major upgrades  
-- **Change process:** PR + Security Review + Rollout plan
+export async function GET(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  
+  const response = NextResponse.json({ data: 'example' });
+  
+  // Apply CORS headers
+  return withCors(response, origin);
+}
+```
+
+**Preflight Requests:**
+
+OPTIONS requests are automatically handled by `src/proxy.ts`. The proxy:
+
+1. Checks if the origin is allowed
+2. Returns appropriate CORS headers
+3. Returns 204 No Content status
+
+### Security Headers
+
+Additional security headers are applied to all responses:
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| `X-Frame-Options` | `DENY` | Prevents clickjacking by blocking iframe embedding |
+| `X-Content-Type-Options` | `nosniff` | Prevents MIME type sniffing |
+| `X-XSS-Protection` | `1; mode=block` | Enables browser XSS protection |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Controls referrer information |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Disables unnecessary browser features |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` | Forces HTTPS (production only) |
+
+### HSTS (HTTP Strict Transport Security)
+
+HSTS forces browsers to use HTTPS for all requests.
+
+**Configuration:**
+
+- **Enabled**: Production only
+- **Max Age**: 31536000 seconds (1 year)
+- **Include Subdomains**: Yes
+- **Preload**: Yes (eligible for browser preload lists)
+
+**Important Notes:**
+
+- HSTS is only applied in production to avoid issues in local development
+- Once enabled, browsers will refuse to connect over HTTP
+- The preload flag makes the site eligible for browser HSTS preload lists
+
+## Testing
+
+### Local Testing
+
+1. Start the development server:
+   ```bash
+   bun dev
+   ```
+
+2. Check headers in browser DevTools:
+   - Open Network tab
+   - Reload the page
+   - Click on any request
+   - View Response Headers
+
+3. Verify CSP:
+   - Check Console for CSP violations
+   - All external resources should load without errors
+
+### Preview Environment Testing
+
+1. Deploy to a preview branch
+2. Test with different origins:
+   ```bash
+   # Should succeed (same origin)
+   curl -H "Origin: https://preview-xyz.vercel.app" \
+        https://preview-xyz.vercel.app/api/health
+   
+   # Should fail (different origin)
+   curl -H "Origin: https://evil.com" \
+        https://preview-xyz.vercel.app/api/health
+   ```
+
+3. Verify CSP allows all required external services
+
+### Production Testing
+
+1. After deployment, verify headers:
+   ```bash
+   curl -I https://ui-syncup.com
+   ```
+
+2. Check for:
+   - All security headers present
+   - HSTS header included
+   - CSP header includes all required domains
+
+3. Test CORS:
+   ```bash
+   # Preflight request
+   curl -X OPTIONS \
+        -H "Origin: https://ui-syncup.com" \
+        -H "Access-Control-Request-Method: POST" \
+        https://ui-syncup.com/api/health
+   ```
+
+## Security Checklist
+
+### Before Deploying
+
+- [ ] All external services are listed in CSP `connect-src`
+- [ ] CORS origins are correctly configured for the environment
+- [ ] No sensitive data in CSP or CORS configuration
+- [ ] HSTS is enabled for production
+- [ ] Security headers are applied to all routes
+
+### After Deploying
+
+- [ ] Verify all security headers are present
+- [ ] Test CORS with allowed and disallowed origins
+- [ ] Check browser console for CSP violations
+- [ ] Verify external services (Supabase, R2, Google) work correctly
+- [ ] Test API routes with different HTTP methods
+
+### Regular Maintenance
+
+- [ ] Review CSP violations in production logs
+- [ ] Update CSP when adding new external services
+- [ ] Rotate CORS origins when domains change
+- [ ] Monitor security header compliance with tools like [securityheaders.com](https://securityheaders.com)
+
+## Troubleshooting
+
+### CSP Violations
+
+**Symptom**: Console errors like "Refused to load..."
+
+**Solution**:
+1. Identify the blocked resource in the error message
+2. Add the domain to the appropriate CSP directive
+3. Test in development before deploying
+
+### CORS Errors
+
+**Symptom**: "CORS policy: No 'Access-Control-Allow-Origin' header"
+
+**Solution**:
+1. Check if the origin is in the allowed list
+2. Verify `NEXT_PUBLIC_APP_URL` is set correctly
+3. For preview deployments, ensure `*.vercel.app` is allowed
+
+### HSTS Issues
+
+**Symptom**: Browser refuses HTTP connections
+
+**Solution**:
+1. HSTS is production-only, shouldn't affect development
+2. Clear browser HSTS cache: `chrome://net-internals/#hsts`
+3. Verify `NODE_ENV` is set correctly
+
+### External Service Blocked
+
+**Symptom**: Supabase, R2, or Google OAuth not working
+
+**Solution**:
+1. Check CSP `connect-src` includes the service domain
+2. Verify environment variables are set correctly
+3. Check browser console for specific CSP violations
+
+## References
+
+- [MDN: Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP)
+- [MDN: CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
+- [OWASP: Secure Headers Project](https://owasp.org/www-project-secure-headers/)
+- [Next.js: Security Headers](https://nextjs.org/docs/app/api-reference/next-config-js/headers)
+
+## Related Documentation
+
+- [Deployment Guide](./DEPLOYMENT.md) - Environment configuration
+- [Local Development](./LOCAL_DEVELOPMENT.md) - Development setup
