@@ -151,6 +151,7 @@ export default function IssueDetailsPanel({
                   issue={issueData} 
                   onUpdate={onUpdate}
                   isLoading={isLoading}
+                  permissions={permissions}
                   isEditingTitle={isEditingTitle}
                   isEditingDescription={isEditingDescription}
                   onEditingTitleChange={onEditingTitleChange}

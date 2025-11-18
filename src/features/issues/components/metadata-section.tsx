@@ -20,12 +20,13 @@ import { InlineEditableUserSelect } from './inline-editable-user-select';
 import { TYPE_OPTIONS, PRIORITY_OPTIONS } from '@/config/issue-options';
 
 // Types
-import type { IssueDetailData } from '@/features/issues/types';
+import type { IssueDetailData, IssuePermissions } from '@/features/issues/types';
 
 interface MetadataSectionProps {
   issue: IssueDetailData;
   onUpdate: (field: string, value: any) => Promise<void>;
   isLoading?: boolean;
+  permissions?: IssuePermissions;
   // Editing state props for keyboard shortcuts
   isEditingTitle?: boolean;
   isEditingDescription?: boolean;
@@ -139,9 +140,19 @@ export function MetadataSection({
   isEditingTitle,
   isEditingDescription,
   onEditingTitleChange,
-  onEditingDescriptionChange
+  onEditingDescriptionChange,
+  permissions,
 }: MetadataSectionProps) {
-  const { permissions } = useMockPermissions(issue);
+  const resolvedPermissions = permissions
+    ? {
+        canEdit: permissions.canEdit,
+        canEditField: () => permissions.canEdit,
+        canChangeStatus: permissions.canChangeStatus ?? false,
+        canDelete: permissions.canDelete ?? false,
+      }
+    : useMockPermissions(issue).permissions;
+
+  const isReadOnly = !resolvedPermissions.canEdit;
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -169,7 +180,7 @@ export function MetadataSection({
         <InlineEditableText
           value={issue.title}
           onSave={(value) => onUpdate('title', value)}
-          canEdit={permissions.canEditField('title')}
+          canEdit={resolvedPermissions.canEditField('title')}
           placeholder="Enter title"
           minLength={4}
           maxLength={200}
@@ -184,7 +195,7 @@ export function MetadataSection({
         <InlineEditableTextarea
           value={issue.description || ''}
           onSave={(value) => onUpdate('description', value)}
-          canEdit={permissions.canEditField('description')}
+          canEdit={resolvedPermissions.canEditField('description')}
           placeholder="Enter description"
           minLength={20}
           maxLength={5000}
@@ -204,7 +215,7 @@ export function MetadataSection({
             value={issue.type}
             options={TYPE_OPTIONS}
             onSave={(value) => onUpdate('type', value)}
-            canEdit={permissions.canEditField('type')}
+            canEdit={resolvedPermissions.canEditField('type')}
             placeholder="Select type"
             renderValue={(option) => {
               const IconComponent = option.icon;
@@ -224,7 +235,7 @@ export function MetadataSection({
             value={issue.priority}
             options={PRIORITY_OPTIONS}
             onSave={(value) => onUpdate('priority', value)}
-            canEdit={permissions.canEditField('priority')}
+            canEdit={resolvedPermissions.canEditField('priority')}
             placeholder="Select priority"
             renderValue={(option) => (
               <div className="flex items-center gap-2">
@@ -249,7 +260,7 @@ export function MetadataSection({
           value={issue.assignee?.id || 'unassigned'}
           users={MOCK_TEAM_MEMBERS}
           onSave={(userId) => onUpdate('assigneeId', userId)}
-          canEdit={permissions.canEditField('assigneeId')}
+          canEdit={resolvedPermissions.canEditField('assigneeId')}
           placeholder="Select assignee"
         />
       </MetadataField>
@@ -278,7 +289,7 @@ export function MetadataSection({
       </div>
 
       {/* Optional fields */}
-      {(issue.page || issue.figmaLink || permissions.canEdit) && (
+      {(issue.page || issue.figmaLink || !isReadOnly) && (
         <>
           <Separator />
           
@@ -287,7 +298,7 @@ export function MetadataSection({
             <InlineEditableText
               value={issue.page || ''}
               onSave={(value) => onUpdate('page', value || null)}
-              canEdit={permissions.canEditField('page')}
+              canEdit={resolvedPermissions.canEditField('page')}
               placeholder="Enter page URL or name"
               minLength={0}
               maxLength={500}
@@ -297,11 +308,11 @@ export function MetadataSection({
 
           {/* Figma Link */}
           <MetadataField label="Figma Link">
-            {permissions.canEditField('figmaLink') ? (
+            {resolvedPermissions.canEditField('figmaLink') ? (
               <InlineEditableText
                 value={issue.figmaLink || ''}
                 onSave={(value) => onUpdate('figmaLink', value || null)}
-                canEdit={permissions.canEditField('figmaLink')}
+                canEdit={resolvedPermissions.canEditField('figmaLink')}
                 placeholder="Enter Figma link"
                 minLength={0}
                 maxLength={500}

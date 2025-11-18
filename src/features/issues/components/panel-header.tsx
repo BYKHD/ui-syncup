@@ -76,6 +76,7 @@ export function PanelHeader({
   };
 
   const canChangeStatus = permissions?.canChangeStatus ?? true;
+  const canDelete = permissions?.canDelete ?? true;
   const collapsed = isPanelCollapsed ?? false;
 
   return (
@@ -159,13 +160,15 @@ export function PanelHeader({
                     <DropdownMenuSeparator />
                   </>
                 )}
-                <DropdownMenuItem
-                  onClick={handleDeleteClick}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <RiDeleteBinLine className="text-destructive mr-2 h-4 w-4" />
-                  Delete Issue
-                </DropdownMenuItem>
+                {canDelete && (
+                  <DropdownMenuItem
+                    onClick={handleDeleteClick}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <RiDeleteBinLine className="text-destructive mr-2 h-4 w-4" />
+                    Delete Issue
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

@@ -5,6 +5,7 @@
 
 // Screens (main entry points)
 export { default as IssueDetailsScreen } from './screens/issue-details-screen';
+export { default as IssueShareScreen } from './screens/issue-share-screen';
 export { EnhancedResponsiveIssueLayoutSkeleton } from './screens/issue-details-skeletons';
 
 // List Components

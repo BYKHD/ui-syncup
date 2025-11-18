@@ -11,7 +11,7 @@ import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCw, Wifi } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import ResponsiveIssueLayout from '../components/responsive-issue-layout';
 import { EnhancedResponsiveIssueLayoutSkeleton } from './issue-details-skeletons';
 import type { IssuePermissions } from '@/features/issues/types';
@@ -19,6 +19,7 @@ import type { IssuePermissions } from '@/features/issues/types';
 interface IssueDetailsScreenProps {
   issueId: string;
   userId?: string; // Current user ID for permissions and updates
+  permissions?: IssuePermissions;
 }
 
 /**
@@ -31,7 +32,11 @@ interface IssueDetailsScreenProps {
  * 3. Add real session management
  * 4. Replace useIssueDetails hook with real data fetching
  */
-export default function IssueDetailsScreen({ issueId, userId = 'user_1' }: IssueDetailsScreenProps) {
+export default function IssueDetailsScreen({
+  issueId,
+  userId = 'user_1',
+  permissions,
+}: IssueDetailsScreenProps) {
   // Fetch issue details
   const {
     issue,
@@ -83,7 +88,7 @@ export default function IssueDetailsScreen({ issueId, userId = 'user_1' }: Issue
   const [activityCursor, setActivityCursor] = useState<string | null>(null);
 
   // Mock permissions (in real app, derive from user role and issue data)
-  const permissions: IssuePermissions = {
+  const resolvedPermissions: IssuePermissions = permissions ?? {
     canEdit: true,
     canDelete: true,
     canComment: true,
@@ -94,14 +99,22 @@ export default function IssueDetailsScreen({ issueId, userId = 'user_1' }: Issue
   // Handlers
   const handleUpdate = useCallback(
     async (field: string, value: any) => {
+      if (!resolvedPermissions.canEdit) {
+        toast.info('View-only link. Editing is disabled.');
+        return;
+      }
       await updateIssue({ issueId, field, value, actorId: userId });
     },
-    [issueId, userId, updateIssue]
+    [issueId, userId, updateIssue, resolvedPermissions.canEdit]
   );
 
   const handleDelete = useCallback(async () => {
+    if (!resolvedPermissions.canDelete) {
+      toast.info('View-only link. Delete is disabled.');
+      return;
+    }
     await deleteIssue({ issueId, actorId: userId });
-  }, [issueId, userId, deleteIssue]);
+  }, [deleteIssue, issueId, resolvedPermissions.canDelete, userId]);
 
   const handleLoadMoreActivities = useCallback(() => {
     // In real implementation, this would trigger pagination
@@ -162,7 +175,7 @@ export default function IssueDetailsScreen({ issueId, userId = 'user_1' }: Issue
         issueId={issueId}
         issueData={issue}
         attachments={issue.attachments || []}
-        permissions={permissions}
+        permissions={resolvedPermissions}
         activities={activities}
         activitiesLoading={isLoadingActivities}
         hasMoreActivities={hasMoreActivities}
