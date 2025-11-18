@@ -85,7 +85,7 @@ function MetadataField({
   const fieldId = id || `field-${label.toLowerCase().replace(/\s+/g, '-')}`;
   
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5 w-full max-w-full">
       <label 
         htmlFor={fieldId}
         id={`${fieldId}-label`}
@@ -96,7 +96,12 @@ function MetadataField({
       {isLoading ? (
         <Skeleton className="h-5 w-full" />
       ) : (
-        <div id={fieldId} className="text-sm text-foreground" role="group" aria-labelledby={`${fieldId}-label`}>
+        <div
+          id={fieldId}
+          className="text-sm text-foreground max-w-full break-words"
+          role="group"
+          aria-labelledby={`${fieldId}-label`}
+        >
           {children}
         </div>
       )}
@@ -123,12 +128,12 @@ function UserDisplay({
     .slice(0, 2);
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 min-w-0">
       <Avatar className="h-6 w-6">
         <AvatarImage src={user.image || undefined} alt={user.name} />
         <AvatarFallback className="text-xs">{initials}</AvatarFallback>
       </Avatar>
-      <span className="text-sm">{user.name}</span>
+      <span className="text-sm break-words">{user.name}</span>
     </div>
   );
 }
@@ -155,7 +160,7 @@ export function MetadataSection({
   const isReadOnly = !resolvedPermissions.canEdit;
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 w-full max-w-full overflow-hidden">
         <MetadataField label="Title" isLoading />
         <MetadataField label="Description" isLoading />
         <Separator />
@@ -174,7 +179,7 @@ export function MetadataSection({
   }
 
   return (
-    <div className="space-y-4" role="region" aria-label="Issue metadata">
+    <div className="space-y-4 w-full max-w-full overflow-hidden" role="region" aria-label="Issue metadata">
       {/* Title */}
       <MetadataField label="Title" id="title-field" labelVisible={false}>
         <InlineEditableText
@@ -184,7 +189,7 @@ export function MetadataSection({
           placeholder="Enter title"
           minLength={4}
           maxLength={200}
-          displayClassName="font-medium leading-tight"
+          displayClassName="font-medium leading-tight break-words"
           isEditing={isEditingTitle}
           onEditingChange={onEditingTitleChange}
         />
@@ -200,7 +205,7 @@ export function MetadataSection({
           minLength={20}
           maxLength={5000}
           rows={4}
-          displayClassName="leading-relaxed text-muted-foreground"
+          displayClassName="leading-relaxed text-muted-foreground break-words"
           isEditing={isEditingDescription}
           onEditingChange={onEditingDescriptionChange}
         />
@@ -208,7 +213,7 @@ export function MetadataSection({
 
       <Separator />
 
-      <div className="grid gap-4 sm:grid-cols-2" role="group" aria-label="Issue classification">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2" role="group" aria-label="Issue classification">
         {/* Type */}
         <MetadataField label="Type">
           <InlineEditableSelect
@@ -268,11 +273,11 @@ export function MetadataSection({
       <Separator />
 
       {/* Timestamps */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 min-w-0">
         <MetadataField label="Created">
           <time
             dateTime={new Date(issue.createdAt).toISOString()}
-            className="text-sm text-muted-foreground"
+            className="text-sm text-muted-foreground break-words"
           >
             {formatTimestamp(issue.createdAt)}
           </time>
@@ -281,7 +286,7 @@ export function MetadataSection({
         <MetadataField label="Updated">
           <time
             dateTime={new Date(issue.updatedAt).toISOString()}
-            className="text-sm text-muted-foreground"
+            className="text-sm text-muted-foreground break-words"
           >
             {formatTimestamp(issue.updatedAt)}
           </time>
@@ -302,7 +307,7 @@ export function MetadataSection({
               placeholder="Enter page URL or name"
               minLength={0}
               maxLength={500}
-              displayClassName="text-sm"
+              displayClassName="text-sm break-words"
             />
           </MetadataField>
 
@@ -316,14 +321,14 @@ export function MetadataSection({
                 placeholder="Enter Figma link"
                 minLength={0}
                 maxLength={500}
-                displayClassName="text-sm"
+                displayClassName="text-sm break-words"
               />
             ) : issue.figmaLink ? (
               <a
                 href={issue.figmaLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-primary hover:underline"
+                className="text-sm text-primary hover:underline break-words"
               >
                 View in Figma
               </a>

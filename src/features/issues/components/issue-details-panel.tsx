@@ -145,7 +145,7 @@ export default function IssueDetailsPanel({
             value="general"
             className="flex flex-1 min-h-0 data-[state=inactive]:hidden focus-visible:outline-none"
           >
-            <ScrollArea className="flex-1 overflow-auto">
+            <ScrollArea className="flex-1 w-full max-w-full overflow-auto">
               <div className="p-6 space-y-8">
                 <MetadataSection 
                   issue={issueData} 

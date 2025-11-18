@@ -582,7 +582,7 @@ function ActivityAvatar({ actor }: { actor: ActivityEntry["actor"] }) {
     .slice(0, 2);
 
   return (
-    <Avatar className="size-8">
+    <Avatar className="size-6">
       <AvatarImage src={actor.image || undefined} alt={actor.name} />
       <AvatarFallback className="text-xs">{initials}</AvatarFallback>
     </Avatar>
