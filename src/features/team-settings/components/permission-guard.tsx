@@ -1,0 +1,23 @@
+"use client";
+
+import * as React from "react";
+
+/**
+ * Permission Guard Component (Mockup)
+ * For UI mockup purposes - always allows access
+ * TODO: Implement real permission checking when backend is ready
+ */
+
+interface PermissionGuardProps {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+  permission?: string; // Simplified for mockup
+  teamId?: string;
+}
+
+export function PermissionGuard({
+  children,
+}: PermissionGuardProps) {
+  // For mockup: always grant permission
+  return <>{children}</>;
+}

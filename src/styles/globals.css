@@ -4,8 +4,16 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-annotation: var(--annotation);
+  --color-annotation-lite: var(--annotation-lite);
+  --color-annotation-bold: var(--annotation-bold);
+  --color-annotation-foreground: var(--annotation-foreground);
+
   --color-background: var(--background);
+  --color-background-alt: var(--background-alt);
   --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
+  --color-canvas-dotted: var(--canvas-dotted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -25,6 +33,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -46,7 +55,10 @@
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
+  --background-alt: oklch(0.985 0 0);
   --foreground: oklch(0.145 0 0);
+  --canvas: oklch(98.5% 0.002 247.839);
+  --canvas-dotted: oklch(86.9% 0.022 252.894);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -60,6 +72,8 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
+  /* Text color on destructive backgrounds (red). Keep high contrast */
+  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -76,11 +90,19 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Annotation Color */
+  --annotation: oklch(64.6% 0.222 41.116);
+  --annotation-bold:oklch(55.3% 0.195 38.402);
+  --annotation-lite:oklch(95.4% 0.038 75.164);
+  --annotation-foreground:oklch(0.985 0 0);
 }
 
 .dark {
   --background: oklch(0.145 0 0);
+  --background-alt: oklch(0.205 0 0);
   --foreground: oklch(0.985 0 0);
+  --canvas: oklch(0.22 0 0);
+  --canvas-dotted: oklch(0.4 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
@@ -94,6 +116,8 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
+  /* Text color on destructive backgrounds (red) in dark mode */
+  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
@@ -110,6 +134,11 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  /* Annotation Color */
+  --annotation: oklch(83.7% 0.128 66.29);
+  --annotation-bold:oklch(75% 0.183 55.934);
+  --annotation-lite:oklch(40.8% 0.123 38.172);
+  --annotation-foreground:oklch(0 0 0);
 }
 
 @layer base {
