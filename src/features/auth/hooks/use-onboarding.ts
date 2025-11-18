@@ -1,6 +1,8 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@/hookform/resolvers/zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import type { InvitationDetails, OnboardingMode, PlanTier } from "../types";
 import { onboardingSchema, type OnboardingSchema } from "../utils/validators";

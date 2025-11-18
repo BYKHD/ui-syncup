@@ -583,7 +583,7 @@ function ActivityAvatar({ actor }: { actor: ActivityEntry["actor"] }) {
 
   return (
     <Avatar className="size-8">
-      <AvatarImage src={actor.avatarUrl || undefined} alt={actor.name} />
+      <AvatarImage src={actor.image || undefined} alt={actor.name} />
       <AvatarFallback className="text-xs">{initials}</AvatarFallback>
     </Avatar>
   );

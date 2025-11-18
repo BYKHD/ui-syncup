@@ -5,7 +5,6 @@ import { RiLoader4Line } from '@remixicon/react';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { issueFeedback } from '@/lib/feedback';
 import { cn } from '@/lib/utils';
 
 interface InlineEditableTextProps {

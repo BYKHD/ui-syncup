@@ -1,10 +1,11 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { OnboardingScreen } from "@/features/auth";
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const searchParams = useSearchParams();
   const invitationToken = searchParams.get("token");
   const invitedTeamName = searchParams.get("team") ?? "Canvas Reviewers";
@@ -14,5 +15,13 @@ export default function OnboardingPage() {
       invitationToken={invitationToken}
       invitedTeamName={invitedTeamName}
     />
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <OnboardingContent />
+    </Suspense>
   );
 }

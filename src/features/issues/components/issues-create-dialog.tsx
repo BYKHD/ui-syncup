@@ -177,7 +177,7 @@ export function IssuesCreateDialog({
     }
   };
 
-  const handleAnnotationSelect = (annotationId: string) => {
+  const handleAnnotationSelect = (annotationId: string | null) => {
     setActiveAnnotationId(annotationId);
   };
 

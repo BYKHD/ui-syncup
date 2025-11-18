@@ -14,7 +14,6 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { issueFeedback } from '@/lib/feedback';
 import { cn } from '@/lib/utils';
 
 interface SelectOption {

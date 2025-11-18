@@ -61,6 +61,14 @@ export const PERMISSIONS = {
 ## 2. Plans / monetization idea
 
 
+**Starter** (alias for Free tier)
+- up to 10 users
+- 1 project
+- 50 issues
+- 100MB
+- $0
+- Note: "starter" is used as the plan ID in the UI/onboarding flow, but maps to the "free" tier internally
+
 **Free**
 - up to 10 users
 - 1 project
@@ -82,7 +90,8 @@ Put it in: `src/config/tiers.ts`
 
 ```typescript
 // src/config/tiers.ts
-export type PlanId = "free" | "pro"
+export type PlanId = "starter" | "free" | "pro"
+// Note: "starter" is an alias for "free" used in UI/onboarding
 
 type LimitSpec = {
   members: number | "unlimited"
@@ -109,6 +118,23 @@ export type PlanSpec = {
 }
 
 export const PLANS: Record<PlanId, PlanSpec> = {
+  starter: {
+    id: "starter",
+    label: "Starter",
+    limits: {
+      members: 10,           // team-level heads
+      projects: 1,
+      issues: 50,
+      storageMB: 100,
+    },
+    features: {
+      jiraIntegration: false,
+      prioritySupport: false,
+      analytics: false,
+      privateProjects: true,
+    },
+    billing: { model: "free", price: 0 },
+  },
   free: {
     id: "free",
     label: "Free",

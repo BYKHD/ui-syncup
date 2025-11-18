@@ -37,7 +37,7 @@ export default function IssueDetailsScreen({ issueId, userId = 'user_1' }: Issue
     issue,
     isLoading: isLoadingIssue,
     error: issueError,
-    mutate: mutateIssue,
+    refetch: refetchIssue,
   } = useIssueDetails({ issueId });
 
   // Fetch activities
@@ -46,7 +46,7 @@ export default function IssueDetailsScreen({ issueId, userId = 'user_1' }: Issue
     hasMore: hasMoreActivities,
     isLoading: isLoadingActivities,
     error: activityError,
-    mutate: mutateActivities,
+    refetch: refetchActivities,
   } = useIssueActivities({
     issueId,
     limit: 10,
@@ -54,11 +54,11 @@ export default function IssueDetailsScreen({ issueId, userId = 'user_1' }: Issue
   });
 
   // Update hook
-  const { updateField, isUpdating } = useIssueUpdate({
+  const { mutateAsync: updateIssue, isPending: isUpdating } = useIssueUpdate({
     onSuccess: (data) => {
       toast.success('Issue updated successfully');
-      mutateIssue(); // Revalidate issue data
-      mutateActivities(); // Revalidate activities to show new activity
+      refetchIssue(); // Revalidate issue data
+      refetchActivities(); // Revalidate activities to show new activity
     },
     onError: (error) => {
       toast.error(`Update failed: ${error.message}`);
@@ -66,7 +66,7 @@ export default function IssueDetailsScreen({ issueId, userId = 'user_1' }: Issue
   });
 
   // Delete hook
-  const { deleteIssueById, isDeleting } = useIssueDelete({
+  const { mutateAsync: deleteIssue, isPending: isDeleting } = useIssueDelete({
     onSuccess: () => {
       toast.success('Issue deleted successfully');
       // Redirect to issues list after short delay
@@ -94,14 +94,14 @@ export default function IssueDetailsScreen({ issueId, userId = 'user_1' }: Issue
   // Handlers
   const handleUpdate = useCallback(
     async (field: string, value: any) => {
-      await updateField(issueId, field, value, userId);
+      await updateIssue({ issueId, field, value, actorId: userId });
     },
-    [issueId, userId, updateField]
+    [issueId, userId, updateIssue]
   );
 
   const handleDelete = useCallback(async () => {
-    await deleteIssueById(issueId, userId);
-  }, [issueId, userId, deleteIssueById]);
+    await deleteIssue({ issueId, actorId: userId });
+  }, [issueId, userId, deleteIssue]);
 
   const handleLoadMoreActivities = useCallback(() => {
     // In real implementation, this would trigger pagination
@@ -110,12 +110,12 @@ export default function IssueDetailsScreen({ issueId, userId = 'user_1' }: Issue
   }, []);
 
   const handleRetryIssue = useCallback(() => {
-    mutateIssue();
-  }, [mutateIssue]);
+    refetchIssue();
+  }, [refetchIssue]);
 
   const handleRetryActivities = useCallback(() => {
-    mutateActivities();
-  }, [mutateActivities]);
+    refetchActivities();
+  }, [refetchActivities]);
 
   // Error states
   if (issueError) {

@@ -71,20 +71,27 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PermissionTooltip } from '@/components/shared/PermissionGuard';
-import type { IssueStatus, WorkflowControlProps } from '@/features/issues/types';
+import { PermissionTooltip } from '@/components/shared/permission-guard';
+import type {
+  IssuePermissions,
+  IssueStatus,
+  WorkflowControlProps,
+} from '@/features/issues/types';
 import { STATUS_TRANSITIONS } from '@/features/issues/types';
 import { DEFAULT_STATUS_ICON, STATUS_OPTIONS } from '@/config/issue-options';
 import { RiCheckLine, RiLoader4Line } from '@remixicon/react';
-import { toast } from 'sonner';
 import { issueFeedback } from '@/lib/feedback';
 
 // Statuses that require confirmation before transition
 const REQUIRES_CONFIRMATION: IssueStatus[] = ['archived'];
 
+interface WorkflowControlIssue {
+  permissions?: IssuePermissions
+}
+
 interface ExtendedWorkflowControlProps extends WorkflowControlProps {
   id?: string;
-  issue?: any; // For permission checking
+  issue?: WorkflowControlIssue | null; // For permission checking
 }
 
 export function WorkflowControl({
@@ -105,6 +112,7 @@ export function WorkflowControl({
   }>({ open: false, targetStatus: null });
 
   const isLoading = externalLoading || internalLoading;
+  const canChangeStatus = issue?.permissions?.canChangeStatus ?? true;
 
   const currentOption = STATUS_OPTIONS.find(option => option.value === currentStatus);
   const allowedTransitions = STATUS_TRANSITIONS[currentStatus] || [];
@@ -169,7 +177,6 @@ export function WorkflowControl({
     return (
       <div className="w-fit">
         <PermissionTooltip
-          issue={issue}
           permission="canChangeStatus"
           tooltipContent="You don't have permission to change the status of this issue"
           asChild

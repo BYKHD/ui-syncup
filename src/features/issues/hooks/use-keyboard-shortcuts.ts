@@ -26,8 +26,10 @@ export function useKeyboardShortcuts({
   enabled = true,
   target
 }: UseKeyboardShortcutsOptions) {
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!enabled) return;
+  const handleKeyDown = useCallback((event: Event) => {
+    if (!enabled || !(event instanceof KeyboardEvent)) return;
+
+    const keyboardEvent = event;
 
     // Don't trigger shortcuts when user is typing in input fields
     const activeElement = document.activeElement;
@@ -40,25 +42,25 @@ export function useKeyboardShortcuts({
     );
 
     // Allow Escape key even in input fields for canceling
-    if (isInputElement && event.key !== 'Escape') {
+    if (isInputElement && keyboardEvent.key !== 'Escape') {
       return;
     }
 
     for (const shortcut of shortcuts) {
       if (shortcut.disabled) continue;
 
-      const keyMatches = event.key.toLowerCase() === shortcut.key.toLowerCase();
-      const ctrlMatches = !!shortcut.ctrlKey === event.ctrlKey;
-      const metaMatches = !!shortcut.metaKey === event.metaKey;
-      const shiftMatches = !!shortcut.shiftKey === event.shiftKey;
-      const altMatches = !!shortcut.altKey === event.altKey;
+      const keyMatches = keyboardEvent.key.toLowerCase() === shortcut.key.toLowerCase();
+      const ctrlMatches = !!shortcut.ctrlKey === keyboardEvent.ctrlKey;
+      const metaMatches = !!shortcut.metaKey === keyboardEvent.metaKey;
+      const shiftMatches = !!shortcut.shiftKey === keyboardEvent.shiftKey;
+      const altMatches = !!shortcut.altKey === keyboardEvent.altKey;
 
       if (keyMatches && ctrlMatches && metaMatches && shiftMatches && altMatches) {
         if (shortcut.preventDefault !== false) {
-          event.preventDefault();
+          keyboardEvent.preventDefault();
         }
         if (shortcut.stopPropagation) {
-          event.stopPropagation();
+          keyboardEvent.stopPropagation();
         }
         shortcut.action();
         break;
@@ -67,7 +69,7 @@ export function useKeyboardShortcuts({
   }, [enabled, shortcuts]);
 
   useEffect(() => {
-    const element = target || document;
+    const element: EventTarget = target || document;
     element.addEventListener('keydown', handleKeyDown);
 
     return () => {

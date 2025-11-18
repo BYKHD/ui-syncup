@@ -97,6 +97,23 @@ export function AnnotationBox({
   const width = Math.abs((x2 - x1) * 100);
   const height = Math.abs((y2 - y1) * 100);
 
+  // Long press handler (mobile) - declared early to be used in pointer handlers
+  const longPressHandlers = useLongPress({
+    onLongPress: () => {
+      // Only trigger on mobile in interactive mode, not during resize, and when not using hand tool
+      if (!isMobile || !interactive || activeHandle || handToolActive || !onEdit || !onDelete) return;
+
+      // Select annotation
+      onSelect?.(annotation.id);
+
+      // Show action sheet
+      setActionSheetOpen(true);
+    },
+    threshold: 500,
+    moveThreshold: 10,
+    enabled: isMobile && interactive && !activeHandle && !handToolActive && !!onEdit && !!onDelete,
+  });
+
   const calculateNewPosition = useCallback(
     (event: PointerEvent, handle: DragHandle): { start: AnnotationPosition; end: AnnotationPosition } | null => {
       const overlay = overlayRef.current;
@@ -146,6 +163,11 @@ export function AnnotationBox({
       event.stopPropagation();
       event.preventDefault();
 
+      // Call long-press handler on mobile
+      if (isMobile && longPressHandlers.onPointerDown) {
+        longPressHandlers.onPointerDown(event as any);
+      }
+
       // Always allow selection, even in non-interactive (view) mode
       onSelect?.(annotation.id);
 
@@ -158,11 +180,16 @@ export function AnnotationBox({
       isDraggingRef.current = false;
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [interactive, onSelect, annotation.id],
+    [interactive, onSelect, annotation.id, isMobile, longPressHandlers],
   );
 
   const handlePointerMove = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
+      // Call long-press handler on mobile
+      if (isMobile && longPressHandlers.onPointerMove) {
+        longPressHandlers.onPointerMove(event as any);
+      }
+
       if (!interactive || !activeHandle) return;
       if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
 
@@ -186,11 +213,16 @@ export function AnnotationBox({
         onMove(annotation.id, newPosition.start, newPosition.end);
       }
     },
-    [interactive, activeHandle, calculateNewPosition, onMove, annotation.id],
+    [interactive, activeHandle, calculateNewPosition, onMove, annotation.id, isMobile, longPressHandlers],
   );
 
   const handlePointerUp = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
+      // Call long-press handler on mobile
+      if (isMobile && longPressHandlers.onPointerUp) {
+        longPressHandlers.onPointerUp(event as any);
+      }
+
       if (!interactive) return;
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
         event.currentTarget.releasePointerCapture(event.pointerId);
@@ -206,7 +238,7 @@ export function AnnotationBox({
       isDraggingRef.current = false;
       lastPositionRef.current = null;
     },
-    [interactive, onMoveComplete, annotation.id],
+    [interactive, onMoveComplete, annotation.id, isMobile, longPressHandlers],
   );
 
   // Context menu handler (desktop right-click)
@@ -227,23 +259,6 @@ export function AnnotationBox({
     },
     [interactive, activeHandle, handToolActive, onEdit, onDelete, onSelect, annotation.id],
   );
-
-  // Long press handler (mobile)
-  const longPressHandlers = useLongPress({
-    onLongPress: () => {
-      // Only trigger on mobile in interactive mode, not during resize, and when not using hand tool
-      if (!isMobile || !interactive || activeHandle || handToolActive || !onEdit || !onDelete) return;
-
-      // Select annotation
-      onSelect?.(annotation.id);
-
-      // Show action sheet
-      setActionSheetOpen(true);
-    },
-    threshold: 500,
-    moveThreshold: 10,
-    enabled: isMobile && interactive && !activeHandle && !handToolActive && !!onEdit && !!onDelete,
-  });
 
   // Edit handler
   const handleEdit = useCallback(() => {
@@ -282,7 +297,6 @@ export function AnnotationBox({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onContextMenu={handleContextMenu}
-          {...(isMobile ? longPressHandlers : {})}
         />
 
         {/* Label Badge */}
@@ -295,7 +309,6 @@ export function AnnotationBox({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onContextMenu={handleContextMenu}
-          {...(isMobile ? longPressHandlers : {})}
         >
           {annotation.label}
         </motion.div>

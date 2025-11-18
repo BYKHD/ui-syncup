@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 
 import type { PlanTier } from "../types";
-import { onboardingPlanOptions } from "../utils/constants";
+import { planOptions } from "../utils/constants";
 
 type OnboardingPlanSelectorProps = {
   selectedPlan: PlanTier;
@@ -26,7 +26,7 @@ export function OnboardingPlanSelector({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {onboardingPlanOptions.map((plan) => (
+        {planOptions.map((plan) => (
           <button
             key={plan.id}
             type="button"

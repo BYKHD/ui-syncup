@@ -47,8 +47,18 @@ export async function updateIssue(
     projectId: issueDetail.projectId,
     projectKey: issueDetail.projectKey,
     projectName: issueDetail.projectName,
-    assignee: issueDetail.assignee,
-    reporter: issueDetail.reporter,
+    assignee: issueDetail.assignee ? {
+      id: issueDetail.assignee.id,
+      name: issueDetail.assignee.name,
+      email: issueDetail.assignee.email,
+      image: issueDetail.assignee.avatarUrl ?? null,
+    } : null,
+    reporter: {
+      id: issueDetail.reporter.id,
+      name: issueDetail.reporter.name,
+      email: issueDetail.reporter.email,
+      image: issueDetail.reporter.avatarUrl ?? null,
+    },
     attachments,
     coverImageUrl: issueDetail.coverImageUrl,
     createdAt: issueDetail.createdAt,
@@ -61,7 +71,12 @@ export async function updateIssue(
     id: `act_${Date.now()}`,
     issueId,
     type: `${field}_changed` as any,
-    actor: issueDetail.reporter, // In real implementation, use actual actor
+    actor: {
+      id: issueDetail.reporter.id,
+      name: issueDetail.reporter.name,
+      email: issueDetail.reporter.email,
+      image: issueDetail.reporter.avatarUrl ?? null,
+    },
     changes: [
       {
         field,

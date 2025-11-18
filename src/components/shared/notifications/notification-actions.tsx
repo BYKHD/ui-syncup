@@ -106,7 +106,8 @@ export function NotificationActions({
   notification,
   teamId,
 }: NotificationActionsProps) {
-  const memberRole = 'member' // Mockup: always member role
+  // Mockup: In real implementation, this would come from useSession() or similar
+  const memberRole = 'member' as 'viewer' | 'member' | 'admin' | 'owner'
   const [pendingAction, setPendingAction] = useState<InvitationAction | null>(
     null
   )

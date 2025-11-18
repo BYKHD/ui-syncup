@@ -62,9 +62,31 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   // Action sheet state (mobile)
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
 
+  // Long press handler (mobile) - declared early to be used in pointer handlers
+  const longPressHandlers = useLongPress({
+    onLongPress: () => {
+      // Only trigger on mobile in interactive mode and when not using hand tool
+      if (!isMobile || !interactive || handToolActive || !onEdit || !onDelete) return;
+
+      // Select annotation
+      onSelect?.(annotation.id);
+
+      // Show action sheet
+      setActionSheetOpen(true);
+    },
+    threshold: 500,
+    moveThreshold: 10,
+    enabled: isMobile && interactive && !handToolActive && !!onEdit && !!onDelete,
+  });
+
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     event.preventDefault();
+
+    // Call long-press handler on mobile
+    if (isMobile && longPressHandlers.onPointerDown) {
+      longPressHandlers.onPointerDown(event as any);
+    }
 
     // Always allow selection, even in non-interactive (view) mode
     onSelect?.(annotation.id);
@@ -78,6 +100,11 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
+    // Call long-press handler on mobile
+    if (isMobile && longPressHandlers.onPointerMove) {
+      longPressHandlers.onPointerMove(event as any);
+    }
+
     if (!interactive) return;
     if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
       return;
@@ -111,6 +138,11 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   };
 
   const handlePointerUp = (event: PointerEvent<HTMLButtonElement>) => {
+    // Call long-press handler on mobile
+    if (isMobile && longPressHandlers.onPointerUp) {
+      longPressHandlers.onPointerUp(event as any);
+    }
+
     if (!interactive) return;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -142,23 +174,6 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     setContextMenuOpen(true);
   };
 
-  // Long press handler (mobile)
-  const longPressHandlers = useLongPress({
-    onLongPress: () => {
-      // Only trigger on mobile in interactive mode and when not using hand tool
-      if (!isMobile || !interactive || handToolActive || !onEdit || !onDelete) return;
-
-      // Select annotation
-      onSelect?.(annotation.id);
-
-      // Show action sheet
-      setActionSheetOpen(true);
-    },
-    threshold: 500,
-    moveThreshold: 10,
-    enabled: isMobile && interactive && !handToolActive && !!onEdit && !!onDelete,
-  });
-
   // Edit handler
   const handleEdit = () => {
     if (onEdit) {
@@ -181,7 +196,6 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onContextMenu={handleContextMenu}
-        {...(isMobile ? longPressHandlers : {})}
         className={getAnnotationPinClassName({ isActive, interactive })}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}

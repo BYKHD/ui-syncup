@@ -6,13 +6,14 @@ const invitationCopy = {
 };
 
 type SignInPageProps = {
-  searchParams: Record<string, string | string[] | undefined>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default function SignInPage({ searchParams }: SignInPageProps) {
-  const invitationToken = searchParams.token;
+export default async function SignInPage({ searchParams }: SignInPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const invitationToken = resolvedSearchParams.token;
   const invitedEmail =
-    typeof searchParams.email === "string" ? searchParams.email : "";
+    typeof resolvedSearchParams.email === "string" ? resolvedSearchParams.email : "";
 
   const description = invitationToken
     ? invitationCopy.invited

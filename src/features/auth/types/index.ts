@@ -1,8 +1,8 @@
 // Sign-up types
 export type SignUpField = "name" | "email" | "password";
-export type PlanTier = "free" | "pro";
+export type PlanTier = "starter" | "free" | "pro";
 
-export type SignUpForm = Record<SignUpField, string>;
+export type SignUpFormData = Record<SignUpField, string>;
 export type FormErrors = Partial<Record<SignUpField, string>>;
 
 export type PlanOption = {

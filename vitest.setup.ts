@@ -1,20 +1,21 @@
 import "@testing-library/jest-dom/vitest"
+import { vi } from "vitest"
 
 // Set up test environment variables
-process.env.NODE_ENV = "test"
-process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000"
-process.env.NEXT_PUBLIC_API_URL = "http://localhost:3000/api"
-process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test"
-process.env.SUPABASE_URL = "https://test.supabase.co"
-process.env.SUPABASE_ANON_KEY = "test-anon-key"
-process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key"
-process.env.R2_ACCOUNT_ID = "test-account-id"
-process.env.R2_ACCESS_KEY_ID = "test-access-key"
-process.env.R2_SECRET_ACCESS_KEY = "test-secret-key"
-process.env.R2_BUCKET_NAME = "test-bucket"
-process.env.R2_PUBLIC_URL = "https://test.r2.dev"
-process.env.GOOGLE_CLIENT_ID = "test-client-id"
-process.env.GOOGLE_CLIENT_SECRET = "test-client-secret"
-process.env.GOOGLE_REDIRECT_URI = "http://localhost:3000/api/auth/callback/google"
-process.env.BETTER_AUTH_SECRET = "test-secret-key-with-at-least-32-characters"
-process.env.BETTER_AUTH_URL = "http://localhost:3000"
+vi.stubEnv("NODE_ENV", "test")
+vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")
+vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:3000/api")
+vi.stubEnv("DATABASE_URL", "postgresql://test:test@localhost:5432/test")
+vi.stubEnv("SUPABASE_URL", "https://test.supabase.co")
+vi.stubEnv("SUPABASE_ANON_KEY", "test-anon-key")
+vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key")
+vi.stubEnv("R2_ACCOUNT_ID", "test-account-id")
+vi.stubEnv("R2_ACCESS_KEY_ID", "test-access-key")
+vi.stubEnv("R2_SECRET_ACCESS_KEY", "test-secret-key")
+vi.stubEnv("R2_BUCKET_NAME", "test-bucket")
+vi.stubEnv("R2_PUBLIC_URL", "https://test.r2.dev")
+vi.stubEnv("GOOGLE_CLIENT_ID", "test-client-id")
+vi.stubEnv("GOOGLE_CLIENT_SECRET", "test-client-secret")
+vi.stubEnv("GOOGLE_REDIRECT_URI", "http://localhost:3000/api/auth/callback/google")
+vi.stubEnv("BETTER_AUTH_SECRET", "test-secret-key-with-at-least-32-characters")
+vi.stubEnv("BETTER_AUTH_URL", "http://localhost:3000")

@@ -40,7 +40,7 @@ interface IssueDetailsPanelProps {
   onToggleShortcutsHelp?: () => void;
   annotations?: AnnotationThreadWithMeta[];
   activeAnnotationId?: string | null;
-  onAnnotationSelect?: (annotationId: string) => void;
+  onAnnotationSelect?: (annotationId: string | null) => void;
   isPanelCollapsed?: boolean;
   onPanelToggle?: () => void;
   isMobile?: boolean;

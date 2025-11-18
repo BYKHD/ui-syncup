@@ -12,17 +12,11 @@ interface AnnotationDrawerProps {
   onDraftChange?: (draft: AnnotationDraft | null) => void;
 }
 
-type DrawingState =
-  | {
-      tool: 'box';
-      start: AnnotationPosition;
-      current: AnnotationPosition;
-    }
-  | {
-      tool: 'highlight';
-      points: AnnotationPosition[];
-    }
-  | null;
+type DrawingState = {
+  tool: 'box';
+  start: AnnotationPosition;
+  current: AnnotationPosition;
+} | null;
 
 const clamp = (value: number) => Math.min(Math.max(value, 0), 1);
 
@@ -65,16 +59,10 @@ export function AnnotationDrawer({
     (shape: DrawingState) => {
       if (!shape) return;
       const id = draftIdRef.current ?? draftId ?? `draft_${Date.now()}`;
-      const getShape = (): AnnotationDraft['shape'] => {
-        if (shape.tool === 'highlight') {
-          return { type: 'highlight', points: shape.points };
-        }
-        return { type: 'box', start: shape.start, end: shape.current };
-      };
       onDraftCommit?.({
         id,
         tool: shape.tool,
-        shape: getShape(),
+        shape: { type: 'box', start: shape.start, end: shape.current },
         createdAt: Date.now(),
       });
     },
@@ -115,34 +103,22 @@ export function AnnotationDrawer({
         return;
       }
 
+      // Only box tool requires drawing state (cursor and pin are handled above)
+      if (activeTool !== 'box') return;
+
       const id = `draft_${Date.now()}`;
       setDraftId(id);
       draftIdRef.current = id;
 
-      if (activeTool === 'highlight') {
-        const initialState: DrawingState = {
-          tool: 'highlight',
-          points: [position],
-        };
-      setDrawingState(initialState);
-      onDraftChange?.({
-        id,
-        tool: 'highlight',
-        shape: { type: 'highlight', points: initialState.points },
-        createdAt: Date.now(),
-      });
-        return;
-      }
-
       const initialState: DrawingState = {
-        tool: activeTool,
+        tool: 'box',
         start: position,
         current: position,
       };
       setDrawingState(initialState);
       onDraftChange?.({
         id,
-        tool: activeTool,
+        tool: 'box',
         shape: { type: 'box', start: position, end: position },
         createdAt: Date.now(),
       });
@@ -160,16 +136,6 @@ export function AnnotationDrawer({
       const currentDraftId = draftIdRef.current ?? `draft_${Date.now()}`;
       setDrawingState((prev) => {
         if (!prev) return prev;
-        if (prev.tool === 'highlight') {
-          const updatedPoints = [...prev.points, position];
-          onDraftChange?.({
-            id: currentDraftId,
-            tool: 'highlight',
-            shape: { type: 'highlight', points: updatedPoints },
-            createdAt: Date.now(),
-          });
-          return { ...prev, points: updatedPoints };
-        }
         const updatedState = { ...prev, current: position };
         onDraftChange?.({
           id: currentDraftId,
@@ -236,24 +202,6 @@ export function AnnotationDrawer({
 
   const draftPreview = useMemo(() => {
     if (!drawingState || !overlayRef.current) return null;
-
-    if (drawingState.tool === 'highlight') {
-      if (drawingState.points.length < 2) return null;
-      const pointsAttr = drawingState.points.map((p) => `${p.x * 100},${p.y * 100}`).join(' ');
-      return (
-        <svg className="absolute inset-0 z-30 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <polyline
-            points={pointsAttr}
-            fill="none"
-            stroke="hsl(var(--primary))"
-            strokeWidth={1.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="drop-shadow-[0_0_6px_hsl(var(--primary)_/_0.35)]"
-          />
-        </svg>
-      );
-    }
 
     const start = drawingState.start;
     const current = drawingState.current;

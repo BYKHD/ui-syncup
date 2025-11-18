@@ -7,7 +7,7 @@ type QueryParams = Record<
   string | number | boolean | null | undefined
 >
 
-export interface ApiClientConfig extends RequestInit {
+export interface ApiClientConfig extends Omit<RequestInit, 'body' | 'method'> {
   method?: HttpMethod
   body?: BodyInit | Record<string, unknown>
   query?: QueryParams
@@ -52,12 +52,16 @@ export async function apiClient<TResponse>(
       ? JSON.stringify(body)
       : body
 
+  const defaultHeaders: HeadersInit = {}
+  if (!(normalizedBody instanceof FormData) && normalizedBody) {
+    defaultHeaders["Content-Type"] = "application/json"
+  }
+
   const response = await fetch(url, {
     method,
     credentials: "include",
     headers: {
-      "Content-Type":
-        normalizedBody instanceof FormData ? undefined : "application/json",
+      ...defaultHeaders,
       ...headers,
     },
     body: normalizedBody,

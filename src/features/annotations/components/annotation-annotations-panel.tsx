@@ -12,7 +12,7 @@ import { RiChatUnreadLine } from '@remixicon/react';
 export interface AnnotationAnnotationsPanelProps<A extends AnnotationThread = AnnotationThread> {
   annotations?: A[];
   activeAnnotationId?: string | null;
-  onAnnotationSelect?: (annotationId: string) => void;
+  onAnnotationSelect?: (annotationId: string | null) => void;
   isMobile?: boolean;
   hideThreadPreview?: boolean;
 }
@@ -57,7 +57,7 @@ export function AnnotationAnnotationsPanel<A extends AnnotationThread>({
     setIsSheetOpen(false);
     // Clear selection when sheet closes
     if (hasExternalControl) {
-      onAnnotationSelect?.(null as any);
+      onAnnotationSelect?.(null);
     } else {
       setLocalActiveId(null);
     }

@@ -12,25 +12,25 @@ export const MOCK_ATTACHMENT_USERS: IssueUser[] = [
     id: 'annot_author_1',
     name: 'Sarah Chen',
     email: 'sarah@example.com',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
+    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
   },
   {
     id: 'annot_author_2',
     name: 'Mike Johnson',
     email: 'mike@example.com',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mike',
+    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mike',
   },
   {
     id: 'annot_author_3',
     name: 'Emma Williams',
     email: 'emma@example.com',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma',
+    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma',
   },
   {
     id: 'annot_author_4',
     name: 'James Park',
     email: 'james@example.com',
-    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=James',
+    image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=James',
   },
 ];
 

@@ -21,7 +21,7 @@ export interface IssueUser {
   id: string
   name: string
   email: string
-  avatarUrl?: string | null
+  image: string | null
 }
 
 // ============================================================================
@@ -161,6 +161,9 @@ export interface IssueDetailData {
   coverImageUrl?: string | null
   createdAt: string
   updatedAt: string
+  page?: string
+  figmaLink?: string
+  jiraLink?: string
 }
 
 // ============================================================================

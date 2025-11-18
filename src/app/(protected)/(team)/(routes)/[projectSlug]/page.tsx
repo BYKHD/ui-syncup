@@ -3,14 +3,14 @@ import ProjectDetailScreen from "@/features/projects/screens/project-detail-scre
 import { MOCK_PROJECTS_WITH_STATS } from "@/mocks";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     projectSlug: string;
-  };
+  }>;
 }
 
 // Thin page component - server-first, minimal logic
-export default function ProjectDetailPage({ params }: PageProps) {
-  const { projectSlug } = params;
+export default async function ProjectDetailPage({ params }: PageProps) {
+  const { projectSlug } = await params;
 
   // TODO: wire GET /api/projects/:slug
   // For now, using mock data to visualize UI

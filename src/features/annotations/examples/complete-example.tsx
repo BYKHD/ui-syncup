@@ -7,6 +7,8 @@
  * Copy this file to get started quickly!
  */
 
+import React from 'react';
+
 import { useRef } from 'react';
 import {
   useAnnotationTools,

@@ -34,7 +34,7 @@ interface UploadedImagePreviewProps {
   onAnnotationsChange?: (annotations: AttachmentAnnotation[]) => void;
   onRemove: () => void;
   activeAnnotationId?: string | null;
-  onAnnotationSelect?: (annotationId: string) => void;
+  onAnnotationSelect?: (annotationId: string | null) => void;
   className?: string;
 }
 

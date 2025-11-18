@@ -45,7 +45,7 @@ interface IssueAttachmentsViewProps {
   onRetry?: () => void;
   annotationThreads?: AttachmentAnnotation[];
   activeAnnotationId?: string | null;
-  onAnnotationSelect?: (annotationId: string) => void;
+  onAnnotationSelect?: (annotationId: string | null) => void;
   onAnnotationMove?: (annotationId: string, position: AnnotationPosition) => void;
   onBoxAnnotationMove?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
   onAnnotationEdit?: (annotationId: string) => void;
@@ -330,7 +330,7 @@ export default function IssueAttachmentsView({
   }, []);
 
   const handleAnnotationSelect = useCallback(
-    (annotationId: string) => {
+    (annotationId: string | null) => {
       setViewMode('annotate');
       // Note: Select isn't tracked in history - only create/move/resize/delete
       onAnnotationSelect?.(annotationId);

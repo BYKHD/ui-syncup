@@ -230,8 +230,12 @@ export default function ResponsiveIssueLayout({
     setTouchStartY(null);
   };
 
-  const handleAnnotationSelect = useCallback((annotationId: string) => {
+  const handleAnnotationSelect = useCallback((annotationId: string | null) => {
     setActiveAnnotationId(annotationId);
+
+    if (!annotationId) {
+      return;
+    }
 
     // Desktop: expand panel if collapsed and switch to annotations tab
     if (!isMobile && isPanelCollapsed) {
