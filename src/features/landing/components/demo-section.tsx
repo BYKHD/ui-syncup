@@ -1,206 +1,147 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { motion, AnimatePresence } from "motion/react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { SectionContainer } from "@/components/shared/section-container"
-import { LANDING_DEMO_ISSUES } from "@/mocks/landing.fixtures"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { MessageSquare, User, Calendar, Tag } from "lucide-react"
 
-const demoAnnotations = [
-  { id: 1, x: 25, y: 30, color: "bg-red-500", issueIndex: 0 },
-  { id: 2, x: 60, y: 50, width: 20, height: 15, color: "bg-amber-500", issueIndex: 1 },
-  { id: 3, x: 45, y: 70, color: "bg-blue-500", issueIndex: 2 },
-]
-
-/**
- * Demo section: interactive annotation board with issue panel preview
- */
 export function DemoSection() {
-  const [selectedPin, setSelectedPin] = useState<number | null>(0)
-
-  const selectedIssue =
-    selectedPin !== null ? LANDING_DEMO_ISSUES[selectedPin] : null
+  const [activePin, setActivePin] = useState<string | null>(null)
 
   return (
-    <SectionContainer id="demo">
-      <div className="space-y-12">
-        {/* Section header */}
-        <div className="text-center space-y-4">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-            See it in action
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Click on any annotation pin to see the linked issue details
-          </p>
+    <section className="container mx-auto px-4 py-24">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl font-bold tracking-tight md:text-4xl mb-4">See it in action</h2>
+        <p className="text-muted-foreground text-lg">Interactive feedback that feels like part of your app.</p>
+      </div>
+
+      <div className="rounded-xl border bg-background shadow-2xl overflow-hidden max-w-6xl mx-auto h-[600px] flex">
+        {/* Mock App Area */}
+        <div className="flex-1 bg-muted/20 relative p-8 overflow-hidden">
+          <div className="absolute inset-0 grid grid-cols-12 gap-4 p-8 opacity-50 pointer-events-none">
+            <div className="col-span-3 bg-muted rounded-lg h-full" />
+            <div className="col-span-9 space-y-4">
+              <div className="h-16 bg-muted rounded-lg w-full" />
+              <div className="grid grid-cols-3 gap-4">
+                <div className="h-40 bg-muted rounded-lg" />
+                <div className="h-40 bg-muted rounded-lg" />
+                <div className="h-40 bg-muted rounded-lg" />
+              </div>
+              <div className="h-96 bg-muted rounded-lg w-full" />
+            </div>
+          </div>
+
+          {/* Interactive Pins */}
+          <div className="absolute inset-0">
+             <Pin 
+              x="25%" 
+              y="15%" 
+              active={activePin === "pin-1"} 
+              onClick={() => setActivePin("pin-1")}
+            />
+             <Pin 
+              x="60%" 
+              y="35%" 
+              active={activePin === "pin-2"} 
+              onClick={() => setActivePin("pin-2")}
+            />
+             <Pin 
+              x="80%" 
+              y="60%" 
+              active={activePin === "pin-3"} 
+              onClick={() => setActivePin("pin-3")}
+            />
+          </div>
         </div>
 
-        {/* Interactive demo */}
-          <div className="flex gap-6 flex-col lg:flex-row">
-          {/* Left: Annotation canvas */}
-          <Card className="relative overflow-hidden w-full">
-            <CardContent className="p-6">
-              <div className="relative aspect-[4/3] bg-gradient-to-br from-muted/30 to-muted/60 rounded-lg border">
-                {/* Mock UI content */}
-                <div className="absolute inset-4 bg-card rounded border shadow-sm p-6 space-y-4">
-                  {/* Simulated header */}
-                  <div className="flex items-center justify-between pb-4 border-b">
-                    <div className="h-4 bg-muted rounded w-32" />
-                    <div className="flex gap-2">
-                      <div className="h-8 w-8 bg-muted rounded" />
-                      <div className="h-8 w-8 bg-muted rounded" />
+        {/* Sidebar Panel */}
+        <div className="w-80 border-l bg-background flex flex-col">
+          <div className="p-4 border-b">
+            <h3 className="font-semibold">Issue Details</h3>
+          </div>
+          <ScrollArea className="flex-1">
+            <AnimatePresence mode="wait">
+              {activePin ? (
+                <motion.div 
+                  key={activePin}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="p-4 space-y-6"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline">OPEN</Badge>
+                      <span className="text-xs text-muted-foreground">ISS-{activePin.split('-')[1]}</span>
                     </div>
+                    <h4 className="font-medium text-lg">
+                      {activePin === "pin-1" && "Sidebar navigation alignment"}
+                      {activePin === "pin-2" && "Card shadow is too heavy"}
+                      {activePin === "pin-3" && "Chart colors don't match theme"}
+                    </h4>
                   </div>
 
-                  {/* Simulated content */}
-                  <div className="space-y-3">
-                    <div className="h-3 bg-muted rounded w-2/3" />
-                    <div className="h-3 bg-muted rounded w-1/2" />
-                    <div className="h-3 bg-muted rounded w-3/4" />
-                  </div>
-
-                  {/* Simulated cards */}
-                  <div className="grid grid-cols-2 gap-3 mt-6">
-                    <div className="h-24 bg-muted/60 rounded p-3 space-y-2">
-                      <div className="h-2 bg-muted rounded w-3/4" />
-                      <div className="h-2 bg-muted rounded w-1/2" />
-                    </div>
-                    <div className="h-24 bg-muted/60 rounded p-3 space-y-2">
-                      <div className="h-2 bg-muted rounded w-3/4" />
-                      <div className="h-2 bg-muted rounded w-1/2" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Annotation pins */}
-                {demoAnnotations.map((pin) => (
-                  <div key={pin.id}>
-                    {pin.width && pin.height ? (
-                      // Box annotation
-                      <button
-                        className={`absolute ${pin.color} opacity-30 hover:opacity-50 border-2 border-white cursor-pointer transition-opacity rounded`}
-                        style={{
-                          top: `${pin.y}%`,
-                          left: `${pin.x}%`,
-                          width: `${pin.width}%`,
-                          height: `${pin.height}%`,
-                        }}
-                        onClick={() => setSelectedPin(pin.issueIndex)}
-                        aria-label={`Annotation ${pin.id}`}
-                      />
-                    ) : (
-                      // Pin annotation
-                      <button
-                        className={`absolute w-8 h-8 ${pin.color} rounded-full border-2 ${
-                          selectedPin === pin.issueIndex
-                            ? "border-white ring-2 ring-primary"
-                            : "border-white"
-                        } shadow-lg cursor-pointer hover:scale-110 transition-all flex items-center justify-center text-xs font-bold text-white`}
-                        style={{
-                          top: `${pin.y}%`,
-                          left: `${pin.x}%`,
-                          transform: "translate(-50%, -50%)",
-                        }}
-                        onClick={() => setSelectedPin(pin.issueIndex)}
-                        aria-label={`Annotation ${pin.id}`}
-                      >
-                        {pin.id}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          {/* Right: Issue details panel */}
-          <Card className="lg:sticky lg:top-24 h-fit">
-            <CardContent className="p-6 space-y-6">
-              {selectedIssue ? (
-                <>
-                  {/* Issue header */}
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1 flex-1">
-                        <div className="text-sm text-muted-foreground">
-                          {selectedIssue.key}
-                        </div>
-                        <h3 className="font-semibold leading-tight">
-                          {selectedIssue.title}
-                        </h3>
+                  <div className="space-y-4 text-sm">
+                    <div className="flex items-center gap-3">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src="/placeholder.svg" />
+                          <AvatarFallback>JD</AvatarFallback>
+                        </Avatar>
+                        <span>John Doe</span>
                       </div>
                     </div>
-
-                    {/* Badges */}
-                    <div className="flex flex-wrap gap-2">
-                      <Badge
-                        variant="outline"
-                        className={
-                          selectedIssue.status === "open"
-                            ? "bg-slate-500/10 text-slate-700 border-slate-300"
-                            : selectedIssue.status === "in_progress"
-                            ? "bg-blue-500/10 text-blue-700 border-blue-300"
-                            : "bg-purple-500/10 text-purple-700 border-purple-300"
-                        }
-                      >
-                        {selectedIssue.status.replace("_", " ")}
-                      </Badge>
-                      <Badge
-                        variant="outline"
-                        className={
-                          selectedIssue.priority === "critical"
-                            ? "bg-red-500/10 text-red-700 border-red-300"
-                            : selectedIssue.priority === "high"
-                            ? "bg-orange-500/10 text-orange-700 border-orange-300"
-                            : "bg-yellow-500/10 text-yellow-700 border-yellow-300"
-                        }
-                      >
-                        {selectedIssue.priority}
-                      </Badge>
-                      <Badge variant="secondary">{selectedIssue.type}</Badge>
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span>Due tomorrow</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                      <Badge variant="secondary" className="text-xs">UI Polish</Badge>
                     </div>
                   </div>
 
-                  {/* Description */}
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">Description</div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {selectedIssue.description}
-                    </p>
-                  </div>
-
-                  {/* Metadata */}
-                  <div className="pt-4 border-t space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Assignee</span>
-                      <span className="font-medium">
-                        {selectedIssue.assignedToId
-                          ? "John Developer"
-                          : "Unassigned"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Created</span>
-                      <span className="font-medium">
-                        {new Date(selectedIssue.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Updated</span>
-                      <span className="font-medium">
-                        {new Date(selectedIssue.updatedAt).toLocaleDateString()}
-                      </span>
+                  <div className="space-y-4 pt-4 border-t">
+                    <div className="flex gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>ME</AvatarFallback>
+                      </Avatar>
+                      <div className="space-y-1">
+                        <div className="bg-muted p-3 rounded-lg text-sm">
+                          Can we adjust this to match the new design system specs?
+                        </div>
+                        <span className="text-xs text-muted-foreground">2m ago</span>
+                      </div>
                     </div>
                   </div>
-                </>
+                </motion.div>
               ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  Click on an annotation to see issue details
+                <div className="flex flex-col items-center justify-center h-64 text-center p-8 text-muted-foreground">
+                  <MessageSquare className="h-12 w-12 mb-4 opacity-20" />
+                  <p>Select a pin to view issue details</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
-          </div>
-     
+            </AnimatePresence>
+          </ScrollArea>
+        </div>
       </div>
-    </SectionContainer>
+    </section>
+  )
+}
+
+function Pin({ x, y, active, onClick }: { x: string, y: string, active: boolean, onClick: () => void }) {
+  return (
+    <motion.button
+      className={`absolute h-8 w-8 -ml-4 -mt-4 rounded-full flex items-center justify-center shadow-lg transition-colors ${active ? 'bg-primary text-primary-foreground ring-4 ring-primary/20' : 'bg-background text-foreground hover:bg-primary hover:text-primary-foreground'}`}
+      style={{ left: x, top: y }}
+      onClick={onClick}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+    >
+      <div className={`h-3 w-3 rounded-full ${active ? 'bg-white' : 'bg-primary'}`} />
+    </motion.button>
   )
 }

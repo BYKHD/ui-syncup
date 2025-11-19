@@ -1,151 +1,121 @@
 "use client"
 
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { SectionContainer } from "@/components/shared/section-container"
+import { motion } from "motion/react"
+import { ArrowRight, MessageSquare, CheckCircle2, MousePointer2 } from "lucide-react"
+import Link from "next/link"
 
-/**
- * Hero section with tagline, value proposition, and primary CTAs
- */
 export function HeroSection() {
   return (
-    <SectionContainer className="pt-20 md:pt-28 pb-16 md:pb-24">
-      <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
-        {/* Left: Copy + CTAs */}
-        <div className="flex flex-col gap-6 text-center lg:text-left">
+    <section className="container mx-auto px-4 py-24 md:py-32">
+      <div className="grid gap-12 lg:grid-cols-2 lg:gap-8 items-center">
+        <div className="flex flex-col justify-center space-y-8">
           <div className="space-y-4">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-              Close the loop between{" "}
-              <span className="text-primary">design and implementation</span>
+            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+              Close the loop between design and implementation
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0">
-              Pin feedback on mockups, turn comments into issues, track every UI
-              detail from design review to production.
+            <p className="max-w-[600px] text-muted-foreground md:text-xl">
+              Pin feedback on mockups, turn comments into issues, track every UI detail from design review to production.
             </p>
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-            <Button size="lg" asChild>
-              <Link href="/sign-up">Start Free Workspace</Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="#demo">See it in Action</Link>
-            </Button>
-          </div>
-
-          {/* Trust indicators */}
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground justify-center lg:justify-start">
-            <div className="flex items-center gap-1.5">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-4 h-4 text-green-600"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span>Free forever plan</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-4 h-4 text-green-600"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span>No credit card required</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-4 h-4 text-green-600"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span>Unlimited developer seats</span>
-            </div>
+          <div className="flex flex-col gap-2 min-[400px]:flex-row">
+            <Link href="/sign-up">
+              <Button size="lg" className="w-full min-[400px]:w-auto gap-2">
+                Start free workspace <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/demo">
+              <Button variant="outline" size="lg" className="w-full min-[400px]:w-auto">
+                Book a demo
+              </Button>
+            </Link>
           </div>
         </div>
+        
+        {/* Interactive Annotation Board Mock */}
+        <div className="relative mx-auto w-full max-w-[500px] lg:max-w-none">
+          <div className="relative aspect-video overflow-hidden rounded-xl border bg-muted/50 shadow-2xl">
+            {/* Mock UI Background */}
+            <div className="absolute inset-0 bg-background p-6 grid gap-4 content-start opacity-80">
+              <div className="h-8 w-1/3 rounded-md bg-muted" />
+              <div className="grid grid-cols-3 gap-4">
+                <div className="h-32 rounded-md bg-muted" />
+                <div className="h-32 rounded-md bg-muted" />
+                <div className="h-32 rounded-md bg-muted" />
+              </div>
+              <div className="h-8 w-1/2 rounded-md bg-muted" />
+              <div className="h-24 rounded-md bg-muted" />
+            </div>
 
-        {/* Right: Hero Visual */}
-        <div className="relative">
-          <div className="relative aspect-[4/3] rounded-lg border bg-muted/30 p-4 shadow-2xl">
-            {/* Mock annotation board preview */}
-            <div className="h-full w-full bg-gradient-to-br from-background to-muted rounded border flex items-center justify-center">
-              <div className="relative w-full h-full p-6">
-                {/* Simulated UI screenshot with pins */}
-                <div className="absolute inset-6 bg-card border rounded-lg shadow-sm">
-                  {/* Mock content */}
-                  <div className="p-4 space-y-3">
-                    <div className="h-3 bg-muted rounded w-1/3" />
-                    <div className="h-2 bg-muted rounded w-2/3" />
-                    <div className="h-2 bg-muted rounded w-1/2" />
-                    <div className="mt-4 grid grid-cols-2 gap-2">
-                      <div className="h-16 bg-muted rounded" />
-                      <div className="h-16 bg-muted rounded" />
-                    </div>
-                  </div>
-
-                  {/* Annotation pins */}
-                  <div
-                    className="absolute w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-lg cursor-pointer flex items-center justify-center text-[10px] font-bold text-white"
-                    style={{ top: "30%", left: "25%" }}
-                  >
-                    1
-                  </div>
-                  <div
-                    className="absolute w-6 h-6 bg-amber-500 rounded-full border-2 border-white shadow-lg cursor-pointer flex items-center justify-center text-[10px] font-bold text-white"
-                    style={{ top: "60%", right: "30%" }}
-                  >
-                    2
-                  </div>
-                  <div
-                    className="absolute w-6 h-6 bg-blue-500 rounded-full border-2 border-white shadow-lg cursor-pointer flex items-center justify-center text-[10px] font-bold text-white"
-                    style={{ bottom: "25%", left: "45%" }}
-                  >
-                    3
-                  </div>
+            {/* Interactive Pins */}
+            <motion.div 
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.5, type: "spring" }}
+              className="absolute top-1/4 left-1/4"
+            >
+              <div className="relative group cursor-pointer">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-4 ring-background">
+                  <MousePointer2 className="h-4 w-4" />
                 </div>
-
-                {/* Issues panel preview (floating) */}
-                <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-48 bg-background border rounded-lg shadow-xl p-3 space-y-2">
-                  <div className="text-xs font-semibold">Issues (3)</div>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2 text-[10px]">
-                      <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
-                      <span className="flex-1 truncate">Button padding...</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[10px]">
-                      <div className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
-                      <span className="flex-1 truncate">Contrast ratio...</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[10px]">
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-                      <span className="flex-1 truncate">Card shadow...</span>
-                    </div>
+                <div className="absolute left-full top-0 ml-2 w-48 rounded-md border bg-background p-3 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="text-xs font-medium">Padding should be 24px</p>
+                  <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
+                    <div className="h-4 w-4 rounded-full bg-blue-500" />
+                    <span>@alex</span>
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
+
+            <motion.div 
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 1.2, type: "spring" }}
+              className="absolute bottom-1/3 right-1/3"
+            >
+              <div className="relative group cursor-pointer">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-lg ring-4 ring-background">
+                  <MessageSquare className="h-4 w-4" />
+                </div>
+                 <div className="absolute right-full top-0 mr-2 w-48 rounded-md border bg-background p-3 shadow-xl opacity-100">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-bold text-destructive">BUG-12</span>
+                    <span className="text-[10px] text-muted-foreground">Just now</span>
+                  </div>
+                  <p className="text-xs font-medium">Button alignment is off on mobile</p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Side Panel Mock */}
+            <motion.div 
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              transition={{ delay: 0.8, type: "spring", damping: 20 }}
+              className="absolute right-0 top-0 bottom-0 w-1/3 border-l bg-background/95 backdrop-blur p-4 flex flex-col gap-3"
+            >
+              <div className="h-4 w-2/3 rounded bg-muted" />
+              <div className="space-y-2">
+                <div className="rounded border p-2 text-[10px] shadow-sm bg-card">
+                  <div className="flex items-center gap-1 mb-1">
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    <span className="font-medium">Resolved</span>
+                  </div>
+                  <p className="text-muted-foreground line-through">Wrong color code</p>
+                </div>
+                <div className="rounded border p-2 text-[10px] shadow-sm bg-card border-primary/20">
+                  <div className="flex items-center gap-1 mb-1">
+                    <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                    <span className="font-medium">In Review</span>
+                  </div>
+                  <p>Header spacing update</p>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>
-    </SectionContainer>
+    </section>
   )
 }
