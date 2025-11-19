@@ -90,8 +90,8 @@ export function setSessionCookie(
  * }
  * ```
  */
-export function getSessionCookie(): string | null {
-  const cookieStore = cookies();
+export async function getSessionCookie(): Promise<string | null> {
+  const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
   
   return sessionCookie?.value ?? null;

@@ -137,7 +137,7 @@ This task list has been refreshed based on the current codebase state. The follo
 
 ## Phase 4: Email Service
 
-- [ ] 9. Set up email infrastructure
+- [x] 9. Set up email infrastructure
   - Verify `RESEND_API_KEY` and `RESEND_FROM_EMAIL` in `src/lib/env.ts`
   - Create `src/server/email/client.ts` with Resend SDK
   - Implement `sendEmail(job: EmailJob): Promise<void>` with error handling
@@ -146,7 +146,7 @@ This task list has been refreshed based on the current codebase state. The follo
   - Implement `renderTemplate(template, data): string`
   - _Validates: Requirements 1.4, 6.1_
 
-- [ ] 10. Implement email queue system
+- [x] 10. Implement email queue system
   - Create `src/server/email/queue.ts`
   - Implement `enqueueEmail(job: EmailJob): Promise<void>` with idempotency (userId + tokenId)
   - Implement `processEmailQueue(): Promise<void>` with retry logic (30s, 5m, 30m)
@@ -156,7 +156,7 @@ This task list has been refreshed based on the current codebase state. The follo
 
 ## Phase 5: Validation Schemas
 
-- [ ] 11. Enhance validation schemas
+- [x] 11. Enhance validation schemas
   - Update `src/features/auth/utils/validators.ts`
   - Enhance `signUpSchema` with password complexity (8+ chars, uppercase, lowercase, number, special)
   - Create `forgotPasswordSchema` with email validation
@@ -165,15 +165,15 @@ This task list has been refreshed based on the current codebase state. The follo
   - Create `src/features/auth/api/types.ts` with response schemas (UserResponse, SessionResponse, ErrorResponse, SuccessResponse)
   - _Validates: Requirements 1.3, 1.5, 8.3_
 
-- [ ] 11.1 Write property test for password validation
+- [x] 11.1 Write property test for password validation
   - **Property 2: Password validation enforces security requirements**
   - **Validates: Requirements 1.3**
 
-- [ ] 11.2 Write property test for validation errors
+- [x] 11.2 Write property test for validation errors
   - **Property 4: Validation errors are field-specific**
   - **Validates: Requirements 1.5**
 
-- [ ] 11.3 Write property test for Zod validation
+- [x] 11.3 Write property test for Zod validation
   - **Property 25: Auth endpoints validate input with Zod**
   - **Validates: Requirements 8.3**
 

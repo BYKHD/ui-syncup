@@ -156,7 +156,7 @@ export async function createSession(
  */
 export async function getSession(): Promise<SessionUser | null> {
   // Get session token from cookie
-  const token = getSessionCookie();
+  const token = await getSessionCookie();
   
   if (!token) {
     return null;
