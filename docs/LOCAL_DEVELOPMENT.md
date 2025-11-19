@@ -1,5 +1,9 @@
 # Local Development Setup
 
+> **Note**: We have migrated to Supabase CLI for local development. Please refer to [SUPABASE_LOCAL_SETUP.md](./SUPABASE_LOCAL_SETUP.md) for the latest instructions. The instructions below regarding `docker-compose` are for the legacy setup.
+
+
+
 This guide walks you through setting up UI SyncUp for local development, including all required services and environment configuration.
 
 ## Prerequisites
@@ -25,16 +29,15 @@ bun install
 cp .env.example .env.local
 # Edit .env.local with your local configuration (see below)
 
-# 4. Start local services (PostgreSQL, pgAdmin, MinIO)
-docker-compose up -d
+# 4. Start local Supabase stack
+bun run supabase:start
 
-# 5. Wait for services to be healthy
-docker-compose ps
+# 5. Run database migrations
+bun run db:push  # For rapid prototyping
+# OR
+bun run db:migrate # For production-like migrations
 
-# 6. Run database migrations (if applicable)
-bun run db:migrate
-
-# 7. Start the development server
+# 6. Start the development server
 bun dev
 ```
 
