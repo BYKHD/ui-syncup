@@ -5,7 +5,7 @@ import { vi } from "vitest"
 vi.stubEnv("NODE_ENV", "test")
 vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")
 vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:3000/api")
-vi.stubEnv("DATABASE_URL", "postgresql://test:test@localhost:5432/test")
+vi.stubEnv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/ui_syncup_dev")
 vi.stubEnv("SUPABASE_URL", "https://test.supabase.co")
 vi.stubEnv("SUPABASE_ANON_KEY", "test-anon-key")
 vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key")

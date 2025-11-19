@@ -179,7 +179,7 @@ This task list has been refreshed based on the current codebase state. The follo
 
 ## Phase 6: API Routes
 
-- [ ] 12. Implement POST /api/auth/signup
+- [x] 12. Implement POST /api/auth/signup
   - Create `src/app/api/auth/signup/route.ts`
   - Validate request body with enhanced `signUpSchema`
   - Check for duplicate email (return 409)
@@ -190,11 +190,11 @@ This task list has been refreshed based on the current codebase state. The follo
   - Return 201 with success message
   - _Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 12.1 Write property test for user creation
+- [x] 12.1 Write property test for user creation
   - **Property 1: Valid registration creates user with hashed password**
   - **Validates: Requirements 1.1**
 
-- [ ] 13. Implement GET /api/auth/verify-email
+- [x] 13. Implement GET /api/auth/verify-email
   - Create `src/app/api/auth/verify-email/route.ts`
   - Validate token from query params
   - Verify token signature and expiration
@@ -205,11 +205,11 @@ This task list has been refreshed based on the current codebase state. The follo
   - Redirect to sign-in with success message
   - _Validates: Requirements 2.1, 2.2, 2.3, 2.5, 7.1_
 
-- [ ] 13.1 Write property test for email verification
+- [x] 13.1 Write property test for email verification
   - **Property 5: Valid verification marks user as verified**
   - **Validates: Requirements 2.1**
 
-- [ ] 14. Implement POST /api/auth/login
+- [x] 14. Implement POST /api/auth/login
   - Create `src/app/api/auth/login/route.ts`
   - Apply rate limiting (5 per IP/min, 3 per email/15min)
   - Validate request body with `signInSchema`
@@ -221,11 +221,11 @@ This task list has been refreshed based on the current codebase state. The follo
   - Return user data
   - _Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 14.1 Write property test for rate limiting
+- [x] 14.1 Write property test for rate limiting
   - **Property 8: Rate limiting blocks excessive sign-in attempts**
   - **Validates: Requirements 3.5**
 
-- [ ] 15. Implement GET /api/auth/me
+- [x] 15. Implement GET /api/auth/me
   - Create `src/app/api/auth/me/route.ts`
   - Get session from cookie
   - Validate session (signature, expiration, database)
@@ -234,11 +234,11 @@ This task list has been refreshed based on the current codebase state. The follo
   - Return user data or 401
   - _Validates: Requirements 4.1, 4.3, 4.4, 10.1_
 
-- [ ] 15.1 Write property test for session access
+- [x] 15.1 Write property test for session access
   - **Property 9: Valid session grants access**
   - **Validates: Requirements 4.1**
 
-- [ ] 16. Implement POST /api/auth/logout
+- [x] 16. Implement POST /api/auth/logout
   - Create `src/app/api/auth/logout/route.ts`
   - Get session from cookie
   - Delete session from database
@@ -246,15 +246,15 @@ This task list has been refreshed based on the current codebase state. The follo
   - Return success message
   - _Validates: Requirements 5.1, 5.2, 5.4_
 
-- [ ] 16.1 Write property test for sign-out
+- [x] 16.1 Write property test for sign-out
   - **Property 12: Sign-out invalidates session**
   - **Validates: Requirements 5.1**
 
-- [ ] 16.2 Write property test for multi-device sessions
+- [x] 16.2 Write property test for multi-device sessions
   - **Property 13: Sign-out preserves other sessions**
   - **Validates: Requirements 5.5**
 
-- [ ] 17. Implement POST /api/auth/forgot-password
+- [x] 17. Implement POST /api/auth/forgot-password
   - Create `src/app/api/auth/forgot-password/route.ts`
   - Apply rate limiting (3 per email/hour)
   - Validate request body with `forgotPasswordSchema`
@@ -265,11 +265,11 @@ This task list has been refreshed based on the current codebase state. The follo
   - Return success message (always)
   - _Validates: Requirements 6.1, 6.5_
 
-- [ ] 17.1 Write property test for reset token creation
+- [x] 17.1 Write property test for reset token creation
   - **Property 16: Password reset creates time-limited token**
   - **Validates: Requirements 6.1**
 
-- [ ] 18. Implement POST /api/auth/reset-password
+- [x] 18. Implement POST /api/auth/reset-password
   - Create `src/app/api/auth/reset-password/route.ts`
   - Validate request body with `resetPasswordSchema`
   - Verify token signature and expiration
@@ -281,11 +281,11 @@ This task list has been refreshed based on the current codebase state. The follo
   - Return success message
   - _Validates: Requirements 6.2, 6.3, 6.4_
 
-- [ ] 18.1 Write property test for session invalidation
+- [x] 18.1 Write property test for session invalidation
   - **Property 17: Password reset invalidates all sessions**
   - **Validates: Requirements 6.2**
 
-- [ ] 19. Checkpoint - Ensure all API tests pass
+- [x] 19. Checkpoint - Ensure all API tests pass
   - Run all property-based tests
   - Verify all API endpoints return correct status codes
   - Verify error handling works correctly

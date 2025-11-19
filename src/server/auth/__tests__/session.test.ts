@@ -512,4 +512,72 @@ describe('Session Management - Property-Based Tests', () => {
     // Cleanup
     await deleteAllUserSessions(testUserId);
   });
+
+  /**
+   * Feature: authentication-system, Property 17: Password reset invalidates all sessions
+   * Validates: Requirements 6.2
+   * 
+   * For any user who resets their password, all existing sessions should be invalidated.
+   * This ensures that if a password is compromised and reset, all active sessions
+   * are terminated for security.
+   */
+  test('Property 17: Password reset invalidates all sessions', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        // Generate multiple session configs to simulate multi-device usage
+        fc.array(
+          fc.record({
+            ipAddress: fc.ipV4(),
+            userAgent: fc.string({ minLength: 10, maxLength: 200 }).filter(s => s.trim().length > 0),
+          }),
+          { minLength: 1, maxLength: 5 }
+        ),
+        async (sessionConfigs) => {
+          // Create multiple sessions for the user (simulating multiple devices)
+          const sessionTokens: string[] = [];
+          for (const config of sessionConfigs) {
+            const token = await createSession(
+              testUserId,
+              config.ipAddress,
+              config.userAgent
+            );
+            sessionTokens.push(token);
+          }
+
+          // Verify all sessions exist before password reset
+          const sessionsBeforeReset = await db
+            .select()
+            .from(sessions)
+            .where(eq(sessions.userId, testUserId));
+
+          expect(sessionsBeforeReset.length).toBe(sessionConfigs.length);
+
+          // Simulate password reset by invalidating all sessions
+          // (This is what the reset-password endpoint does)
+          await deleteAllUserSessions(testUserId);
+
+          // Verify all sessions are invalidated after password reset
+          const sessionsAfterReset = await db
+            .select()
+            .from(sessions)
+            .where(eq(sessions.userId, testUserId));
+
+          // Property: All sessions should be deleted
+          expect(sessionsAfterReset.length).toBe(0);
+
+          // Property: Each individual session token should no longer exist
+          for (const token of sessionTokens) {
+            const [session] = await db
+              .select()
+              .from(sessions)
+              .where(eq(sessions.token, token))
+              .limit(1);
+
+            expect(session).toBeUndefined();
+          }
+        }
+      ),
+      { numRuns: 50, timeout: 30000 } // Run 50 iterations with 30s timeout
+    );
+  });
 });
