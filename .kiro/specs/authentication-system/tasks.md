@@ -9,7 +9,7 @@ This task list has been refreshed based on the current codebase state. The follo
 
 ## Phase 1: Database Schema & Core Infrastructure
 
-- [ ] 1. Set up Drizzle configuration and database schema
+- [x] 1. Set up Drizzle configuration and database schema
   - Create `drizzle.config.ts` with schema path and migrations directory
   - Add database scripts to `package.json` (db:generate, db:migrate, db:studio, db:push)
   - Create `src/server/db/schema/` directory structure
@@ -23,7 +23,7 @@ This task list has been refreshed based on the current codebase state. The follo
   - Generate and review initial migration
   - _Validates: Requirements 1.1, 2.1, 3.1, 4.1, 6.1, 7.1_
 
-- [ ] 2. Install missing dependencies
+- [x] 2. Install missing dependencies
   - Install `@node-rs/argon2` for password hashing
   - Install `fast-check` for property-based testing
   - Install `ioredis` or use in-memory Map for rate limiting
@@ -31,18 +31,18 @@ This task list has been refreshed based on the current codebase state. The follo
 
 ## Phase 2: Core Authentication Services
 
-- [ ] 3. Implement password hashing utilities
+- [x] 3. Implement password hashing utilities
   - Create `src/server/auth/password.ts`
   - Implement `hashPassword(password: string): Promise<string>` using Argon2id
   - Implement `verifyPassword(password: string, hash: string): Promise<boolean>`
   - Use appropriate Argon2id parameters (memory cost: 65536, iterations: 3)
   - _Validates: Requirements 1.1, 8.1_
 
-- [ ] 3.1 Write property test for password hashing
+- [x] 3.1 Write property test for password hashing
   - **Property 23: Passwords are hashed securely**
   - **Validates: Requirements 8.1**
 
-- [ ] 4. Implement token generation and verification
+- [x] 4. Implement token generation and verification
   - Create `src/server/auth/tokens.ts`
   - Implement `generateToken(userId, type, expiresInMs): Promise<string>` with HMAC-SHA256
   - Implement `verifyToken(token, type): Promise<{ userId } | null>`
@@ -50,15 +50,15 @@ This task list has been refreshed based on the current codebase state. The follo
   - Implement token invalidation logic
   - _Validates: Requirements 1.4, 2.1, 2.4, 6.1_
 
-- [ ] 4.1 Write property test for token generation
+- [x] 4.1 Write property test for token generation
   - **Property 3: Registration creates verification token**
   - **Validates: Requirements 1.4**
 
-- [ ] 4.2 Write property test for token invalidation
+- [x] 4.2 Write property test for token invalidation
   - **Property 6: New verification token invalidates previous tokens**
   - **Validates: Requirements 2.4**
 
-- [ ] 5. Implement cookie management
+- [x] 5. Implement cookie management
   - Create `src/server/auth/cookies.ts`
   - Implement `setSessionCookie(response, sessionToken)` with HTTP-only, Secure, SameSite=Lax
   - Implement `getSessionCookie(): string | null`
@@ -66,11 +66,11 @@ This task list has been refreshed based on the current codebase state. The follo
   - Configure 7-day max-age
   - _Validates: Requirements 3.1, 4.1, 8.2_
 
-- [ ] 5.1 Write property test for cookie security attributes
+- [x] 5.1 Write property test for cookie security attributes
   - **Property 24: Session cookies have security attributes**
   - **Validates: Requirements 8.2**
 
-- [ ] 6. Implement session management
+- [x] 6. Implement session management
   - Create `src/server/auth/session.ts`
   - Implement `createSession(userId, ipAddress, userAgent): Promise<string>` with crypto-random tokens
   - Implement `getSession(): Promise<SessionUser | null>` with validation
@@ -79,42 +79,43 @@ This task list has been refreshed based on the current codebase state. The follo
   - Implement `deleteAllUserSessions(userId): Promise<void>`
   - _Validates: Requirements 3.1, 3.4, 4.1, 4.3, 4.4, 5.1, 8.5_
 
-- [ ] 6.1 Write property test for session creation
+- [x] 6.1 Write property test for session creation
   - **Property 7: Valid credentials create session**
   - **Validates: Requirements 3.1, 3.4**
 
-- [ ] 6.2 Write property test for session validation
+- [x] 6.2 Write property test for session validation
   - **Property 10: Session validation performs all security checks**
   - **Validates: Requirements 4.4**
 
-- [ ] 6.3 Write property test for rolling renewal
+- [x] 6.3 Write property test for rolling renewal
   - **Property 11: Rolling renewal extends session expiration**
   - **Validates: Requirements 4.3**
 
-- [ ] 6.4 Write property test for session ID randomness
+- [x] 6.4 Write property test for session ID randomness
   - **Property 27: Session IDs are cryptographically random**
   - **Validates: Requirements 8.5**
 
-- [ ] 7. Implement RBAC utilities
+- [x] 7. Implement RBAC utilities
   - Create `src/config/roles.ts` with role definitions (TEAM_*, PROJECT_*) and permissions map
   - Create `src/server/auth/rbac.ts`
   - Implement `assignRole(userId, role, resourceType, resourceId): Promise<void>`
   - Implement `getUserRoles(userId): Promise<UserRole[]>`
   - Implement `hasPermission(userId, permission, resourceId): Promise<boolean>`
   - Implement `updateBillableSeats(teamId): Promise<void>`
+  - Create `docs/RBAC.md` with comprehensive documentation
   - _Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 7.1 Write property test for role assignment
+- [x] 7.1 Write property test for role assignment
   - **Property 18: Verified users receive default roles**
   - **Validates: Requirements 7.1**
 
-- [ ] 7.2 Write property test for billable seats
+- [x] 7.2 Write property test for billable seats
   - **Property 20: Editor roles mark billable seats**
   - **Validates: Requirements 7.3**
 
 ## Phase 3: Rate Limiting
 
-- [ ] 8. Implement rate limiter
+- [x] 8. Implement rate limiter
   - Create `src/server/auth/rate-limiter.ts`
   - Implement `checkLimit(key, limit, windowMs): Promise<boolean>` using in-memory Map or Redis
   - Implement `getRemainingAttempts(key, limit): Promise<number>`
@@ -122,15 +123,15 @@ This task list has been refreshed based on the current codebase state. The follo
   - Return 429 with Retry-After header when exceeded
   - _Validates: Requirements 3.5, 11.1, 11.2, 11.3, 11.4_
 
-- [ ] 8.1 Write property test for IP rate limiting
+- [x] 8.1 Write property test for IP rate limiting
   - **Property 33: IP-based rate limiting enforces limits**
   - **Validates: Requirements 11.1**
 
-- [ ] 8.2 Write property test for email rate limiting
+- [x] 8.2 Write property test for email rate limiting
   - **Property 34: Email-based rate limiting enforces limits**
   - **Validates: Requirements 11.2**
 
-- [ ] 8.3 Write property test for rate limit responses
+- [x] 8.3 Write property test for rate limit responses
   - **Property 36: Rate limit responses include retry-after header**
   - **Validates: Requirements 11.4**
 

@@ -2,30 +2,90 @@
 
 ## 1. Role model (reduce ambiguity)
 
+### A. Team-level roles (two-tier hierarchy)
 
-### A. Team-level roles (who controls the team)
+#### Management Roles (not billable by themselves)
 
-These map to team:
 - **TEAM_OWNER**
-  - 1 per team
-  - can manage billing, plan, members, delete team
-- **TEAM_ADMIN**
-  - manage members, projects, integrations
-  - cannot delete team or downgrade billing (optional)
-- **TEAM_EDITOR**
-  - billable seat; inherits member access plus edit rights for project content
-  - automatically assigned whenever a user becomes PROJECT_OWNER or PROJECT_EDITOR
-- **TEAM_MEMBER**
-  - can be assigned to projects
-- **TEAM_VIEWER**
-  - read-only across the team
+  - Access team settings
+  - 1 per team (default to who created)
+  - Can manage billing, plan, members, delete team
+  - Can transfer ownership to another user
+  - **Not billable by itself**
+  - Must also have an operational role (EDITOR/MEMBER/VIEWER)
 
-So at team scope we only ever see 5 names and TEAM_EDITOR is the only billable one.
+- **TEAM_ADMIN**
+  - Access team settings
+  - Manage members, projects, integrations
+  - Cannot delete team or transfer ownership
+  - **Not billable by itself**
+  - Must also have an operational role (EDITOR/MEMBER/VIEWER)
+
+#### Operational Roles (determine billing)
+
+- **TEAM_EDITOR**
+  - **Billable seat ($8/month)**
+  - Inherits member access plus edit rights for project content
+  - Automatically assigned whenever a user becomes PROJECT_OWNER or PROJECT_EDITOR
+  - Can create and manage issues and annotations
+
+- **TEAM_MEMBER**
+  - **Not billable**
+  - Can be assigned to projects
+  - Can view and comment (cannot create projects)
+
+- **TEAM_VIEWER**
+  - **Not billable**
+  - Read-only across the team
+
+#### Role Combination Examples
+
+Users have **one management role** (or none) + **one operational role**:
+
+- `TEAM_OWNER` + `TEAM_EDITOR` → **Billed 1 seat** (owner who also creates issues)
+- `TEAM_OWNER` + `TEAM_MEMBER` → **Billed 0 seats** (owner who only manages team)
+- `TEAM_ADMIN` + `TEAM_EDITOR` → **Billed 1 seat** (admin who also creates issues)
+- `TEAM_ADMIN` + `TEAM_VIEWER` → **Billed 0 seats** (admin with read-only access)
+- `TEAM_EDITOR` (no management role) → **Billed 1 seat** (designer/QA)
+- `TEAM_MEMBER` (no management role) → **Billed 0 seats** (developer)
+
+**Key insight:** Billing is determined solely by operational role (EDITOR/MEMBER/VIEWER), not by management role (OWNER/ADMIN).
+
+#### Enforcing Management + Operational Role Requirement
+
+Management roles (TEAM_OWNER, TEAM_ADMIN) **must always** be paired with an operational role. To prevent invalid states:
+
+```typescript
+// src/server/teams/validation.ts
+export async function ensureManagementRoleHasOperationalRole(
+  teamId: string,
+  userId: string
+) {
+  const roles = await getUserRolesForTeam(userId, teamId)
+
+  const hasManagementRole = roles.some(r =>
+    ['TEAM_OWNER', 'TEAM_ADMIN'].includes(r)
+  )
+  const hasOperationalRole = roles.some(r =>
+    ['TEAM_EDITOR', 'TEAM_MEMBER', 'TEAM_VIEWER'].includes(r)
+  )
+
+  if (hasManagementRole && !hasOperationalRole) {
+    throw new Error('MANAGEMENT_ROLE_REQUIRES_OPERATIONAL_ROLE')
+  }
+}
+```
+
+**Implementation points:**
+- Call this validation when assigning/removing roles
+- Prevent removing operational role if user has management role
+- When assigning TEAM_OWNER/TEAM_ADMIN, require operational role selection
+- Consider DB constraint or periodic cleanup job to prevent orphaned states
 
 ### B. Project-level roles (who does the UI feedback work)
 
 Per-project, we can be more specific:
-- **PROJECT_OWNER** – usually the designer/PM who created the project
+- **PROJECT_OWNER** – usually the designer/PM who created the project (can create issues, edit issue details, change status forward/back) - can delete project
 - **PROJECT_EDITOR** – Designer / QA (can create issues, edit issue details, change status forward/back)
 - **PROJECT_DEVELOPER** – can move workflow status + comment, but cannot create/edit issue meta 
 - **PROJECT_VIEWER** – read-only
@@ -34,20 +94,45 @@ You can store this as a mapping in DB:
 
 ```typescript
 // src/config/roles.ts
-export const TEAM_ROLES = ["TEAM_OWNER", "TEAM_ADMIN", "TEAM_EDITOR", "TEAM_MEMBER", "TEAM_VIEWER"] as const
+
+// Management roles (not billable by themselves)
+export const TEAM_MANAGEMENT_ROLES = ["TEAM_OWNER", "TEAM_ADMIN"] as const
+
+// Operational roles (determine billing)
+export const TEAM_OPERATIONAL_ROLES = ["TEAM_EDITOR", "TEAM_MEMBER", "TEAM_VIEWER"] as const
+
+// All team roles
+export const TEAM_ROLES = [...TEAM_MANAGEMENT_ROLES, ...TEAM_OPERATIONAL_ROLES] as const
+
+// Project roles
 export const PROJECT_ROLES = ["PROJECT_OWNER", "PROJECT_EDITOR", "PROJECT_DEVELOPER", "PROJECT_VIEWER"] as const
+
+// Billable roles (single source of truth for billing)
+// Note: PROJECT_OWNER and PROJECT_EDITOR auto-promote users to TEAM_EDITOR
+// So we only need to count TEAM_EDITOR for billing purposes
+export const BILLABLE_ROLES = ["TEAM_EDITOR"] as const
 ```
 
 And an RBAC map:
 
 ```typescript
 export const PERMISSIONS = {
-  // team
+  // Team management (requires management role)
   "team:manage_billing": ["TEAM_OWNER"],
+  "team:delete": ["TEAM_OWNER"],
+  "team:transfer_ownership": ["TEAM_OWNER"],
   "team:manage_members": ["TEAM_OWNER", "TEAM_ADMIN"],
+  "team:manage_settings": ["TEAM_OWNER", "TEAM_ADMIN"],
+  "team:view_settings": ["TEAM_OWNER", "TEAM_ADMIN"],
 
-  // project
-  "project:create": ["TEAM_OWNER", "TEAM_ADMIN", "TEAM_EDITOR", "TEAM_MEMBER"], // viewer cannot
+  // Team operations (requires operational role)
+  "team:view": ["TEAM_EDITOR", "TEAM_MEMBER", "TEAM_VIEWER"],
+  
+  // Project operations (requires operational role OR management role)
+  "project:create": ["TEAM_EDITOR"], // only editors can create projects
+  "project:view": ["TEAM_EDITOR", "TEAM_MEMBER", "TEAM_VIEWER"],
+  
+  // Issue operations (project-level)
   "issue:create": ["PROJECT_OWNER", "PROJECT_EDITOR"],
   "issue:edit": ["PROJECT_OWNER", "PROJECT_EDITOR"],
   "issue:change_status": ["PROJECT_OWNER", "PROJECT_EDITOR", "PROJECT_DEVELOPER"],
@@ -61,15 +146,7 @@ export const PERMISSIONS = {
 ## 2. Plans / monetization idea
 
 
-**Starter** (alias for Free tier)
-- up to 10 users
-- 1 project
-- 50 issues
-- 100MB
-- $0
-- Note: "starter" is used as the plan ID in the UI/onboarding flow, but maps to the "free" tier internally
-
-**Free**
+**Free** (displayed as "Starter" in onboarding UI)
 - up to 10 users
 - 1 project
 - 50 issues
@@ -90,8 +167,8 @@ Put it in: `src/config/tiers.ts`
 
 ```typescript
 // src/config/tiers.ts
-export type PlanId = "starter" | "free" | "pro"
-// Note: "starter" is an alias for "free" used in UI/onboarding
+export type PlanId = "free" | "pro"
+// Note: "free" is the canonical plan ID; display as "Starter" in UI/onboarding
 
 type LimitSpec = {
   members: number | "unlimited"
@@ -118,26 +195,9 @@ export type PlanSpec = {
 }
 
 export const PLANS: Record<PlanId, PlanSpec> = {
-  starter: {
-    id: "starter",
-    label: "Starter",
-    limits: {
-      members: 10,           // team-level heads
-      projects: 1,
-      issues: 50,
-      storageMB: 100,
-    },
-    features: {
-      jiraIntegration: false,
-      prioritySupport: false,
-      analytics: false,
-      privateProjects: true,
-    },
-    billing: { model: "free", price: 0 },
-  },
   free: {
     id: "free",
-    label: "Free",
+    label: "Starter", // Display name for onboarding/UI
     limits: {
       members: 10,           // team-level heads
       projects: 1,
@@ -171,16 +231,94 @@ export const PLANS: Record<PlanId, PlanSpec> = {
     billing: { model: "per_editor", priceUSD: 8 },
   },
 }
+
+// Helper for UI/onboarding contexts
+export function getPlanDisplayName(planId: PlanId): string {
+  return PLANS[planId].label
+}
 ```
 
+**Plan ID Consistency:**
+- **Database/Billing/Analytics:** Always use `"free"` as the canonical plan ID
+- **UI/Onboarding:** Display as `"Starter"` using the `label` field from PLANS config
+- **Never store** `"starter"` in the database—always normalize to `"free"`
+- This prevents confusion in reporting, billing calculations, and analytics dashboards
+
 ### B. How to do "$8 per editor"
-- Promote (or invite) any user who becomes PROJECT_OWNER or PROJECT_EDITOR to TEAM_EDITOR automatically, and keep them TEAM_EDITOR even if those project roles are later removed (downgrade only happens if an admin explicitly strips TEAM_EDITOR).
-- Count TEAM_EDITOR seats for billing so the rule is enforced consistently at the team scope.
-- Store that count per team per month. Bill: teamEditorCount * 8.
 
-So team can have unlimited viewers + developers, only bill the "design / QA / people who create issues", and the billable unit is a single team-level role.
+**Billing Logic:**
+1. Count unique users with `TEAM_EDITOR` operational role
+2. Ignore management roles (TEAM_OWNER, TEAM_ADMIN) for billing
+3. Bill: `editorCount × $8/month`
 
-Implementation tip: wherever you upsert a project role (for example, in `server/projects/memberships.ts`), also call your team-role helper (`await addTeamRole({ teamId, userId, role: "TEAM_EDITOR" })`) so the TEAM_EDITOR promotion stays in sync with project assignments.
+**Auto-promotion Rules:**
+- When a user becomes `PROJECT_OWNER` or `PROJECT_EDITOR`, automatically assign `TEAM_EDITOR` operational role
+- Keep `TEAM_EDITOR` even if project roles are later removed (downgrade only happens if admin explicitly changes operational role)
+- Management roles (OWNER/ADMIN) are assigned separately and don't affect billing
+
+**Example Billing Scenarios:**
+
+| User | Management Role | Operational Role | Project Roles | Billable? |
+|------|----------------|------------------|---------------|-----------|
+| Alice | TEAM_OWNER | TEAM_EDITOR | PROJECT_OWNER (Project A) | ✅ 1 seat |
+| Bob | TEAM_ADMIN | TEAM_MEMBER | PROJECT_DEVELOPER (Project B) | ❌ 0 seats |
+| Carol | - | TEAM_EDITOR | PROJECT_EDITOR (Project C) | ✅ 1 seat |
+| Dave | - | TEAM_MEMBER | PROJECT_DEVELOPER (Project D) | ❌ 0 seats |
+| Eve | TEAM_OWNER | TEAM_VIEWER | - | ❌ 0 seats |
+
+**Total: 2 billable seats × $8 = $16/month**
+
+**Implementation tip:** 
+```typescript
+// server/projects/memberships.ts
+async function assignProjectRole(userId: string, projectId: string, role: ProjectRole) {
+  // Assign project role
+  await assignRole({ userId, role, resourceType: 'project', resourceId: projectId })
+  
+  // Auto-promote to TEAM_EDITOR if needed
+  if (role === 'PROJECT_OWNER' || role === 'PROJECT_EDITOR') {
+    const teamId = await getTeamIdFromProject(projectId)
+    await ensureOperationalRole(userId, teamId, 'TEAM_EDITOR')
+  }
+}
+```
+
+**Edge Case: Demoting PROJECT_OWNER**
+
+Every project must always have at least one PROJECT_OWNER. When demoting a user from TEAM_EDITOR to TEAM_VIEWER/TEAM_MEMBER:
+
+1. **Check their project roles** - Find all projects where this user is PROJECT_OWNER
+2. **Block demotion if they're an owner** - Show error: "You can't demote this user yet. They are the only project owner on: Project A, Project B. Transfer ownership first."
+3. **Provide transfer UI** - Let admin select new owners for each project
+4. **Transfer in transaction** - Transfer all ownerships, then demote the user
+
+```typescript
+// server/teams/members.ts
+async function demoteTeamMember(userId: string, teamId: string, newRole: 'TEAM_VIEWER' | 'TEAM_MEMBER') {
+  // Check if user owns any projects
+  const ownedProjects = await getOwnedProjects(userId)
+  
+  if (ownedProjects.length > 0) {
+    throw new Error(
+      `DEMOTION_BLOCKED: User owns ${ownedProjects.length} project(s). ` +
+      `Transfer ownership first. Project IDs: ${ownedProjects.join(', ')}`
+    )
+  }
+  
+  // Safe to demote
+  await updateRole(userId, 'TEAM_EDITOR', newRole, 'team', teamId)
+}
+
+// Or use the safe helper with ownership transfer
+async function demoteWithTransfer(
+  userId: string,
+  teamId: string,
+  newRole: 'TEAM_VIEWER' | 'TEAM_MEMBER',
+  transfers: Record<string, string> // projectId -> newOwnerId
+) {
+  await demoteWithOwnershipTransfer(userId, teamId, newRole, transfers)
+}
+```
 
 ---
 
@@ -313,7 +451,7 @@ import { getTeamPlan } from "./repo"
 import { getUsageForTeam } from "./usage" // count members/projects/issues
 
 export async function ensureCanCreateProject(teamId: string) {
-  const planId = await getTeamPlan(teamId) // "free" | "pro"
+  const planId = await getTeamPlan(teamId) // returns "free" | "pro" (canonical IDs)
   const plan = PLANS[planId]
   const usage = await getUsageForTeam(teamId)
   if (plan.limits.projects !== "unlimited" && usage.projects >= plan.limits.projects) {
@@ -363,9 +501,11 @@ That keeps your Figma / code / DB aligned.
 - When issue count approaches 25/25 → progress bar + CTA
 - When storage approaches 100MB → CTA
 
-**Billable seat = EDITOR:** on Pro, only count users who have project role ∈ {PROJECT_OWNER, PROJECT_EDITOR} in any active project. That matches your "designer/QA create issues" idea.
+**Billable seat = TEAM_EDITOR:** On Pro, only count users with `TEAM_EDITOR` operational role. Management roles (OWNER/ADMIN) are not billable by themselves.
 
-**Dev is free:** PROJECT_DEVELOPER is unlimited → happy devs, more adoption.
+**Dev is free:** `PROJECT_DEVELOPER` and `TEAM_MEMBER` are unlimited → happy devs, more adoption.
+
+**Owner can be free:** A `TEAM_OWNER` with `TEAM_VIEWER` operational role pays $0 → allows pure team managers who don't create content.
 
 ---
 

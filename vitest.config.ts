@@ -1,11 +1,13 @@
 import { defineConfig } from "vitest/config"
 import path from "path"
+import { loadEnv } from "vite"
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   test: {
     environment: "jsdom",
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
+    env: loadEnv("test", process.cwd(), ""),
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
@@ -25,4 +27,4 @@ export default defineConfig({
       "@services": path.resolve(__dirname, "src/services"),
     },
   },
-})
+}))
