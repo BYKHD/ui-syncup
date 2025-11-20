@@ -125,10 +125,8 @@ export default function DevAuthPage() {
     );
   }
 
-  const expiresAt = session?.expiresAt ? new Date(session.expiresAt) : null;
-  const timeRemaining = expiresAt ? Math.max(0, expiresAt.getTime() - Date.now()) : 0;
-  const hoursRemaining = Math.floor(timeRemaining / (1000 * 60 * 60));
-  const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+  // Note: Session expiration is managed server-side via httpOnly cookies
+  // The client doesn't have direct access to expiration timestamps
 
   return (
     <div className="container mx-auto p-6 max-w-4xl space-y-6">
@@ -226,22 +224,17 @@ export default function DevAuthPage() {
       <Card>
         <CardHeader>
           <CardTitle>Session Information</CardTitle>
-          <CardDescription>Current session details and expiration</CardDescription>
+          <CardDescription>Current session details (managed server-side)</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Expires At</p>
-              <p className="text-sm font-medium">
-                {expiresAt ? expiresAt.toLocaleString() : "Unknown"}
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Time Remaining</p>
-              <p className="text-sm font-medium">
-                {hoursRemaining}h {minutesRemaining}m
-              </p>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Session expiration is managed server-side via httpOnly cookies for security.
+              Sessions are valid for 7 days by default with rolling renewal.
+            </p>
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span className="font-medium">Active Session</span>
             </div>
           </div>
         </CardContent>
@@ -446,7 +439,7 @@ export default function DevAuthPage() {
             </Button>
 
             <Button
-              onClick={() => resetRateLimit()}
+              onClick={() => resetRateLimit({})}
               disabled={isResettingRateLimit}
               variant="outline"
               className="w-full"
