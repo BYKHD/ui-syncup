@@ -94,10 +94,10 @@ export function HeroSection() {
 
   return (
     <section className="container mx-auto px-4 py-24 md:py-32 relative overflow-hidden">
-      {/* Background gradient mesh */}
-      <div className="absolute inset-0 -z-10 opacity-30">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      {/* Background gradient mesh - Simplified */}
+      <div className="absolute inset-0 -z-10 opacity-20">
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px]" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[100px]" />
       </div>
 
       <div className="grid gap-12 lg:grid-cols-2 lg:gap-8 items-center">
@@ -108,8 +108,8 @@ export function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <Badge variant="outline" className="mb-4 gap-1">
-                <Sparkles className="h-3 w-3" />
+              <Badge variant="outline" className="mb-4 gap-2 py-1.5 px-4 backdrop-blur-sm bg-background/50">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
                 Design-to-Dev Made Simple
               </Badge>
             </motion.div>
@@ -117,7 +117,7 @@ export function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.5 }}
-              className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-foreground via-primary to-foreground/70"
+              className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70"
             >
               Close the loop between design and implementation
             </motion.h1>
@@ -125,7 +125,7 @@ export function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="max-w-[600px] text-muted-foreground md:text-xl"
+              className="max-w-[600px] text-muted-foreground md:text-xl leading-relaxed"
             >
               Pin feedback directly on mockups, turn comments into tracked issues, and watch every UI detail flow seamlessly from design review to production.
             </motion.p>
@@ -134,16 +134,16 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className="flex flex-col gap-2 min-[400px]:flex-row"
+            className="flex flex-col gap-3 min-[400px]:flex-row"
           >
             <Link href="/sign-up">
-              <Button size="lg" className="w-full min-[400px]:w-auto gap-2 group">
+              <Button size="lg" className="w-full min-[400px]:w-auto gap-2 group h-12 px-6 text-base">
                 Start free workspace
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
             <Link href="/demo">
-              <Button variant="outline" size="lg" className="w-full min-[400px]:w-auto">
+              <Button variant="outline" size="lg" className="w-full min-[400px]:w-auto h-12 px-6 text-base">
                 Book a demo
               </Button>
             </Link>
@@ -163,23 +163,25 @@ export function HeroSection() {
             <FloatingParticle delay={3} x={400} y={100} />
             <FloatingParticle delay={4} x={250} y={50} />
 
-            <div className="relative aspect-video overflow-hidden rounded-xl border-2 bg-gradient-to-br from-muted/50 to-muted/30 shadow-2xl ring-1 ring-primary/10">
+            <div className="relative aspect-video overflow-hidden rounded-xl border bg-background/50 backdrop-blur-xl shadow-2xl ring-1 ring-white/10">
               {/* Realistic UI Background - Mockup of actual dashboard */}
-              <div className="absolute inset-0 bg-background p-6 grid gap-4 content-start">
+              <div className="absolute inset-0 bg-background/40 p-6 grid gap-4 content-start">
                 {/* Header */}
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="flex items-center justify-between"
+                  className="flex items-center justify-between border-b pb-4"
                 >
-                  <div className="h-6 w-32 rounded-md bg-gradient-to-r from-primary/20 to-primary/10 flex items-center px-2">
-                    <div className="h-3 w-3 rounded-full bg-primary/50 mr-2" />
-                    <div className="h-2 w-20 rounded bg-primary/30" />
+                  <div className="flex items-center gap-4">
+                    <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                      <div className="h-4 w-4 rounded bg-primary" />
+                    </div>
+                    <div className="h-4 w-32 rounded-full bg-muted" />
                   </div>
                   <div className="flex gap-2">
-                    <div className="h-6 w-6 rounded-full bg-muted" />
-                    <div className="h-6 w-6 rounded-full bg-primary/20" />
+                    <div className="h-8 w-8 rounded-full bg-muted" />
+                    <div className="h-8 w-8 rounded-full bg-primary/10" />
                   </div>
                 </motion.div>
 
@@ -188,20 +190,14 @@ export function HeroSection() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.7 }}
-                  className="grid grid-cols-3 gap-3"
+                  className="grid grid-cols-3 gap-4 mt-2"
                 >
-                  <div className="relative h-28 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20 p-3">
-                    <div className="h-2 w-3/4 rounded bg-blue-500/20 mb-2" />
-                    <div className="h-2 w-1/2 rounded bg-blue-500/10" />
-                  </div>
-                  <div className="h-28 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 p-3">
-                    <div className="h-2 w-3/4 rounded bg-purple-500/20 mb-2" />
-                    <div className="h-2 w-1/2 rounded bg-purple-500/10" />
-                  </div>
-                  <div className="h-28 rounded-lg bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 p-3">
-                    <div className="h-2 w-3/4 rounded bg-green-500/20 mb-2" />
-                    <div className="h-2 w-1/2 rounded bg-green-500/10" />
-                  </div>
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-32 rounded-xl border bg-card/50 p-4 space-y-3">
+                      <div className="h-2 w-1/2 rounded-full bg-muted" />
+                      <div className="h-16 rounded-lg bg-muted/30" />
+                    </div>
+                  ))}
                 </motion.div>
 
                 {/* Data section */}
@@ -209,10 +205,10 @@ export function HeroSection() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.8 }}
-                  className="space-y-2"
+                  className="space-y-3 mt-2"
                 >
-                  <div className="h-3 w-1/3 rounded-md bg-muted" />
-                  <div className="h-20 rounded-lg bg-gradient-to-r from-muted/80 to-muted/40 border" />
+                  <div className="h-4 w-1/4 rounded-full bg-muted" />
+                  <div className="h-24 rounded-xl border bg-card/50" />
                 </motion.div>
               </div>
 
@@ -248,23 +244,23 @@ export function HeroSection() {
                         initial={{ opacity: 0, scale: 0.9, x: -10 }}
                         animate={{ opacity: 1, scale: 1, x: 0 }}
                         exit={{ opacity: 0, scale: 0.9, x: -10 }}
-                        className="absolute left-full top-0 ml-3 w-56 rounded-lg border bg-background/95 backdrop-blur-xl p-3 shadow-2xl z-20"
+                        className="absolute left-full top-0 ml-3 w-64 rounded-xl border bg-background/95 backdrop-blur-xl p-4 shadow-2xl z-20"
                       >
-                        <div className="flex items-start gap-2 mb-2">
-                          <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-[10px] text-white font-bold">
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-xs text-white font-bold shadow-inner">
                             A
                           </div>
                           <div className="flex-1">
-                            <p className="text-xs font-semibold">@alex</p>
-                            <p className="text-[10px] text-muted-foreground">2 min ago</p>
+                            <p className="text-sm font-semibold">Alex Design</p>
+                            <p className="text-xs text-muted-foreground">2 min ago</p>
                           </div>
                         </div>
                         {showTyping && (
-                          <p className="text-xs text-foreground/90 mb-2">
-                            <TypingText text="Card padding should be 24px instead of 16px" delay={0} />
+                          <p className="text-sm text-foreground/90 mb-3 leading-relaxed">
+                            <TypingText text="Card padding should be 24px instead of 16px to match the design system." delay={0} />
                           </p>
                         )}
-                        <Badge variant="secondary" className="text-[10px]">Design feedback</Badge>
+                        <Badge variant="secondary" className="text-[10px] font-medium">Design feedback</Badge>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -275,7 +271,7 @@ export function HeroSection() {
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 2.2, type: "spring", stiffness: 200 }}
-                className="absolute bottom-[40%] right-[30%]"
+                className="absolute bottom-[35%] right-[50%]"
                 onHoverStart={() => setActiveAnnotation(2)}
                 onHoverEnd={() => setActiveAnnotation(null)}
               >
@@ -287,7 +283,7 @@ export function HeroSection() {
                     animate={{
                       y: [0, -4, 0],
                       boxShadow: activeAnnotation === 2
-                        ? "0 0 0 8px rgba(239, 68, 68, 0.2)"
+                        ? "0 0 0 8px rgba(239, 68, 68, 1)"
                         : "0 0 0 0px rgba(239, 68, 68, 0)"
                     }}
                     transition={{ y: { duration: 2, repeat: Infinity } }}
@@ -301,18 +297,18 @@ export function HeroSection() {
                         initial={{ opacity: 0, scale: 0.9, x: 10 }}
                         animate={{ opacity: 1, scale: 1, x: 0 }}
                         exit={{ opacity: 0, scale: 0.9, x: 10 }}
-                        className="absolute right-full top-0 mr-3 w-56 rounded-lg border bg-background/95 backdrop-blur-xl p-3 shadow-2xl z-20"
+                        className="absolute right-full top-0 mr-3 w-64 rounded-xl border bg-background/95 backdrop-blur-xl p-4 shadow-2xl z-20"
                       >
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-3">
                           <Badge variant="destructive" className="text-[10px]">BUG-142</Badge>
-                          <span className="text-[10px] text-muted-foreground">Just now</span>
+                          <span className="text-xs text-muted-foreground">Just now</span>
                         </div>
-                        <p className="text-xs font-medium mb-2">Button alignment breaks on mobile viewport</p>
-                        <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium mb-3">Button alignment breaks on mobile viewport</p>
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
                           <div className="h-5 w-5 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
                             <User className="h-3 w-3 text-white" />
                           </div>
-                          <span className="text-[10px] text-muted-foreground">@sarah assigned</span>
+                          <span className="text-xs text-muted-foreground">@sarah assigned</span>
                         </div>
                       </motion.div>
                     )}
@@ -341,7 +337,7 @@ export function HeroSection() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 1.6 }}
-                  className="rounded-lg border border-green-500/30 bg-gradient-to-br from-green-500/10 to-green-500/5 p-2.5 text-[10px] shadow-sm"
+                  className="rounded-lg border border-green-500/30 bg-green-500/5 p-3 text-[10px] shadow-sm"
                 >
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
@@ -358,7 +354,7 @@ export function HeroSection() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 1.8 }}
-                  className="rounded-lg border-2 border-yellow-500/40 bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 p-2.5 text-[10px] shadow-md"
+                  className="rounded-lg border-2 border-yellow-500/40 bg-yellow-500/5 p-3 text-[10px] shadow-md"
                 >
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <motion.div
@@ -407,3 +403,4 @@ export function HeroSection() {
     </section>
   )
 }
+
