@@ -7,6 +7,8 @@
  * For production with multiple servers, replace with Redis.
  */
 
+import { logAuthEvent } from '@/lib/logger';
+
 interface RateLimitEntry {
   count: number;
   resetAt: number;
@@ -83,12 +85,18 @@ if (typeof setInterval !== 'undefined') {
  * @param key - Unique identifier for the rate limit (e.g., "ip:192.168.1.1" or "email:user@example.com")
  * @param limit - Maximum number of requests allowed in the window
  * @param windowMs - Time window in milliseconds
+ * @param context - Optional context for logging (ipAddress, email, requestId)
  * @returns true if the request is allowed, false if rate limit exceeded
  */
 export async function checkLimit(
   key: string,
   limit: number,
-  windowMs: number
+  windowMs: number,
+  context?: {
+    ipAddress?: string;
+    email?: string;
+    requestId?: string;
+  }
 ): Promise<boolean> {
   // Handle zero limit edge case
   if (limit === 0) {
@@ -109,7 +117,21 @@ export async function checkLimit(
 
   // Entry exists and not expired
   if (entry.count >= limit) {
-    // Rate limit exceeded
+    // Rate limit exceeded - log the violation
+    logAuthEvent('auth.rate_limit.exceeded', {
+      outcome: 'failure',
+      ipAddress: context?.ipAddress,
+      email: context?.email,
+      requestId: context?.requestId,
+      metadata: {
+        key,
+        limit,
+        windowMs,
+        count: entry.count,
+        resetAt: new Date(entry.resetAt).toISOString(),
+      },
+    });
+    
     return false;
   }
 

@@ -17,6 +17,7 @@ import { db } from '@/lib/db';
 import { verificationTokens } from '@/server/db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import { env } from '@/lib/env';
+import { logAuthEvent } from '@/lib/logger';
 
 /**
  * Token types supported by the system
@@ -190,6 +191,7 @@ export async function generateToken(
  * 
  * @param token - Token string to verify
  * @param type - Expected token type
+ * @param context - Optional context for logging (ipAddress, requestId)
  * @returns Promise resolving to verified token data or null if invalid
  * 
  * @example
@@ -206,7 +208,12 @@ export async function generateToken(
  */
 export async function verifyToken(
   token: string,
-  type: TokenType
+  type: TokenType,
+  context?: {
+    ipAddress?: string;
+    userAgent?: string;
+    requestId?: string;
+  }
 ): Promise<VerifiedToken | null> {
   if (!token || token.length === 0) {
     return null;
@@ -215,6 +222,19 @@ export async function verifyToken(
   // Parse token format: userId.expiresAt.tokenString.signature
   const parts = token.split('.');
   if (parts.length !== 4) {
+    // Log token tampering - invalid format
+    logAuthEvent('auth.token.tampered', {
+      outcome: 'failure',
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+      requestId: context?.requestId,
+      errorCode: 'INVALID_TOKEN_FORMAT',
+      errorMessage: 'Token format is invalid',
+      metadata: {
+        tokenType: type,
+        reason: 'invalid_format',
+      },
+    });
     return null;
   }
   
@@ -235,6 +255,20 @@ export async function verifyToken(
   // Verify signature
   const isValidSignature = verifySignature(userId, expiresAt, type, tokenString, signature);
   if (!isValidSignature) {
+    // Log token tampering - invalid signature
+    logAuthEvent('auth.token.tampered', {
+      outcome: 'failure',
+      userId,
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+      requestId: context?.requestId,
+      errorCode: 'INVALID_TOKEN_SIGNATURE',
+      errorMessage: 'Token signature is invalid',
+      metadata: {
+        tokenType: type,
+        reason: 'invalid_signature',
+      },
+    });
     return null;
   }
   

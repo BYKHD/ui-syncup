@@ -16,7 +16,7 @@ import { signUpSchema } from '@/features/auth/utils/validators';
 import { hashPassword } from '@/server/auth/password';
 import { generateToken } from '@/server/auth/tokens';
 import { enqueueEmail } from '@/server/email/queue';
-import { logger } from '@/lib/logger';
+import { logAuthEvent } from '@/lib/logger';
 import { env } from '@/lib/env';
 import { eq } from 'drizzle-orm';
 import { ZodError } from 'zod';
@@ -42,6 +42,8 @@ import { ZodError } from 'zod';
  */
 export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID();
+  const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  const userAgent = request.headers.get('user-agent') || 'unknown';
   
   try {
     // Parse and validate request body
@@ -53,10 +55,15 @@ export async function POST(request: NextRequest) {
     // Normalize email (lowercase, trim)
     const normalizedEmail = validatedData.email.toLowerCase().trim();
     
-    logger.info('auth.signup.attempt', {
-      requestId,
+    logAuthEvent('auth.signup.attempt', {
+      outcome: 'success',
       email: normalizedEmail,
-      name: validatedData.name,
+      ipAddress,
+      userAgent,
+      requestId,
+      metadata: {
+        name: validatedData.name,
+      },
     });
     
     // Check for duplicate email
@@ -67,10 +74,17 @@ export async function POST(request: NextRequest) {
       .limit(1);
     
     if (existingUser.length > 0) {
-      logger.info('auth.signup.failure', {
-        requestId,
+      logAuthEvent('auth.signup.failure', {
+        outcome: 'failure',
         email: normalizedEmail,
-        reason: 'duplicate_email',
+        ipAddress,
+        userAgent,
+        requestId,
+        errorCode: 'EMAIL_ALREADY_EXISTS',
+        errorMessage: 'An account with this email already exists',
+        metadata: {
+          reason: 'duplicate_email',
+        },
       });
       
       return NextResponse.json(
@@ -103,25 +117,12 @@ export async function POST(request: NextRequest) {
         name: users.name,
       });
     
-    logger.info('auth.signup.user_created', {
-      requestId,
-      userId: newUser.id,
-      email: newUser.email,
-    });
-    
     // Generate email verification token (24 hours)
     const tokenResult = await generateToken(
       newUser.id,
       'email_verification',
       24 * 60 * 60 * 1000 // 24 hours
     );
-    
-    logger.info('auth.signup.token_generated', {
-      requestId,
-      userId: newUser.id,
-      tokenId: tokenResult.tokenId,
-      expiresAt: tokenResult.expiresAt.toISOString(),
-    });
     
     // Construct verification URL
     const verificationUrl = `${env.BETTER_AUTH_URL}/api/auth/verify-email?token=${encodeURIComponent(tokenResult.token)}`;
@@ -141,10 +142,16 @@ export async function POST(request: NextRequest) {
       },
     });
     
-    logger.info('auth.signup.success', {
-      requestId,
+    logAuthEvent('auth.signup.success', {
+      outcome: 'success',
       userId: newUser.id,
       email: newUser.email,
+      ipAddress,
+      userAgent,
+      requestId,
+      metadata: {
+        tokenId: tokenResult.tokenId,
+      },
     });
     
     // Return success response
@@ -164,11 +171,17 @@ export async function POST(request: NextRequest) {
       if (firstError) {
         const [field, messages] = firstError;
         
-        logger.info('auth.signup.failure', {
+        logAuthEvent('auth.signup.failure', {
+          outcome: 'failure',
+          ipAddress,
+          userAgent,
           requestId,
-          reason: 'validation_error',
-          field,
-          message: messages?.[0],
+          errorCode: 'VALIDATION_ERROR',
+          errorMessage: messages?.[0] || 'Validation failed',
+          metadata: {
+            field,
+            details: fieldErrors,
+          },
         });
         
         return NextResponse.json(
@@ -186,10 +199,16 @@ export async function POST(request: NextRequest) {
     }
     
     // Handle other errors
-    logger.error('auth.signup.error', {
+    logAuthEvent('auth.signup.failure', {
+      outcome: 'error',
+      ipAddress,
+      userAgent,
       requestId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
+      errorCode: 'INTERNAL_SERVER_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      metadata: {
+        stack: error instanceof Error ? error.stack : undefined,
+      },
     });
     
     return NextResponse.json(

@@ -422,7 +422,7 @@ This task list has been refreshed based on the current codebase state. The follo
 
 ## Phase 10: Logging and Monitoring
 
-- [ ] 33. Implement structured logging
+- [x] 33. Implement structured logging
   - Update `src/lib/logger.ts` with auth event types
   - Implement `logAuthEvent(eventType, context)` function
   - Include eventId, timestamp, userId, ipAddress, outcome
@@ -431,19 +431,19 @@ This task list has been refreshed based on the current codebase state. The follo
   - Configure log levels (info, warn, error)
   - _Validates: Requirements 8.4_
 
-- [ ] 33.1 Write property test for auth event logging
+- [x] 33.1 Write property test for auth event logging
   - **Property 26: Auth events are logged with required fields**
   - **Validates: Requirements 8.4**
 
-- [ ] 33.2 Write property test for sign-out logging
+- [x] 33.2 Write property test for sign-out logging
   - **Property 14: Sign-out logs event**
   - **Validates: Requirements 5.4**
 
-- [ ] 33.3 Write property test for rate limit logging
+- [x] 33.3 Write property test for rate limit logging
   - **Property 37: Rate limit violations are logged**
   - **Validates: Requirements 11.5**
 
-- [ ] 34. Add logging to all auth endpoints
+- [x] 34. Add logging to all auth endpoints
   - Log signup attempts, successes, and failures
   - Log login attempts, successes, and failures
   - Log logout events

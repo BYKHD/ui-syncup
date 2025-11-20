@@ -16,7 +16,7 @@ import { resetPasswordSchema } from '@/features/auth/utils/validators';
 import { verifyToken, markTokenAsUsed } from '@/server/auth/tokens';
 import { hashPassword } from '@/server/auth/password';
 import { deleteAllUserSessions } from '@/server/auth/session';
-import { logger } from '@/lib/logger';
+import { logAuthEvent } from '@/lib/logger';
 import { eq } from 'drizzle-orm';
 import { ZodError } from 'zod';
 
@@ -61,6 +61,7 @@ function getClientIp(request: NextRequest): string {
 export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID();
   const clientIp = getClientIp(request);
+  const userAgent = request.headers.get('user-agent') || 'unknown';
   
   try {
     // Parse and validate request body
@@ -69,22 +70,38 @@ export async function POST(request: NextRequest) {
     // Validate with Zod schema
     const validatedData = resetPasswordSchema.parse(body);
     
-    logger.info('auth.reset_password.attempt', {
+    logAuthEvent('auth.reset_password.success', {
+      outcome: 'success',
+      ipAddress: clientIp,
+      userAgent,
       requestId,
-      ip: clientIp,
+      metadata: {
+        stage: 'attempt',
+      },
     });
     
     // Verify token signature and expiration
     const verifiedToken = await verifyToken(
       validatedData.token,
-      'password_reset'
+      'password_reset',
+      {
+        ipAddress: clientIp,
+        userAgent,
+        requestId,
+      }
     );
     
     if (!verifiedToken) {
-      logger.info('auth.reset_password.failure', {
+      logAuthEvent('auth.reset_password.failure', {
+        outcome: 'failure',
+        ipAddress: clientIp,
+        userAgent,
         requestId,
-        reason: 'invalid_or_expired_token',
-        ip: clientIp,
+        errorCode: 'INVALID_TOKEN',
+        errorMessage: 'Invalid or expired password reset token',
+        metadata: {
+          reason: 'invalid_or_expired_token',
+        },
       });
       
       return NextResponse.json(
@@ -110,11 +127,17 @@ export async function POST(request: NextRequest) {
       .limit(1);
     
     if (!user) {
-      logger.error('auth.reset_password.error', {
-        requestId,
+      logAuthEvent('auth.reset_password.failure', {
+        outcome: 'error',
         userId: verifiedToken.userId,
-        reason: 'user_not_found',
-        ip: clientIp,
+        ipAddress: clientIp,
+        userAgent,
+        requestId,
+        errorCode: 'USER_NOT_FOUND',
+        errorMessage: 'User account not found',
+        metadata: {
+          reason: 'user_not_found',
+        },
       });
       
       return NextResponse.json(
@@ -146,11 +169,17 @@ export async function POST(request: NextRequest) {
     // Invalidate all user sessions for security
     await deleteAllUserSessions(user.id);
     
-    logger.info('auth.reset_password.success', {
-      requestId,
+    logAuthEvent('auth.reset_password.success', {
+      outcome: 'success',
       userId: user.id,
       email: user.email,
-      ip: clientIp,
+      ipAddress: clientIp,
+      userAgent,
+      requestId,
+      metadata: {
+        tokenId: verifiedToken.tokenId,
+        sessionsInvalidated: true,
+      },
     });
     
     return NextResponse.json(
@@ -169,11 +198,17 @@ export async function POST(request: NextRequest) {
       if (firstError) {
         const [field, messages] = firstError;
         
-        logger.info('auth.reset_password.validation_error', {
+        logAuthEvent('auth.reset_password.failure', {
+          outcome: 'failure',
+          ipAddress: clientIp,
+          userAgent,
           requestId,
-          field,
-          message: messages?.[0],
-          ip: clientIp,
+          errorCode: 'VALIDATION_ERROR',
+          errorMessage: messages?.[0] || 'Validation failed',
+          metadata: {
+            field,
+            details: fieldErrors,
+          },
         });
         
         return NextResponse.json(
@@ -191,11 +226,16 @@ export async function POST(request: NextRequest) {
     }
     
     // Handle other errors
-    logger.error('auth.reset_password.error', {
+    logAuthEvent('auth.reset_password.failure', {
+      outcome: 'error',
+      ipAddress: clientIp,
+      userAgent,
       requestId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      ip: clientIp,
+      errorCode: 'INTERNAL_SERVER_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      metadata: {
+        stack: error instanceof Error ? error.stack : undefined,
+      },
     });
     
     return NextResponse.json(

@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/server/db/schema';
 import { verifyToken, markTokenAsUsed } from '@/server/auth/tokens';
-import { logger } from '@/lib/logger';
+import { logAuthEvent } from '@/lib/logger';
 import { env } from '@/lib/env';
 import { eq } from 'drizzle-orm';
 
@@ -33,6 +33,8 @@ import { eq } from 'drizzle-orm';
  */
 export async function GET(request: NextRequest) {
   const requestId = crypto.randomUUID();
+  const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  const userAgent = request.headers.get('user-agent') || 'unknown';
   
   try {
     // Get token from query params
@@ -40,9 +42,13 @@ export async function GET(request: NextRequest) {
     const token = searchParams.get('token');
     
     if (!token) {
-      logger.info('auth.verify_email.failure', {
+      logAuthEvent('auth.verify_email.failure', {
+        outcome: 'failure',
+        ipAddress,
+        userAgent,
         requestId,
-        reason: 'missing_token',
+        errorCode: 'MISSING_TOKEN',
+        errorMessage: 'Verification token is missing',
       });
       
       // Redirect to sign-in with error message
@@ -53,17 +59,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
     
-    logger.info('auth.verify_email.attempt', {
+    logAuthEvent('auth.verify_email.attempt', {
+      outcome: 'success',
+      ipAddress,
+      userAgent,
       requestId,
     });
     
     // Verify token signature and expiration
-    const verified = await verifyToken(token, 'email_verification');
+    const verified = await verifyToken(token, 'email_verification', {
+      ipAddress,
+      userAgent,
+      requestId,
+    });
     
     if (!verified) {
-      logger.info('auth.verify_email.failure', {
+      logAuthEvent('auth.verify_email.failure', {
+        outcome: 'failure',
+        ipAddress,
+        userAgent,
         requestId,
-        reason: 'invalid_or_expired_token',
+        errorCode: 'INVALID_TOKEN',
+        errorMessage: 'Verification link is invalid or has expired',
+        metadata: {
+          reason: 'invalid_or_expired_token',
+        },
       });
       
       // Redirect to sign-in with error message
@@ -86,10 +106,17 @@ export async function GET(request: NextRequest) {
       .limit(1);
     
     if (!user) {
-      logger.error('auth.verify_email.error', {
-        requestId,
+      logAuthEvent('auth.verify_email.failure', {
+        outcome: 'error',
         userId: verified.userId,
-        reason: 'user_not_found',
+        ipAddress,
+        userAgent,
+        requestId,
+        errorCode: 'USER_NOT_FOUND',
+        errorMessage: 'User account not found',
+        metadata: {
+          reason: 'user_not_found',
+        },
       });
       
       // Redirect to sign-in with error message
@@ -102,10 +129,16 @@ export async function GET(request: NextRequest) {
     
     // Check if email is already verified
     if (user.emailVerified) {
-      logger.info('auth.verify_email.already_verified', {
-        requestId,
+      logAuthEvent('auth.verify_email.success', {
+        outcome: 'success',
         userId: user.id,
         email: user.email,
+        ipAddress,
+        userAgent,
+        requestId,
+        metadata: {
+          alreadyVerified: true,
+        },
       });
       
       // Mark token as used to prevent reuse
@@ -128,20 +161,8 @@ export async function GET(request: NextRequest) {
       })
       .where(eq(users.id, user.id));
     
-    logger.info('auth.verify_email.user_verified', {
-      requestId,
-      userId: user.id,
-      email: user.email,
-    });
-    
     // Mark token as used
     await markTokenAsUsed(verified.tokenId);
-    
-    logger.info('auth.verify_email.token_marked_used', {
-      requestId,
-      userId: user.id,
-      tokenId: verified.tokenId,
-    });
     
     // Note: Default roles are NOT assigned here because the user hasn't created
     // or joined a team yet. Roles are assigned when:
@@ -149,10 +170,16 @@ export async function GET(request: NextRequest) {
     // 2. User joins a team (gets role assigned by inviter)
     // 3. User is added to a project (gets project role + auto-promoted to TEAM_EDITOR if needed)
     
-    logger.info('auth.verify_email.success', {
-      requestId,
+    logAuthEvent('auth.verify_email.success', {
+      outcome: 'success',
       userId: user.id,
       email: user.email,
+      ipAddress,
+      userAgent,
+      requestId,
+      metadata: {
+        tokenId: verified.tokenId,
+      },
     });
     
     // Redirect to sign-in with success message
@@ -164,10 +191,16 @@ export async function GET(request: NextRequest) {
     
   } catch (error) {
     // Handle errors
-    logger.error('auth.verify_email.error', {
+    logAuthEvent('auth.verify_email.failure', {
+      outcome: 'error',
+      ipAddress,
+      userAgent,
       requestId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
+      errorCode: 'INTERNAL_SERVER_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      metadata: {
+        stack: error instanceof Error ? error.stack : undefined,
+      },
     });
     
     // Redirect to sign-in with error message

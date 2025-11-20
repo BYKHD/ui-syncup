@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession, deleteSession } from '@/server/auth/session';
 import { clearSessionCookie } from '@/server/auth/cookies';
-import { logger } from '@/lib/logger';
+import { logAuthEvent } from '@/lib/logger';
 
 /**
  * POST /api/auth/logout
@@ -31,15 +31,21 @@ import { logger } from '@/lib/logger';
  */
 export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID();
+  const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  const userAgent = request.headers.get('user-agent') || 'unknown';
   
   try {
     // Get current session
     const user = await getSession();
     
     if (!user) {
-      logger.info('auth.logout.failure', {
+      logAuthEvent('auth.logout.success', {
+        outcome: 'failure',
         requestId,
-        reason: 'no_session',
+        ipAddress,
+        userAgent,
+        errorCode: 'NOT_AUTHENTICATED',
+        errorMessage: 'No active session found',
       });
       
       return NextResponse.json(
@@ -53,19 +59,20 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    logger.info('auth.logout.attempt', {
-      requestId,
-      userId: user.id,
-      sessionId: user.sessionId,
-    });
-    
     // Delete session from database
     await deleteSession(user.sessionId);
     
-    logger.info('auth.logout.success', {
-      requestId,
+    // Log successful sign-out
+    logAuthEvent('auth.logout.success', {
+      outcome: 'success',
       userId: user.id,
-      sessionId: user.sessionId,
+      email: user.email,
+      ipAddress,
+      userAgent,
+      requestId,
+      metadata: {
+        sessionId: user.sessionId,
+      },
     });
     
     // Return success response with cleared cookie
@@ -83,10 +90,16 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     // Handle errors
-    logger.error('auth.logout.error', {
+    logAuthEvent('auth.logout.success', {
+      outcome: 'error',
       requestId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
+      ipAddress,
+      userAgent,
+      errorCode: 'INTERNAL_SERVER_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      metadata: {
+        stack: error instanceof Error ? error.stack : undefined,
+      },
     });
     
     return NextResponse.json(

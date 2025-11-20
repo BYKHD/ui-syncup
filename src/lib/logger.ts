@@ -3,6 +3,8 @@
  * Control all console logs from this single file
  */
 
+import { createHash, randomUUID } from 'crypto'
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'none'
 
 interface LoggerConfig {
@@ -49,6 +51,98 @@ function formatMessage(level: LogLevel, ...args: unknown[]): unknown[] {
   return parts
 }
 
+// Auth event types
+export type AuthEventType =
+  // Authentication events
+  | 'auth.signup.attempt'
+  | 'auth.signup.success'
+  | 'auth.signup.failure'
+  | 'auth.login.attempt'
+  | 'auth.login.success'
+  | 'auth.login.failure'
+  | 'auth.logout.success'
+  | 'auth.verify_email.attempt'
+  | 'auth.verify_email.success'
+  | 'auth.verify_email.failure'
+  | 'auth.reset_password.request'
+  | 'auth.reset_password.success'
+  | 'auth.reset_password.failure'
+  // Security events
+  | 'auth.rate_limit.exceeded'
+  | 'auth.token.tampered'
+  | 'auth.session.tampered'
+  | 'auth.reauth.required'
+  | 'auth.reauth.failure'
+  // Email events
+  | 'email.queued'
+  | 'email.sent'
+  | 'email.failed'
+  | 'email.retry'
+
+export type AuthEventOutcome = 'success' | 'failure' | 'error'
+
+export interface AuthLogEvent {
+  // Event identification
+  eventId: string
+  eventType: AuthEventType
+  timestamp: string
+  
+  // User context
+  userId?: string
+  email?: string // Hashed for PII protection
+  
+  // Request context
+  ipAddress?: string
+  userAgent?: string
+  requestId?: string
+  
+  // Outcome
+  outcome: AuthEventOutcome
+  errorCode?: string
+  errorMessage?: string
+  
+  // Additional context
+  metadata?: Record<string, unknown>
+}
+
+/**
+ * Hash email address for PII protection in logs
+ */
+function hashEmail(email: string): string {
+  return createHash('sha256').update(email.toLowerCase()).digest('hex').substring(0, 16)
+}
+
+/**
+ * Log authentication event with structured format
+ */
+export function logAuthEvent(
+  eventType: AuthEventType,
+  context: Omit<AuthLogEvent, 'eventId' | 'eventType' | 'timestamp'> & {
+    email?: string // Will be hashed automatically
+  }
+): void {
+  const event: AuthLogEvent = {
+    eventId: randomUUID(),
+    eventType,
+    timestamp: new Date().toISOString(),
+    ...context,
+    // Hash email if provided
+    email: context.email ? hashEmail(context.email) : undefined,
+  }
+  
+  // Determine log level based on outcome
+  const level: LogLevel = 
+    event.outcome === 'error' ? 'error' :
+    event.outcome === 'failure' ? 'warn' :
+    'info'
+  
+  // Log structured event
+  if (shouldLog(level)) {
+    const logFn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.info
+    logFn(JSON.stringify(event))
+  }
+}
+
 export const logger = {
   debug: (...args: unknown[]) => {
     if (shouldLog('debug')) {
@@ -81,6 +175,9 @@ export const logger = {
 
   // Get current config
   getConfig: () => ({ ...config }),
+  
+  // Auth event logging
+  authEvent: logAuthEvent,
 }
 
 // Convenience exports

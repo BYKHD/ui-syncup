@@ -20,6 +20,7 @@ import { db } from '@/lib/db';
 import { sessions, users } from '@/server/db/schema';
 import { eq, and, gt } from 'drizzle-orm';
 import { getSessionCookie } from './cookies';
+import { logAuthEvent } from '@/lib/logger';
 
 /**
  * Session configuration constants
@@ -140,6 +141,7 @@ export async function createSession(
  * checks expiration, and returns the associated user data.
  * Automatically extends session if it's close to expiring (rolling renewal).
  * 
+ * @param context - Optional context for logging (ipAddress, userAgent, requestId)
  * @returns Promise resolving to SessionUser if valid, null otherwise
  * 
  * @example
@@ -154,7 +156,13 @@ export async function createSession(
  * console.log(user.email);
  * ```
  */
-export async function getSession(): Promise<SessionUser | null> {
+export async function getSession(
+  context?: {
+    ipAddress?: string;
+    userAgent?: string;
+    requestId?: string;
+  }
+): Promise<SessionUser | null> {
   // Get session token from cookie
   const token = await getSessionCookie();
   
@@ -184,6 +192,18 @@ export async function getSession(): Promise<SessionUser | null> {
       .limit(1);
 
     if (!result) {
+      // Session not found or expired - could indicate tampering
+      logAuthEvent('auth.session.tampered', {
+        outcome: 'failure',
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        requestId: context?.requestId,
+        errorCode: 'INVALID_SESSION',
+        errorMessage: 'Session token is invalid or expired',
+        metadata: {
+          reason: 'session_not_found_or_expired',
+        },
+      });
       return null;
     }
 

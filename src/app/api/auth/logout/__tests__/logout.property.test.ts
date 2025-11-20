@@ -14,6 +14,7 @@ import { createSession } from '@/server/auth/session';
 import { hashPassword } from '@/server/auth/password';
 import { POST } from '../route';
 import { NextRequest } from 'next/server';
+import * as loggerModule from '@/lib/logger';
 
 /**
  * Mock the Next.js cookies() function
@@ -360,5 +361,89 @@ describe('POST /api/auth/logout - Property-Based Tests', () => {
     // Cleanup
     await db.delete(sessions).where(eq(sessions.token, sessionToken));
     mockSessionToken = null;
+  });
+
+  /**
+   * Feature: authentication-system, Property 14: Sign-out logs event
+   * Validates: Requirements 5.4
+   * 
+   * For any sign-out action, a log entry should be created with user ID and timestamp.
+   */
+  test('Property 14: Sign-out logs event', async () => {
+    // Spy on logAuthEvent
+    const logAuthEventSpy = vi.spyOn(loggerModule, 'logAuthEvent');
+
+    await fc.assert(
+      fc.asyncProperty(
+        // Generate random IP addresses and user agents
+        fc.ipV4(),
+        fc.string({ minLength: 10, maxLength: 200 }).filter(s => s.trim().length > 0),
+        async (ipAddress, userAgent) => {
+          // Create a valid session
+          const sessionToken = await createSession(testUserId, ipAddress, userAgent);
+
+          // Set mock session token for this test
+          mockSessionToken = sessionToken;
+
+          // Clear previous spy calls
+          logAuthEventSpy.mockClear();
+
+          // Create mock request
+          const request = createMockRequest();
+
+          // Call the logout endpoint
+          const response = await POST(request);
+
+          // Verify response status is 200 OK
+          expect(response.status).toBe(200);
+
+          // Verify logAuthEvent was called
+          expect(logAuthEventSpy).toHaveBeenCalled();
+
+          // Find the success log call
+          const successLogCall = logAuthEventSpy.mock.calls.find(
+            call => call[0] === 'auth.logout.success' && call[1].outcome === 'success'
+          );
+
+          expect(successLogCall).toBeDefined();
+
+          if (successLogCall) {
+            const [eventType, context] = successLogCall;
+
+            // Verify event type
+            expect(eventType).toBe('auth.logout.success');
+
+            // Verify outcome
+            expect(context.outcome).toBe('success');
+
+            // Verify user ID is logged
+            expect(context.userId).toBe(testUserId);
+
+            // Verify email is logged (will be hashed)
+            expect(context.email).toBeDefined();
+
+            // Verify request context is logged
+            expect(context.requestId).toBeDefined();
+            expect(typeof context.requestId).toBe('string');
+
+            // Verify IP address and user agent are logged
+            expect(context.ipAddress).toBeDefined();
+            expect(context.userAgent).toBeDefined();
+
+            // Verify metadata contains session ID
+            expect(context.metadata).toBeDefined();
+            expect(context.metadata?.sessionId).toBeDefined();
+          }
+
+          // Cleanup
+          await db.delete(sessions).where(eq(sessions.userId, testUserId));
+          mockSessionToken = null;
+        }
+      ),
+      PROPERTY_CONFIG
+    );
+
+    // Restore spy
+    logAuthEventSpy.mockRestore();
   });
 });

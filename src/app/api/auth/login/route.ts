@@ -23,7 +23,7 @@ import {
   createRateLimitKey,
   RATE_LIMITS 
 } from '@/server/auth/rate-limiter';
-import { logger } from '@/lib/logger';
+import { logAuthEvent } from '@/lib/logger';
 import { eq } from 'drizzle-orm';
 import { ZodError } from 'zod';
 
@@ -97,12 +97,7 @@ export async function POST(request: NextRequest) {
     if (!ipAllowed) {
       const retryAfter = await getResetTime(ipRateLimitKey);
       
-      logger.warn('auth.rate_limit.exceeded', {
-        requestId,
-        type: 'signin_ip',
-        ip: clientIp,
-        retryAfter,
-      });
+      // Rate limit logging is already handled in checkLimit function
       
       return NextResponse.json(
         {
@@ -131,12 +126,7 @@ export async function POST(request: NextRequest) {
     if (!emailAllowed) {
       const retryAfter = await getResetTime(emailRateLimitKey);
       
-      logger.warn('auth.rate_limit.exceeded', {
-        requestId,
-        type: 'signin_email',
-        email: normalizedEmail,
-        retryAfter,
-      });
+      // Rate limit logging is already handled in checkLimit function
       
       return NextResponse.json(
         {
@@ -154,10 +144,12 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    logger.info('auth.login.attempt', {
-      requestId,
+    logAuthEvent('auth.login.attempt', {
+      outcome: 'success',
       email: normalizedEmail,
-      ip: clientIp,
+      ipAddress: clientIp,
+      userAgent,
+      requestId,
     });
     
     // Find user by email
@@ -175,11 +167,17 @@ export async function POST(request: NextRequest) {
     
     // User not found or invalid password - return generic error
     if (!user) {
-      logger.info('auth.login.failure', {
-        requestId,
+      logAuthEvent('auth.login.failure', {
+        outcome: 'failure',
         email: normalizedEmail,
-        reason: 'user_not_found',
-        ip: clientIp,
+        ipAddress: clientIp,
+        userAgent,
+        requestId,
+        errorCode: 'INVALID_CREDENTIALS',
+        errorMessage: 'Invalid email or password',
+        metadata: {
+          reason: 'user_not_found',
+        },
       });
       
       return NextResponse.json(
@@ -200,12 +198,18 @@ export async function POST(request: NextRequest) {
     );
     
     if (!isPasswordValid) {
-      logger.info('auth.login.failure', {
-        requestId,
+      logAuthEvent('auth.login.failure', {
+        outcome: 'failure',
         userId: user.id,
         email: normalizedEmail,
-        reason: 'invalid_password',
-        ip: clientIp,
+        ipAddress: clientIp,
+        userAgent,
+        requestId,
+        errorCode: 'INVALID_CREDENTIALS',
+        errorMessage: 'Invalid email or password',
+        metadata: {
+          reason: 'invalid_password',
+        },
       });
       
       return NextResponse.json(
@@ -221,12 +225,18 @@ export async function POST(request: NextRequest) {
     
     // Check if email is verified
     if (!user.emailVerified) {
-      logger.info('auth.login.failure', {
-        requestId,
+      logAuthEvent('auth.login.failure', {
+        outcome: 'failure',
         userId: user.id,
         email: normalizedEmail,
-        reason: 'email_not_verified',
-        ip: clientIp,
+        ipAddress: clientIp,
+        userAgent,
+        requestId,
+        errorCode: 'EMAIL_NOT_VERIFIED',
+        errorMessage: 'Please verify your email address before signing in',
+        metadata: {
+          reason: 'email_not_verified',
+        },
       });
       
       return NextResponse.json(
@@ -243,11 +253,13 @@ export async function POST(request: NextRequest) {
     // Create session
     const sessionToken = await createSession(user.id, clientIp, userAgent);
     
-    logger.info('auth.login.success', {
-      requestId,
+    logAuthEvent('auth.login.success', {
+      outcome: 'success',
       userId: user.id,
       email: user.email,
-      ip: clientIp,
+      ipAddress: clientIp,
+      userAgent,
+      requestId,
     });
     
     // Return user data with session cookie
@@ -277,12 +289,17 @@ export async function POST(request: NextRequest) {
       if (firstError) {
         const [field, messages] = firstError;
         
-        logger.info('auth.login.failure', {
+        logAuthEvent('auth.login.failure', {
+          outcome: 'failure',
+          ipAddress: clientIp,
+          userAgent,
           requestId,
-          reason: 'validation_error',
-          field,
-          message: messages?.[0],
-          ip: clientIp,
+          errorCode: 'VALIDATION_ERROR',
+          errorMessage: messages?.[0] || 'Validation failed',
+          metadata: {
+            field,
+            details: fieldErrors,
+          },
         });
         
         return NextResponse.json(
@@ -300,11 +317,16 @@ export async function POST(request: NextRequest) {
     }
     
     // Handle other errors
-    logger.error('auth.login.error', {
+    logAuthEvent('auth.login.failure', {
+      outcome: 'error',
+      ipAddress: clientIp,
+      userAgent,
       requestId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      ip: clientIp,
+      errorCode: 'INTERNAL_SERVER_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      metadata: {
+        stack: error instanceof Error ? error.stack : undefined,
+      },
     });
     
     return NextResponse.json(

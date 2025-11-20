@@ -22,7 +22,7 @@ import {
   createRateLimitKey,
   RATE_LIMITS 
 } from '@/server/auth/rate-limiter';
-import { logger } from '@/lib/logger';
+import { logAuthEvent } from '@/lib/logger';
 import { eq } from 'drizzle-orm';
 import { ZodError } from 'zod';
 import { env } from '@/lib/env';
@@ -68,6 +68,7 @@ function getClientIp(request: NextRequest): string {
 export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID();
   const clientIp = getClientIp(request);
+  const userAgent = request.headers.get('user-agent') || 'unknown';
   
   try {
     // Parse and validate request body
@@ -84,18 +85,18 @@ export async function POST(request: NextRequest) {
     const emailAllowed = await checkLimit(
       emailRateLimitKey,
       RATE_LIMITS.PASSWORD_RESET.limit,
-      RATE_LIMITS.PASSWORD_RESET.windowMs
+      RATE_LIMITS.PASSWORD_RESET.windowMs,
+      {
+        ipAddress: clientIp,
+        email: normalizedEmail,
+        requestId,
+      }
     );
     
     if (!emailAllowed) {
       const retryAfter = await getResetTime(emailRateLimitKey);
       
-      logger.warn('auth.rate_limit.exceeded', {
-        requestId,
-        type: 'password_reset',
-        email: normalizedEmail,
-        retryAfter,
-      });
+      // Rate limit logging is already handled in checkLimit function
       
       return NextResponse.json(
         {
@@ -113,10 +114,12 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    logger.info('auth.reset_password.request', {
-      requestId,
+    logAuthEvent('auth.reset_password.request', {
+      outcome: 'success',
       email: normalizedEmail,
-      ip: clientIp,
+      ipAddress: clientIp,
+      userAgent,
+      requestId,
     });
     
     // Find user by email (silently fail if not found)
@@ -161,27 +164,42 @@ export async function POST(request: NextRequest) {
           },
         });
         
-        logger.info('auth.reset_password.token_created', {
-          requestId,
+        logAuthEvent('auth.reset_password.request', {
+          outcome: 'success',
           userId: user.id,
           email: user.email,
-          tokenId,
+          ipAddress: clientIp,
+          userAgent,
+          requestId,
+          metadata: {
+            tokenId,
+            tokenCreated: true,
+          },
         });
       } catch (error) {
         // Log error but don't reveal it to user
-        logger.error('auth.reset_password.error', {
-          requestId,
+        logAuthEvent('auth.reset_password.request', {
+          outcome: 'error',
           userId: user.id,
           email: user.email,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          ipAddress: clientIp,
+          userAgent,
+          requestId,
+          errorCode: 'TOKEN_GENERATION_ERROR',
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     } else {
-      // User not found - log but return success message
-      logger.info('auth.reset_password.user_not_found', {
-        requestId,
+      // User not found - log but return success message (prevent email enumeration)
+      logAuthEvent('auth.reset_password.request', {
+        outcome: 'success',
         email: normalizedEmail,
-        ip: clientIp,
+        ipAddress: clientIp,
+        userAgent,
+        requestId,
+        metadata: {
+          userNotFound: true,
+        },
       });
     }
     
@@ -202,11 +220,17 @@ export async function POST(request: NextRequest) {
       if (firstError) {
         const [field, messages] = firstError;
         
-        logger.info('auth.reset_password.validation_error', {
+        logAuthEvent('auth.reset_password.request', {
+          outcome: 'failure',
+          ipAddress: clientIp,
+          userAgent,
           requestId,
-          field,
-          message: messages?.[0],
-          ip: clientIp,
+          errorCode: 'VALIDATION_ERROR',
+          errorMessage: messages?.[0] || 'Validation failed',
+          metadata: {
+            field,
+            details: fieldErrors,
+          },
         });
         
         return NextResponse.json(
@@ -224,11 +248,16 @@ export async function POST(request: NextRequest) {
     }
     
     // Handle other errors
-    logger.error('auth.reset_password.error', {
+    logAuthEvent('auth.reset_password.request', {
+      outcome: 'error',
+      ipAddress: clientIp,
+      userAgent,
       requestId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      ip: clientIp,
+      errorCode: 'INTERNAL_SERVER_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      metadata: {
+        stack: error instanceof Error ? error.stack : undefined,
+      },
     });
     
     return NextResponse.json(
