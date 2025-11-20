@@ -4,27 +4,28 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
-import { signUpSchema, type SignUpSchema } from "../utils/validators";
+import { resetPasswordSchema, type ResetPasswordSchema } from "../utils/validators";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { successResponseSchema, type SuccessResponse, type ErrorResponse } from "../api/types";
 
 type SubmissionStatus = "idle" | "submitting" | "success";
 
-type UseSignUpOptions = {
-  defaultValues?: Partial<SignUpSchema>;
+type UseResetPasswordOptions = {
+  token?: string;
   onSuccess?: (data: SuccessResponse) => void;
+  redirectTo?: string;
 };
 
 /**
- * Sign up API call
+ * Reset password API call
  */
-async function signUp(data: SignUpSchema): Promise<SuccessResponse> {
-  const response = await apiClient<SuccessResponse>("/api/auth/signup", {
+async function resetPassword(data: ResetPasswordSchema): Promise<SuccessResponse> {
+  const response = await apiClient<SuccessResponse>("/api/auth/reset-password", {
     method: "POST",
     body: {
-      name: data.name,
-      email: data.email,
+      token: data.token,
       password: data.password,
     },
   });
@@ -34,49 +35,53 @@ async function signUp(data: SignUpSchema): Promise<SuccessResponse> {
 }
 
 /**
- * Hook for user sign-up
+ * Hook for password reset flow
  * 
  * Features:
- * - React Query mutation to POST /api/auth/signup
+ * - React Query mutation to POST /api/auth/reset-password
  * - Handles validation errors (400)
- * - Handles duplicate email errors (409)
- * - Displays success message
+ * - Handles token errors (expired, already used)
+ * - Redirects to sign-in on success
+ * 
+ * Validates: Requirements 6.2, 6.3, 6.4
  * 
  * @param options Configuration options
  * @returns Form state, handlers, and mutation state
  */
-export function useSignUp(options: UseSignUpOptions = {}) {
-  const { defaultValues, onSuccess } = options;
+export function useResetPassword(options: UseResetPasswordOptions = {}) {
+  const { token = "", onSuccess, redirectTo = "/sign-in" } = options;
+  const router = useRouter();
 
-  const form = useForm<SignUpSchema>({
-    resolver: zodResolver(signUpSchema),
+  const form = useForm<ResetPasswordSchema>({
+    resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      name: defaultValues?.name || "",
-      email: defaultValues?.email || "",
-      password: defaultValues?.password || "",
-      confirmPassword: defaultValues?.confirmPassword || "",
+      token,
+      password: "",
+      confirmPassword: "",
     },
   });
 
   const [status, setStatus] = useState<SubmissionStatus>("idle");
   const [message, setMessage] = useState<string | null>(null);
 
-  // Sign-up mutation
+  // Reset password mutation
   const mutation = useMutation({
-    mutationFn: signUp,
+    mutationFn: resetPassword,
     onMutate: () => {
       setStatus("submitting");
       setMessage(null);
     },
     onSuccess: (data) => {
       setStatus("success");
-      setMessage(data.message || "Account created successfully! Please check your email to verify your account.");
+      setMessage(data.message || "Password reset successfully. You can now sign in with your new password.");
       
       // Call custom success handler
       onSuccess?.(data);
       
-      // Reset form on success
-      form.reset();
+      // Redirect to sign-in after a short delay
+      setTimeout(() => {
+        router.push(redirectTo);
+      }, 2000);
     },
     onError: (error: unknown) => {
       setStatus("idle");
@@ -89,7 +94,7 @@ export function useSignUp(options: UseSignUpOptions = {}) {
           const fieldError = errorPayload?.error;
           if (fieldError?.field) {
             // Set field-specific error
-            form.setError(fieldError.field as keyof SignUpSchema, {
+            form.setError(fieldError.field as keyof ResetPasswordSchema, {
               type: "manual",
               message: fieldError.message,
             });
@@ -99,25 +104,20 @@ export function useSignUp(options: UseSignUpOptions = {}) {
           return;
         }
         
-        // Handle duplicate email errors (409)
-        if (error.status === 409) {
+        // Handle gone errors (410) - token already used
+        if (error.status === 410) {
           setMessage(
             errorPayload?.error?.message || 
-            "An account with this email already exists. Please sign in instead."
+            "This password reset link has already been used. Please request a new one."
           );
-          // Also set field error on email field
-          form.setError("email", {
-            type: "manual",
-            message: "This email is already registered",
-          });
           return;
         }
         
-        // Handle rate limit errors (429)
-        if (error.status === 429) {
+        // Handle unauthorized errors (401) - invalid or expired token
+        if (error.status === 401) {
           setMessage(
             errorPayload?.error?.message || 
-            "Too many registration attempts. Please try again later."
+            "This password reset link is invalid or has expired. Please request a new one."
           );
           return;
         }

@@ -5,27 +5,25 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
-import { signUpSchema, type SignUpSchema } from "../utils/validators";
+import { forgotPasswordSchema, type ForgotPasswordSchema } from "../utils/validators";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { successResponseSchema, type SuccessResponse, type ErrorResponse } from "../api/types";
 
 type SubmissionStatus = "idle" | "submitting" | "success";
 
-type UseSignUpOptions = {
-  defaultValues?: Partial<SignUpSchema>;
+type UseForgotPasswordOptions = {
+  defaultEmail?: string;
   onSuccess?: (data: SuccessResponse) => void;
 };
 
 /**
- * Sign up API call
+ * Forgot password API call
  */
-async function signUp(data: SignUpSchema): Promise<SuccessResponse> {
-  const response = await apiClient<SuccessResponse>("/api/auth/signup", {
+async function forgotPassword(data: ForgotPasswordSchema): Promise<SuccessResponse> {
+  const response = await apiClient<SuccessResponse>("/api/auth/forgot-password", {
     method: "POST",
     body: {
-      name: data.name,
       email: data.email,
-      password: data.password,
     },
   });
 
@@ -34,43 +32,47 @@ async function signUp(data: SignUpSchema): Promise<SuccessResponse> {
 }
 
 /**
- * Hook for user sign-up
+ * Hook for forgot password flow
  * 
  * Features:
- * - React Query mutation to POST /api/auth/signup
+ * - React Query mutation to POST /api/auth/forgot-password
  * - Handles validation errors (400)
- * - Handles duplicate email errors (409)
- * - Displays success message
+ * - Handles rate limit errors (429) with retry-after
+ * - Displays success message (always, for security)
+ * 
+ * Validates: Requirements 6.1, 6.5
  * 
  * @param options Configuration options
  * @returns Form state, handlers, and mutation state
  */
-export function useSignUp(options: UseSignUpOptions = {}) {
-  const { defaultValues, onSuccess } = options;
+export function useForgotPassword(options: UseForgotPasswordOptions = {}) {
+  const { defaultEmail = "", onSuccess } = options;
 
-  const form = useForm<SignUpSchema>({
-    resolver: zodResolver(signUpSchema),
+  const form = useForm<ForgotPasswordSchema>({
+    resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
-      name: defaultValues?.name || "",
-      email: defaultValues?.email || "",
-      password: defaultValues?.password || "",
-      confirmPassword: defaultValues?.confirmPassword || "",
+      email: defaultEmail,
     },
   });
 
   const [status, setStatus] = useState<SubmissionStatus>("idle");
   const [message, setMessage] = useState<string | null>(null);
+  const [retryAfter, setRetryAfter] = useState<number | null>(null);
 
-  // Sign-up mutation
+  // Forgot password mutation
   const mutation = useMutation({
-    mutationFn: signUp,
+    mutationFn: forgotPassword,
     onMutate: () => {
       setStatus("submitting");
       setMessage(null);
+      setRetryAfter(null);
     },
     onSuccess: (data) => {
       setStatus("success");
-      setMessage(data.message || "Account created successfully! Please check your email to verify your account.");
+      setMessage(
+        data.message || 
+        "If an account exists with this email, a password reset link has been sent."
+      );
       
       // Call custom success handler
       onSuccess?.(data);
@@ -89,35 +91,25 @@ export function useSignUp(options: UseSignUpOptions = {}) {
           const fieldError = errorPayload?.error;
           if (fieldError?.field) {
             // Set field-specific error
-            form.setError(fieldError.field as keyof SignUpSchema, {
+            form.setError(fieldError.field as keyof ForgotPasswordSchema, {
               type: "manual",
               message: fieldError.message,
             });
           } else {
-            setMessage(fieldError?.message || "Invalid input. Please check your information.");
+            setMessage(fieldError?.message || "Invalid email address. Please check and try again.");
           }
-          return;
-        }
-        
-        // Handle duplicate email errors (409)
-        if (error.status === 409) {
-          setMessage(
-            errorPayload?.error?.message || 
-            "An account with this email already exists. Please sign in instead."
-          );
-          // Also set field error on email field
-          form.setError("email", {
-            type: "manual",
-            message: "This email is already registered",
-          });
           return;
         }
         
         // Handle rate limit errors (429)
         if (error.status === 429) {
+          const retryAfterHeader = errorPayload?.error?.details as number | undefined;
+          if (retryAfterHeader) {
+            setRetryAfter(retryAfterHeader);
+          }
           setMessage(
             errorPayload?.error?.message || 
-            "Too many registration attempts. Please try again later."
+            "Too many password reset requests. Please try again later."
           );
           return;
         }
@@ -142,6 +134,7 @@ export function useSignUp(options: UseSignUpOptions = {}) {
     form,
     status,
     message,
+    retryAfter,
     handleSubmit,
     isLoading: mutation.isPending,
     isSuccess: mutation.isSuccess,

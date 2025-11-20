@@ -293,7 +293,7 @@ This task list has been refreshed based on the current codebase state. The follo
 
 ## Phase 7: Client-Side Integration
 
-- [ ] 20. Update useSession hook
+- [x] 20. Update useSession hook
   - Update `src/features/auth/hooks/use-session.ts`
   - Replace mock with React Query to fetch `/api/auth/me`
   - Cache session data for 5 minutes
@@ -301,11 +301,11 @@ This task list has been refreshed based on the current codebase state. The follo
   - Return loading, error, and data states
   - _Validates: Requirements 10.1, 10.2_
 
-- [ ] 20.1 Write property test for cache invalidation
+- [x] 20.1 Write property test for cache invalidation
   - **Property 29: Auth state changes invalidate cache**
   - **Validates: Requirements 10.2**
 
-- [ ] 21. Update useSignIn hook
+- [x] 21. Update useSignIn hook
   - Update `src/features/auth/hooks/use-sign-in.ts`
   - Replace mock with React Query mutation to POST `/api/auth/login`
   - Invalidate session cache on success
@@ -314,7 +314,7 @@ This task list has been refreshed based on the current codebase state. The follo
   - Redirect to dashboard on success
   - _Validates: Requirements 3.1, 3.5_
 
-- [ ] 22. Update useSignUp hook
+- [x] 22. Update useSignUp hook
   - Update `src/features/auth/hooks/use-sign-up.ts`
   - Replace mock with React Query mutation to POST `/api/auth/signup`
   - Handle validation errors
@@ -322,14 +322,14 @@ This task list has been refreshed based on the current codebase state. The follo
   - Display success message
   - _Validates: Requirements 1.1, 1.2_
 
-- [ ] 23. Create useSignOut hook
+- [x] 23. Create useSignOut hook
   - Create `src/features/auth/hooks/use-sign-out.ts`
   - Use React Query mutation to POST `/api/auth/logout`
   - Clear session cache on success
   - Redirect to sign-in page
   - _Validates: Requirements 5.1, 5.2_
 
-- [ ] 24. Create password reset hooks
+- [x] 24. Create password reset hooks
   - Create `src/features/auth/hooks/use-forgot-password.ts`
   - Create `src/features/auth/hooks/use-reset-password.ts`
   - Use React Query mutations for both endpoints

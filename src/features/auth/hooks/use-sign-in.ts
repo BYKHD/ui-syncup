@@ -3,19 +3,53 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 import { signInSchema, type SignInSchema } from "../utils/validators";
+import { apiClient, ApiError } from "@/lib/api-client";
+import { sessionResponseSchema, type SessionResponse, type ErrorResponse } from "../api/types";
+import { useInvalidateSession } from "./use-session";
 
 type SubmissionStatus = "idle" | "submitting" | "success";
 type OAuthStatus = "idle" | "loading" | "error";
 
 type UseSignInOptions = {
   defaultEmail?: string;
-  onSuccess?: (data: SignInSchema) => void;
+  onSuccess?: (data: SessionResponse) => void;
+  redirectTo?: string;
 };
 
+/**
+ * Sign in API call
+ */
+async function signIn(credentials: SignInSchema): Promise<SessionResponse> {
+  const response = await apiClient<SessionResponse>("/api/auth/login", {
+    method: "POST",
+    body: credentials,
+  });
+
+  // Validate response with Zod schema
+  return sessionResponseSchema.parse(response);
+}
+
+/**
+ * Hook for user sign-in
+ * 
+ * Features:
+ * - React Query mutation to POST /api/auth/login
+ * - Invalidates session cache on success
+ * - Handles validation errors
+ * - Handles rate limit errors with retry-after
+ * - Redirects to projects page on success (configurable)
+ * 
+ * @param options Configuration options
+ * @returns Form state, handlers, and mutation state
+ */
 export function useSignIn(options: UseSignInOptions = {}) {
-  const { defaultEmail = "", onSuccess } = options;
+  const { defaultEmail = "", onSuccess, redirectTo = "/projects" } = options;
+  const router = useRouter();
+  const invalidateSession = useInvalidateSession();
 
   const form = useForm<SignInSchema>({
     resolver: zodResolver(signInSchema),
@@ -27,31 +61,107 @@ export function useSignIn(options: UseSignInOptions = {}) {
 
   const [status, setStatus] = useState<SubmissionStatus>("idle");
   const [message, setMessage] = useState<string | null>(null);
+  const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const [oauthStatus, setOauthStatus] = useState<OAuthStatus>("idle");
   const [oauthError, setOauthError] = useState<string | null>(null);
 
-  const handleSubmit = form.handleSubmit((data) => {
-    setMessage(null);
-    setStatus("submitting");
-
-    // Mock API call
-    setTimeout(() => {
+  // Sign-in mutation
+  const mutation = useMutation({
+    mutationFn: signIn,
+    onMutate: () => {
+      setStatus("submitting");
+      setMessage(null);
+      setRetryAfter(null);
+    },
+    onSuccess: (data) => {
       setStatus("success");
-      setMessage(
-        "Signed in successfully. Dashboard access is mocked in this build."
-      );
+      setMessage("Signed in successfully");
+      
+      // Invalidate session cache to trigger refetch
+      invalidateSession();
+      
+      // Call custom success handler
       onSuccess?.(data);
-    }, 700);
+      
+      // Redirect to dashboard
+      router.push(redirectTo);
+    },
+    onError: (error: unknown) => {
+      setStatus("idle");
+      
+      if (error instanceof ApiError) {
+        const errorPayload = error.payload as ErrorResponse | null;
+        
+        // Handle rate limit errors (429)
+        if (error.status === 429) {
+          const retryAfterHeader = errorPayload?.error?.details as number | undefined;
+          if (retryAfterHeader) {
+            setRetryAfter(retryAfterHeader);
+          }
+          setMessage(
+            errorPayload?.error?.message || 
+            "Too many sign-in attempts. Please try again later."
+          );
+          return;
+        }
+        
+        // Handle validation errors (400)
+        if (error.status === 400) {
+          const fieldError = errorPayload?.error;
+          if (fieldError?.field) {
+            // Set field-specific error
+            form.setError(fieldError.field as keyof SignInSchema, {
+              type: "manual",
+              message: fieldError.message,
+            });
+          } else {
+            setMessage(fieldError?.message || "Invalid input. Please check your credentials.");
+          }
+          return;
+        }
+        
+        // Handle authentication errors (401)
+        if (error.status === 401) {
+          setMessage(
+            errorPayload?.error?.message || 
+            "Invalid email or password"
+          );
+          return;
+        }
+        
+        // Handle forbidden errors (403) - email not verified
+        if (error.status === 403) {
+          setMessage(
+            errorPayload?.error?.message || 
+            "Please verify your email address before signing in"
+          );
+          return;
+        }
+        
+        // Handle other errors
+        setMessage(
+          errorPayload?.error?.message || 
+          "An unexpected error occurred. Please try again."
+        );
+      } else {
+        // Handle network or other errors
+        setMessage("Unable to connect. Please check your internet connection.");
+      }
+    },
+  });
+
+  const handleSubmit = form.handleSubmit((data) => {
+    mutation.mutate(data);
   });
 
   const handleOAuthSignIn = () => {
     setOauthStatus("loading");
     setOauthError(null);
 
-    // Mock OAuth flow
+    // Mock OAuth flow (not implemented yet)
     setTimeout(() => {
       setOauthStatus("error");
-      setOauthError("Mock Google sign-in is disabled in preview builds.");
+      setOauthError("OAuth sign-in is not yet implemented.");
     }, 600);
   };
 
@@ -59,9 +169,14 @@ export function useSignIn(options: UseSignInOptions = {}) {
     form,
     status,
     message,
+    retryAfter,
     oauthStatus,
     oauthError,
     handleSubmit,
     handleOAuthSignIn,
+    isLoading: mutation.isPending,
+    isSuccess: mutation.isSuccess,
+    isError: mutation.isError,
+    error: mutation.error,
   };
 }
