@@ -453,7 +453,7 @@ This task list has been refreshed based on the current codebase state. The follo
   - Log security events (token tampering, session tampering)
   - _Validates: Requirements 8.4, 11.5_
 
-- [ ] 35. Document monitoring setup
+- [x] 35. Document monitoring setup
   - Update `docs/DEPLOYMENT.md` with monitoring rules
   - Define alert thresholds (high failure rate, rate limit abuse, etc.)
   - Document metrics collection (counters, gauges, histograms)

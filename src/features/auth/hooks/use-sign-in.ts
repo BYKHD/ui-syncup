@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 
 import { signInSchema, type SignInSchema } from "../utils/validators";
 import { apiClient, ApiError } from "@/lib/api-client";
+import { authClient } from "@/lib/auth-client";
 import { sessionResponseSchema, type SessionResponse, type ErrorResponse } from "../api/types";
 import { useInvalidateSession } from "./use-session";
 
@@ -154,15 +155,22 @@ export function useSignIn(options: UseSignInOptions = {}) {
     mutation.mutate(data);
   });
 
-  const handleOAuthSignIn = () => {
+  const handleOAuthSignIn = async () => {
     setOauthStatus("loading");
     setOauthError(null);
 
-    // Mock OAuth flow (not implemented yet)
-    setTimeout(() => {
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: redirectTo,
+      });
+      // Redirect is handled by better-auth
+    } catch (error) {
       setOauthStatus("error");
-      setOauthError("OAuth sign-in is not yet implemented.");
-    }, 600);
+      setOauthError(
+        error instanceof Error ? error.message : "Failed to sign in with Google"
+      );
+    }
   };
 
   return {

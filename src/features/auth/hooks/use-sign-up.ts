@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { signUpSchema, type SignUpSchema } from "../utils/validators";
 import { apiClient, ApiError } from "@/lib/api-client";
+import { authClient } from "@/lib/auth-client";
 import { successResponseSchema, type SuccessResponse, type ErrorResponse } from "../api/types";
 
 type SubmissionStatus = "idle" | "submitting" | "success";
@@ -138,11 +139,34 @@ export function useSignUp(options: UseSignUpOptions = {}) {
     mutation.mutate(data);
   });
 
+  const [oauthStatus, setOauthStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [oauthError, setOauthError] = useState<string | null>(null);
+
+  const handleOAuthSignIn = async () => {
+    setOauthStatus("loading");
+    setOauthError(null);
+
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/projects", // Redirect to projects after sign up
+      });
+    } catch (error) {
+      setOauthStatus("error");
+      setOauthError(
+        error instanceof Error ? error.message : "Failed to sign up with Google"
+      );
+    }
+  };
+
   return {
     form,
     status,
     message,
     handleSubmit,
+    handleOAuthSignIn,
+    oauthStatus,
+    oauthError,
     isLoading: mutation.isPending,
     isSuccess: mutation.isSuccess,
     isError: mutation.isError,
