@@ -1,7 +1,10 @@
 export { AuthCard } from "./auth-card";
 export { SignInForm } from "./sign-in-form";
 export { SignUpForm } from "./sign-up-form";
+export { ForgotPasswordForm } from "./forgot-password-form";
+export { ResetPasswordForm } from "./reset-password-form";
 export { PlanSelector } from "./plan-selector";
 export { OnboardingForm } from "./onboarding-form";
 export { OnboardingPlanSelector } from "./onboarding-plan-selector";
 export { PasswordStrengthIndicator } from "./password-strength-indicator";
+export { RoleGate } from "./role-gate";

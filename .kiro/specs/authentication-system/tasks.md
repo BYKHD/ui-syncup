@@ -338,7 +338,7 @@ This task list has been refreshed based on the current codebase state. The follo
 
 ## Phase 8: UI Components
 
-- [ ] 25. Update SignUpForm component
+- [x] 25. Update SignUpForm component
   - Update `src/features/auth/components/sign-up-form.tsx`
   - Use real `useSignUp` hook
   - Display validation errors from API
@@ -347,7 +347,7 @@ This task list has been refreshed based on the current codebase state. The follo
   - Handle duplicate email errors
   - _Validates: Requirements 1.1, 1.2, 1.5_
 
-- [ ] 26. Update SignInForm component
+- [x] 26. Update SignInForm component
   - Update `src/features/auth/components/sign-in-form.tsx`
   - Use real `useSignIn` hook
   - Display validation errors from API
@@ -357,7 +357,7 @@ This task list has been refreshed based on the current codebase state. The follo
   - Redirect to dashboard on success
   - _Validates: Requirements 3.1, 3.2, 3.5_
 
-- [ ] 27. Create ForgotPasswordForm component
+- [x] 27. Create ForgotPasswordForm component
   - Create `src/features/auth/components/forgot-password-form.tsx`
   - Use `useForgotPassword` hook
   - Email input with validation
@@ -366,7 +366,7 @@ This task list has been refreshed based on the current codebase state. The follo
   - Handle rate limit errors
   - _Validates: Requirements 6.1, 6.5_
 
-- [ ] 28. Create ResetPasswordForm component
+- [x] 28. Create ResetPasswordForm component
   - Create `src/features/auth/components/reset-password-form.tsx`
   - Use `useResetPassword` hook
   - Password and confirm password inputs
@@ -376,7 +376,7 @@ This task list has been refreshed based on the current codebase state. The follo
   - Redirect to sign-in on success
   - _Validates: Requirements 6.2, 6.3, 6.4_
 
-- [ ] 29. Create RoleGate component
+- [x] 29. Create RoleGate component
   - Create `src/features/auth/components/role-gate.tsx`
   - Accept `roles` prop (array of required roles)
   - Use `useSession` hook to get user roles
@@ -384,31 +384,31 @@ This task list has been refreshed based on the current codebase state. The follo
   - Render fallback or null if unauthorized
   - _Validates: Requirements 10.4_
 
-- [ ] 29.1 Write property test for permission checks
+- [x] 29.1 Write property test for permission checks
   - **Property 31: Permission hooks return correct boolean results**
   - **Validates: Requirements 10.4**
 
 ## Phase 9: Route Protection
 
-- [ ] 30. Implement server-side session check
+- [x] 30. Implement server-side session check
   - Update `src/app/(protected)/layout.tsx`
   - Call `getSession()` on server side
   - Redirect to `/sign-in` if no session
   - Pass session data to client components
   - _Validates: Requirements 12.4, 12.5_
 
-- [ ] 30.1 Write property test for server-side validation
+- [x] 30.1 Write property test for server-side validation
   - **Property 38: Server-side layout validates sessions**
   - **Validates: Requirements 12.4**
 
-- [ ] 31. Implement guest-only route protection
+- [x] 31. Implement guest-only route protection
   - Update `src/app/(public)/sign-in/page.tsx`
   - Update `src/app/(public)/sign-up/page.tsx`
   - Check session on server side
   - Redirect to dashboard if authenticated
   - _Validates: Requirements 12.1, 12.2_
 
-- [ ] 32. Create password reset pages
+- [x] 32. Create password reset pages
   - Create `src/app/(public)/forgot-password/page.tsx`
   - Create `src/app/(public)/reset-password/page.tsx`
   - Render ForgotPasswordForm component
@@ -416,7 +416,7 @@ This task list has been refreshed based on the current codebase state. The follo
   - Handle token from query params
   - _Validates: Requirements 6.1, 6.2_
 
-- [ ] 32.1 Write property test for route protection
+- [x] 32.1 Write property test for route protection
   - **Property 15: Protected routes reject signed-out users**
   - **Validates: Requirements 5.3**
 

@@ -1,5 +1,17 @@
 import { z } from "zod";
 
+// User role schema
+export const userRoleSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  role: z.string(),
+  resourceType: z.enum(["team", "project"]),
+  resourceId: z.string().uuid(),
+  createdAt: z.string().datetime(),
+});
+
+export type UserRole = z.infer<typeof userRoleSchema>;
+
 // User response schema
 export const userResponseSchema = z.object({
   id: z.string().uuid(),
@@ -8,6 +20,7 @@ export const userResponseSchema = z.object({
   emailVerified: z.boolean(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+  roles: z.array(userRoleSchema).optional(),
 });
 
 export type UserResponse = z.infer<typeof userResponseSchema>;
