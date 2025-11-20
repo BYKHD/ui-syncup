@@ -201,6 +201,32 @@ export async function POST(request: NextRequest) {
     }
     
     // Verify password
+    if (!user.passwordHash) {
+      logAuthEvent('auth.login.failure', {
+        outcome: 'failure',
+        userId: user.id,
+        email: normalizedEmail,
+        ipAddress: clientIp,
+        userAgent,
+        requestId,
+        errorCode: 'INVALID_CREDENTIALS',
+        errorMessage: 'Invalid email or password',
+        metadata: {
+          reason: 'no_password_hash',
+        },
+      });
+      
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_CREDENTIALS',
+            message: 'Invalid email or password',
+          },
+        },
+        { status: 401 }
+      );
+    }
+    
     const isPasswordValid = await verifyPassword(
       validatedData.password,
       user.passwordHash

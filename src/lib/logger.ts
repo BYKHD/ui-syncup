@@ -77,6 +77,9 @@ export type AuthEventType =
   | 'auth.list_sessions.success'
   | 'auth.list_sessions.failure'
   | 'auth.list_sessions.error'
+  | 'auth.reset_rate_limit.success'
+  | 'auth.reset_rate_limit.failure'
+  | 'auth.reset_rate_limit.error'
   // Security events
   | 'auth.rate_limit.exceeded'
   | 'auth.token.tampered'
