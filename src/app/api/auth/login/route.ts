@@ -165,6 +165,15 @@ export async function POST(request: NextRequest) {
       .where(eq(users.email, normalizedEmail))
       .limit(1);
     
+    // Debug logging in development
+    if (process.env.NODE_ENV === 'development' && user) {
+      console.log('[Login Debug]', {
+        email: user.email,
+        emailVerified: user.emailVerified,
+        hasPassword: !!user.passwordHash,
+      });
+    }
+    
     // User not found or invalid password - return generic error
     if (!user) {
       logAuthEvent('auth.login.failure', {

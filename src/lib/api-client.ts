@@ -72,6 +72,16 @@ export async function apiClient<TResponse>(
   const payload = isJson ? await response.json() : await response.text()
 
   if (!response.ok) {
+    // Log the error for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[API Error]', {
+        url,
+        method,
+        status: response.status,
+        statusText: response.statusText,
+        payload,
+      })
+    }
     throw new ApiError(response.status, response.statusText, payload)
   }
 

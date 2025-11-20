@@ -12,23 +12,28 @@ export const userRoleSchema = z.object({
 
 export type UserRole = z.infer<typeof userRoleSchema>;
 
-// User response schema
+// User response schema (basic user info)
 export const userResponseSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
   name: z.string(),
   emailVerified: z.boolean(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
   roles: z.array(userRoleSchema).optional(),
 });
 
 export type UserResponse = z.infer<typeof userResponseSchema>;
 
-// Session response schema
+// Full user response schema (with timestamps)
+export const fullUserResponseSchema = userResponseSchema.extend({
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export type FullUserResponse = z.infer<typeof fullUserResponseSchema>;
+
+// Session response schema (for login and /me endpoints)
 export const sessionResponseSchema = z.object({
   user: userResponseSchema,
-  expiresAt: z.string().datetime(),
 });
 
 export type SessionResponse = z.infer<typeof sessionResponseSchema>;

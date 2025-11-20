@@ -67,6 +67,16 @@ export type AuthEventType =
   | 'auth.reset_password.request'
   | 'auth.reset_password.success'
   | 'auth.reset_password.failure'
+  // Dev/Testing events
+  | 'auth.delete_account.success'
+  | 'auth.delete_account.failure'
+  | 'auth.delete_account.error'
+  | 'auth.force_verify.success'
+  | 'auth.force_verify.failure'
+  | 'auth.force_verify.error'
+  | 'auth.list_sessions.success'
+  | 'auth.list_sessions.failure'
+  | 'auth.list_sessions.error'
   // Security events
   | 'auth.rate_limit.exceeded'
   | 'auth.token.tampered'

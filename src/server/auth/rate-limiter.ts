@@ -98,6 +98,11 @@ export async function checkLimit(
     requestId?: string;
   }
 ): Promise<boolean> {
+  // Disable rate limiting in development mode
+  if (process.env.NODE_ENV === 'development') {
+    return true;
+  }
+
   // Handle zero limit edge case
   if (limit === 0) {
     return false;

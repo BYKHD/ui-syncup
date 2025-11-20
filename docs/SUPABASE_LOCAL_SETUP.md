@@ -31,7 +31,13 @@ This guide explains how to run the local development environment using the **Sup
     ```
     > **Note**: The keys are printed to the terminal when you run `npx supabase start`. You can also find them with `npx supabase status`.
 
-3.  **Run the App**
+3.  **Apply Database Migrations** (First-time setup)
+    ```bash
+    bun run db:migrate
+    ```
+    > **Important**: You must run migrations before the app will work. Without this step, you'll get `500 Internal Server Error` during signup because the database tables don't exist.
+
+4.  **Run the App**
     ```bash
     bun dev
     ```
@@ -60,15 +66,62 @@ bun run db:migrate
 ```
 
 ### Resetting the Database
-If you need to wipe the database and start fresh:
+
+If you need to wipe the database and start fresh, follow these steps:
+
+#### Method 1: Using Supabase Reset (Recommended)
+
 ```bash
-npx supabase db reset
+# 1. Stop the Supabase stack
+npx supabase stop
+
+# 2. Start fresh (this will recreate the database)
+npx supabase start
+
+# 3. Apply all Drizzle migrations
+bun run db:migrate
+
+# 4. (Optional) Verify tables were created
+npx supabase db psql -c "\dt"
 ```
-This will:
-1.  Drop the database.
-2.  Re-create it.
-3.  Apply all migrations.
-4.  Run the seed script (if configured in `supabase/seed.sql`).
+
+#### Method 2: Using Supabase DB Reset
+
+```bash
+# This drops and recreates the database, then applies migrations
+npx supabase db reset
+
+# Note: This only works if you have migrations in supabase/migrations/
+# Since we use Drizzle, you may need to run:
+bun run db:migrate
+```
+
+#### Method 3: Manual Reset (If above methods fail)
+
+```bash
+# 1. Stop Supabase
+npx supabase stop
+
+# 2. Remove all Docker volumes (nuclear option)
+docker volume prune -f
+
+# 3. Start Supabase fresh
+npx supabase start
+
+# 4. Apply Drizzle migrations
+bun run db:migrate
+```
+
+**What gets reset:**
+- All database tables and data
+- Auth users
+- Storage files
+- Edge Functions state
+
+**What persists:**
+- Your schema files in `src/server/db/schema/`
+- Migration files in `drizzle/`
+- Environment variables in `.env.local`
 
 ### Accessing the Database
 *   **Supabase Studio**: [http://127.0.0.1:54323](http://127.0.0.1:54323) - A powerful web UI for viewing tables, running SQL, and managing Auth.
@@ -104,4 +157,22 @@ docker-compose -f docker-compose-old.yaml down
 Check that `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `.env.local` match the output of `npx supabase status`.
 
 **"Schema mismatch"**
-If Drizzle complains about schema drift, try `bun run db:push` to force sync, or `npx supabase db reset` to start clean.
+If Drizzle complains about schema drift, try `bun run db:push` to force sync, or follow the reset steps above.
+
+**"500 Internal Server Error during signup"**
+This usually means the database tables don't exist. Run:
+```bash
+bun run db:migrate
+```
+
+**"Migration already applied" errors**
+If you see duplicate migration errors:
+```bash
+# Check which migrations are applied
+npx supabase db psql -c "SELECT * FROM drizzle.__drizzle_migrations;"
+
+# If needed, reset and reapply
+npx supabase stop
+npx supabase start
+bun run db:migrate
+```

@@ -31,7 +31,16 @@ async function signIn(credentials: SignInSchema): Promise<SessionResponse> {
   });
 
   // Validate response with Zod schema
-  return sessionResponseSchema.parse(response);
+  try {
+    return sessionResponseSchema.parse(response);
+  } catch (error) {
+    // Log validation errors in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Sign-in] Response validation failed:', error);
+      console.error('[Sign-in] Response data:', response);
+    }
+    throw error;
+  }
 }
 
 /**
@@ -84,8 +93,14 @@ export function useSignIn(options: UseSignInOptions = {}) {
       // Call custom success handler
       onSuccess?.(data);
       
-      // Redirect to dashboard
-      router.push(redirectTo);
+      // Use router.refresh() to reload server components with new session
+      router.refresh();
+      
+      // Navigate after a brief delay to ensure cookie is processed
+      // This prevents the "Unable to connect" error from premature navigation
+      setTimeout(() => {
+        router.push(redirectTo);
+      }, 150);
     },
     onError: (error: unknown) => {
       setStatus("idle");
@@ -144,9 +159,19 @@ export function useSignIn(options: UseSignInOptions = {}) {
           errorPayload?.error?.message || 
           "An unexpected error occurred. Please try again."
         );
-      } else {
-        // Handle network or other errors
+      } else if (error instanceof Error) {
+        // Check if it's an abort error (navigation during fetch)
+        if (error.name === 'AbortError' || error.message.includes('aborted')) {
+          // Ignore abort errors - they happen during navigation
+          console.log('[Sign-in] Request aborted during navigation (expected)');
+          return;
+        }
+        
+        // Handle other network errors
         setMessage("Unable to connect. Please check your internet connection.");
+      } else {
+        // Unknown error type
+        setMessage("An unexpected error occurred. Please try again.");
       }
     },
   });

@@ -1,21 +1,19 @@
 import { SignUpScreen } from "@/features/auth";
+import { getSessionCookie } from "@/server/auth/cookies";
 import { getSession } from "@/server/auth/session";
 import { redirect } from "next/navigation";
 
 export default async function SignUpPage() {
-  // Check if user is already authenticated
-  let session;
+  // Only check session if cookie exists (avoid unnecessary logging on public pages)
+  const sessionToken = await getSessionCookie();
   
-  try {
-    session = await getSession();
-  } catch (error) {
-    // Treat any session validation error as no session
-    session = null;
-  }
-  
-  // Redirect to dashboard if already authenticated
-  if (session) {
-    redirect("/dashboard");
+  if (sessionToken) {
+    const session = await getSession();
+    
+    // Redirect to dashboard if already authenticated
+    if (session) {
+      redirect("/dashboard");
+    }
   }
 
   return <SignUpScreen />;

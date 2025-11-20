@@ -31,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MOCK_USER } from '../sidebar/type';
+import { useSignOut } from '@/features/auth/hooks/use-sign-out';
 
 // ============================================================================
 // TYPES
@@ -89,6 +90,7 @@ export function HeaderUserMenu({
   const { theme, setTheme } = useTheme();
   const user = userProp ?? MOCK_USER;
   const currentTheme = (theme ?? 'system') as ThemeValue;
+  const { signOut, isLoading: isSigningOut } = useSignOut();
 
   const displayName = user.name;
   const displayEmail = user.email;
@@ -107,13 +109,14 @@ export function HeaderUserMenu({
       .slice(0, 2) || 'U';
   }, [user.name]);
 
-  const handleLogout = () => {
+  const handleLogout = React.useCallback(() => {
     if (onLogout) {
       onLogout();
-    } else {
-      console.log('User logged out');
+      return;
     }
-  };
+
+    signOut();
+  }, [onLogout, signOut]);
 
   const handleSettingsClick = () => {
     if (onSettingsClick) {
@@ -219,6 +222,7 @@ export function HeaderUserMenu({
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem
+          disabled={isSigningOut}
           onSelect={(event) => {
             event.preventDefault();
             handleLogout();
