@@ -1,14 +1,14 @@
 "use client";
 
-import type { SignInSchema } from "../utils/validators";
 import { useSignIn } from "../hooks/use-sign-in";
 import { SignInForm } from "../components/sign-in-form";
 import { AuthCard } from "../components/auth-card";
+import type { SessionResponse } from "../api/types";
 
 type SignInScreenProps = {
   description?: string;
   invitedEmail?: string;
-  onSuccess?: (data: SignInSchema) => void;
+  onSuccess?: (data: SessionResponse) => void;
 };
 
 export default function SignInScreen({
@@ -20,6 +20,7 @@ export default function SignInScreen({
     form,
     status,
     message,
+    retryAfter,
     oauthStatus,
     oauthError,
     handleSubmit,
@@ -41,6 +42,7 @@ export default function SignInScreen({
         form={form}
         status={status}
         message={message}
+        retryAfter={retryAfter}
         onSubmit={handleSubmit}
         onOAuthSignIn={handleOAuthSignIn}
         oauthStatus={oauthStatus}

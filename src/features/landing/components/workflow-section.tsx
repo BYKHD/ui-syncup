@@ -1,155 +1,149 @@
 "use client"
 
+import { motion } from "motion/react"
 import { Badge } from "@/components/ui/badge"
-import { SectionContainer } from "@/components/shared/section-container"
-import { ISSUE_WORKFLOW } from "@/config/workflow"
+import { SectionHeader } from "./section-header"
+import { 
+  RiCheckboxBlankCircleLine, 
+  RiProgress2Line, 
+  RiFlagLine, 
+  RiCheckboxCircleLine, 
+  RiArchiveLine,
+  RiArrowRightLine
+} from "@remixicon/react"
 
 const workflowSteps = [
   {
-    key: "open",
+    id: "open",
     label: "Open",
-    description: "Issue reported with visual context",
-    color: "bg-slate-500",
+    description: "Issue reported",
+    icon: RiCheckboxBlankCircleLine,
+    color: "text-zinc-500",
+    bg: "bg-zinc-500/10",
+    border: "border-zinc-500/20"
   },
   {
-    key: "in_progress",
+    id: "in_progress",
     label: "In Progress",
-    description: "Developer is actively working on fix",
-    color: "bg-blue-500",
+    description: "Active development",
+    icon: RiProgress2Line,
+    color: "text-blue-500",
+    bg: "bg-blue-500/10",
+    border: "border-blue-500/20"
   },
   {
-    key: "in_review",
+    id: "in_review",
     label: "In Review",
-    description: "Designer compares implementation to mockup side-by-side",
-    color: "bg-purple-500",
+    description: "QA & Design check",
+    icon: RiFlagLine,
+    color: "text-orange-500",
+    bg: "bg-orange-500/10",
+    border: "border-orange-500/20"
   },
   {
-    key: "resolved",
+    id: "resolved",
     label: "Resolved",
-    description: "Fix approved and ready to ship",
-    color: "bg-green-500",
+    description: "Fix deployed",
+    icon: RiCheckboxCircleLine,
+    color: "text-green-500",
+    bg: "bg-green-500/10",
+    border: "border-green-500/20"
   },
   {
-    key: "archived",
+    id: "archived",
     label: "Archived",
-    description: "Issue closed and moved to history",
-    color: "bg-gray-400",
-  },
+    description: "Case closed",
+    icon: RiArchiveLine,
+    color: "text-zinc-400",
+    bg: "bg-zinc-500/5",
+    border: "border-zinc-500/10"
+  }
 ]
 
-/**
- * Workflow section: visual representation of issue lifecycle
- */
 export function WorkflowSection() {
   return (
-    <SectionContainer variant="muted" id="workflow">
-      <div className="space-y-12">
-        {/* Section header */}
-        <div className="text-center space-y-4">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-            Issue workflows that match your UI process
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Track every issue from discovery to resolution with clear status transitions
-          </p>
-        </div>
+    <section className="container mx-auto px-4 py-24 relative overflow-hidden">
+      <SectionHeader
+        badge="Workflow"
+        title="Built for modern product teams"
+        description="A linear, transparent process that keeps everyone aligned from bug report to fix."
+      />
 
-        {/* Workflow visualization */}
-        <div className="relative max-w-5xl mx-auto">
-          {/* Desktop: Horizontal flow */}
-          <div className="hidden md:flex items-center justify-between gap-4">
-            {workflowSteps.map((step, index) => (
-              <div key={step.key} className="flex items-center flex-1">
-                <div className="flex flex-col items-center text-center flex-1">
-                  {/* Badge */}
-                  <div className="relative">
-                    <Badge
-                      variant="outline"
-                      className={`${step.color} text-white border-white/20 px-4 py-2 text-sm font-semibold shadow-lg`}
-                    >
-                      {step.label}
-                    </Badge>
-                  </div>
+      <div className="mt-16 relative max-w-5xl mx-auto">
+        {/* Connector Line */}
+        <div className="absolute top-16 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent hidden md:block" />
 
-                  {/* Description */}
-                  <p className="mt-4 text-sm text-muted-foreground max-w-[150px]">
-                    {step.description}
-                  </p>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 relative">
+          {workflowSteps.map((step, index) => (
+            <motion.div
+              key={step.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1 }}
+              className="relative group"
+            >
+              {/* Step Card */}
+              <div className="flex flex-col items-center text-center p-4 rounded-2xl transition-all duration-300 hover:bg-muted/50">
+                <div className={`
+                  relative z-10 flex h-24 w-24 items-center justify-center rounded-full 
+                  bg-background border-2 shadow-sm transition-all duration-300
+                  group-hover:scale-110 group-hover:shadow-lg
+                  ${step.border}
+                `}>
+                  <div className={`absolute inset-0 rounded-2xl opacity-20 ${step.bg}`} />
+                  <step.icon className={`h-10 w-10 ${step.color}`} />
+                  
+                  {/* Step Number Badge
+                  <div className="absolute -top-3 -right-3 h-8 w-8 rounded-full bg-background border shadow-sm flex items-center justify-center text-xs font-bold text-muted-foreground">
+                    {index + 1}
+                  </div> */}
                 </div>
 
-                {/* Arrow connector */}
+                <div className="mt-6 space-y-1">
+                  <h3 className="font-semibold text-lg">{step.label}</h3>
+                  <p className="text-sm text-muted-foreground">{step.description}</p>
+                </div>
+
+                {/* Mobile Arrow */}
                 {index < workflowSteps.length - 1 && (
-                  <div className="flex items-center justify-center px-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="w-6 h-6 text-muted-foreground/40"
-                    >
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </div>
+                  <RiArrowRightLine className="md:hidden h-6 w-6 text-muted-foreground/30 mt-6 rotate-90" />
                 )}
               </div>
-            ))}
-          </div>
-
-          {/* Mobile: Vertical flow */}
-          <div className="md:hidden space-y-6">
-            {workflowSteps.map((step, index) => (
-              <div key={step.key}>
-                <div className="flex gap-4">
-                  {/* Badge */}
-                  <div className="flex flex-col items-center">
-                    <Badge
-                      variant="outline"
-                      className={`${step.color} text-white border-white/20 px-3 py-1.5 text-xs font-semibold shadow-lg`}
-                    >
-                      {step.label}
-                    </Badge>
-
-                    {/* Arrow connector */}
-                    {index < workflowSteps.length - 1 && (
-                      <div className="flex-1 w-0.5 bg-border mt-2 min-h-[40px]">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="w-4 h-4 text-muted-foreground/40 mx-auto mt-2"
-                        >
-                          <polyline points="18 15 12 9 6 15" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Description */}
-                  <div className="flex-1 pt-1">
-                    <p className="text-sm text-muted-foreground">
-                      {step.description}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Additional info */}
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground">
-            Customize workflows to match your team's process. Add custom states, transitions, and automation rules.
-          </p>
+        {/* Bottom Features */}
+        <div className="mt-20 grid md:grid-cols-3 gap-8">
+          {[
+            {
+              title: "Automated Transitions",
+              desc: "Status updates trigger notifications and move issues automatically."
+            },
+            {
+              title: "Git Integration",
+              desc: "Link PRs to issues. Merging a PR automatically resolves the issue."
+            },
+            {
+              title: "Custom Views",
+              desc: "Filter by status, priority, or assignee to focus on what matters."
+            }
+          ].map((feature, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.5 + (i * 0.1) }}
+              className="p-6 rounded-xl border bg-background/50 backdrop-blur-sm"
+            >
+              <h4 className="font-semibold mb-2">{feature.title}</h4>
+              <p className="text-sm text-muted-foreground">{feature.desc}</p>
+            </motion.div>
+          ))}
         </div>
       </div>
-    </SectionContainer>
+    </section>
   )
 }

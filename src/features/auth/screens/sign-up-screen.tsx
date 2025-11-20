@@ -3,11 +3,8 @@
 import Link from "next/link";
 
 import { SignUpForm } from "../components/sign-up-form";
-import { useSignUp } from "../hooks/use-sign-up";
 
 export default function SignUpScreen() {
-  const { form, status, message, handleSubmit } = useSignUp();
-
   return (
     <section className="bg-muted min-h-screen">
       <div className="flex min-h-screen items-center justify-center px-4 py-10">
@@ -22,12 +19,7 @@ export default function SignUpScreen() {
             </p>
           </div>
 
-          <SignUpForm
-            form={form}
-            status={status}
-            message={message}
-            onSubmit={handleSubmit}
-          />
+          <SignUpForm />
 
           <div className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}

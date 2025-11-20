@@ -28,11 +28,14 @@ export default defineConfig({
   },
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
-  reporter: process.env.CI ? [["html"], ["github"]] : "list",
+  reporter: process.env.CI 
+    ? [["html"], ["github"], ["junit", { outputFile: "test-results/junit.xml" }]] 
+    : "list",
   use: {
     baseURL: BASE_URL,
     trace: "on-first-retry",
     video: "retain-on-failure",
+    screenshot: "only-on-failure",
     // Increase timeout for production tests (network latency)
     actionTimeout: process.env.PLAYWRIGHT_BASE_URL ? 15 * 1000 : 10 * 1000,
   },
@@ -59,5 +62,9 @@ export default defineConfig({
         stdout: "pipe",
         stderr: "pipe",
         reuseExistingServer: !process.env.CI,
+        timeout: 120 * 1000, // 2 minutes for server startup
       },
+  // Global setup and teardown
+  globalSetup: process.env.PLAYWRIGHT_SKIP_WEB_SERVER ? undefined : "./tests/e2e/global-setup.ts",
+  globalTeardown: process.env.PLAYWRIGHT_SKIP_WEB_SERVER ? undefined : "./tests/e2e/global-teardown.ts",
 })

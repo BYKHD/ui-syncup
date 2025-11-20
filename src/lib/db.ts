@@ -10,6 +10,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { env, isProduction } from './env'
+import * as schema from '@/server/db/schema'
 
 /**
  * PostgreSQL connection configuration
@@ -62,7 +63,7 @@ const client = postgres(connectionString, {
  * await db.insert(usersTable).values({ name: 'John', email: 'john@example.com' })
  * ```
  */
-export const db = drizzle(client)
+export const db = drizzle(client, { schema })
 
 /**
  * Close database connection

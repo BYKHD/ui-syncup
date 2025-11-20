@@ -1,173 +1,301 @@
-# E2E Tests
+# E2E Tests for Authentication System
 
-End-to-end tests using Playwright for deployment verification and critical user flows.
+Comprehensive end-to-end tests for the authentication system using Playwright.
 
-## Test Suites
+## Test Coverage
 
-### Smoke Tests (`smoke-test.spec.ts`)
+The E2E tests cover all authentication requirements:
 
-Production deployment verification tests that validate:
-- Health check endpoint functionality
-- Homepage loading and navigation
-- Authentication flow (sign-in/sign-up pages)
-- API route accessibility
-- Performance benchmarks
+### User Registration and Email Verification
+- ✅ Successful user registration
+- ✅ Duplicate email rejection
+- ✅ Password complexity validation
+- ✅ Password confirmation matching
+- ✅ Password strength indicator
+- ✅ Email verification flow
 
-These tests are designed to run after deployment to verify the application is operational.
+### User Sign-In and Dashboard Access
+- ✅ Successful sign-in with valid credentials
+- ✅ Invalid credentials rejection
+- ✅ Unverified email rejection
+- ✅ Session persistence across page refreshes
+- ✅ Authenticated user redirection
+
+### Password Reset Flow
+- ✅ Forgot password form display
+- ✅ Password reset request acceptance
+- ✅ Email enumeration prevention
+- ✅ Reset password form with valid token
+- ✅ New password complexity validation
+
+### Sign-Out from Multiple Devices
+- ✅ Successful sign-out
+- ✅ Redirect to sign-in after sign-out
+- ✅ Session invalidation after sign-out
+- ✅ Other device sessions preservation
+
+### Rate Limiting
+- ✅ IP-based rate limiting on sign-in (5 per minute)
+- ✅ Email-based rate limiting on sign-in (3 per 15 minutes)
+- ✅ Password reset rate limiting (3 per hour)
+- ✅ Retry-after header in rate limit responses
+
+### Protected Route Access Control
+- ✅ Public routes accessible without authentication
+- ✅ Protected routes redirect unauthenticated users
+- ✅ Authenticated users can access protected routes
+- ✅ Guest-only routes redirect authenticated users
+- ✅ Server-side session validation
 
 ## Running Tests
 
 ### Local Development
 
-Run tests against local development server:
-
 ```bash
+# Run all E2E tests
 bun run test:ui
-```
 
-This will automatically start the dev server and run tests against `http://localhost:3000`.
+# Run specific test file
+bun run test:ui tests/e2e/auth.spec.ts
 
-### Production Verification
+# Run tests in headed mode (see browser)
+bun run test:ui --headed
 
-Run tests against production deployment:
+# Run tests in debug mode
+bun run test:ui --debug
 
-```bash
-PLAYWRIGHT_BASE_URL=https://ui-syncup.com PLAYWRIGHT_SKIP_WEB_SERVER=1 bun run test:ui
-```
-
-### Preview Environment
-
-Run tests against Vercel preview deployment:
-
-```bash
-PLAYWRIGHT_BASE_URL=https://preview-xyz.vercel.app PLAYWRIGHT_SKIP_WEB_SERVER=1 bun run test:ui
-```
-
-### Specific Test File
-
-Run only smoke tests:
-
-```bash
-bun run test:ui tests/e2e/smoke-test.spec.ts
-```
-
-### Specific Browser
-
-Run tests in a specific browser:
-
-```bash
+# Run tests in specific browser
 bun run test:ui --project=chromium
 bun run test:ui --project=firefox
 bun run test:ui --project=webkit
 ```
 
-### Debug Mode
+### Prerequisites
 
-Run tests in debug mode with Playwright Inspector:
+1. **Database**: Ensure PostgreSQL is running and test database is set up
+   ```bash
+   # Start local database (if using Docker)
+   docker-compose up -d postgres
+   
+   # Run migrations
+   bun run db:push
+   ```
+
+2. **Environment Variables**: Create `.env.test` file
+   ```env
+   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ui_syncup_test
+   BETTER_AUTH_SECRET=your-test-secret
+   BETTER_AUTH_URL=http://localhost:3000
+   RESEND_API_KEY=your-test-api-key
+   RESEND_FROM_EMAIL=noreply@example.com
+   ```
+
+3. **Install Playwright Browsers**
+   ```bash
+   bunx playwright install
+   ```
+
+### CI/CD
+
+Tests run automatically on:
+- Push to `main` or `develop` branches
+- Pull requests to `main` or `develop` branches
+
+The CI workflow:
+1. Sets up PostgreSQL database
+2. Installs dependencies
+3. Runs database migrations
+4. Builds the application
+5. Installs Playwright browsers
+6. Runs E2E tests
+7. Uploads test reports and videos
+
+### Testing Against Production/Preview
 
 ```bash
-bun run test:ui --debug
-```
+# Test against production
+PLAYWRIGHT_BASE_URL=https://ui-syncup.com PLAYWRIGHT_SKIP_WEB_SERVER=1 bun run test:ui
 
-### Headed Mode
-
-Run tests with visible browser:
-
-```bash
-bun run test:ui --headed
-```
-
-## Environment Variables
-
-- `PLAYWRIGHT_BASE_URL` - Base URL for tests (default: `http://127.0.0.1:3000`)
-- `PLAYWRIGHT_SKIP_WEB_SERVER` - Skip starting local dev server (set to `1` for external URLs)
-- `CI` - Enables CI-specific configuration (retries, reporters)
-
-## CI/CD Integration
-
-### GitHub Actions
-
-Add to your CI workflow:
-
-```yaml
-- name: Install Playwright Browsers
-  run: bunx playwright install --with-deps
-
-- name: Run E2E Tests
-  run: bun run test:ui
-```
-
-### Post-Deployment Verification
-
-Run smoke tests after production deployment:
-
-```yaml
-- name: Verify Production Deployment
-  run: |
-    PLAYWRIGHT_BASE_URL=https://ui-syncup.com \
-    PLAYWRIGHT_SKIP_WEB_SERVER=1 \
-    bun run test:ui tests/e2e/smoke-test.spec.ts
+# Test against preview deployment
+PLAYWRIGHT_BASE_URL=https://preview-xyz.vercel.app PLAYWRIGHT_SKIP_WEB_SERVER=1 bun run test:ui
 ```
 
 ## Test Structure
 
-Tests follow Playwright best practices:
+```
+tests/e2e/
+├── auth.spec.ts              # Main authentication tests
+├── smoke-test.spec.ts        # Basic smoke tests
+├── helpers/
+│   ├── auth-helpers.ts       # Reusable auth test helpers
+│   └── test-fixtures.ts      # Database fixtures and setup
+├── global-setup.ts           # Global test setup
+├── global-teardown.ts        # Global test cleanup
+└── README.md                 # This file
+```
 
-- **Descriptive test names** - Clear description of what is being tested
-- **Proper assertions** - Use `expect()` for all validations
-- **Wait strategies** - Use `waitForLoadState()` and `waitForSelector()` appropriately
-- **Error handling** - Tests handle both success and failure scenarios
-- **Performance checks** - Include timing assertions for critical paths
+## Test Helpers
+
+### Authentication Helpers (`helpers/auth-helpers.ts`)
+
+```typescript
+import { generateTestUser, signUpUser, signInUser } from './helpers/auth-helpers';
+
+// Generate unique test user
+const user = generateTestUser();
+
+// Sign up via UI
+await signUpUser(page, user);
+
+// Sign in via UI
+await signInUser(page, user.email, user.password);
+```
+
+### Database Fixtures (`helpers/test-fixtures.ts`)
+
+```typescript
+import { 
+  createVerifiedTestUser, 
+  createAuthenticatedTestUser,
+  deleteTestUser 
+} from './helpers/test-fixtures';
+
+// Create verified user in database
+const user = await createVerifiedTestUser();
+
+// Create authenticated user with session
+const { user, sessionToken } = await createAuthenticatedTestUser();
+
+// Clean up
+await deleteTestUser(user.id);
+```
 
 ## Writing New Tests
 
-When adding new E2E tests:
-
-1. Create test file in `tests/e2e/` with `.spec.ts` extension
-2. Use descriptive `test.describe()` blocks to group related tests
-3. Add JSDoc comments explaining test purpose and requirements
-4. Include both positive and negative test cases
-5. Use page object pattern for complex interactions
-6. Keep tests independent and idempotent
-
-Example:
+### Test Template
 
 ```typescript
-import { test, expect } from '@playwright/test'
+import { test, expect } from '@playwright/test';
+import { generateTestUser, signUpUser } from './helpers/auth-helpers';
 
 test.describe('Feature Name', () => {
-  test('should perform expected action', async ({ page }) => {
-    await page.goto('/feature')
-    await expect(page.locator('h1')).toContainText('Expected Text')
-  })
-})
+  test('should do something', async ({ page }) => {
+    const user = generateTestUser();
+    
+    // Test implementation
+    await page.goto('/some-page');
+    
+    // Assertions
+    await expect(page.locator('selector')).toBeVisible();
+  });
+});
+```
+
+### Best Practices
+
+1. **Use Helpers**: Leverage existing helpers for common operations
+2. **Clean Up**: Always clean up test data after tests
+3. **Unique Data**: Use `generateTestUser()` for unique test data
+4. **Wait for Elements**: Use `waitForSelector` or `expect().toBeVisible()`
+5. **Descriptive Names**: Use clear, descriptive test names
+6. **Test Isolation**: Each test should be independent
+7. **Error Messages**: Use meaningful error messages in assertions
+
+## Debugging Tests
+
+### View Test Report
+
+```bash
+# Generate and open HTML report
+bunx playwright show-report
+```
+
+### Debug Specific Test
+
+```bash
+# Run in debug mode
+bun run test:ui --debug tests/e2e/auth.spec.ts
+
+# Run with headed browser
+bun run test:ui --headed tests/e2e/auth.spec.ts
+```
+
+### View Test Traces
+
+```bash
+# Open trace viewer
+bunx playwright show-trace test-results/trace.zip
 ```
 
 ## Troubleshooting
 
 ### Tests Failing Locally
 
-1. Ensure dev server is running: `bun run dev`
-2. Check if port 3000 is available
-3. Clear browser cache: `bunx playwright clean`
-4. Update browsers: `bunx playwright install`
+1. **Database Connection**: Ensure PostgreSQL is running
+   ```bash
+   docker-compose up -d postgres
+   ```
 
-### Tests Failing in CI
+2. **Environment Variables**: Check `.env.test` is configured
+   ```bash
+   cat .env.test
+   ```
 
-1. Check CI logs for specific error messages
-2. Verify environment variables are set correctly
-3. Ensure all dependencies are installed
-4. Check for timing issues (increase timeouts if needed)
+3. **Database Migrations**: Run migrations
+   ```bash
+   bun run db:push
+   ```
 
-### Tests Failing in Production
+4. **Clean Test Data**: Clean up old test data
+   ```bash
+   # Connect to database and run
+   DELETE FROM users WHERE email LIKE 'test-%@example.com';
+   ```
 
-1. Verify deployment completed successfully
-2. Check health endpoint: `curl https://ui-syncup.com/api/health`
-3. Review Vercel deployment logs
-4. Ensure environment variables are configured in Vercel
+### Tests Timing Out
+
+1. **Increase Timeout**: Add timeout to specific test
+   ```typescript
+   test('slow test', async ({ page }) => {
+     test.setTimeout(120000); // 2 minutes
+     // ...
+   });
+   ```
+
+2. **Check Network**: Ensure good network connection for external services
+
+3. **Server Startup**: Ensure dev server has enough time to start
+
+### Rate Limiting Issues
+
+If tests are being rate limited:
+
+1. **Wait Between Tests**: Add delays between rate limit tests
+2. **Use Different IPs**: Run tests from different machines
+3. **Clear Rate Limit Cache**: Restart Redis or clear in-memory cache
+
+## Maintenance
+
+### Updating Tests
+
+When authentication features change:
+
+1. Update test helpers in `helpers/`
+2. Update test assertions in `auth.spec.ts`
+3. Update this README with new test coverage
+4. Run tests locally to verify changes
+5. Update CI workflow if needed
+
+### Adding New Test Suites
+
+1. Create new test file: `tests/e2e/feature.spec.ts`
+2. Import helpers: `import { ... } from './helpers/auth-helpers'`
+3. Write tests following existing patterns
+4. Update this README with new test coverage
 
 ## Resources
 
 - [Playwright Documentation](https://playwright.dev/)
 - [Playwright Best Practices](https://playwright.dev/docs/best-practices)
-- [Playwright API Reference](https://playwright.dev/docs/api/class-playwright)
+- [Authentication System Design](../../.kiro/specs/authentication-system/design.md)
+- [Authentication System Requirements](../../.kiro/specs/authentication-system/requirements.md)
