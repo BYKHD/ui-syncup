@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/server/db/schema';
-import { signUpSchema } from '@/features/auth/utils/validators';
+import { signUpServerSchema } from '@/features/auth/utils/validators';
 import { hashPassword } from '@/server/auth/password';
 import { generateToken } from '@/server/auth/tokens';
 import { enqueueEmail } from '@/server/email/queue';
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Validate with Zod schema
-    const validatedData = signUpSchema.parse(body);
+    const validatedData = signUpServerSchema.parse(body);
     
     // Normalize email (lowercase, trim)
     const normalizedEmail = validatedData.email.toLowerCase().trim();

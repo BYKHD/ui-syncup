@@ -57,6 +57,19 @@ export const signUpSchema = z
 
 export type SignUpSchema = z.infer<typeof signUpSchema>;
 
+// Server-side sign-up validation schema (no confirmPassword needed on backend)
+export const signUpServerSchema = z.object({
+  name: z.string().min(1, "Name is required").max(120, "Name must be less than 120 characters"),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Enter a valid email address")
+    .max(320, "Email must be less than 320 characters"),
+  password: passwordSchema,
+});
+
+export type SignUpServerSchema = z.infer<typeof signUpServerSchema>;
+
 // Forgot password validation schema
 export const forgotPasswordSchema = z.object({
   email: z

@@ -13,10 +13,10 @@ src/
 │   ├── (public)/                 # Public routes (no auth required)
 │   │   ├── layout.tsx            # Public shell
 │   │   ├── sign-in/page.tsx
-│   │   ├── sign-up/page.tsx
-│   │   └── onboarding/page.tsx
+│   │   └── sign-up/page.tsx
 │   ├── (protected)/              # Protected routes (auth required)
 │   │   ├── layout.tsx            # Auth gate (server-side session check)
+│   │   ├── onboarding/page.tsx   # Post-auth team setup (no team required)
 │   │   ├── settings/             # User settings
 │   │   └── (team)/               # Team-scoped routes
 │   │       ├── projects/page.tsx

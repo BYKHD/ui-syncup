@@ -463,7 +463,7 @@ This task list has been refreshed based on the current codebase state. The follo
 
 ## Phase 11: Testing & Documentation
 
-- [ ] 36. Write remaining property-based tests
+- [x] 36. Write remaining property-based tests
   - Install and configure `fast-check`
   - Create test generators for emails, passwords, users, sessions
   - Implement any remaining properties not covered by inline tests
@@ -471,7 +471,7 @@ This task list has been refreshed based on the current codebase state. The follo
   - Verify all 38 properties pass
   - _Validates: All requirements_
 
-- [ ] 37. Write integration tests
+- [x] 37. Write integration tests
   - Test complete registration → verification → sign-in flow
   - Test sign-in with invalid credentials
   - Test sign-in with unverified email
@@ -482,7 +482,7 @@ This task list has been refreshed based on the current codebase state. The follo
   - Use test database for integration tests
   - _Validates: All requirements_
 
-- [ ] 38. Write E2E tests
+- [x] 38. Write E2E tests
   - Test new user registration and email verification
   - Test existing user sign-in and dashboard access
   - Test password reset flow
@@ -492,7 +492,7 @@ This task list has been refreshed based on the current codebase state. The follo
   - Configure Playwright for CI/CD
   - _Validates: All requirements_
 
-- [ ] 39. Update environment configuration
+- [x] 39. Update environment configuration
   - Update `.env.example` with all auth-related variables
   - Update `docs/ENVIRONMENT_CONFIG.md` with descriptions
   - Document Resend API key setup
@@ -500,7 +500,7 @@ This task list has been refreshed based on the current codebase state. The follo
   - Document better-auth secret generation
   - _Validates: All requirements_
 
-- [ ] 40. Final checkpoint - Production readiness
+- [x] 40. Final checkpoint - Production readiness
   - Ensure all tests pass (unit, property, integration, E2E)
   - Verify all API endpoints work correctly
   - Verify email delivery works
