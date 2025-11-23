@@ -21,6 +21,7 @@
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
     "db:seed": "bun run scripts/seed.ts",
+    "db:pull-data": "bash scripts/db-pull-data.sh",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status"
