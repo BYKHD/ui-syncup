@@ -1,11 +1,11 @@
 /**
  * GET /api/auth/verify-email
- * 
+ *
  * Email verification endpoint
- * 
- * Validates verification token, marks user as verified, assigns default roles,
- * and redirects to sign-in page with success message.
- * 
+ *
+ * Validates verification token and marks user as verified.
+ * Returns JSON response with success or error message.
+ *
  * @module api/auth/verify-email
  */
 
@@ -19,16 +19,20 @@ import { eq } from 'drizzle-orm';
 
 /**
  * GET /api/auth/verify-email?token=...
- * 
+ *
  * Query parameters:
  * - token: string (verification token from email)
- * 
- * Success response:
- * - Redirects to /sign-in with success message
- * 
+ *
+ * Success response (200):
+ * {
+ *   "message": "Email verified successfully! You can now sign in."
+ * }
+ *
  * Error responses:
- * - 400: Invalid or expired token
- * - 410: Token already used (email already verified)
+ * - 400: Missing token
+ * - 401: Invalid or expired token
+ * - 404: User not found
+ * - 410: Email already verified
  * - 500: Internal server error
  */
 export async function GET(request: NextRequest) {
@@ -51,12 +55,15 @@ export async function GET(request: NextRequest) {
         errorMessage: 'Verification token is missing',
       });
       
-      // Redirect to sign-in with error message
-      const redirectUrl = new URL('/sign-in', env.BETTER_AUTH_URL);
-      redirectUrl.searchParams.set('error', 'missing_token');
-      redirectUrl.searchParams.set('message', 'Verification token is missing');
-      
-      return NextResponse.redirect(redirectUrl);
+      return NextResponse.json(
+        {
+          error: {
+            code: 'MISSING_TOKEN',
+            message: 'Verification token is missing.',
+          },
+        },
+        { status: 400 }
+      );
     }
     
     logAuthEvent('auth.verify_email.attempt', {
@@ -86,12 +93,15 @@ export async function GET(request: NextRequest) {
         },
       });
       
-      // Redirect to sign-in with error message
-      const redirectUrl = new URL('/sign-in', env.BETTER_AUTH_URL);
-      redirectUrl.searchParams.set('error', 'invalid_token');
-      redirectUrl.searchParams.set('message', 'Verification link is invalid or has expired');
-      
-      return NextResponse.redirect(redirectUrl);
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_TOKEN',
+            message: 'This verification link is invalid or has expired.',
+          },
+        },
+        { status: 401 }
+      );
     }
     
     // Get user data
@@ -119,12 +129,15 @@ export async function GET(request: NextRequest) {
         },
       });
       
-      // Redirect to sign-in with error message
-      const redirectUrl = new URL('/sign-in', env.BETTER_AUTH_URL);
-      redirectUrl.searchParams.set('error', 'user_not_found');
-      redirectUrl.searchParams.set('message', 'User account not found');
-      
-      return NextResponse.redirect(redirectUrl);
+      return NextResponse.json(
+        {
+          error: {
+            code: 'USER_NOT_FOUND',
+            message: 'User account not found.',
+          },
+        },
+        { status: 404 }
+      );
     }
     
     // Check if email is already verified
@@ -143,13 +156,16 @@ export async function GET(request: NextRequest) {
       
       // Mark token as used to prevent reuse
       await markTokenAsUsed(verified.tokenId);
-      
-      // Redirect to sign-in with info message
-      const redirectUrl = new URL('/sign-in', env.BETTER_AUTH_URL);
-      redirectUrl.searchParams.set('info', 'already_verified');
-      redirectUrl.searchParams.set('message', 'Your email is already verified. You can sign in now.');
-      
-      return NextResponse.redirect(redirectUrl);
+
+      return NextResponse.json(
+        {
+          error: {
+            code: 'ALREADY_VERIFIED',
+            message: 'Your email is already verified. You can sign in now.',
+          },
+        },
+        { status: 410 }
+      );
     }
     
     // Mark user as verified
@@ -182,12 +198,12 @@ export async function GET(request: NextRequest) {
       },
     });
     
-    // Redirect to sign-in with success message
-    const redirectUrl = new URL('/sign-in', env.BETTER_AUTH_URL);
-    redirectUrl.searchParams.set('success', 'email_verified');
-    redirectUrl.searchParams.set('message', 'Email verified successfully! You can now sign in.');
-    
-    return NextResponse.redirect(redirectUrl);
+    return NextResponse.json(
+      {
+        message: 'Email verified successfully! You can now sign in.',
+      },
+      { status: 200 }
+    );
     
   } catch (error) {
     // Handle errors
@@ -203,11 +219,14 @@ export async function GET(request: NextRequest) {
       },
     });
     
-    // Redirect to sign-in with error message
-    const redirectUrl = new URL('/sign-in', env.BETTER_AUTH_URL);
-    redirectUrl.searchParams.set('error', 'server_error');
-    redirectUrl.searchParams.set('message', 'An unexpected error occurred. Please try again later.');
-    
-    return NextResponse.redirect(redirectUrl);
+    return NextResponse.json(
+      {
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'An unexpected error occurred. Please try again later.',
+        },
+      },
+      { status: 500 }
+    );
   }
 }

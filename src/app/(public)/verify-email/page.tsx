@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import VerifyEmailScreen from "@/features/auth/screens/verify-email-screen";
 
 /**
@@ -10,5 +11,9 @@ import VerifyEmailScreen from "@/features/auth/screens/verify-email-screen";
  * - email: Pre-fill the email input (optional)
  */
 export default function VerifyEmailPage() {
-  return <VerifyEmailScreen />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <VerifyEmailScreen />
+    </Suspense>
+  );
 }

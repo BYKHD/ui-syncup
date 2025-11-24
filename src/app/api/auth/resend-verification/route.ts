@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Construct verification URL
-    const verificationUrl = `${env.BETTER_AUTH_URL}/api/auth/verify-email?token=${encodeURIComponent(tokenResult.token)}`;
+    const verificationUrl = `${env.BETTER_AUTH_URL}/verify-email-confirm?token=${encodeURIComponent(tokenResult.token)}`;
 
     // Enqueue verification email
     await enqueueEmail({

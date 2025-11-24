@@ -19,7 +19,7 @@ interface ResendVerificationResponse {
 async function resendVerification(data: ResendVerificationRequest): Promise<ResendVerificationResponse> {
   return await apiClient<ResendVerificationResponse>("/api/auth/resend-verification", {
     method: "POST",
-    body: data,
+    body: data as unknown as Record<string, unknown>,
   });
 }
 
