@@ -5,7 +5,7 @@
  * using property-based testing with fast-check.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import fc from 'fast-check';
 import { db } from '@/lib/db';
 import { users, sessions } from '@/server/db/schema';
@@ -39,20 +39,25 @@ const PROPERTY_CONFIG = {
   verbose: false,
 };
 
+const userAgentArb = fc
+  .string({ minLength: 10, maxLength: 200 })
+  .filter(s => s.trim().length > 0 && !s.includes('\\'));
+
 // Test user data
 let testUserId: string;
 let testUserEmail: string;
 
 /**
- * Setup: Create a test user before all tests
+ * Create a fresh test user for each test run.
+ * The global vitest.setup.ts resets the in-memory DB before every test,
+ * so we need to seed the user after that reset.
  */
-beforeAll(async () => {
-  // Create test user
+async function createTestUser() {
   const passwordHash = await hashPassword('TestPassword123!');
   const [user] = await db
     .insert(users)
     .values({
-      email: `test-logout-${Date.now()}@example.com`,
+      email: `test-logout-${Date.now()}-${Math.random().toString(16).slice(2)}@example.com`,
       passwordHash,
       name: 'Test Logout User',
       emailVerified: true,
@@ -61,24 +66,15 @@ beforeAll(async () => {
 
   testUserId = user.id;
   testUserEmail = user.email;
-});
-
-/**
- * Cleanup: Delete test user and all sessions after all tests
- */
-afterAll(async () => {
-  // Delete all sessions for test user
-  await db.delete(sessions).where(eq(sessions.userId, testUserId));
-  
-  // Delete test user
-  await db.delete(users).where(eq(users.id, testUserId));
-});
+}
 
 /**
  * Cleanup: Delete all sessions before each test
  */
 beforeEach(async () => {
-  // Delete all sessions for test user
+  await createTestUser();
+
+  // Delete all sessions for test user (defensive; tables are reset globally)
   await db.delete(sessions).where(eq(sessions.userId, testUserId));
   
   mockSessionToken = null; // Reset mock session token
@@ -109,7 +105,7 @@ describe('POST /api/auth/logout - Property-Based Tests', () => {
       fc.asyncProperty(
         // Generate random IP addresses and user agents
         fc.ipV4(),
-        fc.string({ minLength: 10, maxLength: 200 }).filter(s => s.trim().length > 0),
+        userAgentArb,
         async (ipAddress, userAgent) => {
           // Create a valid session
           const sessionToken = await createSession(testUserId, ipAddress, userAgent);
@@ -182,7 +178,7 @@ describe('POST /api/auth/logout - Property-Based Tests', () => {
         fc.array(
           fc.record({
             ipAddress: fc.ipV4(),
-            userAgent: fc.string({ minLength: 10, maxLength: 200 }).filter(s => s.trim().length > 0),
+            userAgent: userAgentArb,
           }),
           { minLength: 1, maxLength: 5 }
         ),
@@ -377,7 +373,7 @@ describe('POST /api/auth/logout - Property-Based Tests', () => {
       fc.asyncProperty(
         // Generate random IP addresses and user agents
         fc.ipV4(),
-        fc.string({ minLength: 10, maxLength: 200 }).filter(s => s.trim().length > 0),
+        userAgentArb,
         async (ipAddress, userAgent) => {
           // Create a valid session
           const sessionToken = await createSession(testUserId, ipAddress, userAgent);
