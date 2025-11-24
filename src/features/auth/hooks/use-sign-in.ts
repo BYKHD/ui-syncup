@@ -71,6 +71,7 @@ export function useSignIn(options: UseSignInOptions = {}) {
 
   const [status, setStatus] = useState<SubmissionStatus>("idle");
   const [message, setMessage] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const [oauthStatus, setOauthStatus] = useState<OAuthStatus>("idle");
   const [oauthError, setOauthError] = useState<string | null>(null);
@@ -81,6 +82,7 @@ export function useSignIn(options: UseSignInOptions = {}) {
     onMutate: () => {
       setStatus("submitting");
       setMessage(null);
+      setErrorCode(null);
       setRetryAfter(null);
     },
     onSuccess: (data) => {
@@ -147,8 +149,18 @@ export function useSignIn(options: UseSignInOptions = {}) {
         
         // Handle forbidden errors (403) - email not verified
         if (error.status === 403) {
+          const code = errorPayload?.error?.code || null;
+          setErrorCode(code);
+
+          // Redirect to verify-email page if email is not verified
+          if (code === "EMAIL_NOT_VERIFIED") {
+            const email = form.getValues("email");
+            router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+            return;
+          }
+
           setMessage(
-            errorPayload?.error?.message || 
+            errorPayload?.error?.message ||
             "Please verify your email address before signing in"
           );
           return;
@@ -202,6 +214,7 @@ export function useSignIn(options: UseSignInOptions = {}) {
     form,
     status,
     message,
+    errorCode,
     retryAfter,
     oauthStatus,
     oauthError,

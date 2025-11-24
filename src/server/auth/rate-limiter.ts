@@ -224,6 +224,11 @@ export const RATE_LIMITS = {
     limit: 10,
     windowMs: 60 * 60 * 1000, // 1 hour
   },
+  // Resend verification: 3 requests per email per hour
+  RESEND_VERIFICATION: {
+    limit: 3,
+    windowMs: 60 * 60 * 1000, // 1 hour
+  },
 } as const;
 
 /**
@@ -236,4 +241,5 @@ export const createRateLimitKey = {
   signInEmail: (email: string) => `signin:email:${email.toLowerCase()}`,
   passwordReset: (email: string) => `reset:email:${email.toLowerCase()}`,
   signupIp: (ip: string) => `signup:ip:${ip}`,
+  resendVerification: (email: string) => `resend-verification:email:${email.toLowerCase()}`,
 } as const;
