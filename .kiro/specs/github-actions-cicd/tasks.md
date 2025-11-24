@@ -136,7 +136,7 @@
     - Push and verify workflow fails appropriately
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
   
-  - [-] 7.2 Test preview deployment workflow
+  - [ ] 7.2 Test preview deployment workflow
     - Create test branch with schema change
     - Generate migration using `bun run db:generate`
     - Push to dev branch
