@@ -9,6 +9,17 @@ on:
     branches:
       - main
 
+# Never cancel deployments in progress
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+# Explicit permissions
+permissions:
+  contents: read
+  deployments: write
+  pull-requests: write
+
 jobs:
   # ============================================================================
   # Database Migration Job
@@ -17,6 +28,10 @@ jobs:
   migrate:
     name: Run Database Migrations
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      url: ${{ github.ref == 'refs/heads/main' && 'https://ui-syncup.com' || 'https://dev.ui-syncup.com' }}
 
     steps:
       - name: Checkout code
@@ -25,7 +40,17 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
-          bun-version: latest
+          bun-version: '1.1.38'
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -36,12 +61,23 @@ jobs:
       - name: Run migrations on Production DB
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
           DIRECT_URL: ${{ secrets.PROD_DIRECT_URL }}
           NODE_ENV: production
         run: |
           echo "🚀 Running migrations on PRODUCTION database..."
-          bun run db:push
+          bun run db:migrate
           echo "✅ Production migrations completed successfully"
+        timeout-minutes: 10
+
+      - name: Verify production database health
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: |
+          echo "🔍 Verifying database connectivity..."
+          bun run -e 'import postgres from "postgres"; const sql = postgres(process.env.DATABASE_URL); await sql`SELECT 1`; await sql.end();'
+          echo "✅ Database health check passed"
 
       # ========================================================================
       # DEVELOPMENT Migration (develop branch)
@@ -49,25 +85,53 @@ jobs:
       - name: Run migrations on Dev DB
         if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
         env:
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DEV_DIRECT_URL }}
           NODE_ENV: development
         run: |
           echo "🚀 Running migrations on DEVELOPMENT database..."
-          bun run db:push
+          bun run db:migrate
           echo "✅ Development migrations completed successfully"
+        timeout-minutes: 10
+
+      - name: Verify development database health
+        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+        run: |
+          echo "🔍 Verifying database connectivity..."
+          bun run -e 'import postgres from "postgres"; const sql = postgres(process.env.DATABASE_URL); await sql`SELECT 1`; await sql.end();'
+          echo "✅ Database health check passed"
 
       # ========================================================================
-      # DRY RUN for Pull Requests (validation only, no actual migration)
+      # VALIDATION for Pull Requests (no actual migration)
       # ========================================================================
-      - name: Validate migrations (PR dry-run)
+      - name: Validate migrations (PR validation)
         if: github.event_name == 'pull_request'
-        env:
-          # Use dev database for PR validation
-          DIRECT_URL: ${{ secrets.DEV_DIRECT_URL }}
         run: |
-          echo "🔍 Validating migration files (dry-run)..."
-          echo "✅ Migration validation completed"
-          echo "⚠️  Migrations will run automatically when PR is merged"
+          echo "🔍 Validating migration files..."
+
+          # Check that migration files exist
+          if [ ! -d "drizzle" ]; then
+            echo "❌ Error: drizzle directory not found"
+            exit 1
+          fi
+
+          # Generate migrations to check for differences
+          bun run db:generate
+
+          # Check if there are uncommitted migration changes
+          if [ -n "$(git status --porcelain drizzle)" ]; then
+            echo "❌ Error: Generated migrations differ from committed migrations"
+            echo "Please run 'bun run db:generate' locally and commit the changes"
+            echo ""
+            echo "Changes detected:"
+            git diff drizzle
+            exit 1
+          fi
+
+          echo "✅ Migration files are valid and up-to-date"
+          echo "⚠️  Migrations will run automatically when PR is merged to main"
 
   # ============================================================================
   # Deployment Status Check
