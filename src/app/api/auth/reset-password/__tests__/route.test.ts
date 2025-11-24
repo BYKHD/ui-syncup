@@ -76,19 +76,20 @@ describe('POST /api/auth/reset-password', () => {
     expect(data.message).toBe('Password reset successfully. You can now sign in with your new password.');
 
     // Verify password was updated in database
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, testUserId))
-      .limit(1);
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, testUserId))
+    .limit(1);
 
-    expect(user.passwordHash).not.toBe('dummy-hash');
-    
-    // Verify we can verify the new password
-    const { verifyPassword } = await import('@/server/auth/password');
-    const isValid = await verifyPassword('NewPassword123!', user.passwordHash);
-    expect(isValid).toBe(true);
-  });
+  expect(user.passwordHash).not.toBe('dummy-hash');
+  expect(typeof user.passwordHash).toBe('string');
+  
+  // Verify we can verify the new password
+  const { verifyPassword } = await import('@/server/auth/password');
+  const isValid = await verifyPassword('NewPassword123!', user.passwordHash as string);
+  expect(isValid).toBe(true);
+});
 
   test('should invalidate all sessions after password reset', async () => {
     // Create multiple sessions

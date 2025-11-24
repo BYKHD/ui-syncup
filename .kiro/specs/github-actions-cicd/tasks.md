@@ -125,7 +125,7 @@
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
 - [ ]* 7. Test workflows end-to-end
-  - [ ]* 7.1 Test quality checks workflow
+  - [x] 7.1 Test quality checks workflow
     - Create test branch with valid code
     - Push and verify all checks pass
     - Create test branch with failing TypeScript
@@ -136,7 +136,7 @@
     - Push and verify workflow fails appropriately
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
   
-  - [ ]* 7.2 Test preview deployment workflow
+  - [-] 7.2 Test preview deployment workflow
     - Create test branch with schema change
     - Generate migration using `bun run db:generate`
     - Push to dev branch

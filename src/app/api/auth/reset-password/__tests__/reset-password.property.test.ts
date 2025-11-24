@@ -22,6 +22,11 @@ const PROPERTY_CONFIG = {
   verbose: false,
 };
 
+const ensurePasswordHash = (hash: string | null) => {
+  expect(typeof hash).toBe('string');
+  return hash as string;
+};
+
 // Test user data
 let testUserId: string;
 let testUserEmail: string;
@@ -207,23 +212,24 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
           const [updatedUser] = await db
             .select()
             .from(users)
-            .where(eq(users.id, testUserId))
-            .limit(1);
+          .where(eq(users.id, testUserId))
+          .limit(1);
 
-          expect(updatedUser).toBeDefined();
-          expect(updatedUser.passwordHash).not.toBe(testUserPasswordHash);
+        expect(updatedUser).toBeDefined();
+        const updatedHash = ensurePasswordHash(updatedUser.passwordHash);
+        expect(updatedHash).not.toBe(testUserPasswordHash);
 
-          // Verify new password works
-          const isNewPasswordValid = await verifyPassword(newPassword, updatedUser.passwordHash);
-          expect(isNewPasswordValid).toBe(true);
+        // Verify new password works
+        const isNewPasswordValid = await verifyPassword(newPassword, updatedHash);
+        expect(isNewPasswordValid).toBe(true);
 
-          // Verify old password no longer works
-          const isOldPasswordValid = await verifyPassword('OldPassword123!', updatedUser.passwordHash);
-          expect(isOldPasswordValid).toBe(false);
-        }
-      ),
-      PROPERTY_CONFIG
-    );
+        // Verify old password no longer works
+        const isOldPasswordValid = await verifyPassword('OldPassword123!', updatedHash);
+        expect(isOldPasswordValid).toBe(false);
+      }
+    ),
+    PROPERTY_CONFIG
+  );
   });
 
   /**
@@ -258,18 +264,19 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
           expect(response.status).toBe(200);
 
           // Verify password was changed
-          const [updatedUser] = await db
-            .select()
-            .from(users)
-            .where(eq(users.id, testUserId))
-            .limit(1);
+        const [updatedUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, testUserId))
+          .limit(1);
 
-          const isNewPasswordValid = await verifyPassword(newPassword, updatedUser.passwordHash);
-          expect(isNewPasswordValid).toBe(true);
-        }
-      ),
-      PROPERTY_CONFIG
-    );
+        const updatedHash = ensurePasswordHash(updatedUser.passwordHash);
+        const isNewPasswordValid = await verifyPassword(newPassword, updatedHash);
+        expect(isNewPasswordValid).toBe(true);
+      }
+    ),
+    PROPERTY_CONFIG
+  );
   });
 
   /**
@@ -387,7 +394,7 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
         .where(eq(users.id, testUserId))
         .limit(1);
       
-      const passwordHashBefore = userBefore.passwordHash;
+      const passwordHashBefore = ensurePasswordHash(userBefore.passwordHash);
 
       // Generate password reset token
       const { token } = await generateToken(
@@ -410,7 +417,7 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
       const response = await POST(request);
 
       // Verify response status is 400 Bad Request
-      expect(response.status).toBe(400, `Expected 400 for mismatched passwords: ${password1} vs ${password2}`);
+      expect(response.status).toBe(400);
 
       // Parse response body
       const body = await response.json();
@@ -426,7 +433,7 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
         .where(eq(users.id, testUserId))
         .limit(1);
 
-      expect(userAfter.passwordHash).toBe(passwordHashBefore, `Password should not change for mismatched passwords: ${password1} vs ${password2}`);
+      expect(userAfter.passwordHash).toBe(passwordHashBefore);
     }
   });
 
@@ -451,7 +458,7 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
         .where(eq(users.id, testUserId))
         .limit(1);
       
-      const passwordHashBefore = userBefore.passwordHash;
+      const passwordHashBefore = ensurePasswordHash(userBefore.passwordHash);
 
       // Generate password reset token
       const { token } = await generateToken(
@@ -474,7 +481,7 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
       const response = await POST(request);
 
       // Verify response status is 400 Bad Request
-      expect(response.status).toBe(400, `Expected 400 for password: ${weakPassword}`);
+      expect(response.status).toBe(400);
 
       // Parse response body
       const body = await response.json();
@@ -490,7 +497,7 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
         .where(eq(users.id, testUserId))
         .limit(1);
 
-      expect(userAfter.passwordHash).toBe(passwordHashBefore, `Password should not change for weak password: ${weakPassword}`);
+      expect(userAfter.passwordHash).toBe(passwordHashBefore);
     }
   });
 });

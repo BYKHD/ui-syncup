@@ -20,6 +20,9 @@ let consoleInfoSpy: ReturnType<typeof vi.spyOn>;
 let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
 let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
+const getLastLogMessage = (spy: ReturnType<typeof vi.spyOn>) =>
+  String(spy.mock.calls[spy.mock.calls.length - 1]?.[0] ?? '{}');
+
 beforeEach(() => {
   consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
   consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -69,7 +72,7 @@ describe('POST /api/auth/logout - Logging Property Tests', () => {
           expect(consoleInfoSpy).toHaveBeenCalled();
 
           // Get the logged message
-          const loggedMessage = consoleInfoSpy.mock.calls[consoleInfoSpy.mock.calls.length - 1][0];
+          const loggedMessage = getLastLogMessage(consoleInfoSpy);
 
           // Parse the JSON log
           const logEvent = JSON.parse(loggedMessage);
@@ -142,7 +145,7 @@ describe('POST /api/auth/logout - Logging Property Tests', () => {
           expect(consoleWarnSpy).toHaveBeenCalled();
 
           // Get the logged message
-          const loggedMessage = consoleWarnSpy.mock.calls[consoleWarnSpy.mock.calls.length - 1][0];
+          const loggedMessage = getLastLogMessage(consoleWarnSpy);
 
           // Parse the JSON log
           const logEvent = JSON.parse(loggedMessage);
@@ -192,7 +195,7 @@ describe('POST /api/auth/logout - Logging Property Tests', () => {
           expect(consoleErrorSpy).toHaveBeenCalled();
 
           // Get the logged message
-          const loggedMessage = consoleErrorSpy.mock.calls[consoleErrorSpy.mock.calls.length - 1][0];
+          const loggedMessage = getLastLogMessage(consoleErrorSpy);
 
           // Parse the JSON log
           const logEvent = JSON.parse(loggedMessage);
