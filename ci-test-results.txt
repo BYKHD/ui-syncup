@@ -1,0 +1,35 @@
+=== CI Workflow Testing Script ===
+Original branch: ci-fix
+
+=== Test 1: Valid Code (All Checks Pass) ===
+Branch created: test-ci-valid
+Running TypeScript check...
+✓ TypeScript check passed
+Running ESLint...
+✓ ESLint passed
+Running tests...
+✗ Tests failed
+Running build...
+✓ Build passed
+
+=== Test 2: TypeScript Errors ===
+Branch created: test-ci-typescript-fail
+Created file with TypeScript errors
+Running TypeScript check (should fail)...
+✓ TypeScript check failed as expected
+
+=== Test 3: ESLint Errors ===
+Branch created: test-ci-eslint-fail
+Created file with ESLint errors
+Running ESLint (should fail)...
+✓ ESLint failed as expected
+
+=== Test 4: Test Failures ===
+Branch created: test-ci-test-fail
+Created failing test file
+Running tests (should fail)...
+✓ Tests failed as expected
+
+=== Test Summary ===
+All CI workflow tests completed!
+Results saved to: ci-test-results.txt

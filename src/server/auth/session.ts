@@ -158,13 +158,14 @@ export async function createSession(
  */
 export async function getSession(
   context?: {
+    token?: string;
     ipAddress?: string;
     userAgent?: string;
     requestId?: string;
   }
 ): Promise<SessionUser | null> {
   // Get session token from cookie
-  const token = await getSessionCookie();
+  const token = context?.token ?? (await getSessionCookie());
   
   if (!token) {
     return null;

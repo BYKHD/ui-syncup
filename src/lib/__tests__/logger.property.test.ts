@@ -20,6 +20,9 @@ let consoleInfoSpy: ReturnType<typeof vi.spyOn>;
 let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
 let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
+const getLastLogMessage = (spy: ReturnType<typeof vi.spyOn>) =>
+  String(spy.mock.calls[spy.mock.calls.length - 1]?.[0] ?? '{}');
+
 beforeEach(() => {
   consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
   consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -107,7 +110,7 @@ describe('Authentication Event Logging - Property-Based Tests', () => {
           expect(expectedSpy).toHaveBeenCalled();
 
           // Get the logged message
-          const loggedMessage = expectedSpy.mock.calls[expectedSpy.mock.calls.length - 1][0];
+          const loggedMessage = getLastLogMessage(expectedSpy);
 
           // Parse the JSON log
           const logEvent = JSON.parse(loggedMessage);
@@ -179,7 +182,7 @@ describe('Authentication Event Logging - Property-Based Tests', () => {
             email,
           });
 
-          const firstLog = JSON.parse(consoleInfoSpy.mock.calls[consoleInfoSpy.mock.calls.length - 1][0]);
+          const firstLog = JSON.parse(getLastLogMessage(consoleInfoSpy));
           const firstHash = firstLog.email;
 
           consoleInfoSpy.mockClear();
@@ -189,7 +192,7 @@ describe('Authentication Event Logging - Property-Based Tests', () => {
             email,
           });
 
-          const secondLog = JSON.parse(consoleInfoSpy.mock.calls[consoleInfoSpy.mock.calls.length - 1][0]);
+          const secondLog = JSON.parse(getLastLogMessage(consoleInfoSpy));
           const secondHash = secondLog.email;
 
           // Verify hashes are identical
@@ -217,7 +220,7 @@ describe('Authentication Event Logging - Property-Based Tests', () => {
             email: email.toLowerCase(),
           });
 
-          const lowerLog = JSON.parse(consoleInfoSpy.mock.calls[consoleInfoSpy.mock.calls.length - 1][0]);
+          const lowerLog = JSON.parse(getLastLogMessage(consoleInfoSpy));
           const lowerHash = lowerLog.email;
 
           consoleInfoSpy.mockClear();
@@ -228,7 +231,7 @@ describe('Authentication Event Logging - Property-Based Tests', () => {
             email: email.toUpperCase(),
           });
 
-          const upperLog = JSON.parse(consoleInfoSpy.mock.calls[consoleInfoSpy.mock.calls.length - 1][0]);
+          const upperLog = JSON.parse(getLastLogMessage(consoleInfoSpy));
           const upperHash = upperLog.email;
 
           // Verify hashes are identical
@@ -259,7 +262,7 @@ describe('Authentication Event Logging - Property-Based Tests', () => {
           });
 
           // Get the logged message
-          const loggedMessage = consoleErrorSpy.mock.calls[consoleErrorSpy.mock.calls.length - 1][0];
+          const loggedMessage = getLastLogMessage(consoleErrorSpy);
           const logEvent = JSON.parse(loggedMessage);
 
           // Verify error details are present
@@ -296,7 +299,7 @@ describe('Authentication Event Logging - Property-Based Tests', () => {
           });
 
           // Get the logged message
-          const loggedMessage = consoleInfoSpy.mock.calls[consoleInfoSpy.mock.calls.length - 1][0];
+          const loggedMessage = getLastLogMessage(consoleInfoSpy);
           const logEvent = JSON.parse(loggedMessage);
 
           // Verify metadata is present

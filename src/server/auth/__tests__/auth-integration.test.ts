@@ -26,6 +26,11 @@ const testUserIds: string[] = [];
 const testSessionIds: string[] = [];
 const testEmails: string[] = [];
 
+const ensurePasswordHash = (hash: string | null) => {
+  expect(typeof hash).toBe('string');
+  return hash as string;
+};
+
 /**
  * Helper to create a test user
  */
@@ -91,10 +96,11 @@ describe('Integration Test: Complete Registration → Verification → Sign-in F
     expect(user.id).toBeTruthy();
     expect(user.email).toBe(email.toLowerCase());
     expect(user.emailVerified).toBe(false);
-    expect(user.passwordHash).not.toBe(password);
+    const initialPasswordHash = ensurePasswordHash(user.passwordHash);
+    expect(initialPasswordHash).not.toBe(password);
     
     // Verify password is hashed correctly
-    const passwordValid = await verifyPassword(password, user.passwordHash);
+    const passwordValid = await verifyPassword(password, initialPasswordHash);
     expect(passwordValid).toBe(true);
     
     // Step 2: Generate verification token
@@ -144,7 +150,7 @@ describe('Integration Test: Complete Registration → Verification → Sign-in F
     expect(typeof sessionToken).toBe('string');
     
     // Step 8: Verify session works
-    const sessionUser = await getSession(sessionToken);
+    const sessionUser = await getSession({ token: sessionToken });
     
     expect(sessionUser).not.toBeNull();
     expect(sessionUser?.id).toBe(user.id);
@@ -181,7 +187,7 @@ describe('Integration Test: Complete Registration → Verification → Sign-in F
       'Mozilla/5.0 Test Browser'
     );
     
-    const sessionUser = await getSession(sessionToken);
+    const sessionUser = await getSession({ token: sessionToken });
     
     // Session is created, but emailVerified is false
     expect(sessionUser).not.toBeNull();
@@ -210,16 +216,17 @@ describe('Integration Test: Sign-in with Invalid Credentials', () => {
     const wrongPassword = 'Wrong123!@#';
     const name = 'Valid User';
     
-    // Create verified user
-    const user = await createTestUser(email, correctPassword, name, true);
-    
-    // Verify correct password works
-    const correctPasswordValid = await verifyPassword(correctPassword, user.passwordHash);
-    expect(correctPasswordValid).toBe(true);
-    
-    // Verify wrong password fails
-    const wrongPasswordValid = await verifyPassword(wrongPassword, user.passwordHash);
-    expect(wrongPasswordValid).toBe(false);
+  // Create verified user
+  const user = await createTestUser(email, correctPassword, name, true);
+  
+  // Verify correct password works
+  const userPasswordHash = ensurePasswordHash(user.passwordHash);
+  const correctPasswordValid = await verifyPassword(correctPassword, userPasswordHash);
+  expect(correctPasswordValid).toBe(true);
+  
+  // Verify wrong password fails
+  const wrongPasswordValid = await verifyPassword(wrongPassword, userPasswordHash);
+  expect(wrongPasswordValid).toBe(false);
     
     // Application should not create session with wrong password
     // This test verifies the password verification logic works correctly
@@ -250,9 +257,10 @@ describe('Integration Test: Password Reset Flow', () => {
     
     // Step 1: Create verified user
     const user = await createTestUser(email, oldPassword, name, true);
-    
+
     // Verify old password works
-    const oldPasswordValid = await verifyPassword(oldPassword, user.passwordHash);
+    const existingPasswordHash = ensurePasswordHash(user.passwordHash);
+    const oldPasswordValid = await verifyPassword(oldPassword, existingPasswordHash);
     expect(oldPasswordValid).toBe(true);
     
     // Step 2: Create active session
@@ -262,7 +270,7 @@ describe('Integration Test: Password Reset Flow', () => {
       'Mozilla/5.0 Test Browser'
     );
     
-    const sessionUser = await getSession(oldSessionToken);
+    const sessionUser = await getSession({ token: oldSessionToken });
     expect(sessionUser).not.toBeNull();
     
     // Track session for cleanup
@@ -305,7 +313,7 @@ describe('Integration Test: Password Reset Flow', () => {
       .where(eq(sessions.userId, user.id));
     
     // Step 7: Verify old session no longer works
-    const oldSessionAfterReset = await getSession(oldSessionToken);
+    const oldSessionAfterReset = await getSession({ token: oldSessionToken });
     expect(oldSessionAfterReset).toBeNull();
     
     // Step 8: Verify old password no longer works
@@ -315,11 +323,12 @@ describe('Integration Test: Password Reset Flow', () => {
       .where(eq(users.id, user.id))
       .limit(1);
     
-    const oldPasswordStillValid = await verifyPassword(oldPassword, updatedUser.passwordHash);
+    const updatedPasswordHash = ensurePasswordHash(updatedUser.passwordHash);
+    const oldPasswordStillValid = await verifyPassword(oldPassword, updatedPasswordHash);
     expect(oldPasswordStillValid).toBe(false);
     
     // Step 9: Verify new password works
-    const newPasswordValid = await verifyPassword(newPassword, updatedUser.passwordHash);
+    const newPasswordValid = await verifyPassword(newPassword, updatedPasswordHash);
     expect(newPasswordValid).toBe(true);
     
     // Step 10: Verify reset token cannot be reused
@@ -333,7 +342,7 @@ describe('Integration Test: Password Reset Flow', () => {
       'Mozilla/5.0 Test Browser'
     );
     
-    const newSessionUser = await getSession(newSessionToken);
+    const newSessionUser = await getSession({ token: newSessionToken });
     expect(newSessionUser).not.toBeNull();
     expect(newSessionUser?.id).toBe(user.id);
     
@@ -409,13 +418,13 @@ describe('Integration Test: Session Validation and Renewal', () => {
     
     const extendedExpiration = extendedSession.expiresAt.getTime();
     
-    // Expiration should be extended
-    expect(extendedExpiration).toBeGreaterThan(initialExpiration);
-    
-    // Session should still be valid
-    const sessionUser = await getSession(sessionToken);
-    expect(sessionUser).not.toBeNull();
-    expect(sessionUser?.id).toBe(user.id);
+  // Expiration should be extended
+  expect(extendedExpiration).toBeGreaterThan(initialExpiration);
+  
+  // Session should still be valid
+  const sessionUser = await getSession({ token: sessionToken });
+  expect(sessionUser).not.toBeNull();
+  expect(sessionUser?.id).toBe(user.id);
   });
   
   test('should reject expired session', async () => {
@@ -444,13 +453,13 @@ describe('Integration Test: Session Validation and Renewal', () => {
     testSessionIds.push(session.id);
     
     // Manually expire the session
-    await db
-      .update(sessions)
-      .set({ expiresAt: new Date(Date.now() - 1000) })
-      .where(eq(sessions.id, session.id));
-    
-    // Try to get session
-    const expiredSessionUser = await getSession(sessionToken);
+  await db
+    .update(sessions)
+    .set({ expiresAt: new Date(Date.now() - 1000) })
+    .where(eq(sessions.id, session.id));
+  
+  // Try to get session
+  const expiredSessionUser = await getSession({ token: sessionToken });
     
     // Should return null for expired session
     expect(expiredSessionUser).toBeNull();
@@ -482,11 +491,11 @@ describe('Integration Test: Session Validation and Renewal', () => {
       testSessionIds.push(session.id);
     }
     
-    // Tamper with token
-    const tamperedToken = sessionToken.slice(0, -5) + 'XXXXX';
-    
-    // Try to get session with tampered token
-    const tamperedSessionUser = await getSession(tamperedToken);
+  // Tamper with token
+  const tamperedToken = sessionToken.slice(0, -5) + 'XXXXX';
+  
+  // Try to get session with tampered token
+  const tamperedSessionUser = await getSession({ token: tamperedToken });
     
     // Should return null for tampered token
     expect(tamperedSessionUser).toBeNull();
@@ -585,10 +594,10 @@ describe('Integration Test: Concurrent Session Handling', () => {
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1'
     );
     
-    // All sessions should be valid
-    const user1 = await getSession(session1Token);
-    const user2 = await getSession(session2Token);
-    const user3 = await getSession(session3Token);
+// All sessions should be valid
+const user1 = await getSession({ token: session1Token });
+const user2 = await getSession({ token: session2Token });
+const user3 = await getSession({ token: session3Token });
     
     expect(user1).not.toBeNull();
     expect(user2).not.toBeNull();
@@ -650,14 +659,14 @@ describe('Integration Test: Concurrent Session Handling', () => {
     // Delete session 1
     await deleteSession(session1.id);
     
-    // Session 1 should be invalid
-    const user1After = await getSession(session1Token);
-    expect(user1After).toBeNull();
-    
-    // Session 2 should still be valid
-    const user2After = await getSession(session2Token);
-    expect(user2After).not.toBeNull();
-    expect(user2After?.id).toBe(user.id);
+// Session 1 should be invalid
+const user1After = await getSession({ token: session1Token });
+expect(user1After).toBeNull();
+
+// Session 2 should still be valid
+const user2After = await getSession({ token: session2Token });
+expect(user2After).not.toBeNull();
+expect(user2After?.id).toBe(user.id);
   });
   
   test('should delete all sessions on password reset', async () => {
@@ -683,19 +692,19 @@ describe('Integration Test: Concurrent Session Handling', () => {
       testSessionIds.push(session.id);
     }
     
-    // Verify all sessions work
-    expect(await getSession(session1Token)).not.toBeNull();
-    expect(await getSession(session2Token)).not.toBeNull();
-    expect(await getSession(session3Token)).not.toBeNull();
-    
-    // Delete all sessions (simulating password reset)
-    await db
-      .delete(sessions)
-      .where(eq(sessions.userId, user.id));
-    
-    // All sessions should be invalid
-    expect(await getSession(session1Token)).toBeNull();
-    expect(await getSession(session2Token)).toBeNull();
-    expect(await getSession(session3Token)).toBeNull();
+// Verify all sessions work
+expect(await getSession({ token: session1Token })).not.toBeNull();
+expect(await getSession({ token: session2Token })).not.toBeNull();
+expect(await getSession({ token: session3Token })).not.toBeNull();
+
+// Delete all sessions (simulating password reset)
+await db
+  .delete(sessions)
+  .where(eq(sessions.userId, user.id));
+
+// All sessions should be invalid
+expect(await getSession({ token: session1Token })).toBeNull();
+expect(await getSession({ token: session2Token })).toBeNull();
+expect(await getSession({ token: session3Token })).toBeNull();
   });
 });
