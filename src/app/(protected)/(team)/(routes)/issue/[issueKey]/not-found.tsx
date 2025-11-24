@@ -16,7 +16,7 @@ export default function IssueNotFound() {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Issue Not Found</AlertTitle>
           <AlertDescription className="mt-2">
-            The issue you're looking for doesn't exist or you don't have permission to view it.
+            The issue you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission to view it.
           </AlertDescription>
         </Alert>
 

@@ -14,6 +14,7 @@ describe("Environment Variable Validation", () => {
 
   it("should validate required environment variables", () => {
     // Set minimal required environment variables
+    // @ts-expect-error - NODE_ENV is read-only in types but writable at runtime in test
     process.env.NODE_ENV = "test"
     process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000"
     process.env.NEXT_PUBLIC_API_URL = "http://localhost:3000/api"
@@ -51,6 +52,7 @@ describe("Environment Variable Validation", () => {
   })
 
   it("should validate URL format for URL fields", () => {
+    // @ts-expect-error - NODE_ENV is read-only in types but writable at runtime in test
     process.env.NODE_ENV = "test"
     process.env.NEXT_PUBLIC_APP_URL = "not-a-valid-url"
     process.env.NEXT_PUBLIC_API_URL = "http://localhost:3000/api"
@@ -76,6 +78,7 @@ describe("Environment Variable Validation", () => {
   })
 
   it("should validate minimum length for BETTER_AUTH_SECRET", () => {
+    // @ts-expect-error - NODE_ENV is read-only in types but writable at runtime in test
     process.env.NODE_ENV = "test"
     process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000"
     process.env.NEXT_PUBLIC_API_URL = "http://localhost:3000/api"

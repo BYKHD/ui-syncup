@@ -2,6 +2,9 @@ import { ResetPasswordScreen } from "@/features/auth/screens";
 import { getSession } from "@/server/auth/session";
 import { redirect } from "next/navigation";
 
+// Force dynamic rendering to prevent SSR issues with client components
+export const dynamic = 'force-dynamic';
+
 type ResetPasswordPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };

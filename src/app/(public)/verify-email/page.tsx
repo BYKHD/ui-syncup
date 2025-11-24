@@ -1,6 +1,9 @@
 import { Suspense } from "react";
 import VerifyEmailScreen from "@/features/auth/screens/verify-email-screen";
 
+// Force dynamic rendering to prevent SSR issues with client components
+export const dynamic = 'force-dynamic';
+
 /**
  * Verify Email Page
  *

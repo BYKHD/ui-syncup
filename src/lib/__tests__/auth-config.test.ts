@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from "vitest"
 describe("Auth Configuration", () => {
   beforeEach(() => {
     // Set all required environment variables
+    // @ts-expect-error - NODE_ENV is read-only in types but writable at runtime in test
     process.env.NODE_ENV = "test"
     process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000"
     process.env.NEXT_PUBLIC_API_URL = "http://localhost:3000/api"

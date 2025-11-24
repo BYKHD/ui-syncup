@@ -17,9 +17,9 @@ import { eq, and } from 'drizzle-orm';
 import {
   assignRole,
   getUserRoles,
-  type Role,
 } from '@/server/auth/rbac';
 import {
+  type Role,
   DEFAULT_ROLES,
   TEAM_ROLES,
   PROJECT_ROLES,

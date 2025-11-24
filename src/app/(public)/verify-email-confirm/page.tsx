@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 
 import VerifyEmailConfirmScreen from "@/features/auth/screens/verify-email-confirm-screen";
 
+// Force dynamic rendering to prevent SSR issues with client components
+export const dynamic = 'force-dynamic';
+
 type PageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };

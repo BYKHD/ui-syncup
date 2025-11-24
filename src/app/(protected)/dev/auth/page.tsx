@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering to prevent SSR issues with auth hooks
+export const dynamic = 'force-dynamic';
+
 import { useState } from "react";
 import { Copy, AlertTriangle, CheckCircle, XCircle, Loader2, Monitor, RefreshCw } from "lucide-react";
 import { toast } from "sonner";

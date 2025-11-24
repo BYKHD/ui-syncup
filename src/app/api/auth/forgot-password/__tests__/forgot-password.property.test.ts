@@ -240,7 +240,7 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
       fc.asyncProperty(
         // Generate random non-existent emails (valid format only)
         fc.tuple(
-          fc.stringOf(fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz0123456789'.split('')), { minLength: 5, maxLength: 20 }),
+          fc.string({ minLength: 5, maxLength: 20 }).filter(s => /^[a-z0-9]+$/.test(s)),
           fc.constantFrom('example.com', 'test.com', 'demo.org', 'sample.net')
         ).map(([local, domain]) => `${local}@${domain}`),
         async (nonExistentEmail) => {
