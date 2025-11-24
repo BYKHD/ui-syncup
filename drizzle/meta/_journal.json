@@ -15,6 +15,13 @@
       "when": 1763624924927,
       "tag": "0001_wonderful_triathlon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763972816084,
+      "tag": "0002_ordinary_clea",
+      "breakpoints": true
     }
   ]
 }

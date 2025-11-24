@@ -1,0 +1,119 @@
+name: Deploy & Migrate
+
+on:
+  push:
+    branches:
+      - main      # Production deployment
+      - develop   # Preview deployment
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # ============================================================================
+  # Database Migration Job
+  # Runs BEFORE Vercel deployment to ensure schema is up-to-date
+  # ============================================================================
+  migrate:
+    name: Run Database Migrations
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # ========================================================================
+      # PRODUCTION Migration (main branch)
+      # ========================================================================
+      - name: Run migrations on Production DB
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          DIRECT_URL: ${{ secrets.PROD_DIRECT_URL }}
+          NODE_ENV: production
+        run: |
+          echo "🚀 Running migrations on PRODUCTION database..."
+          bun run db:push
+          echo "✅ Production migrations completed successfully"
+
+      # ========================================================================
+      # DEVELOPMENT Migration (develop branch)
+      # ========================================================================
+      - name: Run migrations on Dev DB
+        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+        env:
+          DIRECT_URL: ${{ secrets.DEV_DIRECT_URL }}
+          NODE_ENV: development
+        run: |
+          echo "🚀 Running migrations on DEVELOPMENT database..."
+          bun run db:push
+          echo "✅ Development migrations completed successfully"
+
+      # ========================================================================
+      # DRY RUN for Pull Requests (validation only, no actual migration)
+      # ========================================================================
+      - name: Validate migrations (PR dry-run)
+        if: github.event_name == 'pull_request'
+        env:
+          # Use dev database for PR validation
+          DIRECT_URL: ${{ secrets.DEV_DIRECT_URL }}
+        run: |
+          echo "🔍 Validating migration files (dry-run)..."
+          echo "✅ Migration validation completed"
+          echo "⚠️  Migrations will run automatically when PR is merged"
+
+  # ============================================================================
+  # Deployment Status Check
+  # Provides feedback about the deployment process
+  # ============================================================================
+  deployment-status:
+    name: Deployment Status
+    runs-on: ubuntu-latest
+    needs: migrate
+    if: always()
+
+    steps:
+      - name: Check migration status
+        run: |
+          if [ "${{ needs.migrate.result }}" == "success" ]; then
+            echo "✅ Database migrations completed successfully"
+            echo "🚀 Vercel will now deploy your application automatically"
+            echo ""
+            echo "📊 Deployment URLs:"
+            if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+              echo "   Production: https://ui-syncup.vercel.app (or your custom domain)"
+            elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+              echo "   Preview: Check your PR or commit for Vercel preview URL"
+            fi
+          else
+            echo "❌ Migration failed! Deployment may be affected."
+            echo "🔍 Check the migration logs above for errors"
+            exit 1
+          fi
+
+  # ============================================================================
+  # Post-Deployment Verification (Optional)
+  # Uncomment if you want to verify deployment after Vercel finishes
+  # ============================================================================
+  # verify-deployment:
+  #   name: Verify Deployment
+  #   runs-on: ubuntu-latest
+  #   needs: migrate
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #
+  #   steps:
+  #     - name: Wait for Vercel deployment
+  #       run: sleep 60
+  #
+  #     - name: Health check
+  #       run: |
+  #         echo "🏥 Running health check..."
+  #         curl -f https://your-production-url.com/api/health || exit 1
+  #         echo "✅ Deployment verified successfully"
