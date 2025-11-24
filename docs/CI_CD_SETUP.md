@@ -58,13 +58,23 @@ gh secret list
 
 ### 2. Verify Vercel Integration
 
-Ensure Vercel is connected to your GitHub repository:
+Run the automated verification script:
+
+```bash
+bun run verify:vercel
+```
+
+Or follow the detailed manual steps:
+- **Quick Guide:** [`docs/VERCEL_QUICK_START.md`](./VERCEL_QUICK_START.md)
+- **Full Checklist:** [`docs/VERCEL_INTEGRATION_CHECKLIST.md`](./VERCEL_INTEGRATION_CHECKLIST.md)
+
+**Quick verification:**
 1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
 2. Select your project
 3. **Settings** → **Git**
 4. Verify:
    - ✅ Production Branch: `main`
-   - ✅ Preview Branches: `develop` and others
+   - ✅ Preview Branches: All branches enabled
 
 ### 3. Configure Vercel Environment Variables
 
@@ -460,6 +470,9 @@ gh pr create --base main --head develop
 | [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) | Main CI/CD workflow - runs migrations and deploys |
 | [`.github/DEPLOYMENT_CHECKLIST.md`](../.github/DEPLOYMENT_CHECKLIST.md) | Pre-deployment checklist |
 | [`.github/GITHUB_SECRETS_SETUP.md`](../.github/GITHUB_SECRETS_SETUP.md) | How to configure GitHub secrets |
+| [`docs/VERCEL_QUICK_START.md`](./VERCEL_QUICK_START.md) | Quick Vercel integration verification guide |
+| [`docs/VERCEL_INTEGRATION_CHECKLIST.md`](./VERCEL_INTEGRATION_CHECKLIST.md) | Detailed Vercel verification checklist |
+| [`scripts/verify-vercel-integration.ts`](../scripts/verify-vercel-integration.ts) | Automated Vercel verification script |
 | [`drizzle/`](../drizzle/) | Contains all migration SQL files |
 | [`src/server/db/schema/`](../src/server/db/schema/) | TypeScript schema definitions |
 
@@ -497,6 +510,7 @@ bun run db:push               # Push schema to database (dev)
 bun run db:migrate            # Run migrations (prod)
 bun run test                  # Run tests
 bun run typecheck             # Type check
+bun run verify:vercel         # Verify Vercel integration
 
 # Git workflow
 git checkout develop          # Switch to develop branch

@@ -1,183 +1,55 @@
-name: Deploy & Migrate
+name: Deploy
 
 on:
   push:
     branches:
-      - main      # Production deployment
-      - develop   # Preview deployment
-  pull_request:
-    branches:
       - main
-
-# Never cancel deployments in progress
-concurrency:
-  group: deploy-${{ github.ref }}
-  cancel-in-progress: false
-
-# Explicit permissions
-permissions:
-  contents: read
-  deployments: write
-  pull-requests: write
+      - dev
+      - 'feature/**'
 
 jobs:
-  # ============================================================================
-  # Database Migration Job
-  # Runs BEFORE Vercel deployment to ensure schema is up-to-date
-  # ============================================================================
-  migrate:
-    name: Run Database Migrations
+  migrate-preview:
+    name: Migrate Preview Database
+    if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
-      url: ${{ github.ref == 'refs/heads/main' && 'https://ui-syncup.com' || 'https://dev.ui-syncup.com' }}
-
+    environment: Preview
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.1.38'
-
-      - name: Cache Bun dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.bun/install/cache
-            node_modules
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
-
+          bun-version: latest
+      
       - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      # ========================================================================
-      # PRODUCTION Migration (main branch)
-      # ========================================================================
-      - name: Run migrations on Production DB
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: bun install
+      
+      - name: Run database migrations
+        run: bun run db:migrate
         env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.PROD_DIRECT_URL }}
-          NODE_ENV: production
-        run: |
-          echo "🚀 Running migrations on PRODUCTION database..."
-          bun run db:migrate
-          echo "✅ Production migrations completed successfully"
-        timeout-minutes: 10
-
-      - name: Verify production database health
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-        run: |
-          echo "🔍 Verifying database connectivity..."
-          bun run -e 'import postgres from "postgres"; const sql = postgres(process.env.DATABASE_URL); await sql`SELECT 1`; await sql.end();'
-          echo "✅ Database health check passed"
-
-      # ========================================================================
-      # DEVELOPMENT Migration (develop branch)
-      # ========================================================================
-      - name: Run migrations on Dev DB
-        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-        env:
-          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DEV_DIRECT_URL }}
-          NODE_ENV: development
-        run: |
-          echo "🚀 Running migrations on DEVELOPMENT database..."
-          bun run db:migrate
-          echo "✅ Development migrations completed successfully"
-        timeout-minutes: 10
 
-      - name: Verify development database health
-        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-        env:
-          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
-        run: |
-          echo "🔍 Verifying database connectivity..."
-          bun run -e 'import postgres from "postgres"; const sql = postgres(process.env.DATABASE_URL); await sql`SELECT 1`; await sql.end();'
-          echo "✅ Database health check passed"
-
-      # ========================================================================
-      # VALIDATION for Pull Requests (no actual migration)
-      # ========================================================================
-      - name: Validate migrations (PR validation)
-        if: github.event_name == 'pull_request'
-        run: |
-          echo "🔍 Validating migration files..."
-
-          # Check that migration files exist
-          if [ ! -d "drizzle" ]; then
-            echo "❌ Error: drizzle directory not found"
-            exit 1
-          fi
-
-          # Generate migrations to check for differences
-          bun run db:generate
-
-          # Check if there are uncommitted migration changes
-          if [ -n "$(git status --porcelain drizzle)" ]; then
-            echo "❌ Error: Generated migrations differ from committed migrations"
-            echo "Please run 'bun run db:generate' locally and commit the changes"
-            echo ""
-            echo "Changes detected:"
-            git diff drizzle
-            exit 1
-          fi
-
-          echo "✅ Migration files are valid and up-to-date"
-          echo "⚠️  Migrations will run automatically when PR is merged to main"
-
-  # ============================================================================
-  # Deployment Status Check
-  # Provides feedback about the deployment process
-  # ============================================================================
-  deployment-status:
-    name: Deployment Status
+  migrate-production:
+    name: Migrate Production Database
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: migrate
-    if: always()
-
+    environment: Production
+    
     steps:
-      - name: Check migration status
-        run: |
-          if [ "${{ needs.migrate.result }}" == "success" ]; then
-            echo "✅ Database migrations completed successfully"
-            echo "🚀 Vercel will now deploy your application automatically"
-            echo ""
-            echo "📊 Deployment URLs:"
-            if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-              echo "   Production: https://ui-syncup.vercel.app (or your custom domain)"
-            elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
-              echo "   Preview: Check your PR or commit for Vercel preview URL"
-            fi
-          else
-            echo "❌ Migration failed! Deployment may be affected."
-            echo "🔍 Check the migration logs above for errors"
-            exit 1
-          fi
-
-  # ============================================================================
-  # Post-Deployment Verification (Optional)
-  # Uncomment if you want to verify deployment after Vercel finishes
-  # ============================================================================
-  # verify-deployment:
-  #   name: Verify Deployment
-  #   runs-on: ubuntu-latest
-  #   needs: migrate
-  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-  #
-  #   steps:
-  #     - name: Wait for Vercel deployment
-  #       run: sleep 60
-  #
-  #     - name: Health check
-  #       run: |
-  #         echo "🏥 Running health check..."
-  #         curl -f https://your-production-url.com/api/health || exit 1
-  #         echo "✅ Deployment verified successfully"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      
+      - name: Install dependencies
+        run: bun install
+      
+      - name: Run database migrations
+        run: bun run db:migrate
+        env:
+          DIRECT_URL: ${{ secrets.PROD_DIRECT_URL }}
