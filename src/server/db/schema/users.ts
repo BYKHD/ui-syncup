@@ -8,8 +8,6 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash", { length: 255 }),
   name: varchar("name", { length: 120 }).notNull(),
   image: text("image"),
-  // Test column for CI/CD workflow verification
-  testColumn: varchar("test_column", { length: 50 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
