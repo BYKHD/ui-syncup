@@ -279,13 +279,13 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
   }, { timeout: PROPERTY_TIMEOUT });
 
   /**
-   * Additional test: Verify rate limiting (3 requests per email per hour)
+   * Additional test: Verify rate limiting (5 requests per email per hour)
    */
   test('Property 16 (rate limiting): Exceeding rate limit returns 429', async () => {
     await resetForgotPasswordState();
 
-    // Make 3 requests (the limit)
-    for (let i = 0; i < 3; i++) {
+    // Make 5 requests (the limit)
+    for (let i = 0; i < 5; i++) {
       const request = createMockRequest({ email: testUserEmail });
       const response = await POST(request);
       expect(response.status).toBe(200);

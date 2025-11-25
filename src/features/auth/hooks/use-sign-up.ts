@@ -61,6 +61,7 @@ export function useSignUp(options: UseSignUpOptions = {}) {
 
   const [status, setStatus] = useState<SubmissionStatus>("idle");
   const [message, setMessage] = useState<string | null>(null);
+  const [isLongLoading, setIsLongLoading] = useState(false);
 
   // Sign-up mutation
   const mutation = useMutation({
@@ -68,8 +69,18 @@ export function useSignUp(options: UseSignUpOptions = {}) {
     onMutate: () => {
       setStatus("submitting");
       setMessage(null);
+      setIsLongLoading(false);
+      
+      // Set a timer to trigger "long loading" state if request takes too long
+      const timerId = setTimeout(() => {
+        setIsLongLoading(true);
+      }, 2000);
+      
+      return { timerId };
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables, context) => {
+      if (context?.timerId) clearTimeout(context.timerId);
+      setIsLongLoading(false);
       setStatus("success");
       setMessage(data.message || "Account created successfully! Please check your email to verify your account.");
       
@@ -79,7 +90,9 @@ export function useSignUp(options: UseSignUpOptions = {}) {
       // Reset form on success
       form.reset();
     },
-    onError: (error: unknown) => {
+    onError: (error: unknown, variables, context) => {
+      if (context?.timerId) clearTimeout(context.timerId);
+      setIsLongLoading(false);
       setStatus("idle");
       
       if (error instanceof ApiError) {
@@ -168,6 +181,7 @@ export function useSignUp(options: UseSignUpOptions = {}) {
     oauthStatus,
     oauthError,
     isLoading: mutation.isPending,
+    isLongLoading,
     isSuccess: mutation.isSuccess,
     isError: mutation.isError,
     error: mutation.error,

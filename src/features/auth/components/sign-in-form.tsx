@@ -22,6 +22,7 @@ type SignInFormProps = {
   oauthError: string | null;
   description?: string;
   invitedEmail?: string;
+  isLongLoading?: boolean;
 };
 
 export function SignInForm({
@@ -35,6 +36,7 @@ export function SignInForm({
   oauthError,
   description = "Sign in to your account to continue",
   invitedEmail,
+  isLongLoading = false,
 }: SignInFormProps) {
   const {
     register,
@@ -125,7 +127,9 @@ export function SignInForm({
           className="w-full"
           disabled={status === "submitting"}
         >
-          {status === "submitting" ? "Signing in…" : "Sign In"}
+          {status === "submitting" 
+            ? (isLongLoading ? "Still working..." : "Signing in…") 
+            : "Sign In"}
         </Button>
       </form>
 

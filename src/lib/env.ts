@@ -87,7 +87,20 @@ const envSchema = z.object({
   BETTER_AUTH_URL: z
     .string()
     .url()
-    .describe("better-auth base URL"),
+    .describe("better-auth base URL")
+    .refine(
+      (url) => {
+        // In production/preview, ensure it's not localhost
+        if (process.env.VERCEL_ENV && url.includes("localhost")) {
+          return false
+        }
+        return true
+      },
+      {
+        message:
+          "BETTER_AUTH_URL cannot be localhost in Vercel deployments. Configure it in Vercel Dashboard → Settings → Environment Variables",
+      }
+    ),
 
   // Email (Resend)
   RESEND_API_KEY: z

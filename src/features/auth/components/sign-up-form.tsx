@@ -21,7 +21,7 @@ type SignUpFormProps = {
 };
 
 export function SignUpForm({ onSuccess }: SignUpFormProps) {
-  const { form, status, message, handleSubmit, isLoading } = useSignUp({
+  const { form, status, message, handleSubmit, isLoading, isLongLoading } = useSignUp({
     onSuccess,
   });
 
@@ -125,7 +125,9 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
             className="w-full"
             disabled={isLoading}
           >
-            {isLoading ? "Creating workspace…" : "Create account"}
+            {isLoading 
+              ? (isLongLoading ? "Still working..." : "Creating workspace…") 
+              : "Create account"}
           </Button>
         </form>
 
