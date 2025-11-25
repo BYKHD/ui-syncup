@@ -87,6 +87,32 @@ vercel env add NEXT_PUBLIC_APP_URL development
 
 **Important**: Never commit secrets to Git. All sensitive values must be stored in Vercel's Environment Variables.
 
+### Common Issue: Localhost URLs in Emails
+
+**Symptom**: Verification emails and password reset emails contain localhost links (e.g., `http://localhost:3000/verify-email-confirm?token=...`) instead of your production domain URLs.
+
+**Cause**: The `BETTER_AUTH_URL` environment variable is not configured in Vercel Dashboard. The `.env.production` and `.env.development` files in the repository are templates only and are **NOT** used by Vercel deployments.
+
+**Solution**:
+1. Environment variables must be explicitly configured in Vercel Dashboard:
+   - Navigate to **Settings** → **Environment Variables**
+   - Add `BETTER_AUTH_URL` with your domain (e.g., `https://ui-syncup.com`)
+   - Select appropriate scope:
+     - **Production** scope for `https://ui-syncup.com`
+     - **Preview** scope for `https://dev.ui-syncup.com` or preview URLs
+2. After adding variables, trigger a new deployment:
+   - Either push a new commit to trigger automatic deployment
+   - Or use Vercel Dashboard → Deployments → "Redeploy"
+3. Environment variable changes require redeployment to take effect
+
+**Related Variables**: Ensure these are also configured correctly:
+- `NEXT_PUBLIC_APP_URL` - Should match your deployment domain
+- `GOOGLE_REDIRECT_URI` - Should match your deployment domain + `/api/auth/callback/google`
+
+**Verification**: After deployment, test by signing up with a test account and checking that the verification email contains your production domain URL, not localhost.
+
+**Reference**: See [Environment Variables Reference](#environment-variables-reference) below for complete list and examples.
+
 ### Step 3: Configure Git Integration
 
 #### GitHub Branch Protection Settings

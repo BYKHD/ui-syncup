@@ -17,6 +17,7 @@ import { generateToken, invalidateUserTokens } from '@/server/auth/tokens';
 import { enqueueEmail } from '@/server/email/queue';
 import { logAuthEvent } from '@/lib/logger';
 import { env } from '@/lib/env';
+import { validateEmailUrl } from '@/lib/url-validator';
 import { eq } from 'drizzle-orm';
 import {
   checkLimit,
@@ -176,6 +177,9 @@ export async function POST(request: NextRequest) {
 
     // Construct verification URL
     const verificationUrl = `${env.BETTER_AUTH_URL}/verify-email-confirm?token=${encodeURIComponent(tokenResult.token)}`;
+
+    // Validate URL before sending (prevents localhost URLs in production)
+    validateEmailUrl(verificationUrl, 'resend-verification-email');
 
     // Enqueue verification email
     await enqueueEmail({
