@@ -19,12 +19,15 @@ if (!DIRECT_URL) {
   process.exit(1);
 }
 
+// TypeScript type assertion - DIRECT_URL is guaranteed to exist here
+const dbUrl: string = DIRECT_URL;
+
 async function runMigrations() {
   console.log("🔄 Starting database migrations...");
-  console.log(`📍 Database: ${DIRECT_URL.split("@")[1]?.split("/")[0] || "hidden"}`);
-  
+  console.log(`📍 Database: ${dbUrl.split("@")[1]?.split("/")[0] || "hidden"}`);
+
   // Create postgres connection for migrations
-  const migrationClient = postgres(DIRECT_URL, { max: 1 });
+  const migrationClient = postgres(dbUrl, { max: 1 });
   const db = drizzle(migrationClient);
 
   try {

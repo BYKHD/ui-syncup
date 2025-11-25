@@ -19,10 +19,13 @@ if (!DIRECT_URL) {
   process.exit(1);
 }
 
+// TypeScript type assertion - DIRECT_URL is guaranteed to exist here
+const dbUrl: string = DIRECT_URL;
+
 async function syncMigrationTracking() {
   console.log("🔄 Syncing migration tracking table...");
-  
-  const client = postgres(DIRECT_URL, { max: 1 });
+
+  const client = postgres(dbUrl, { max: 1 });
   const db = drizzle(client);
 
   try {
