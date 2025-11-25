@@ -145,7 +145,7 @@
     - Check preview URL works correctly
     - _Requirements: 2.1, 2.2, 2.5_
   
-  - [ ]* 7.3 Test production deployment workflow
+  - [x] 7.3 Test production deployment workflow
     - Create PR from dev to main
     - Verify quality checks pass
     - Get code review approval
@@ -155,7 +155,7 @@
     - Check production URL works correctly
     - _Requirements: 3.1, 3.2, 3.3, 3.5_
   
-  - [ ]* 7.4 Test error handling
+  - [ ] 7.4 Test error handling
     - Create branch with failing migration
     - Push and verify workflow fails
     - Verify deployment is halted
