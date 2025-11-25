@@ -35,6 +35,13 @@ jobs:
           fi
           echo "✓ DEV_DIRECT_URL secret is configured"
       
+      - name: Sync migration tracking (if needed)
+        run: |
+          echo "Checking migration tracking state..."
+          bun run db:migrate:sync
+        env:
+          DIRECT_URL: ${{ secrets.DEV_DIRECT_URL }}
+      
       - name: Run database migrations
         id: migrate
         run: |
@@ -91,6 +98,13 @@ jobs:
             exit 1
           fi
           echo "✓ PROD_DIRECT_URL secret is configured"
+      
+      - name: Sync migration tracking (if needed)
+        run: |
+          echo "Checking migration tracking state..."
+          bun run db:migrate:sync
+        env:
+          DIRECT_URL: ${{ secrets.PROD_DIRECT_URL }}
       
       - name: Run database migrations
         id: migrate
