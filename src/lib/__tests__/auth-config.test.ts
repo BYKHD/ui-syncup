@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest"
+import { describe, it, expect, beforeEach, vi } from "vitest"
 
 describe("Auth Configuration", () => {
   beforeEach(() => {
@@ -22,13 +22,12 @@ describe("Auth Configuration", () => {
     process.env.BETTER_AUTH_SECRET = "test-secret-key-with-32-characters-minimum"
     process.env.BETTER_AUTH_URL = "http://localhost:3000"
     
-    // Clear module cache to ensure fresh imports
-    delete require.cache[require.resolve("../env")]
-    delete require.cache[require.resolve("../auth-config")]
+    // Reset module graph to reload env/auth-config with fresh values
+    vi.resetModules()
   })
 
-  it("should create Google OAuth configuration from environment variables", () => {
-    const { authConfig } = require("../auth-config")
+  it("should create Google OAuth configuration from environment variables", async () => {
+    const { authConfig } = await import("../auth-config")
 
     expect(authConfig.providers.google).toBeDefined()
     expect(authConfig.providers.google.clientId).toBe("test-google-client-id")
@@ -36,16 +35,16 @@ describe("Auth Configuration", () => {
     expect(authConfig.providers.google.redirectUri).toBe("http://localhost:3000/api/auth/callback/google")
   })
 
-  it("should include required OAuth scopes for Google", () => {
-    const { authConfig } = require("../auth-config")
+  it("should include required OAuth scopes for Google", async () => {
+    const { authConfig } = await import("../auth-config")
 
     expect(authConfig.providers.google.scope).toContain("openid")
     expect(authConfig.providers.google.scope).toContain("https://www.googleapis.com/auth/userinfo.email")
     expect(authConfig.providers.google.scope).toContain("https://www.googleapis.com/auth/userinfo.profile")
   })
 
-  it("should configure session settings from environment", () => {
-    const { authConfig } = require("../auth-config")
+  it("should configure session settings from environment", async () => {
+    const { authConfig } = await import("../auth-config")
 
     expect(authConfig.session.secret).toBe("test-secret-key-with-32-characters-minimum")
     expect(authConfig.session.baseUrl).toBe("http://localhost:3000")

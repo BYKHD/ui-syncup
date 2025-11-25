@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest"
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 
 describe("Environment Variable Validation", () => {
   const originalEnv = process.env
 
   beforeEach(() => {
-    // Reset modules to clear cached env
+    vi.resetModules()
+    // Reset environment per test
     process.env = { ...originalEnv }
   })
 
@@ -12,7 +13,7 @@ describe("Environment Variable Validation", () => {
     process.env = originalEnv
   })
 
-  it("should validate required environment variables", () => {
+  it("should validate required environment variables", async () => {
     // Set minimal required environment variables
     // @ts-expect-error - NODE_ENV is read-only in types but writable at runtime in test
     process.env.NODE_ENV = "test"
@@ -34,24 +35,17 @@ describe("Environment Variable Validation", () => {
     process.env.BETTER_AUTH_URL = "http://localhost:3000"
 
     // This should not throw
-    expect(() => {
-      // Re-import to trigger validation with new env
-      delete require.cache[require.resolve("../env")]
-      require("../env")
-    }).not.toThrow()
+    await expect(import("../env")).resolves.toBeDefined()
   })
 
-  it("should provide helpful error messages for missing variables", () => {
+  it("should provide helpful error messages for missing variables", async () => {
     // Clear all environment variables
     process.env = { NODE_ENV: "test" }
 
-    expect(() => {
-      delete require.cache[require.resolve("../env")]
-      require("../env")
-    }).toThrow("Environment validation failed")
+    await expect(import("../env")).rejects.toThrow("Environment validation failed")
   })
 
-  it("should validate URL format for URL fields", () => {
+  it("should validate URL format for URL fields", async () => {
     // @ts-expect-error - NODE_ENV is read-only in types but writable at runtime in test
     process.env.NODE_ENV = "test"
     process.env.NEXT_PUBLIC_APP_URL = "not-a-valid-url"
@@ -71,13 +65,10 @@ describe("Environment Variable Validation", () => {
     process.env.BETTER_AUTH_SECRET = "test-secret-key-with-32-characters-min"
     process.env.BETTER_AUTH_URL = "http://localhost:3000"
 
-    expect(() => {
-      delete require.cache[require.resolve("../env")]
-      require("../env")
-    }).toThrow()
+    await expect(import("../env")).rejects.toThrow()
   })
 
-  it("should validate minimum length for BETTER_AUTH_SECRET", () => {
+  it("should validate minimum length for BETTER_AUTH_SECRET", async () => {
     // @ts-expect-error - NODE_ENV is read-only in types but writable at runtime in test
     process.env.NODE_ENV = "test"
     process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000"
@@ -97,9 +88,6 @@ describe("Environment Variable Validation", () => {
     process.env.BETTER_AUTH_SECRET = "too-short" // Less than 32 characters
     process.env.BETTER_AUTH_URL = "http://localhost:3000"
 
-    expect(() => {
-      delete require.cache[require.resolve("../env")]
-      require("../env")
-    }).toThrow()
+    await expect(import("../env")).rejects.toThrow()
   })
 })
