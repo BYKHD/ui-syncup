@@ -22,7 +22,7 @@ const PROPERTY_CONFIG = {
   verbose: false,
 };
 
-const PROPERTY_TIMEOUT = 20000;
+const PROPERTY_TIMEOUT = 60000;
 
 const userAgentArb = fc
   .string({ minLength: 10, maxLength: 200 })

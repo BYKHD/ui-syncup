@@ -75,6 +75,7 @@ export function useSignIn(options: UseSignInOptions = {}) {
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const [oauthStatus, setOauthStatus] = useState<OAuthStatus>("idle");
   const [oauthError, setOauthError] = useState<string | null>(null);
+  const [isLongLoading, setIsLongLoading] = useState(false);
 
   // Sign-in mutation
   const mutation = useMutation({
@@ -84,8 +85,18 @@ export function useSignIn(options: UseSignInOptions = {}) {
       setMessage(null);
       setErrorCode(null);
       setRetryAfter(null);
+      setIsLongLoading(false);
+      
+      // Set a timer to trigger "long loading" state if request takes too long
+      const timerId = setTimeout(() => {
+        setIsLongLoading(true);
+      }, 2000);
+      
+      return { timerId };
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables, context) => {
+      if (context?.timerId) clearTimeout(context.timerId);
+      setIsLongLoading(false);
       setStatus("success");
       setMessage("Signed in successfully");
       
@@ -104,7 +115,9 @@ export function useSignIn(options: UseSignInOptions = {}) {
         router.push(redirectTo);
       }, 150);
     },
-    onError: (error: unknown) => {
+    onError: (error: unknown, variables, context) => {
+      if (context?.timerId) clearTimeout(context.timerId);
+      setIsLongLoading(false);
       setStatus("idle");
       
       if (error instanceof ApiError) {
@@ -221,6 +234,7 @@ export function useSignIn(options: UseSignInOptions = {}) {
     handleSubmit,
     handleOAuthSignIn,
     isLoading: mutation.isPending,
+    isLongLoading,
     isSuccess: mutation.isSuccess,
     isError: mutation.isError,
     error: mutation.error,
