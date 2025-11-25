@@ -3,14 +3,13 @@ import path from "path"
 import { randomUUID } from "crypto"
 
 import { sql } from "drizzle-orm"
-import { drizzle } from "drizzle-orm/node-postgres"
-import type { PgDatabase } from "drizzle-orm/pg-core"
-import { newDb, type IMemoryDb } from "pg-mem"
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres"
+import { newDb, DataType, type IMemoryDb } from "pg-mem"
 
 import * as schema from "@/server/db/schema"
 
 type TestDbContext = {
-  db: PgDatabase<typeof schema>
+  db: NodePgDatabase<typeof schema>
   resetDatabase: () => Promise<void>
   closeDatabase: () => Promise<void>
 }
@@ -42,13 +41,13 @@ export function createTestDb(): TestDbContext {
   // Functions used by the schema defaults
   memoryDb.public.registerFunction({
     name: "gen_random_uuid",
-    returns: "uuid",
+    returns: DataType.uuid,
     implementation: randomUUID,
     impure: true,
   })
   memoryDb.public.registerFunction({
     name: "now",
-    returns: "timestamp",
+    returns: DataType.timestamp,
     implementation: () => new Date(),
     impure: true,
   })
@@ -85,7 +84,9 @@ export function createTestDb(): TestDbContext {
     if (expectArrayResult && typeof result?.then === "function") {
       return (result as Promise<{ rows: unknown[]; [key: string]: unknown }>).then((res) => ({
         ...res,
-        rows: res.rows.map((row) => (Array.isArray(row) ? row : Object.values(row))),
+        rows: res.rows.map((row: unknown) =>
+          Array.isArray(row) ? row : Object.values(row as Record<string, unknown>)
+        ),
       }))
     }
 
