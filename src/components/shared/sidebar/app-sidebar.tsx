@@ -18,6 +18,7 @@ import {
   RiTeamLine,
   RiBarChartBoxLine,
   RiDragDropFill,
+  RiBugLine,
 } from '@remixicon/react';
 import {
   TeamSwitcher,
@@ -73,6 +74,16 @@ const MOCK_NAV_ITEMS: NavItem[] = [
       },
     ],
   },
+  // Dev-only: Auth testing page
+  ...(process.env.NODE_ENV !== 'production'
+    ? [
+        {
+          title: 'Dev: Auth Testing',
+          url: '/dev/auth',
+          icon: RiBugLine,
+        },
+      ]
+    : []),
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

@@ -1876,5 +1876,949 @@ For deployment issues:
 
 ---
 
-**Last Updated**: 2025-11-17
+## Authentication System Monitoring
+
+The authentication system requires specialized monitoring to ensure security, reliability, and performance. This section covers authentication-specific monitoring rules, alert thresholds, metrics collection, and troubleshooting procedures.
+
+### Authentication Monitoring Overview
+
+The authentication system logs all security-relevant events using a structured logging format. All logs include:
+- Event ID (UUID)
+- Event type (e.g., `auth.login.success`)
+- Timestamp (ISO 8601)
+- User context (user ID, email hash)
+- Request context (IP address, user agent, request ID)
+- Outcome (success, failure, error)
+
+### Alert Thresholds
+
+Configure alerts for the following authentication events to detect security issues and system problems early.
+
+#### Critical Alerts (Immediate Response Required)
+
+**High Authentication Failure Rate**:
+```typescript
+// Alert when login failures exceed 100 in 5 minutes
+if (count('auth.login.failure', last_5_minutes) > 100) {
+  alert('high_auth_failure_rate', {
+    severity: 'critical',
+    count: count,
+    threshold: 100,
+    message: 'Potential brute force attack or system issue',
+    action: 'Investigate logs, check for attack patterns, consider temporary IP blocks',
+  });
+}
+```
+
+**Token Tampering Detected**:
+```typescript
+// Alert on any token tampering attempts
+if (count('auth.token.tampered', last_5_minutes) > 5) {
+  alert('potential_attack', {
+    severity: 'critical',
+    count: count,
+    threshold: 5,
+    message: 'Multiple token tampering attempts detected',
+    action: 'Review IP addresses, check for coordinated attack, consider blocking IPs',
+  });
+}
+```
+
+**Session Tampering Detected**:
+```typescript
+// Alert on session cookie tampering
+if (count('auth.session.tampered', last_5_minutes) > 5) {
+  alert('session_tampering', {
+    severity: 'critical',
+    count: count,
+    threshold: 5,
+    message: 'Multiple session tampering attempts detected',
+    action: 'Investigate source IPs, verify session signing key integrity',
+  });
+}
+```
+
+**Email Delivery Failures**:
+```typescript
+// Alert when email delivery fails repeatedly
+if (count('email.failed', last_15_minutes) > 10) {
+  alert('email_delivery_issues', {
+    severity: 'critical',
+    count: count,
+    threshold: 10,
+    message: 'Email service experiencing high failure rate',
+    action: 'Check Resend API status, verify API key, review error logs',
+  });
+}
+```
+
+#### High Priority Alerts (Response Within 30 Minutes)
+
+**Rate Limit Abuse**:
+```typescript
+// Alert when rate limits are frequently exceeded
+if (count('auth.rate_limit.exceeded', last_5_minutes) > 50) {
+  alert('rate_limit_abuse', {
+    severity: 'high',
+    count: count,
+    threshold: 50,
+    message: 'High rate of rate limit violations',
+    action: 'Review IP addresses, check for bot activity, consider stricter limits',
+  });
+}
+```
+
+**Elevated Sign-In Failure Rate**:
+```typescript
+// Alert on elevated but not critical failure rate
+if (count('auth.login.failure', last_15_minutes) > 50) {
+  alert('elevated_auth_failures', {
+    severity: 'high',
+    count: count,
+    threshold: 50,
+    message: 'Elevated authentication failure rate',
+    action: 'Monitor for escalation, review failure reasons',
+  });
+}
+```
+
+**Password Reset Spike**:
+```typescript
+// Alert on unusual password reset activity
+if (count('auth.reset_password.request', last_hour) > 100) {
+  alert('password_reset_spike', {
+    severity: 'high',
+    count: count,
+    threshold: 100,
+    message: 'Unusual spike in password reset requests',
+    action: 'Check for automated attacks, verify legitimate user activity',
+  });
+}
+```
+
+**Email Queue Backlog**:
+```typescript
+// Alert when email queue grows too large
+if (gauge('email.queue.size') > 1000) {
+  alert('email_queue_backlog', {
+    severity: 'high',
+    value: gauge('email.queue.size'),
+    threshold: 1000,
+    message: 'Email queue backlog growing',
+    action: 'Check email worker status, verify Resend API availability',
+  });
+}
+```
+
+#### Medium Priority Alerts (Response Within 2 Hours)
+
+**Session Validation Errors**:
+```typescript
+// Alert on session validation issues
+if (count('auth.session.validation.error', last_hour) > 20) {
+  alert('session_validation_errors', {
+    severity: 'medium',
+    count: count,
+    threshold: 20,
+    message: 'Elevated session validation errors',
+    action: 'Review database connectivity, check session table integrity',
+  });
+}
+```
+
+**Slow Authentication Response Times**:
+```typescript
+// Alert when auth endpoints are slow
+if (histogram('auth.login.duration', p95) > 1000) {
+  alert('slow_auth_response', {
+    severity: 'medium',
+    p95: histogram('auth.login.duration', p95),
+    threshold: 1000,
+    message: 'Authentication response times degraded',
+    action: 'Check database performance, review query execution plans',
+  });
+}
+```
+
+**Unverified Email Sign-In Attempts**:
+```typescript
+// Alert on users trying to sign in without verification
+if (count('auth.login.failure.unverified', last_hour) > 30) {
+  alert('unverified_signin_attempts', {
+    severity: 'medium',
+    count: count,
+    threshold: 30,
+    message: 'High rate of unverified email sign-in attempts',
+    action: 'Review verification email delivery, check for user confusion',
+  });
+}
+```
+
+### Metrics Collection
+
+Implement the following metrics to track authentication system health and performance.
+
+#### Counters (Cumulative Counts)
+
+**Authentication Events**:
+```typescript
+// Track all authentication events
+metrics.counter('auth.signup.total');           // Total signups
+metrics.counter('auth.signup.success');         // Successful signups
+metrics.counter('auth.signup.failure');         // Failed signups
+
+metrics.counter('auth.login.total');            // Total sign-in attempts
+metrics.counter('auth.login.success');          // Successful sign-ins
+metrics.counter('auth.login.failure');          // Failed sign-ins
+metrics.counter('auth.login.failure.invalid_credentials');
+metrics.counter('auth.login.failure.unverified');
+
+metrics.counter('auth.logout.total');           // Total sign-outs
+
+metrics.counter('auth.verify_email.total');     // Email verification attempts
+metrics.counter('auth.verify_email.success');   // Successful verifications
+metrics.counter('auth.verify_email.failure');   // Failed verifications
+
+metrics.counter('auth.reset_password.request'); // Password reset requests
+metrics.counter('auth.reset_password.success'); // Successful resets
+metrics.counter('auth.reset_password.failure'); // Failed resets
+```
+
+**Security Events**:
+```typescript
+metrics.counter('auth.rate_limit.exceeded');    // Rate limit hits
+metrics.counter('auth.token.tampered');         // Token tampering attempts
+metrics.counter('auth.session.tampered');       // Session tampering attempts
+metrics.counter('auth.reauth.required');        // Re-auth prompts
+metrics.counter('auth.reauth.failure');         // Failed re-auth attempts
+```
+
+**Email Events**:
+```typescript
+metrics.counter('email.queued');                // Emails queued
+metrics.counter('email.sent');                  // Emails sent successfully
+metrics.counter('email.failed');                // Email delivery failures
+metrics.counter('email.retry');                 // Email retries scheduled
+```
+
+#### Gauges (Point-in-Time Values)
+
+**System State**:
+```typescript
+metrics.gauge('auth.sessions.active');          // Current active sessions
+metrics.gauge('auth.users.total');              // Total registered users
+metrics.gauge('auth.users.verified');           // Verified users
+metrics.gauge('email.queue.size');              // Current email queue size
+metrics.gauge('auth.rate_limit.blocked_ips');   // Currently blocked IPs
+```
+
+#### Histograms (Distribution of Values)
+
+**Performance Metrics**:
+```typescript
+metrics.histogram('auth.login.duration');                    // Sign-in duration (ms)
+metrics.histogram('auth.signup.duration');                   // Signup duration (ms)
+metrics.histogram('auth.session.validation.duration');       // Session validation (ms)
+metrics.histogram('auth.password.hash.duration');            // Password hashing (ms)
+metrics.histogram('auth.token.generation.duration');         // Token generation (ms)
+metrics.histogram('email.delivery.duration');                // Email delivery (ms)
+```
+
+**Example Implementation**:
+```typescript
+// src/lib/metrics.ts
+import { logger } from '@/lib/logger';
+
+class MetricsCollector {
+  private counters: Map<string, number> = new Map();
+  private gauges: Map<string, number> = new Map();
+  private histograms: Map<string, number[]> = new Map();
+
+  counter(name: string, value: number = 1): void {
+    const current = this.counters.get(name) || 0;
+    this.counters.set(name, current + value);
+    
+    // Send to external metrics service (Datadog, Prometheus, etc.)
+    this.sendMetric({ type: 'counter', name, value });
+  }
+
+  gauge(name: string, value: number): void {
+    this.gauges.set(name, value);
+    this.sendMetric({ type: 'gauge', name, value });
+  }
+
+  histogram(name: string, value: number): void {
+    const values = this.histograms.get(name) || [];
+    values.push(value);
+    this.histograms.set(name, values);
+    this.sendMetric({ type: 'histogram', name, value });
+  }
+
+  private sendMetric(metric: any): void {
+    // Send to external service or log for collection
+    logger.info('metric', metric);
+  }
+
+  getPercentile(name: string, percentile: number): number {
+    const values = this.histograms.get(name) || [];
+    if (values.length === 0) return 0;
+    
+    const sorted = values.sort((a, b) => a - b);
+    const index = Math.ceil((percentile / 100) * sorted.length) - 1;
+    return sorted[index];
+  }
+}
+
+export const metrics = new MetricsCollector();
+```
+
+**Usage in Authentication Code**:
+```typescript
+// src/app/api/auth/login/route.ts
+import { metrics } from '@/lib/metrics';
+
+export async function POST(request: Request) {
+  const start = Date.now();
+  metrics.counter('auth.login.total');
+  
+  try {
+    // ... authentication logic ...
+    
+    metrics.counter('auth.login.success');
+    metrics.histogram('auth.login.duration', Date.now() - start);
+    
+    return Response.json({ user });
+  } catch (error) {
+    metrics.counter('auth.login.failure');
+    metrics.histogram('auth.login.duration', Date.now() - start);
+    
+    throw error;
+  }
+}
+```
+
+### Email and Slack Alert Configuration
+
+Configure notification channels to receive authentication alerts in real-time.
+
+#### Slack Integration
+
+**Setup Slack Webhook**:
+
+1. Create Slack App:
+   - Go to https://api.slack.com/apps
+   - Click "Create New App" → "From scratch"
+   - Name: "UI SyncUp Alerts"
+   - Select workspace
+
+2. Enable Incoming Webhooks:
+   - Navigate to "Incoming Webhooks"
+   - Toggle "Activate Incoming Webhooks" to On
+   - Click "Add New Webhook to Workspace"
+   - Select channel (e.g., `#auth-alerts`)
+   - Copy webhook URL
+
+3. Configure in Application:
+   ```bash
+   # Add to environment variables
+   vercel env add SLACK_WEBHOOK_URL production
+   # Paste webhook URL when prompted
+   ```
+
+4. Implement Alert Function:
+   ```typescript
+   // src/lib/alerts.ts
+   import { env } from '@/lib/env';
+   
+   interface Alert {
+     type: string;
+     severity: 'critical' | 'high' | 'medium' | 'low';
+     message: string;
+     details?: Record<string, any>;
+   }
+   
+   export async function sendSlackAlert(alert: Alert): Promise<void> {
+     if (!env.SLACK_WEBHOOK_URL) return;
+     
+     const color = {
+       critical: '#FF0000',
+       high: '#FF6600',
+       medium: '#FFCC00',
+       low: '#00CC00',
+     }[alert.severity];
+     
+     const payload = {
+       attachments: [{
+         color,
+         title: `🚨 ${alert.severity.toUpperCase()}: ${alert.type}`,
+         text: alert.message,
+         fields: Object.entries(alert.details || {}).map(([key, value]) => ({
+           title: key,
+           value: String(value),
+           short: true,
+         })),
+         footer: 'UI SyncUp Auth System',
+         ts: Math.floor(Date.now() / 1000),
+       }],
+     };
+     
+     await fetch(env.SLACK_WEBHOOK_URL, {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify(payload),
+     });
+   }
+   ```
+
+5. Use in Alert Logic:
+   ```typescript
+   // src/lib/monitoring.ts
+   import { sendSlackAlert } from '@/lib/alerts';
+   import { metrics } from '@/lib/metrics';
+   
+   export async function checkAuthFailureRate(): Promise<void> {
+     const failures = metrics.counter('auth.login.failure');
+     
+     if (failures > 100) {
+       await sendSlackAlert({
+         type: 'high_auth_failure_rate',
+         severity: 'critical',
+         message: 'Authentication failure rate exceeded threshold',
+         details: {
+           count: failures,
+           threshold: 100,
+           window: '5 minutes',
+           action: 'Investigate logs for attack patterns',
+         },
+       });
+     }
+   }
+   ```
+
+#### Email Alerts
+
+**Setup Email Alerts**:
+
+1. Configure Email Service:
+   ```typescript
+   // src/lib/alerts.ts
+   import { resend } from '@/server/email/client';
+   import { env } from '@/lib/env';
+   
+   export async function sendEmailAlert(alert: Alert): Promise<void> {
+     const recipients = env.ALERT_EMAIL_RECIPIENTS?.split(',') || [];
+     if (recipients.length === 0) return;
+     
+     const subject = `[${alert.severity.toUpperCase()}] ${alert.type}`;
+     const html = `
+       <h2>${alert.message}</h2>
+       <p><strong>Severity:</strong> ${alert.severity}</p>
+       <p><strong>Time:</strong> ${new Date().toISOString()}</p>
+       ${alert.details ? `
+         <h3>Details:</h3>
+         <ul>
+           ${Object.entries(alert.details).map(([key, value]) => 
+             `<li><strong>${key}:</strong> ${value}</li>`
+           ).join('')}
+         </ul>
+       ` : ''}
+     `;
+     
+     await resend.emails.send({
+       from: 'alerts@yourdomain.com',
+       to: recipients,
+       subject,
+       html,
+     });
+   }
+   ```
+
+2. Add Environment Variable:
+   ```bash
+   vercel env add ALERT_EMAIL_RECIPIENTS production
+   # Enter: admin@yourdomain.com,devops@yourdomain.com
+   ```
+
+#### Discord Integration (Alternative)
+
+**Setup Discord Webhook**:
+
+1. Create Webhook:
+   - Open Discord server
+   - Go to Server Settings → Integrations → Webhooks
+   - Click "New Webhook"
+   - Name: "Auth Alerts"
+   - Select channel (e.g., `#auth-alerts`)
+   - Copy webhook URL
+
+2. Implement Discord Alerts:
+   ```typescript
+   // src/lib/alerts.ts
+   export async function sendDiscordAlert(alert: Alert): Promise<void> {
+     if (!env.DISCORD_WEBHOOK_URL) return;
+     
+     const color = {
+       critical: 0xFF0000,
+       high: 0xFF6600,
+       medium: 0xFFCC00,
+       low: 0x00CC00,
+     }[alert.severity];
+     
+     const payload = {
+       embeds: [{
+         title: `🚨 ${alert.severity.toUpperCase()}: ${alert.type}`,
+         description: alert.message,
+         color,
+         fields: Object.entries(alert.details || {}).map(([name, value]) => ({
+           name,
+           value: String(value),
+           inline: true,
+         })),
+         timestamp: new Date().toISOString(),
+         footer: { text: 'UI SyncUp Auth System' },
+       }],
+     };
+     
+     await fetch(env.DISCORD_WEBHOOK_URL, {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify(payload),
+     });
+   }
+   ```
+
+### Monitoring Dashboard Setup
+
+Create a centralized dashboard to monitor authentication system health.
+
+#### Vercel Analytics Dashboard
+
+**Key Metrics to Display**:
+- Authentication success/failure rates (last 24 hours)
+- Active sessions count
+- Email queue size
+- Rate limit violations
+- Response time percentiles (p50, p95, p99)
+
+**Custom Dashboard** (if using external service):
+
+```typescript
+// Example: Datadog Dashboard Configuration
+{
+  "title": "Authentication System Health",
+  "widgets": [
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Authentication Success Rate",
+        "requests": [{
+          "q": "sum:auth.login.success{*}.as_rate()",
+          "display_type": "line"
+        }]
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "Active Sessions",
+        "requests": [{
+          "q": "avg:auth.sessions.active{*}"
+        }]
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Authentication Response Time (p95)",
+        "requests": [{
+          "q": "p95:auth.login.duration{*}",
+          "display_type": "line"
+        }]
+      }
+    }
+  ]
+}
+```
+
+### Troubleshooting Guide
+
+Common authentication issues and their resolutions.
+
+#### High Authentication Failure Rate
+
+**Symptoms**:
+- Alert: `high_auth_failure_rate`
+- Many `auth.login.failure` events in logs
+
+**Diagnosis**:
+```bash
+# Check recent login failures
+vercel logs --follow | grep "auth.login.failure"
+
+# Check for patterns (same IP, same email)
+vercel logs | grep "auth.login.failure" | jq '.ipAddress' | sort | uniq -c | sort -rn
+
+# Check failure reasons
+vercel logs | grep "auth.login.failure" | jq '.errorCode' | sort | uniq -c
+```
+
+**Common Causes**:
+1. **Brute Force Attack**:
+   - Multiple IPs trying common passwords
+   - Solution: Verify rate limiting is working, consider temporary IP blocks
+   
+2. **User Confusion**:
+   - Users forgetting passwords
+   - Solution: Improve password reset flow, add "forgot password" link
+   
+3. **System Issue**:
+   - Database connectivity problems
+   - Solution: Check database health, connection pool status
+
+**Resolution**:
+```bash
+# If attack detected, block IPs temporarily
+# Add to rate limiter with extended block time
+
+# If system issue, check database
+psql $DATABASE_URL -c "SELECT COUNT(*) FROM users;"
+
+# Check connection pool
+psql $DATABASE_URL -c "SELECT count(*) FROM pg_stat_activity;"
+```
+
+#### Email Delivery Failures
+
+**Symptoms**:
+- Alert: `email_delivery_issues`
+- Many `email.failed` events in logs
+
+**Diagnosis**:
+```bash
+# Check email failure logs
+vercel logs | grep "email.failed" | jq '.errorMessage'
+
+# Check Resend API status
+curl https://status.resend.com/api/v2/status.json
+
+# Check email queue size
+vercel logs | grep "email.queue.size" | tail -1
+```
+
+**Common Causes**:
+1. **Resend API Issues**:
+   - Service outage or rate limiting
+   - Solution: Check Resend status page, wait for recovery
+   
+2. **Invalid API Key**:
+   - Expired or incorrect API key
+   - Solution: Verify `RESEND_API_KEY` environment variable
+   
+3. **Rate Limit Exceeded**:
+   - Too many emails sent too quickly
+   - Solution: Implement exponential backoff, upgrade Resend plan
+
+**Resolution**:
+```bash
+# Verify API key
+vercel env ls | grep RESEND_API_KEY
+
+# Test Resend API
+curl -X POST https://api.resend.com/emails \
+  -H "Authorization: Bearer $RESEND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"from":"test@yourdomain.com","to":"test@example.com","subject":"Test","html":"Test"}'
+
+# Check email queue and retry failed jobs
+# (Implement admin endpoint to retry failed emails)
+```
+
+#### Session Validation Errors
+
+**Symptoms**:
+- Alert: `session_validation_errors`
+- Users being logged out unexpectedly
+
+**Diagnosis**:
+```bash
+# Check session validation errors
+vercel logs | grep "auth.session.validation.error" | jq '.errorMessage'
+
+# Check database connectivity
+psql $DATABASE_URL -c "SELECT 1;"
+
+# Check session table
+psql $DATABASE_URL -c "SELECT COUNT(*) FROM sessions WHERE expires_at > NOW();"
+```
+
+**Common Causes**:
+1. **Database Connection Issues**:
+   - Connection pool exhausted
+   - Solution: Increase pool size, check for connection leaks
+   
+2. **Clock Skew**:
+   - Server time out of sync
+   - Solution: Verify server time, use NTP
+   
+3. **Session Expiration**:
+   - Sessions expiring too quickly
+   - Solution: Adjust session lifetime, verify rolling renewal
+
+**Resolution**:
+```bash
+# Check database connection pool
+psql $DATABASE_URL -c "SELECT count(*), state FROM pg_stat_activity GROUP BY state;"
+
+# Check server time
+date -u
+
+# Verify session expiration logic
+psql $DATABASE_URL -c "SELECT id, expires_at, created_at FROM sessions ORDER BY created_at DESC LIMIT 10;"
+```
+
+#### Rate Limit Abuse
+
+**Symptoms**:
+- Alert: `rate_limit_abuse`
+- Many `auth.rate_limit.exceeded` events
+
+**Diagnosis**:
+```bash
+# Check rate limit violations
+vercel logs | grep "auth.rate_limit.exceeded" | jq '.ipAddress' | sort | uniq -c | sort -rn
+
+# Check for bot patterns
+vercel logs | grep "auth.rate_limit.exceeded" | jq '.userAgent' | sort | uniq -c
+```
+
+**Common Causes**:
+1. **Bot Attack**:
+   - Automated tools trying to brute force
+   - Solution: Block IPs, implement CAPTCHA
+   
+2. **Legitimate User**:
+   - User repeatedly trying wrong password
+   - Solution: Improve error messages, suggest password reset
+
+**Resolution**:
+```bash
+# Block abusive IPs (implement IP blocking in rate limiter)
+# Add to blocklist with extended timeout
+
+# Consider implementing CAPTCHA for repeated failures
+# Add reCAPTCHA or similar after 3 failed attempts
+```
+
+#### Token Tampering
+
+**Symptoms**:
+- Alert: `potential_attack`
+- `auth.token.tampered` events in logs
+
+**Diagnosis**:
+```bash
+# Check token tampering attempts
+vercel logs | grep "auth.token.tampered" | jq '{ip: .ipAddress, token: .token, time: .timestamp}'
+
+# Check for patterns
+vercel logs | grep "auth.token.tampered" | jq '.ipAddress' | sort | uniq -c
+```
+
+**Common Causes**:
+1. **Malicious Attack**:
+   - Attacker trying to forge tokens
+   - Solution: Verify token signing key, block IPs
+   
+2. **Old Tokens**:
+   - Users using expired or old verification links
+   - Solution: Improve token expiration messaging
+
+**Resolution**:
+```bash
+# Verify token signing secret
+vercel env ls | grep BETTER_AUTH_SECRET
+
+# Rotate secret if compromised (will invalidate all tokens)
+vercel env rm BETTER_AUTH_SECRET production
+vercel env add BETTER_AUTH_SECRET production
+# Enter new 32+ character secret
+
+# Block attacking IPs
+# Implement IP blocking in rate limiter
+```
+
+### Performance Monitoring
+
+Monitor authentication system performance to ensure fast response times.
+
+#### Target Performance Metrics
+
+| Operation | Target (p95) | Critical Threshold |
+|-----------|--------------|-------------------|
+| Sign-in | < 500ms | > 1000ms |
+| Sign-up | < 1000ms | > 2000ms |
+| Session validation | < 100ms | > 500ms |
+| Password hashing | < 200ms | > 500ms |
+| Token generation | < 50ms | > 200ms |
+| Email queueing | < 100ms | > 500ms |
+
+#### Performance Monitoring Queries
+
+```bash
+# Check authentication response times
+vercel logs | grep "auth.login.duration" | jq '.duration' | \
+  awk '{sum+=$1; count++} END {print "Average:", sum/count, "ms"}'
+
+# Check p95 response time
+vercel logs | grep "auth.login.duration" | jq '.duration' | \
+  sort -n | awk '{a[NR]=$1} END {print "P95:", a[int(NR*0.95)]}'
+
+# Check slow queries
+vercel logs | grep "auth.login.duration" | jq 'select(.duration > 1000)'
+```
+
+#### Performance Optimization
+
+If performance degrades:
+
+1. **Check Database**:
+   ```bash
+   # Check slow queries
+   psql $DATABASE_URL -c "SELECT query, mean_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;"
+   
+   # Check missing indexes
+   psql $DATABASE_URL -c "SELECT schemaname, tablename, attname FROM pg_stats WHERE schemaname = 'public' AND n_distinct < 0;"
+   ```
+
+2. **Check Connection Pool**:
+   ```bash
+   # Check active connections
+   psql $DATABASE_URL -c "SELECT count(*), state FROM pg_stat_activity GROUP BY state;"
+   ```
+
+3. **Optimize Queries**:
+   - Add indexes for frequently queried columns
+   - Use `EXPLAIN ANALYZE` to identify slow queries
+   - Implement query result caching
+
+### Security Monitoring
+
+Monitor for security threats and suspicious activity.
+
+#### Security Metrics to Track
+
+```typescript
+// Track security events
+metrics.counter('auth.suspicious.multiple_ips');        // Same user from multiple IPs
+metrics.counter('auth.suspicious.rapid_signups');       // Many signups from same IP
+metrics.counter('auth.suspicious.password_spray');      // Same password tried on multiple accounts
+metrics.counter('auth.suspicious.credential_stuffing'); // Known breached credentials
+```
+
+#### Security Alerts
+
+**Multiple IPs for Same User**:
+```typescript
+// Alert if user signs in from multiple IPs in short time
+if (userIPCount(userId, last_hour) > 3) {
+  alert('suspicious_activity', {
+    severity: 'high',
+    userId,
+    ipCount: userIPCount(userId, last_hour),
+    message: 'User signed in from multiple IPs',
+  });
+}
+```
+
+**Rapid Signups from Same IP**:
+```typescript
+// Alert if many signups from same IP
+if (signupsFromIP(ipAddress, last_hour) > 10) {
+  alert('suspicious_signups', {
+    severity: 'high',
+    ipAddress,
+    count: signupsFromIP(ipAddress, last_hour),
+    message: 'Rapid signups from single IP',
+  });
+}
+```
+
+### Compliance and Audit Logging
+
+Maintain audit logs for compliance and security investigations.
+
+#### Audit Log Requirements
+
+All authentication events must be logged with:
+- Event ID (UUID)
+- Timestamp (ISO 8601)
+- User ID (if authenticated)
+- Email (hashed for PII protection)
+- IP address
+- User agent
+- Outcome (success/failure)
+- Error code (if failed)
+
+#### Audit Log Retention
+
+| Environment | Retention Period | Storage |
+|-------------|------------------|---------|
+| Production | 90 days | External log service |
+| Preview | 7 days | Vercel logs |
+| Development | 1 day | Local logs |
+
+#### Audit Log Queries
+
+```bash
+# Find all events for a user
+vercel logs | grep "userId:user_123" | jq '.'
+
+# Find all failed login attempts
+vercel logs | grep "auth.login.failure" | jq '{time: .timestamp, email: .email, ip: .ipAddress}'
+
+# Find all password changes
+vercel logs | grep "auth.reset_password.success" | jq '{time: .timestamp, userId: .userId}'
+
+# Find all token tampering attempts
+vercel logs | grep "auth.token.tampered" | jq '{time: .timestamp, ip: .ipAddress, token: .token}'
+```
+
+### Monitoring Checklist
+
+Use this checklist to ensure comprehensive authentication monitoring.
+
+#### Daily Monitoring (5 minutes)
+
+- [ ] Check authentication success rate (should be > 95%)
+- [ ] Review error rate (should be < 1%)
+- [ ] Check email queue size (should be < 100)
+- [ ] Verify no critical alerts triggered
+- [ ] Review rate limit violations (should be < 50/day)
+
+#### Weekly Monitoring (30 minutes)
+
+- [ ] Review authentication metrics trends
+- [ ] Check for unusual patterns (time of day, geography)
+- [ ] Review top error messages
+- [ ] Verify email delivery rate (should be > 99%)
+- [ ] Check session validation performance
+- [ ] Review security events (tampering, suspicious activity)
+- [ ] Verify rate limiting effectiveness
+
+#### Monthly Monitoring (2 hours)
+
+- [ ] Review authentication system performance trends
+- [ ] Analyze user behavior patterns
+- [ ] Review and update alert thresholds
+- [ ] Check for security vulnerabilities
+- [ ] Review audit logs for compliance
+- [ ] Update monitoring documentation
+- [ ] Test alert notification channels
+- [ ] Review and optimize database queries
+- [ ] Check for outdated dependencies
+- [ ] Verify backup and recovery procedures
+
+---
+
+**Last Updated**: 2025-11-20
 **Maintained By**: DevOps Team

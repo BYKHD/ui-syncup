@@ -89,6 +89,16 @@ const envSchema = z.object({
     .url()
     .describe("better-auth base URL"),
 
+  // Email (Resend)
+  RESEND_API_KEY: z
+    .string()
+    .min(1)
+    .describe("Resend API key"),
+  RESEND_FROM_EMAIL: z
+    .string()
+    .email()
+    .describe("Default sender email address (e.g., noreply@ui-syncup.com)"),
+
   // Feature Flags (Optional)
   NEXT_PUBLIC_ENABLE_ANALYTICS: z
     .string()

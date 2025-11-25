@@ -1,5 +1,3 @@
-import { env } from "./env"
-
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
 
 type QueryParams = Record<
@@ -13,7 +11,7 @@ export interface ApiClientConfig extends Omit<RequestInit, 'body' | 'method'> {
   query?: QueryParams
 }
 
-const API_BASE_URL = env.NEXT_PUBLIC_API_URL ?? ""
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? ""
 
 export class ApiError<T = unknown> extends Error {
   public status: number
@@ -74,6 +72,16 @@ export async function apiClient<TResponse>(
   const payload = isJson ? await response.json() : await response.text()
 
   if (!response.ok) {
+    // Log the error for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[API Error]', {
+        url,
+        method,
+        status: response.status,
+        statusText: response.statusText,
+        payload,
+      })
+    }
     throw new ApiError(response.status, response.statusText, payload)
   }
 

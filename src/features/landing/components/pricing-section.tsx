@@ -1,164 +1,138 @@
 "use client"
 
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { SectionContainer } from "@/components/shared/section-container"
+import { motion } from "motion/react"
+import { Check, X, Sparkles, DollarSign } from "lucide-react"
+import Link from "next/link"
+import { useState } from "react"
+import { SectionHeader } from "./section-header"
 
 const plans = [
   {
-    id: "free",
     name: "Free",
     price: "$0",
-    billing: "forever",
-    description: "Perfect for small teams getting started",
+    description: "Perfect for a squad or hobby project",
+    popular: false,
     features: [
-      "10 team members",
-      "1 project",
-      "25 issues",
-      "100 MB storage",
-      "Public & private projects",
-      "Visual annotations & pins",
-      "Issue workflow tracking",
-      "Community support",
-    ],
-    cta: "Start Free",
-    href: "/sign-up",
-    featured: false,
+      { text: "10 users", included: true },
+      { text: "1 project", included: true },
+      { text: "50 issues", included: true },
+      { text: "Unlimited viewers", included: true },
+      { text: "Priority support", included: false },
+      { text: "Advanced integrations", included: false },
+    ]
   },
   {
-    id: "pro",
     name: "Pro",
     price: "$8",
-    billing: "per editor / month",
-    description: "For growing teams shipping pixel-perfect UI",
+    period: "/ editor / month",
+    description: "For growing teams shipping fast",
+    popular: true,
     features: [
-      "Unlimited team members",
-      "50 projects",
-      "Unlimited issues",
-      "80 GB storage",
-      "Everything in Free, plus:",
-      "Jira & Linear integration",
-      "Advanced analytics & reports",
-      "Priority support",
-      "Unlimited developer & viewer seats (free)",
-    ],
-    cta: "Start Free Trial",
-    href: "/sign-up?plan=pro",
-    featured: true,
-  },
+      { text: "Unlimited users", included: true },
+      { text: "Unlimited projects", included: true },
+      { text: "Unlimited issues", included: true },
+      { text: "Unlimited viewers", included: true },
+      { text: "Priority support", included: true },
+      { text: "Advanced integrations", included: true },
+    ]
+  }
 ]
 
-/**
- * Pricing section: Free and Pro tier comparison
- */
 export function PricingSection() {
-  return (
-    <SectionContainer variant="muted" id="pricing">
-      <div className="space-y-12">
-        {/* Section header */}
-        <div className="text-center space-y-4">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-            Pricing that scales with your design surface
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Start free, upgrade when you need more. Only pay for editor seats—developers and viewers are always free.
-          </p>
-        </div>
+  const [hoveredPlan, setHoveredPlan] = useState<string | null>(null)
 
-        {/* Pricing cards */}
-        <div className="grid gap-8 md:grid-cols-2 max-w-4xl mx-auto">
-          {plans.map((plan) => (
-            <Card
-              key={plan.id}
-              className={
-                plan.featured
-                  ? "border-primary shadow-lg relative"
-                  : "hover:shadow-lg transition-shadow"
+  return (
+    <section className="container mx-auto px-4 py-24 relative overflow-hidden">
+      <SectionHeader
+        badge="Pricing"
+        title="Pricing that scales with you"
+        description="Start for free, upgrade when you need more control. No hidden fees."
+      />
+
+      <div className="mt-16 grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        {plans.map((plan, planIndex) => (
+          <motion.div
+            key={plan.name}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: planIndex * 0.1 }}
+            onHoverStart={() => setHoveredPlan(plan.name)}
+            onHoverEnd={() => setHoveredPlan(null)}
+          >
+            <Card className={`
+              flex flex-col h-full relative overflow-hidden transition-all duration-500
+              ${plan.popular 
+                ? "border-primary/50 shadow-2xl shadow-primary/5 scale-[1.02]" 
+                : "hover:border-primary/20 hover:shadow-xl"
               }
-            >
-              {plan.featured && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-primary text-primary-foreground">
-                    Most Popular
-                  </Badge>
+            `}>
+              {/* Popular Badge */}
+              {plan.popular && (
+                <div className="absolute top-0 right-0">
+                  <div className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-xl">
+                    POPULAR
+                  </div>
                 </div>
               )}
 
-              <CardHeader className="text-center pb-8 pt-6">
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-bold">{plan.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {plan.description}
-                  </p>
-                </div>
-                <div className="mt-4">
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-5xl font-bold">{plan.price}</span>
-                  </div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {plan.billing}
-                  </div>
+              <CardHeader>
+                <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                <CardDescription>{plan.description}</CardDescription>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">{plan.price}</span>
+                  {plan.period && (
+                    <span className="text-muted-foreground text-sm">{plan.period}</span>
+                  )}
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-6">
-                {/* Features list */}
+              <CardContent className="flex-1">
                 <ul className="space-y-3">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          className="w-3 h-3"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                      <span
-                        className={
-                          feature.includes("Everything in") || feature.includes("Unlimited developer")
-                            ? "text-sm font-medium"
-                            : "text-sm"
-                        }
-                      >
-                        {feature}
+                  {plan.features.map((feature, i) => (
+                    <li key={i} className="flex items-center gap-3 text-sm">
+                      {feature.included ? (
+                        <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <Check className="h-3 w-3 text-primary" />
+                        </div>
+                      ) : (
+                        <div className="h-5 w-5 rounded-full bg-muted flex items-center justify-center shrink-0">
+                          <X className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                      )}
+                      <span className={feature.included ? "text-foreground" : "text-muted-foreground"}>
+                        {feature.text}
                       </span>
                     </li>
                   ))}
                 </ul>
-
-                {/* CTA */}
-                <Button
-                  size="lg"
-                  variant={plan.featured ? "default" : "outline"}
-                  className="w-full"
-                  asChild
-                >
-                  <Link href={plan.href}>{plan.cta}</Link>
-                </Button>
               </CardContent>
-            </Card>
-          ))}
-        </div>
 
-        {/* Additional info */}
-        <div className="text-center space-y-2">
-          <p className="text-sm text-muted-foreground">
-            All plans include 14-day money-back guarantee. No credit card required to start.
-          </p>
-          <Button variant="link" asChild>
-            <Link href="#demo">See how pricing works →</Link>
-          </Button>
-        </div>
+              <CardFooter>
+                <Link href="/sign-up" className="w-full">
+                  <Button 
+                    className="w-full" 
+                    variant={plan.popular ? "default" : "outline"}
+                    size="lg"
+                  >
+                    {plan.popular ? "Get Started" : "Start for free"}
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+          </motion.div>
+        ))}
       </div>
-    </SectionContainer>
+
+      <p className="text-center text-sm text-muted-foreground mt-12">
+        All plans include unlimited viewers. Need enterprise features?{" "}
+        <a href="#" className="text-primary hover:underline font-medium">
+          Contact sales
+        </a>
+      </p>
+    </section>
   )
 }

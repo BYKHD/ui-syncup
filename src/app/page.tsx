@@ -1,4 +1,4 @@
-import LandingScreen from "@/features/landing/screens/landing-screen"
+import { LandingScreen } from "@/features/landing"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {

@@ -10,6 +10,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { env, isProduction } from './env'
+import * as schema from '@/server/db/schema'
 
 /**
  * PostgreSQL connection configuration
@@ -20,6 +21,20 @@ import { env, isProduction } from './env'
  * - Sets idle timeout to prevent stale connections
  */
 const connectionString = env.DATABASE_URL
+const connectionOptions = {
+  // SSL configuration based on environment
+  ssl: isProduction() ? 'require' : false,
+  
+  // Connection pool settings
+  max: 10, // Maximum number of connections in pool
+  idle_timeout: 20, // Close idle connections after 20 seconds
+  connect_timeout: 10, // Connection timeout in seconds
+  
+  // Prepared statements for better performance
+  prepare: true,
+} as const
+
+export { connectionString, connectionOptions }
 
 /**
  * Create postgres client with environment-specific configuration
@@ -32,18 +47,8 @@ const connectionString = env.DATABASE_URL
  * - SSL disabled for local PostgreSQL
  * - Connection pooling enabled
  */
-const client = postgres(connectionString, {
-  // SSL configuration based on environment
-  ssl: isProduction() ? 'require' : false,
-  
-  // Connection pool settings
-  max: 10, // Maximum number of connections in pool
-  idle_timeout: 20, // Close idle connections after 20 seconds
-  connect_timeout: 10, // Connection timeout in seconds
-  
-  // Prepared statements for better performance
-  prepare: true,
-})
+const client = postgres(connectionString, connectionOptions)
+export const dbClient = client
 
 /**
  * Drizzle ORM database instance
@@ -62,7 +67,7 @@ const client = postgres(connectionString, {
  * await db.insert(usersTable).values({ name: 'John', email: 'john@example.com' })
  * ```
  */
-export const db = drizzle(client)
+export const db = drizzle(client, { schema })
 
 /**
  * Close database connection

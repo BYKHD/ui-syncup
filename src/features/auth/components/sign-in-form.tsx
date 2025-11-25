@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { RiAlertLine, RiCheckboxCircleLine } from "@remixicon/react";
 
 import type { SignInSchema } from "../utils/validators";
 
@@ -14,6 +15,7 @@ type SignInFormProps = {
   form: UseFormReturn<SignInSchema>;
   status: "idle" | "submitting" | "success";
   message: string | null;
+  retryAfter?: number | null;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   onOAuthSignIn: () => void;
   oauthStatus: "idle" | "loading" | "error";
@@ -26,6 +28,7 @@ export function SignInForm({
   form,
   status,
   message,
+  retryAfter,
   onSubmit,
   onOAuthSignIn,
   oauthStatus,
@@ -38,6 +41,10 @@ export function SignInForm({
     formState: { errors },
   } = form;
 
+  // Determine if we should show an error or success message
+  const isError = status === "idle" && message !== null;
+  const isSuccess = status === "success" && message !== null;
+
   return (
     <div className="flex w-full flex-col gap-4 rounded-lg border border-muted bg-background px-6 py-8 shadow-sm">
       <div className="space-y-1 text-center">
@@ -45,10 +52,28 @@ export function SignInForm({
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
 
-      {message && (
-        <Alert>
+      {/* Success message */}
+      {isSuccess && (
+        <Alert className="border-green-200 bg-green-50 text-green-900 dark:border-green-900 dark:bg-green-950 dark:text-green-100">
+          <RiCheckboxCircleLine className="h-4 w-4" />
           <AlertTitle>Success</AlertTitle>
           <AlertDescription>{message}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Error message (authentication, validation, rate limit) */}
+      {isError && (
+        <Alert variant="destructive">
+          <RiAlertLine className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {message}
+            {retryAfter && (
+              <span className="mt-1 block text-xs">
+                Please wait {retryAfter} seconds before trying again.
+              </span>
+            )}
+          </AlertDescription>
         </Alert>
       )}
 
@@ -70,7 +95,15 @@ export function SignInForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Password</Label>
+            <a
+              href="/forgot-password"
+              className="text-xs text-primary hover:underline"
+            >
+              Forgot password?
+            </a>
+          </div>
           <Input
             id="password"
             autoComplete="current-password"

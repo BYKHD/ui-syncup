@@ -1,129 +1,121 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
-import { SectionContainer } from "@/components/shared/section-container"
+import { Card } from "@/components/ui/card"
+import { motion, useScroll, useTransform } from "motion/react"
+import { MessageSquarePlus, ListTodo, CheckCircle, Zap } from "lucide-react"
+import { useRef } from "react"
+import { SectionHeader } from "./section-header"
 
 const steps = [
   {
-    number: "01",
+    step: 1,
     title: "Capture visual feedback",
-    description:
-      "Upload Figma exports or screenshots. Pin and box annotations with threaded comments to highlight every UI detail.",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-8 h-8"
-      >
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        <circle cx="9" cy="10" r="1" />
-        <circle cx="15" cy="10" r="1" />
-      </svg>
-    ),
+    description: "Upload Figma exports or screenshots. Pin comments directly on the UI, draw boxes, and start threaded discussions with context.",
+    icon: MessageSquarePlus,
+    color: "text-blue-500",
+    bg: "bg-blue-500/10",
+    border: "border-blue-500/20"
   },
   {
-    number: "02",
-    title: "Convert to trackable issues",
-    description:
-      "One click to create an issue with workflow state, assignee, priority, and type. All context preserved.",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-8 h-8"
-      >
-        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-        <path d="M3 3v5h5" />
-        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-        <path d="M16 16h5v5" />
-      </svg>
-    ),
+    step: 2,
+    title: "Convert to issues",
+    description: "One click turns a comment into a trackable issue. Assign team members, set priority, and sync with your project workflow.",
+    icon: ListTodo,
+    color: "text-purple-500",
+    bg: "bg-purple-500/10",
+    border: "border-purple-500/20"
   },
   {
-    number: "03",
+    step: 3,
     title: "Track to resolution",
-    description:
-      "Follow issues through your workflow: Open → In Progress → In Review → Resolved. Timeline shows every status change and update.",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-8 h-8"
-      >
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-      </svg>
-    ),
+    description: "Follow the timeline from Open to Resolved. Compare implementation vs design side-by-side to ensure pixel perfection.",
+    icon: CheckCircle,
+    color: "text-green-500",
+    bg: "bg-green-500/10",
+    border: "border-green-500/20"
   },
 ]
 
-/**
- * How it works section: 3-step flow showing the feedback-to-resolution process
- */
 export function HowItWorksSection() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  })
+
+  const pathLength = useTransform(scrollYProgress, [0.1, 0.6], [0, 1])
+
   return (
-    <SectionContainer variant="muted" id="how-it-works">
-      <div className="space-y-12">
-        {/* Section header */}
-        <div className="text-center space-y-4">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-            How teams use UI SyncUp
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            From visual feedback to shipped feature in three simple steps
-          </p>
+    <section ref={containerRef} className="container mx-auto px-4 py-24 md:py-32 relative">
+      <SectionHeader
+        title="From Design to Done"
+        description="Streamline your feedback loop in three simple steps. No more scattered screenshots or lost Slack messages."
+        badge="Workflow"
+        icon={Zap}
+      />
+
+      <div className="relative grid gap-8 md:grid-cols-3">
+        {/* Connecting Line (Desktop) */}
+        <div className="hidden md:block absolute top-12 left-0 right-0 h-24 -z-10">
+          <svg className="w-full h-full overflow-visible">
+            <motion.path
+              d="M 100 50 C 300 50, 300 50, 500 50 C 700 50, 700 50, 900 50"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-muted/30"
+              vectorEffect="non-scaling-stroke"
+            />
+            <motion.path
+              d="M 100 50 C 300 50, 300 50, 500 50 C 700 50, 700 50, 900 50"
+              fill="none"
+              stroke="url(#gradient)"
+              strokeWidth="2"
+              className="drop-shadow-lg"
+              style={{ pathLength }}
+              vectorEffect="non-scaling-stroke"
+            />
+            <defs>
+              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="var(--blue-500)" stopOpacity="0" />
+                <stop offset="50%" stopColor="var(--primary)" />
+                <stop offset="100%" stopColor="var(--green-500)" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+          </svg>
         </div>
 
-        {/* Steps grid */}
-        <div className="grid gap-8 md:grid-cols-3">
-          {steps.map((step, index) => (
-            <div key={step.number} className="relative">
-              {/* Connector line (desktop only) */}
-              {index < steps.length - 1 && (
-                <div className="hidden md:block absolute top-12 left-full w-full h-0.5 bg-border -z-10">
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 bg-primary rounded-full" />
+        {steps.map((step, index) => (
+          <motion.div
+            key={step.step}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: index * 0.2 }}
+            className="relative group"
+          >
+            <div className="mb-6 flex justify-center md:justify-start md:pl-8">
+              <div className={`
+                relative flex h-16 w-16 items-center justify-center rounded-2xl 
+                bg-background border-2 ${step.border} shadow-lg
+                group-hover:scale-110 transition-transform duration-300
+              `}>
+                <step.icon className={`h-8 w-8 ${step.color}`} />
+                <div className={`absolute -top-2 -right-2 h-6 w-6 rounded-full ${step.bg} ${step.border} border flex items-center justify-center text-xs font-bold`}>
+                  {step.step}
                 </div>
-              )}
-
-              <Card className="h-full hover:shadow-lg transition-shadow">
-                <CardContent className="p-6 space-y-4">
-                  {/* Step number badge */}
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      {step.icon}
-                    </div>
-                    <span className="text-4xl font-bold text-muted-foreground/20">
-                      {step.number}
-                    </span>
-                  </div>
-
-                  {/* Content */}
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-semibold">{step.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      {step.description}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              </div>
             </div>
-          ))}
-        </div>
+
+            <Card className="p-6 border-muted/40 bg-background/50 backdrop-blur-sm hover:bg-background/80 transition-colors">
+              <h3 className="text-xl font-bold mb-3">{step.title}</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                {step.description}
+              </p>
+            </Card>
+          </motion.div>
+        ))}
       </div>
-    </SectionContainer>
+    </section>
   )
 }

@@ -1,11 +1,13 @@
 import "@testing-library/jest-dom/vitest"
-import { vi } from "vitest"
+import { afterAll, afterEach, beforeEach, vi } from "vitest"
+
+import { createTestDb } from "@/lib/testing/test-db"
 
 // Set up test environment variables
 vi.stubEnv("NODE_ENV", "test")
 vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")
 vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:3000/api")
-vi.stubEnv("DATABASE_URL", "postgresql://test:test@localhost:5432/test")
+vi.stubEnv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/ui_syncup_dev")
 vi.stubEnv("SUPABASE_URL", "https://test.supabase.co")
 vi.stubEnv("SUPABASE_ANON_KEY", "test-anon-key")
 vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key")
@@ -19,3 +21,25 @@ vi.stubEnv("GOOGLE_CLIENT_SECRET", "test-client-secret")
 vi.stubEnv("GOOGLE_REDIRECT_URI", "http://localhost:3000/api/auth/callback/google")
 vi.stubEnv("BETTER_AUTH_SECRET", "test-secret-key-with-at-least-32-characters")
 vi.stubEnv("BETTER_AUTH_URL", "http://localhost:3000")
+vi.stubEnv("RESEND_API_KEY", "re_test_key")
+vi.stubEnv("RESEND_FROM_EMAIL", "test@example.com")
+
+// In-memory Postgres for tests (avoids needing a real DB)
+const testDb = createTestDb()
+
+vi.mock("@/lib/db", () => ({
+  db: testDb.db,
+  closeDatabase: testDb.closeDatabase,
+}))
+
+beforeEach(async () => {
+  await testDb.resetDatabase()
+})
+
+afterEach(async () => {
+  await testDb.resetDatabase()
+})
+
+afterAll(async () => {
+  await testDb.closeDatabase()
+})
