@@ -8,6 +8,18 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
     env: loadEnv("test", process.cwd(), ""),
+    include: [
+      "src/**/__tests__/**/*.{test,spec}.{ts,tsx}",
+      "src/**/*.{test,spec}.{ts,tsx}",
+    ],
+    exclude: [
+      "node_modules/**",
+      "dist/**",
+      ".next/**",
+      "tests/e2e/**",
+      "**/playwright.config.ts",
+      "**/*.spec.ts",
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],

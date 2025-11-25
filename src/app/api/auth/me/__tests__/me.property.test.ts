@@ -5,7 +5,7 @@
  * using property-based testing with fast-check.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import fc from 'fast-check';
 import { db } from '@/lib/db';
 import { users, sessions, userRoles } from '@/server/db/schema';
@@ -39,20 +39,24 @@ const PROPERTY_CONFIG = {
   verbose: false,
 };
 
+const userAgentArb = fc
+  .string({ minLength: 10, maxLength: 200 })
+  .filter(s => s.trim().length > 0 && !s.includes('\\'));
+
 // Test user data
 let testUserId: string;
 let testUserEmail: string;
 
 /**
- * Setup: Create a test user before all tests
+ * Create a fresh test user for each test.
+ * The shared test DB is reset before every test run, so seed after the reset.
  */
-beforeAll(async () => {
-  // Create test user
+async function createTestUser() {
   const passwordHash = await hashPassword('TestPassword123!');
   const [user] = await db
     .insert(users)
     .values({
-      email: `test-me-${Date.now()}@example.com`,
+      email: `test-me-${Date.now()}-${Math.random().toString(16).slice(2)}@example.com`,
       passwordHash,
       name: 'Test User',
       emailVerified: true,
@@ -61,24 +65,15 @@ beforeAll(async () => {
 
   testUserId = user.id;
   testUserEmail = user.email;
-});
-
-/**
- * Cleanup: Delete test user and all sessions after all tests
- */
-afterAll(async () => {
-  // Delete all sessions for test user
-  await db.delete(sessions).where(eq(sessions.userId, testUserId));
-  
-  // Delete test user
-  await db.delete(users).where(eq(users.id, testUserId));
-});
+}
 
 /**
  * Cleanup: Delete all sessions and roles before each test
  */
 beforeEach(async () => {
-  // Delete all sessions and roles for test user
+  await createTestUser();
+
+  // Delete all sessions and roles for test user (defensive; tables are reset globally)
   await db.delete(sessions).where(eq(sessions.userId, testUserId));
   await db.delete(userRoles).where(eq(userRoles.userId, testUserId));
   
@@ -110,7 +105,7 @@ describe('GET /api/auth/me - Property-Based Tests', () => {
       fc.asyncProperty(
         // Generate random IP addresses and user agents
         fc.ipV4(),
-        fc.string({ minLength: 10, maxLength: 200 }).filter(s => s.trim().length > 0),
+        userAgentArb,
         // Generate random number of roles (0-3)
         fc.integer({ min: 0, max: 3 }),
         async (ipAddress, userAgent, roleCount) => {

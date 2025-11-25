@@ -92,6 +92,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
     "jsdom": "^27.2.0",
+    "pg": "^8.16.3",
+    "pg-mem": "^3.0.5",
     "prettier": "^3.5.0",
     "react-email": "^5.0.4",
     "tailwindcss": "^4",

@@ -248,8 +248,8 @@ describe('Cookie Management - Property-Based Tests', () => {
    * 
    * This tests the integration between setting and getting cookies
    */
-  test('Integration: getSessionCookie returns mock value', () => {
-    const sessionToken = getSessionCookie();
+  test('Integration: getSessionCookie returns mock value', async () => {
+    const sessionToken = await getSessionCookie();
     expect(sessionToken).toBe('mock-session-token');
   });
 

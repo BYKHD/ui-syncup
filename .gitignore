@@ -3,6 +3,7 @@
 !.env.example
 !.env.development
 !.env.production
+!.env.test
 .npm
 .parcel-cache
 .pnp.*

@@ -377,7 +377,8 @@ describe('Token Generation and Verification - Property-Based Tests', () => {
    * Edge case: Zero or negative expiration
    */
   test('Edge case: Zero or negative expiration is rejected', async () => {
-    const userId = await createTestUser();
+    // No DB setup needed here because generateToken should fail before any insert runs
+    const userId = 'test-user-expiration-guard';
 
     await expect(generateToken(userId, 'email_verification', 0)).rejects.toThrow(
       'Expiration time must be positive'

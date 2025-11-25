@@ -128,8 +128,14 @@ export async function createSession(
 
     return token;
   } catch (error) {
+    const baseMessage = error instanceof Error ? error.message : 'Unknown error';
+    const causeMessage =
+      error && typeof error === 'object' && 'cause' in error && error.cause instanceof Error
+        ? error.cause.message
+        : undefined;
+
     throw new Error(
-      `Failed to create session: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Failed to create session: ${baseMessage}${causeMessage ? ` | Cause: ${causeMessage}` : ''}`
     );
   }
 }

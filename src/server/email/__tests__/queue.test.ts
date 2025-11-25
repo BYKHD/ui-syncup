@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { enqueueEmail, processEmailQueue } from '../queue';
 import { db } from '@/lib/db';
-import { emailJobs } from '@/server/db/schema';
+import { emailJobs, users, verificationTokens } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';
 import * as emailClient from '../client';
 import { randomUUID } from 'crypto';
@@ -32,6 +32,50 @@ vi.mock('@/lib/logger', () => ({
 // Helper to generate valid UUIDs for tests
 const generateTestUUID = () => randomUUID();
 
+async function createTestUser(overrides: Partial<typeof users.$inferInsert> = {}) {
+  const userId = overrides.id ?? generateTestUUID();
+  const { id: _ignored, email, name, ...rest } = overrides;
+
+  const [user] = await db
+    .insert(users)
+    .values({
+      id: userId,
+      email: email ?? `user-${userId}@example.com`,
+      name: name ?? 'Test User',
+      ...rest,
+    })
+    .returning();
+
+  return user;
+}
+
+async function createTestVerificationToken({
+  userId,
+  id = generateTestUUID(),
+  token = `token-${id}`,
+  type = 'email_verification',
+  expiresAt = new Date(Date.now() + 60 * 60 * 1000),
+}: {
+  userId: string;
+  id?: string;
+  token?: string;
+  type?: 'email_verification' | 'password_reset';
+  expiresAt?: Date;
+}) {
+  const [verificationToken] = await db
+    .insert(verificationTokens)
+    .values({
+      id,
+      userId,
+      token,
+      type,
+      expiresAt,
+    })
+    .returning();
+
+  return verificationToken;
+}
+
 describe('Email Queue System', () => {
   beforeEach(async () => {
     // Clean up email jobs before each test
@@ -46,12 +90,12 @@ describe('Email Queue System', () => {
 
   describe('enqueueEmail', () => {
     it('should create a new email job', async () => {
-      const userId = generateTestUUID();
-      const tokenId = generateTestUUID();
+      const user = await createTestUser();
+      const token = await createTestVerificationToken({ userId: user.id });
       
       const jobInput = {
-        userId,
-        tokenId,
+        userId: user.id,
+        tokenId: token.id,
         type: 'verification' as const,
         to: 'test@example.com',
         template: {
@@ -68,8 +112,8 @@ describe('Email Queue System', () => {
       // Verify job was created
       const jobs = await db.select().from(emailJobs);
       expect(jobs).toHaveLength(1);
-      expect(jobs[0].userId).toBe(jobInput.userId);
-      expect(jobs[0].tokenId).toBe(jobInput.tokenId);
+      expect(jobs[0].userId).toBe(user.id);
+      expect(jobs[0].tokenId).toBe(token.id);
       expect(jobs[0].type).toBe(jobInput.type);
       expect(jobs[0].to).toBe(jobInput.to);
       expect(jobs[0].status).toBe('pending');
@@ -77,12 +121,12 @@ describe('Email Queue System', () => {
     });
 
     it('should enforce idempotency for duplicate jobs with tokenId', async () => {
-      const userId = generateTestUUID();
-      const tokenId = generateTestUUID();
+      const user = await createTestUser();
+      const token = await createTestVerificationToken({ userId: user.id });
       
       const jobInput = {
-        userId,
-        tokenId,
+        userId: user.id,
+        tokenId: token.id,
         type: 'verification' as const,
         to: 'test@example.com',
         template: {
@@ -104,10 +148,10 @@ describe('Email Queue System', () => {
     });
 
     it('should enforce idempotency for duplicate jobs without tokenId', async () => {
-      const userId = generateTestUUID();
+      const user = await createTestUser();
       
       const jobInput = {
-        userId,
+        userId: user.id,
         type: 'welcome' as const,
         to: 'test@example.com',
         template: {
@@ -129,13 +173,13 @@ describe('Email Queue System', () => {
     });
 
     it('should allow different jobs for the same user', async () => {
-      const userId = generateTestUUID();
-      const tokenId1 = generateTestUUID();
-      const tokenId2 = generateTestUUID();
+      const user = await createTestUser();
+      const token1 = await createTestVerificationToken({ userId: user.id });
+      const token2 = await createTestVerificationToken({ userId: user.id });
       
       const job1 = {
-        userId,
-        tokenId: tokenId1,
+        userId: user.id,
+        tokenId: token1.id,
         type: 'verification' as const,
         to: 'test@example.com',
         template: {
@@ -148,8 +192,8 @@ describe('Email Queue System', () => {
       };
 
       const job2 = {
-        userId,
-        tokenId: tokenId2,
+        userId: user.id,
+        tokenId: token2.id,
         type: 'password_reset' as const,
         to: 'test@example.com',
         template: {
@@ -172,8 +216,8 @@ describe('Email Queue System', () => {
 
   describe('processEmailQueue', () => {
     it('should process pending jobs successfully', async () => {
-      const userId = generateTestUUID();
-      const tokenId = generateTestUUID();
+      const user = await createTestUser();
+      const token = await createTestVerificationToken({ userId: user.id });
       
       // Mock successful email sending
       const sendEmailMock = vi.spyOn(emailClient, 'sendEmail').mockResolvedValue();
@@ -182,8 +226,8 @@ describe('Email Queue System', () => {
       const [job] = await db
         .insert(emailJobs)
         .values({
-          userId,
-          tokenId,
+          userId: user.id,
+          tokenId: token.id,
           type: 'verification',
           to: 'test@example.com',
           subject: 'Verify your email',
@@ -212,7 +256,7 @@ describe('Email Queue System', () => {
     });
 
     it('should retry failed jobs with backoff', async () => {
-      const userId = generateTestUUID();
+      const user = await createTestUser();
       
       // Mock failed email sending
       const sendEmailMock = vi.spyOn(emailClient, 'sendEmail').mockRejectedValue(new Error('Network error'));
@@ -221,7 +265,7 @@ describe('Email Queue System', () => {
       const [job] = await db
         .insert(emailJobs)
         .values({
-          userId,
+          userId: user.id,
           type: 'verification',
           to: 'test@example.com',
           subject: 'Verify your email',
@@ -251,7 +295,7 @@ describe('Email Queue System', () => {
     });
 
     it('should mark job as failed after max retries', async () => {
-      const userId = generateTestUUID();
+      const user = await createTestUser();
       
       // Mock failed email sending
       const sendEmailMock = vi.spyOn(emailClient, 'sendEmail').mockRejectedValue(new Error('Permanent failure'));
@@ -260,7 +304,7 @@ describe('Email Queue System', () => {
       const [job] = await db
         .insert(emailJobs)
         .values({
-          userId,
+          userId: user.id,
           type: 'verification',
           to: 'test@example.com',
           subject: 'Verify your email',
@@ -291,12 +335,12 @@ describe('Email Queue System', () => {
     });
 
     it('should not process jobs scheduled for the future', async () => {
-      const userId = generateTestUUID();
+      const user = await createTestUser();
       
       // Create a job scheduled for 1 hour from now
       const futureDate = new Date(Date.now() + 60 * 60 * 1000);
       await db.insert(emailJobs).values({
-        userId,
+        userId: user.id,
         type: 'verification',
         to: 'test@example.com',
         subject: 'Verify your email',
@@ -319,8 +363,8 @@ describe('Email Queue System', () => {
     });
 
     it('should process multiple jobs in sequence', async () => {
-      const userId1 = generateTestUUID();
-      const userId2 = generateTestUUID();
+      const user1 = await createTestUser({ name: 'User 1' });
+      const user2 = await createTestUser({ name: 'User 2' });
       
       // Mock successful email sending
       const sendEmailMock = vi.spyOn(emailClient, 'sendEmail').mockResolvedValue();
@@ -328,7 +372,7 @@ describe('Email Queue System', () => {
       // Create multiple pending jobs
       await db.insert(emailJobs).values([
         {
-          userId: userId1,
+          userId: user1.id,
           type: 'verification',
           to: 'user1@example.com',
           subject: 'Verify your email',
@@ -338,7 +382,7 @@ describe('Email Queue System', () => {
           scheduledFor: new Date(),
         },
         {
-          userId: userId2,
+          userId: user2.id,
           type: 'welcome',
           to: 'user2@example.com',
           subject: 'Welcome',

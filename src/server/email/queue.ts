@@ -12,7 +12,7 @@
 import { db } from '@/lib/db';
 import { emailJobs } from '@/server/db/schema';
 import { logger } from '@/lib/logger';
-import { eq, and, lte, or } from 'drizzle-orm';
+import { eq, and, lte, or, isNull } from 'drizzle-orm';
 import type { EmailTemplate } from './render-template';
 import { renderTemplate, getEmailSubject } from './render-template';
 import { sendEmail } from './client';
@@ -69,7 +69,7 @@ export async function enqueueEmail(job: EmailJobInput): Promise<void> {
             ? eq(emailJobs.tokenId, job.tokenId)
             : and(
                 eq(emailJobs.type, job.type),
-                eq(emailJobs.tokenId, null as any)
+                isNull(emailJobs.tokenId)
               ),
           or(
             eq(emailJobs.status, 'pending'),
