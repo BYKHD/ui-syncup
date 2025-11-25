@@ -204,19 +204,19 @@ export async function clearAllLimits(): Promise<void> {
  * Rate limit configuration for different endpoints
  */
 export const RATE_LIMITS = {
-  // Sign-in: 5 attempts per IP per minute
+  // Sign-in: 10 attempts per IP per minute
   SIGNIN_IP: {
-    limit: 5,
+    limit: 10,
     windowMs: 60 * 1000, // 1 minute
   },
-  // Sign-in: 3 attempts per email per 15 minutes
+  // Sign-in: 10 attempts per email per 15 minutes
   SIGNIN_EMAIL: {
-    limit: 3,
+    limit: 10,
     windowMs: 15 * 60 * 1000, // 15 minutes
   },
-  // Password reset: 3 requests per email per hour
+  // Password reset: 5 requests per email per hour
   PASSWORD_RESET: {
-    limit: 3,
+    limit: 5,
     windowMs: 60 * 60 * 1000, // 1 hour
   },
   // Registration: 10 registrations per IP per hour
@@ -224,9 +224,9 @@ export const RATE_LIMITS = {
     limit: 10,
     windowMs: 60 * 60 * 1000, // 1 hour
   },
-  // Resend verification: 3 requests per email per hour
+  // Resend verification: 5 requests per email per hour
   RESEND_VERIFICATION: {
-    limit: 3,
+    limit: 5,
     windowMs: 60 * 60 * 1000, // 1 hour
   },
 } as const;

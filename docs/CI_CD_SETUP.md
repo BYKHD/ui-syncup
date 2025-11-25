@@ -344,6 +344,22 @@ vercel rollback
 
 ## 📊 Monitoring & Debugging
 
+### Monitoring and Alerts
+
+For comprehensive monitoring and alerting setup, see:
+- **[CI/CD Monitoring Guide](./CI_CD_MONITORING.md)** - Complete monitoring procedures
+- **[Alerts Setup Guide](./CI_CD_ALERTS_SETUP.md)** - Configure notifications and alerts
+- **[Quick Reference](./CI_CD_MONITORING_QUICK_REFERENCE.md)** - Quick troubleshooting guide
+
+**Quick setup:**
+```bash
+# Verify status reporting is working
+./scripts/verify-ci-status-reporting.sh
+
+# Set up monitoring and alerts
+./scripts/setup-monitoring.sh
+```
+
 ### Check GitHub Actions Logs
 
 ```bash
@@ -468,11 +484,17 @@ gh pr create --base main --head develop
 | File | Purpose |
 |------|---------|
 | [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) | Main CI/CD workflow - runs migrations and deploys |
+| [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | Quality checks workflow - TypeScript, ESLint, tests, build |
 | [`.github/DEPLOYMENT_CHECKLIST.md`](../.github/DEPLOYMENT_CHECKLIST.md) | Pre-deployment checklist |
 | [`.github/GITHUB_SECRETS_SETUP.md`](../.github/GITHUB_SECRETS_SETUP.md) | How to configure GitHub secrets |
 | [`docs/VERCEL_QUICK_START.md`](./VERCEL_QUICK_START.md) | Quick Vercel integration verification guide |
 | [`docs/VERCEL_INTEGRATION_CHECKLIST.md`](./VERCEL_INTEGRATION_CHECKLIST.md) | Detailed Vercel verification checklist |
+| [`docs/CI_CD_MONITORING.md`](./CI_CD_MONITORING.md) | Complete monitoring and status reporting guide |
+| [`docs/CI_CD_ALERTS_SETUP.md`](./CI_CD_ALERTS_SETUP.md) | Alerts and notifications setup guide |
+| [`docs/CI_CD_MONITORING_QUICK_REFERENCE.md`](./CI_CD_MONITORING_QUICK_REFERENCE.md) | Quick reference for monitoring and troubleshooting |
 | [`scripts/verify-vercel-integration.ts`](../scripts/verify-vercel-integration.ts) | Automated Vercel verification script |
+| [`scripts/verify-ci-status-reporting.sh`](../scripts/verify-ci-status-reporting.sh) | Verify workflow status reporting |
+| [`scripts/setup-monitoring.sh`](../scripts/setup-monitoring.sh) | Interactive monitoring setup script |
 | [`drizzle/`](../drizzle/) | Contains all migration SQL files |
 | [`src/server/db/schema/`](../src/server/db/schema/) | TypeScript schema definitions |
 
