@@ -26,7 +26,7 @@ jobs:
         run: bun install
 
       - name: Setup environment for CI build
-        run: cp .env.test .env
+        run: cp .env.test .env.production
 
       - name: TypeScript type checking
         run: bun run typecheck
