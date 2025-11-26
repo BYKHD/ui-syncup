@@ -10,28 +10,28 @@
   - _Critical: Partial unique index prevents slug conflicts with soft deletes_
   - _Critical: Token hash storage prevents database compromise attacks_
 
-- [ ] 2. Implement core team service layer
-- [ ] 2.1 Create team CRUD operations
+- [x] 2. Implement core team service layer
+- [x] 2.1 Create team CRUD operations
   - Implement createTeam with slug generation and uniqueness checking
   - Implement getTeam, getTeams with member info
   - Implement updateTeam with validation
   - Implement softDeleteTeam with 30-day retention
   - _Requirements: 1.1, 1.2, 1.4, 4.1, 5.2_
 
-- [ ] 2.2 Write property test for slug generation
+- [x] 2.2 Write property test for slug generation
   - **Property 2: Slug generation produces URL-friendly unique slugs**
   - **Validates: Requirements 1.2, 13.2**
 
-- [ ] 2.3 Write property test for team creation roles
+- [x] 2.3 Write property test for team creation roles
   - **Property 1: Team creation assigns correct roles**
   - **Validates: Requirements 1.1**
 
-- [ ] 2.4 Implement billable seat calculation
+- [x] 2.4 Implement billable seat calculation
   - Create calculateBillableSeats function
   - Integrate with role assignment logic
   - _Requirements: 3.2, 3.5, 13.4_
 
-- [ ] 2.5 Write property test for billable seats
+- [x] 2.5 Write property test for billable seats
   - **Property 48: Billable seats count only TEAM_EDITOR**
   - **Validates: Requirements 13.4**
 
