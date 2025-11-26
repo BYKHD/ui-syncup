@@ -30,7 +30,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MOCK_USER } from '../sidebar/type';
+import { MOCK_USER } from '@/mocks/user.fixtures';
+import { useSession } from '@/features/auth/hooks/use-session';
 import { useSignOut } from '@/features/auth/hooks/use-sign-out';
 
 // ============================================================================
@@ -88,9 +89,18 @@ export function HeaderUserMenu({
 }: HeaderUserMenuProps = {}) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const user = userProp ?? MOCK_USER;
+  const { user: authUser } = useSession(); // Use useSession for auth data
+  const { signOut, isLoading: isSigningOut } = useSignOut(); // Use useSignOut for sign out
+  
+  // Use provided user prop, or fall back to authenticated user, or finally MOCK_USER (as a last resort/placeholder)
+  // In a real app, you might want to return null if not authenticated and no user prop is provided.
+  const user = userProp ?? (authUser ? {
+    name: authUser.name,
+    email: authUser.email,
+    image: null, // Auth user doesn't have image yet
+  } : MOCK_USER);
+
   const currentTheme = (theme ?? 'system') as ThemeValue;
-  const { signOut, isLoading: isSigningOut } = useSignOut();
 
   const displayName = user.name;
   const displayEmail = user.email;

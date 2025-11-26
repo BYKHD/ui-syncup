@@ -254,9 +254,21 @@ This document specifies the requirements for the Team Management system in UI Sy
 
 #### Acceptance Criteria
 
-1. WHEN a user completes email verification without an active invitation THEN the System SHALL redirect them to the onboarding page
+1. WHEN a user completes email verification without an active invitation THEN the System SHALL redirect them to the onboarding page at `/onboarding`
 2. WHEN a user views the onboarding page THEN the System SHALL display plan options with Free plan enabled and Pro plan marked as "Coming Soon"
 3. WHEN a user selects the Free plan and creates a team THEN the System SHALL create the team with free plan limits and redirect to the projects page
 4. WHEN a user attempts to select the Pro plan THEN the System SHALL display a "Coming Soon" message and prevent selection
 5. WHEN a user completes onboarding THEN the System SHALL set the newly created team as their active team
+
+### Requirement 17
+
+**User Story:** As an existing user who wants to create an additional team, I want to use the same onboarding experience, so that I have a consistent and familiar interface.
+
+#### Acceptance Criteria
+
+1. WHEN an existing user navigates to create a new team THEN the System SHALL redirect them to the onboarding page at `/onboarding`
+2. WHEN an existing user views the onboarding page THEN the System SHALL reuse the same components and layout as initial user onboarding
+3. WHEN an existing user creates a team through onboarding THEN the System SHALL automatically switch to the new team as their active team
+4. WHEN an existing user completes team creation THEN the System SHALL redirect them to the projects page with the new team context
+5. WHEN the onboarding page loads THEN the System SHALL check if the user has existing teams and show appropriate messaging
 

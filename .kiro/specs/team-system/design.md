@@ -24,7 +24,8 @@ Key design principles:
 The system consists of four main layers:
 
 1. **Client Layer** (`features/teams/`)
-   - React components for team creation, member management, settings
+   - React components for member management, settings
+   - Onboarding screen for team creation (reuses auth onboarding components)
    - React Query hooks for team state management
    - Client-side validation with Zod schemas
 
@@ -48,12 +49,13 @@ The system consists of four main layers:
 ### Data Flow Examples
 
 **Team Creation Flow:**
-1. User submits team name and description via `CreateTeamDialog`
+1. User submits team name and description via onboarding page (`/onboarding`)
 2. `POST /api/teams` validates with Zod, generates unique slug
 3. Creates team record with plan="free"
 4. Assigns creator as TEAM_OWNER + TEAM_EDITOR
 5. Sets team as user's lastActiveTeamId
 6. Returns team data, client caches in React Query
+7. Redirects to projects page with new team context
 
 **Invitation Flow:**
 1. Team owner/admin sends invitation with email and roles
@@ -91,6 +93,30 @@ The system consists of four main layers:
 7. Redirects user to onboarding
 
 ## Components and Interfaces
+
+### Onboarding Integration
+
+The team creation experience is integrated into the existing onboarding flow rather than using a modal dialog. This approach:
+
+- **Reuses existing components**: Leverages `OnboardingForm` and `PlanSelector` from `features/auth/components`
+- **Consistent UX**: Maintains the same full-page onboarding experience users see during initial signup
+- **Simplified state management**: Avoids modal state complexity and dialog z-index issues
+- **Better mobile experience**: Full-page layout works better on mobile devices than modals
+- **Component reusability**: The onboarding page at `/onboarding` serves both initial signup and subsequent team creation
+
+**Onboarding Page Structure:**
+```typescript
+// app/(protected)/onboarding/page.tsx
+// Handles both initial user onboarding and team creation
+// Checks if user has teams:
+//   - No teams: Show plan selector + team creation form
+//   - Has teams: Redirect to last active team or team switcher
+```
+
+**Shared Components:**
+- `OnboardingForm`: Team name, description input (from `features/auth/components`)
+- `PlanSelector`: Free/Pro plan selection (from `features/auth/components`)
+- Form validation and submission logic reused across auth and team features
 
 ### Database Schema
 
@@ -513,6 +539,22 @@ interface TeamWithMemberInfo extends Team {
 ### Property 54: Leaving is logged and notifies admins
 *For any* member leaving a team, a log entry should be created and notifications sent to team admins.
 **Validates: Requirements 15.5**
+
+### Property 55: Onboarding page redirects verified users
+*For any* user who completes email verification without an invitation, they should be redirected to `/onboarding`.
+**Validates: Requirements 16.1**
+
+### Property 56: Existing users can create teams via onboarding
+*For any* existing user navigating to create a new team, they should be redirected to `/onboarding` and see the same interface as initial onboarding.
+**Validates: Requirements 17.1, 17.2**
+
+### Property 57: Team creation switches active team
+*For any* user creating a team through onboarding, the new team should automatically become their active team.
+**Validates: Requirements 17.3**
+
+### Property 58: Onboarding completion redirects to projects
+*For any* user completing team creation through onboarding, they should be redirected to the projects page with the new team context.
+**Validates: Requirements 17.4**
 
 ## Error Handling
 
@@ -951,7 +993,9 @@ The team system integrates with the existing authentication system:
 1. **Session Context**: Team operations require valid session
 2. **User Verification**: Only verified users can create teams
 3. **Re-authentication**: Sensitive operations (delete, transfer) require re-auth
-4. **Onboarding Flow**: New users without invitations go through onboarding
+4. **Onboarding Flow**: New users without invitations go through onboarding at `/onboarding`
+5. **Component Reuse**: Team creation reuses `OnboardingForm` and `PlanSelector` from `features/auth/components`
+6. **Unified Experience**: Same full-page onboarding layout for initial signup and team creation
 
 ### RBAC System Integration
 

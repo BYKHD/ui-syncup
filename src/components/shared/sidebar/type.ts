@@ -99,11 +99,7 @@ export const MOCK_PROJECTS: Project[] = [
   },
 ]
 
-export const MOCK_USER: User = {
-  name: 'John Doe',
-  email: 'john.doe@example.com',
-  image: null,
-}
+
 
 // ============================================================================
 // UTILITY FUNCTIONS
