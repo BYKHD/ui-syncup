@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [-] 1. Set up database schema and migrations
+- [x] 1. Set up database schema and migrations
   - Create teams, team_members, team_invitations tables with proper indexes
   - Add lastActiveTeamId column to users table
   - Set up foreign key constraints and cascade rules

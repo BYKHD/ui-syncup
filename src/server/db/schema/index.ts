@@ -5,3 +5,6 @@ export * from "./user-roles";
 export * from "./email-jobs";
 export * from "./account";
 export * from "./projects";
+export * from "./teams";
+export * from "./team-members";
+export * from "./team-invitations";
