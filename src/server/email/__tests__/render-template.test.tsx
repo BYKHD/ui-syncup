@@ -3,8 +3,8 @@ import { renderTemplate, getEmailSubject } from '../render-template';
 
 describe('Email Template Rendering', () => {
   describe('renderTemplate', () => {
-    it('should render verification email template', () => {
-      const html = renderTemplate({
+    it('should render verification email template', async () => {
+      const html = await renderTemplate({
         type: 'verification',
         data: {
           name: 'John Doe',
@@ -15,11 +15,11 @@ describe('Email Template Rendering', () => {
       expect(html).toContain('John Doe');
       expect(html).toContain('https://example.com/verify?token=abc123');
       expect(html).toContain('Verify Email Address');
-      expect(html).toContain('Welcome to UI SyncUp!');
+      expect(html).toContain('Welcome to <strong>UI SyncUp</strong>!');
     });
 
-    it('should render password reset email template', () => {
-      const html = renderTemplate({
+    it('should render password reset email template', async () => {
+      const html = await renderTemplate({
         type: 'password_reset',
         data: {
           name: 'Jane Smith',
@@ -33,8 +33,8 @@ describe('Email Template Rendering', () => {
       expect(html).toContain('Reset Your Password');
     });
 
-    it('should render welcome email template', () => {
-      const html = renderTemplate({
+    it('should render welcome email template', async () => {
+      const html = await renderTemplate({
         type: 'welcome',
         data: {
           name: 'Alice Johnson',
@@ -48,8 +48,8 @@ describe('Email Template Rendering', () => {
       expect(html).toContain('Welcome to UI SyncUp!');
     });
 
-    it('should render security alert email template for password change', () => {
-      const html = renderTemplate({
+    it('should render security alert email template for password change', async () => {
+      const html = await renderTemplate({
         type: 'security_alert',
         data: {
           name: 'Bob Wilson',
@@ -64,8 +64,8 @@ describe('Email Template Rendering', () => {
       expect(html).toContain('192.168.1.1');
     });
 
-    it('should render security alert email template for new signin', () => {
-      const html = renderTemplate({
+    it('should render security alert email template for new signin', async () => {
+      const html = await renderTemplate({
         type: 'security_alert',
         data: {
           name: 'Carol Davis',
@@ -84,8 +84,8 @@ describe('Email Template Rendering', () => {
       expect(html).toContain('Chrome on macOS');
     });
 
-    it('should render security alert email template for suspicious activity', () => {
-      const html = renderTemplate({
+    it('should render security alert email template for suspicious activity', async () => {
+      const html = await renderTemplate({
         type: 'security_alert',
         data: {
           name: 'David Brown',

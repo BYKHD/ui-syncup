@@ -19,6 +19,9 @@ const PROPERTY_CONFIG = {
 // Mock console methods to capture log output
 let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
 
+const getLastLogMessage = (spy: ReturnType<typeof vi.spyOn>) =>
+  String(spy.mock.calls[spy.mock.calls.length - 1]?.[0] ?? '{}');
+
 beforeEach(async () => {
   consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
   // Clear all rate limits before each test
@@ -125,7 +128,7 @@ describe('Rate Limiter - Logging Property Tests', () => {
           expect(consoleWarnSpy).toHaveBeenCalled();
 
           // Get the logged message
-          const loggedMessage = consoleWarnSpy.mock.calls[consoleWarnSpy.mock.calls.length - 1][0];
+          const loggedMessage = getLastLogMessage(consoleWarnSpy);
 
           // Parse the JSON log
           const logEvent = JSON.parse(loggedMessage);
@@ -286,7 +289,7 @@ describe('Rate Limiter - Logging Property Tests', () => {
           expect(allowed).toBe(false);
 
           // Get the logged message
-          const loggedMessage = consoleWarnSpy.mock.calls[consoleWarnSpy.mock.calls.length - 1][0];
+          const loggedMessage = getLastLogMessage(consoleWarnSpy);
           const logEvent = JSON.parse(loggedMessage);
 
           // Verify email is hashed (16 character hex string)

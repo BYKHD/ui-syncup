@@ -86,6 +86,13 @@ export type AuthEventType =
   | 'auth.session.tampered'
   | 'auth.reauth.required'
   | 'auth.reauth.failure'
+  | 'auth.resend_verification.rate_limited'
+  | 'auth.resend_verification.attempt'
+  | 'auth.resend_verification.user_not_found'
+  | 'auth.resend_verification.already_verified'
+  | 'auth.resend_verification.success'
+  | 'auth.resend_verification.validation_error'
+  | 'auth.resend_verification.error'
   // Email events
   | 'email.queued'
   | 'email.sent'

@@ -16,16 +16,17 @@ import { users } from '@/server/db/schema';
 import { forgotPasswordSchema } from '@/features/auth/utils/validators';
 import { generateToken, invalidateUserTokens } from '@/server/auth/tokens';
 import { enqueueEmail } from '@/server/email/queue';
-import { 
-  checkLimit, 
-  getResetTime, 
+import {
+  checkLimit,
+  getResetTime,
   createRateLimitKey,
-  RATE_LIMITS 
+  RATE_LIMITS
 } from '@/server/auth/rate-limiter';
 import { logAuthEvent } from '@/lib/logger';
 import { eq } from 'drizzle-orm';
 import { ZodError } from 'zod';
 import { env } from '@/lib/env';
+import { validateEmailUrl } from '@/lib/url-validator';
 
 /**
  * Get client IP address from request headers
@@ -148,7 +149,10 @@ export async function POST(request: NextRequest) {
         
         // Construct reset URL
         const resetUrl = `${env.BETTER_AUTH_URL}/reset-password?token=${token}`;
-        
+
+        // Validate URL before sending (prevents localhost URLs in production)
+        validateEmailUrl(resetUrl, 'password-reset-email');
+
         // Enqueue password reset email
         await enqueueEmail({
           userId: user.id,

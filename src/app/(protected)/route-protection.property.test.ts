@@ -29,8 +29,8 @@ import { getSession } from '@/server/auth/session';
 // Import the layout component dynamically to ensure mocks are applied
 async function importLayout() {
   // Clear module cache to ensure fresh import with mocks
-  const module = await import('./layout');
-  return module.default;
+  const layoutModule = await import('./layout');
+  return layoutModule.default;
 }
 
 describe('Route Protection - Property 15', () => {

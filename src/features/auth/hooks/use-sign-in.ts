@@ -71,9 +71,11 @@ export function useSignIn(options: UseSignInOptions = {}) {
 
   const [status, setStatus] = useState<SubmissionStatus>("idle");
   const [message, setMessage] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const [oauthStatus, setOauthStatus] = useState<OAuthStatus>("idle");
   const [oauthError, setOauthError] = useState<string | null>(null);
+  const [isLongLoading, setIsLongLoading] = useState(false);
 
   // Sign-in mutation
   const mutation = useMutation({
@@ -81,9 +83,20 @@ export function useSignIn(options: UseSignInOptions = {}) {
     onMutate: () => {
       setStatus("submitting");
       setMessage(null);
+      setErrorCode(null);
       setRetryAfter(null);
+      setIsLongLoading(false);
+      
+      // Set a timer to trigger "long loading" state if request takes too long
+      const timerId = setTimeout(() => {
+        setIsLongLoading(true);
+      }, 2000);
+      
+      return { timerId };
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables, context) => {
+      if (context?.timerId) clearTimeout(context.timerId);
+      setIsLongLoading(false);
       setStatus("success");
       setMessage("Signed in successfully");
       
@@ -102,7 +115,9 @@ export function useSignIn(options: UseSignInOptions = {}) {
         router.push(redirectTo);
       }, 150);
     },
-    onError: (error: unknown) => {
+    onError: (error: unknown, variables, context) => {
+      if (context?.timerId) clearTimeout(context.timerId);
+      setIsLongLoading(false);
       setStatus("idle");
       
       if (error instanceof ApiError) {
@@ -147,8 +162,18 @@ export function useSignIn(options: UseSignInOptions = {}) {
         
         // Handle forbidden errors (403) - email not verified
         if (error.status === 403) {
+          const code = errorPayload?.error?.code || null;
+          setErrorCode(code);
+
+          // Redirect to verify-email page if email is not verified
+          if (code === "EMAIL_NOT_VERIFIED") {
+            const email = form.getValues("email");
+            router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+            return;
+          }
+
           setMessage(
-            errorPayload?.error?.message || 
+            errorPayload?.error?.message ||
             "Please verify your email address before signing in"
           );
           return;
@@ -202,12 +227,14 @@ export function useSignIn(options: UseSignInOptions = {}) {
     form,
     status,
     message,
+    errorCode,
     retryAfter,
     oauthStatus,
     oauthError,
     handleSubmit,
     handleOAuthSignIn,
     isLoading: mutation.isPending,
+    isLongLoading,
     isSuccess: mutation.isSuccess,
     isError: mutation.isError,
     error: mutation.error,

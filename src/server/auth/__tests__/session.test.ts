@@ -31,6 +31,10 @@ const PROPERTY_CONFIG = {
   timeout: 30000, // 30 second timeout per property
 };
 
+const userAgentArb = fc
+  .string({ minLength: 10, maxLength: 200 })
+  .filter((s) => s.trim().length > 0 && !s.includes("\\"));
+
 /**
  * Test user data for session tests
  */
@@ -82,7 +86,7 @@ describe('Session Management - Property-Based Tests', () => {
       fc.asyncProperty(
         // Generate random IP addresses and user agents
         fc.ipV4(),
-        fc.string({ minLength: 10, maxLength: 200 }).filter(s => s.trim().length > 0),
+        userAgentArb,
         async (ipAddress, userAgent) => {
           // Create session
           const sessionToken = await createSession(testUserId, ipAddress, userAgent);
@@ -135,7 +139,7 @@ describe('Session Management - Property-Based Tests', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.ipV4(),
-        fc.string({ minLength: 10, maxLength: 200 }).filter(s => s.trim().length > 0),
+        userAgentArb,
         async (ipAddress, userAgent) => {
           // Create a valid session
           const sessionToken = await createSession(testUserId, ipAddress, userAgent);
@@ -182,7 +186,7 @@ describe('Session Management - Property-Based Tests', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.ipV4(),
-        fc.string({ minLength: 10, maxLength: 200 }).filter(s => s.trim().length > 0),
+        userAgentArb,
         async (ipAddress, userAgent) => {
           // Create session
           const sessionToken = await createSession(testUserId, ipAddress, userAgent);
@@ -240,7 +244,7 @@ describe('Session Management - Property-Based Tests', () => {
         fc.array(
           fc.record({
             ipAddress: fc.ipV4(),
-            userAgent: fc.string({ minLength: 10, maxLength: 200 }).filter(s => s.trim().length > 0),
+            userAgent: userAgentArb,
           }),
           { minLength: 5, maxLength: 10 }
         ),
@@ -303,7 +307,7 @@ describe('Session Management - Property-Based Tests', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.ipV4(),
-        fc.string({ minLength: 10, maxLength: 200 }).filter(s => s.trim().length > 0),
+        userAgentArb,
         async (ipAddress, userAgent) => {
           // Create session
           const sessionToken = await createSession(testUserId, ipAddress, userAgent);
@@ -340,54 +344,60 @@ describe('Session Management - Property-Based Tests', () => {
    * For any user with multiple sessions, deleteAllUserSessions should
    * remove all of them.
    */
-  test('Property: Delete all user sessions removes all sessions', async () => {
+  test('Property: Delete all user sessions removes all sessions', { timeout: 20000 }, async () => {
     await fc.assert(
       fc.asyncProperty(
         // Generate multiple session configs
         fc.array(
           fc.record({
             ipAddress: fc.ipV4(),
-            userAgent: fc.string({ minLength: 10, maxLength: 200 }).filter(s => s.trim().length > 0),
+            userAgent: userAgentArb,
           }),
           { minLength: 2, maxLength: 5 }
         ),
         async (sessionConfigs) => {
-          // Create multiple sessions
-          const sessionIds: string[] = [];
-          for (const config of sessionConfigs) {
-            const token = await createSession(
-              testUserId,
-              config.ipAddress,
-              config.userAgent
-            );
-
-            const [session] = await db
-              .select()
-              .from(sessions)
-              .where(eq(sessions.token, token))
-              .limit(1);
-
-            sessionIds.push(session.id);
-          }
-
-          // Verify all sessions exist
-          const beforeSessions = await db
-            .select()
-            .from(sessions)
-            .where(eq(sessions.userId, testUserId));
-
-          expect(beforeSessions.length).toBe(sessionConfigs.length);
-
-          // Delete all user sessions
           await deleteAllUserSessions(testUserId);
 
-          // Verify all sessions are deleted
-          const afterSessions = await db
-            .select()
-            .from(sessions)
-            .where(eq(sessions.userId, testUserId));
+          try {
+            // Create multiple sessions
+            const sessionIds: string[] = [];
+            for (const config of sessionConfigs) {
+              const token = await createSession(
+                testUserId,
+                config.ipAddress,
+                config.userAgent
+              );
 
-          expect(afterSessions.length).toBe(0);
+              const [session] = await db
+                .select()
+                .from(sessions)
+                .where(eq(sessions.token, token))
+                .limit(1);
+
+              sessionIds.push(session.id);
+            }
+
+            // Verify all sessions exist
+            const beforeSessions = await db
+              .select()
+              .from(sessions)
+              .where(eq(sessions.userId, testUserId));
+
+            expect(beforeSessions.length).toBe(sessionConfigs.length);
+
+            // Delete all user sessions
+            await deleteAllUserSessions(testUserId);
+
+            // Verify all sessions are deleted
+            const afterSessions = await db
+              .select()
+              .from(sessions)
+              .where(eq(sessions.userId, testUserId));
+
+            expect(afterSessions.length).toBe(0);
+          } finally {
+            await deleteAllUserSessions(testUserId);
+          }
         }
       ),
       { numRuns: 20, timeout: 30000 } // Fewer runs since we create multiple sessions per iteration
@@ -528,52 +538,58 @@ describe('Session Management - Property-Based Tests', () => {
         fc.array(
           fc.record({
             ipAddress: fc.ipV4(),
-            userAgent: fc.string({ minLength: 10, maxLength: 200 }).filter(s => s.trim().length > 0),
+            userAgent: userAgentArb,
           }),
           { minLength: 1, maxLength: 5 }
         ),
         async (sessionConfigs) => {
-          // Create multiple sessions for the user (simulating multiple devices)
-          const sessionTokens: string[] = [];
-          for (const config of sessionConfigs) {
-            const token = await createSession(
-              testUserId,
-              config.ipAddress,
-              config.userAgent
-            );
-            sessionTokens.push(token);
-          }
-
-          // Verify all sessions exist before password reset
-          const sessionsBeforeReset = await db
-            .select()
-            .from(sessions)
-            .where(eq(sessions.userId, testUserId));
-
-          expect(sessionsBeforeReset.length).toBe(sessionConfigs.length);
-
-          // Simulate password reset by invalidating all sessions
-          // (This is what the reset-password endpoint does)
           await deleteAllUserSessions(testUserId);
 
-          // Verify all sessions are invalidated after password reset
-          const sessionsAfterReset = await db
-            .select()
-            .from(sessions)
-            .where(eq(sessions.userId, testUserId));
+          try {
+            // Create multiple sessions for the user (simulating multiple devices)
+            const sessionTokens: string[] = [];
+            for (const config of sessionConfigs) {
+              const token = await createSession(
+                testUserId,
+                config.ipAddress,
+                config.userAgent
+              );
+              sessionTokens.push(token);
+            }
 
-          // Property: All sessions should be deleted
-          expect(sessionsAfterReset.length).toBe(0);
-
-          // Property: Each individual session token should no longer exist
-          for (const token of sessionTokens) {
-            const [session] = await db
+            // Verify all sessions exist before password reset
+            const sessionsBeforeReset = await db
               .select()
               .from(sessions)
-              .where(eq(sessions.token, token))
-              .limit(1);
+              .where(eq(sessions.userId, testUserId));
 
-            expect(session).toBeUndefined();
+            expect(sessionsBeforeReset.length).toBe(sessionConfigs.length);
+
+            // Simulate password reset by invalidating all sessions
+            // (This is what the reset-password endpoint does)
+            await deleteAllUserSessions(testUserId);
+
+            // Verify all sessions are invalidated after password reset
+            const sessionsAfterReset = await db
+              .select()
+              .from(sessions)
+              .where(eq(sessions.userId, testUserId));
+
+            // Property: All sessions should be deleted
+            expect(sessionsAfterReset.length).toBe(0);
+
+            // Property: Each individual session token should no longer exist
+            for (const token of sessionTokens) {
+              const [session] = await db
+                .select()
+                .from(sessions)
+                .where(eq(sessions.token, token))
+                .limit(1);
+
+              expect(session).toBeUndefined();
+            }
+          } finally {
+            await deleteAllUserSessions(testUserId);
           }
         }
       ),

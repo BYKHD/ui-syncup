@@ -148,6 +148,7 @@ export function MetadataSection({
   onEditingDescriptionChange,
   permissions,
 }: MetadataSectionProps) {
+  const mockPermissions = useMockPermissions(issue).permissions;
   const resolvedPermissions = permissions
     ? {
         canEdit: permissions.canEdit,
@@ -155,7 +156,7 @@ export function MetadataSection({
         canChangeStatus: permissions.canChangeStatus ?? false,
         canDelete: permissions.canDelete ?? false,
       }
-    : useMockPermissions(issue).permissions;
+    : mockPermissions;
 
   const isReadOnly = !resolvedPermissions.canEdit;
   if (isLoading) {

@@ -15,6 +15,27 @@
       "when": 1763624924927,
       "tag": "0001_wonderful_triathlon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763972816084,
+      "tag": "0002_ordinary_clea",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1764059413252,
+      "tag": "0003_absent_rawhide_kid",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1764065977969,
+      "tag": "0004_new_photon",
+      "breakpoints": true
     }
   ]
 }

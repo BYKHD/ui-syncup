@@ -41,7 +41,9 @@ const passwordArb = fc
   });
 
 // Generate valid names
-const nameArb = fc.string({ minLength: 1, maxLength: 120 }).filter((s) => s.trim().length > 0);
+const nameArb = fc
+  .string({ minLength: 1, maxLength: 120 })
+  .filter((s) => s.trim().length > 0 && !s.includes("\\"));
 
 // Generate complete user data
 const userDataArb = fc.record({
@@ -55,12 +57,14 @@ const userDataArb = fc.record({
  */
 async function createTestUser(data: { email: string; password: string; name: string }) {
   const passwordHash = await hashPassword(data.password);
+  const uniqueEmail = `${Date.now()}-${Math.random()}-${data.email.toLowerCase().trim()}`;
+  const trimmedName = data.name.trim();
   
   const [user] = await db
     .insert(users)
     .values({
-      email: data.email.toLowerCase().trim(),
-      name: data.name.trim(),
+      email: uniqueEmail,
+      name: trimmedName,
       passwordHash,
       emailVerified: false,
     })

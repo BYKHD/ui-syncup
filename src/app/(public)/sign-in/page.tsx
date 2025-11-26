@@ -3,6 +3,9 @@ import { getSessionCookie } from "@/server/auth/cookies";
 import { getSession } from "@/server/auth/session";
 import { redirect } from "next/navigation";
 
+// Force dynamic rendering to prevent SSR issues with client components
+export const dynamic = 'force-dynamic';
+
 const invitationCopy = {
   default: "Sign in to your account to continue",
   invited: "Sign in to accept your team invitation",

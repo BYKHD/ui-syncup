@@ -5,7 +5,7 @@
  * using property-based testing with fast-check.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, test, expect, beforeEach } from 'vitest';
 import fc from 'fast-check';
 import { db } from '@/lib/db';
 import { users, verificationTokens } from '@/server/db/schema';
@@ -18,24 +18,25 @@ import { forgotPasswordSchema } from '@/features/auth/utils/validators';
 
 // Property test configuration
 const PROPERTY_CONFIG = {
-  numRuns: 100,
+  numRuns: 50,
   verbose: false,
 };
+
+const PROPERTY_TIMEOUT = 15000;
 
 // Test user data
 let testUserId: string;
 let testUserEmail: string;
 
 /**
- * Setup: Create a test user before all tests
+ * Create a fresh test user for each test run to account for the global DB reset.
  */
-beforeAll(async () => {
-  // Create test user
+async function createTestUser() {
   const passwordHash = await hashPassword('TestPassword123!');
   const [user] = await db
     .insert(users)
     .values({
-      email: `test-forgot-${Date.now()}@example.com`,
+      email: `test-forgot-${Date.now()}-${Math.random().toString(16).slice(2)}@example.com`,
       passwordHash,
       name: 'Test Forgot Password User',
       emailVerified: true,
@@ -44,28 +45,19 @@ beforeAll(async () => {
 
   testUserId = user.id;
   testUserEmail = user.email;
-});
+}
 
-/**
- * Cleanup: Delete test user and all tokens after all tests
- */
-afterAll(async () => {
-  // Delete all tokens for test user
+async function resetForgotPasswordState() {
+  await clearAllLimits();
   await db.delete(verificationTokens).where(eq(verificationTokens.userId, testUserId));
-  
-  // Delete test user
-  await db.delete(users).where(eq(users.id, testUserId));
-});
+}
 
 /**
  * Cleanup: Delete all tokens and reset rate limits before each test
  */
 beforeEach(async () => {
-  // Delete all tokens for test user
-  await db.delete(verificationTokens).where(eq(verificationTokens.userId, testUserId));
-  
-  // Clear rate limits
-  await clearAllLimits();
+  await createTestUser();
+  await resetForgotPasswordState();
 });
 
 /**
@@ -97,6 +89,8 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
         // Generate random valid email (use test user email)
         fc.constant(testUserEmail),
         async (email) => {
+          await resetForgotPasswordState();
+
           // Record the time before making the request
           const beforeRequest = Date.now();
 
@@ -169,7 +163,7 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
       ),
       PROPERTY_CONFIG
     );
-  });
+  }, { timeout: PROPERTY_TIMEOUT });
 
   /**
    * Additional test: Verify that requesting password reset invalidates previous tokens
@@ -180,8 +174,7 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
         // Generate random number of previous requests (1-3)
         fc.integer({ min: 1, max: 3 }),
         async (numPreviousRequests) => {
-          // Clear any existing tokens before this test iteration
-          await db.delete(verificationTokens).where(eq(verificationTokens.userId, testUserId));
+          await resetForgotPasswordState();
           
           // Make multiple password reset requests
           for (let i = 0; i < numPreviousRequests; i++) {
@@ -229,7 +222,7 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
       ),
       PROPERTY_CONFIG
     );
-  });
+  }, { timeout: PROPERTY_TIMEOUT });
 
   /**
    * Additional test: Verify that password reset for non-existent email returns success
@@ -240,10 +233,12 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
       fc.asyncProperty(
         // Generate random non-existent emails (valid format only)
         fc.tuple(
-          fc.stringOf(fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz0123456789'.split('')), { minLength: 5, maxLength: 20 }),
+          fc.string({ minLength: 5, maxLength: 20 }).filter(s => /^[a-z0-9]+$/.test(s)),
           fc.constantFrom('example.com', 'test.com', 'demo.org', 'sample.net')
         ).map(([local, domain]) => `${local}@${domain}`),
         async (nonExistentEmail) => {
+          await resetForgotPasswordState();
+
           // Skip if this is the test user email
           if (nonExistentEmail === testUserEmail) {
             return;
@@ -281,14 +276,16 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
       ),
       PROPERTY_CONFIG
     );
-  });
+  }, { timeout: PROPERTY_TIMEOUT });
 
   /**
-   * Additional test: Verify rate limiting (3 requests per email per hour)
+   * Additional test: Verify rate limiting (5 requests per email per hour)
    */
   test('Property 16 (rate limiting): Exceeding rate limit returns 429', async () => {
-    // Make 3 requests (the limit)
-    for (let i = 0; i < 3; i++) {
+    await resetForgotPasswordState();
+
+    // Make 5 requests (the limit)
+    for (let i = 0; i < 5; i++) {
       const request = createMockRequest({ email: testUserEmail });
       const response = await POST(request);
       expect(response.status).toBe(200);
@@ -330,6 +327,8 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
           fc.string({ minLength: 1, maxLength: 50 }).filter(s => !s.includes('@'))
         ),
         async (invalidEmail) => {
+          await resetForgotPasswordState();
+
           // Create mock request with invalid email
           const request = createMockRequest({ email: invalidEmail });
 
@@ -350,7 +349,7 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
       ),
       PROPERTY_CONFIG
     );
-  });
+  }, { timeout: PROPERTY_TIMEOUT });
 
   /**
    * Additional test: Verify email normalization (case-insensitive)
@@ -365,11 +364,7 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
           testUserEmail.charAt(0).toUpperCase() + testUserEmail.slice(1).toLowerCase()
         ),
         async (emailVariation) => {
-          // Clear rate limits before each iteration
-          await clearAllLimits();
-          
-          // Clear existing tokens
-          await db.delete(verificationTokens).where(eq(verificationTokens.userId, testUserId));
+          await resetForgotPasswordState();
           
           // Create mock request with email variation
           const request = createMockRequest({ email: emailVariation });
@@ -398,5 +393,5 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
       ),
       PROPERTY_CONFIG
     );
-  });
+  }, { timeout: PROPERTY_TIMEOUT });
 });

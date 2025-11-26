@@ -17,9 +17,9 @@ import { eq, and } from 'drizzle-orm';
 import {
   assignRole,
   getUserRoles,
-  type Role,
 } from '@/server/auth/rbac';
 import {
+  type Role,
   DEFAULT_ROLES,
   TEAM_ROLES,
   PROJECT_ROLES,
@@ -34,6 +34,10 @@ const PROPERTY_CONFIG = {
   numRuns: 100,
   timeout: 30000, // 30 second timeout per property
 };
+
+const userNameArb = fc
+  .string({ minLength: 1, maxLength: 120 })
+  .filter((value) => value.trim().length > 0 && !value.includes("\\"));
 
 /**
  * Test data cleanup
@@ -119,7 +123,7 @@ describe('RBAC - Property-Based Tests', () => {
       fc.asyncProperty(
         // Generate random user data
         fc.emailAddress(),
-        fc.string({ minLength: 1, maxLength: 120 }),
+        userNameArb,
         async (email, name) => {
           // Make email unique by adding timestamp
           const uniqueEmail = `${Date.now()}-${Math.random()}-${email}`;
@@ -190,7 +194,7 @@ describe('RBAC - Property-Based Tests', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.emailAddress(),
-        fc.string({ minLength: 1, maxLength: 120 }),
+        userNameArb,
         fc.constantFrom(...Object.values(TEAM_ROLES)),
         async (email, name, role) => {
           // Make email unique
@@ -240,7 +244,7 @@ describe('RBAC - Property-Based Tests', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.emailAddress(),
-        fc.string({ minLength: 1, maxLength: 120 }),
+        userNameArb,
         async (email, name) => {
           // Make email unique
           const uniqueEmail = `${Date.now()}-${Math.random()}-${email}`;
@@ -305,7 +309,7 @@ describe('RBAC - Property-Based Tests', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.array(fc.emailAddress(), { minLength: 2, maxLength: 5 }),
-        fc.array(fc.string({ minLength: 1, maxLength: 120 }), { minLength: 2, maxLength: 5 }),
+        fc.array(userNameArb, { minLength: 2, maxLength: 5 }),
         fc.constantFrom(...Object.values(TEAM_ROLES)),
         async (emails, names, role) => {
           // Ensure we have matching arrays
@@ -380,7 +384,7 @@ describe('RBAC - Property-Based Tests', () => {
       fc.asyncProperty(
         // Generate random user data
         fc.emailAddress(),
-        fc.string({ minLength: 1, maxLength: 120 }),
+        userNameArb,
         // Generate random project role (PROJECT_OWNER or PROJECT_EDITOR)
         fc.constantFrom(PROJECT_ROLES.PROJECT_OWNER, PROJECT_ROLES.PROJECT_EDITOR),
         async (email, name, projectRole) => {

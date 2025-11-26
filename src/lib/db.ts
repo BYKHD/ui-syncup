@@ -21,6 +21,20 @@ import * as schema from '@/server/db/schema'
  * - Sets idle timeout to prevent stale connections
  */
 const connectionString = env.DATABASE_URL
+const connectionOptions = {
+  // SSL configuration based on environment
+  ssl: isProduction() ? 'require' : false,
+  
+  // Connection pool settings
+  max: 10, // Maximum number of connections in pool
+  idle_timeout: 20, // Close idle connections after 20 seconds
+  connect_timeout: 10, // Connection timeout in seconds
+  
+  // Prepared statements for better performance
+  prepare: true,
+} as const
+
+export { connectionString, connectionOptions }
 
 /**
  * Create postgres client with environment-specific configuration
@@ -33,18 +47,8 @@ const connectionString = env.DATABASE_URL
  * - SSL disabled for local PostgreSQL
  * - Connection pooling enabled
  */
-const client = postgres(connectionString, {
-  // SSL configuration based on environment
-  ssl: isProduction() ? 'require' : false,
-  
-  // Connection pool settings
-  max: 10, // Maximum number of connections in pool
-  idle_timeout: 20, // Close idle connections after 20 seconds
-  connect_timeout: 10, // Connection timeout in seconds
-  
-  // Prepared statements for better performance
-  prepare: true,
-})
+const client = postgres(connectionString, connectionOptions)
+export const dbClient = client
 
 /**
  * Drizzle ORM database instance
