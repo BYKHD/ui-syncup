@@ -43,6 +43,13 @@
       "when": 1764135681547,
       "tag": "0005_smooth_roulette",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1764142672442,
+      "tag": "0006_perpetual_champions",
+      "breakpoints": true
     }
   ]
 }

@@ -40,3 +40,38 @@ export interface TeamMember {
   joinedAt: Date;
   invitedBy: string | null;
 }
+
+export interface AddMemberInput {
+  teamId: string;
+  userId: string;
+  managementRole?: string | null;
+  operationalRole: string;
+  invitedBy?: string;
+}
+
+export interface UpdateMemberRolesInput {
+  managementRole?: string | null;
+  operationalRole?: string;
+}
+
+export interface CreateInvitationInput {
+  teamId: string;
+  email: string;
+  managementRole?: string | null;
+  operationalRole: string;
+  invitedBy: string;
+}
+
+export interface Invitation {
+  id: string;
+  teamId: string;
+  email: string;
+  tokenHash: string;
+  managementRole: string | null;
+  operationalRole: string;
+  invitedBy: string;
+  expiresAt: Date;
+  usedAt: Date | null;
+  cancelledAt: Date | null;
+  createdAt: Date;
+}

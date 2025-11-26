@@ -35,8 +35,8 @@
   - **Property 48: Billable seats count only TEAM_EDITOR**
   - **Validates: Requirements 13.4**
 
-- [ ] 3. Implement team member management
-- [ ] 3.1 Create member service operations
+- [x] 3. Implement team member management
+- [x] 3.1 Create member service operations
   - Implement addMember with role validation
   - Implement updateMemberRoles with project ownership checks (blocks demotion if owns projects)
   - Implement removeMember with project ownership checks (blocks removal if owns projects)
@@ -44,20 +44,20 @@
   - _Requirements: 3.1, 3.3, 3.4, 8.2_
   - _Critical: Both demotion AND removal must check project ownership_
 
-- [ ] 3.2 Write property test for role assignment
+- [x] 3.2 Write property test for role assignment
   - **Property 13: Management roles require operational roles**
   - **Validates: Requirements 3.1, 13.3**
 
-- [ ] 3.3 Write property test for demotion blocking
+- [x] 3.3 Write property test for demotion blocking
   - **Property 15: Demotion blocked when projects owned**
   - **Validates: Requirements 3.3, 15.3**
 
-- [ ] 3.4 Write property test for role changes
+- [x] 3.4 Write property test for role changes
   - **Property 17: Role changes recalculate billable seats**
   - **Validates: Requirements 3.5**
 
-- [ ] 4. Implement invitation system
-- [ ] 4.1 Create invitation service operations
+- [x] 4. Implement invitation system
+- [x] 4.1 Create invitation service operations
   - Implement createInvitation with secure token generation and SHA-256 hashing (7-day expiry)
   - Implement acceptInvitation with hash-based token verification
   - Implement resendInvitation with new token generation and hashing
@@ -65,24 +65,24 @@
   - _Requirements: 2.1, 2.3, 2.4, 2A.2, 2A.3_
   - _Critical: Store only SHA-256 hash of token, send raw token in email_
 
-- [ ] 4.2 Write property test for invitation expiration
+- [x] 4.2 Write property test for invitation expiration
   - **Property 6: Invitations have 7-day expiration**
   - **Validates: Requirements 2.1**
 
-- [ ] 4.3 Write property test for invitation acceptance
+- [x] 4.3 Write property test for invitation acceptance
   - **Property 7: Invitation acceptance adds user with correct roles**
   - **Validates: Requirements 2.3**
 
-- [ ] 4.4 Write property test for invalid invitations
+- [x] 4.4 Write property test for invalid invitations
   - **Property 9: Invalid invitations are rejected**
   - **Validates: Requirements 2.5**
 
-- [ ] 4.5 Implement invitation rate limiting
+- [x] 4.5 Implement invitation rate limiting
   - Add rate limiter for invitation creation (10/hour per team)
-  - Add rate limiter for data export (1/day per team)
-  - _Requirements: 2A.5, 5A.5_
+  - _Requirements: 2A.5_
+  - _Note: Data export rate limiting (5A.5) deferred to Task 5_
 
-- [ ] 4.6 Write property test for rate limiting
+- [x] 4.6 Write property test for rate limiting
   - **Property 12: Invitation rate limiting enforced**
   - **Validates: Requirements 2A.5**
 

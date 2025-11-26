@@ -3,6 +3,7 @@ import { VerificationEmail } from './templates/verification-email';
 import { PasswordResetEmail } from './templates/password-reset-email';
 import { WelcomeEmail } from './templates/welcome-email';
 import { SecurityAlertEmail } from './templates/security-alert-email';
+import { TeamInvitationEmail } from './templates/team-invitation-email';
 
 /**
  * Template types and their corresponding data structures
@@ -19,6 +20,12 @@ export type EmailTemplate =
       location?: string;
       device?: string;
       actionUrl?: string;
+    }}
+  | { type: 'team_invitation'; data: {
+      inviterName: string;
+      teamName: string;
+      invitationUrl: string;
+      expiresIn: string;
     }};
 
 /**
@@ -42,6 +49,9 @@ export async function renderTemplate(template: EmailTemplate): Promise<string> {
       break;
     case 'security_alert':
       component = <SecurityAlertEmail {...template.data} />;
+      break;
+    case 'team_invitation':
+      component = <TeamInvitationEmail {...template.data} />;
       break;
     default:
       throw new Error(`Unknown template type: ${(template as any).type}`);
@@ -70,6 +80,8 @@ export function getEmailSubject(template: EmailTemplate): string {
       } else {
         return 'Security alert for your account - UI SyncUp';
       }
+    case 'team_invitation':
+      return `Join ${template.data.teamName} on UI SyncUp`;
     default:
       return 'UI SyncUp Notification';
   }

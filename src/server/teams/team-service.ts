@@ -291,7 +291,11 @@ export type TeamEventType =
   | "team.member.remove.success"
   | "team.member.role_change.success"
   | "team.switch.success"
-  | "team.context.invalid";
+  | "team.context.invalid"
+  | "team.invitation.create.success"
+  | "team.invitation.accept.success"
+  | "team.invitation.resend.success"
+  | "team.invitation.cancel.success";
 
 export type TeamEventOutcome = "success" | "failure" | "error";
 
