@@ -68,6 +68,7 @@ describe("Property 1: Team creation assigns correct roles", () => {
         // Create team
         const team = await createTeam({
           ...data,
+          description: data.description ?? undefined,
           creatorId: user.id,
         });
 
@@ -112,6 +113,7 @@ describe("Property 1: Team creation assigns correct roles", () => {
         // Create team
         const team = await createTeam({
           ...data,
+          description: data.description ?? undefined,
           creatorId: user.id,
         });
 
@@ -156,6 +158,7 @@ describe("Property 1: Team creation assigns correct roles", () => {
         // Create team
         const team = await createTeam({
           ...data,
+          description: data.description ?? undefined,
           creatorId: user.id,
         });
 
@@ -201,6 +204,7 @@ describe("Property 1: Team creation assigns correct roles", () => {
         // Create team
         const team = await createTeam({
           ...data,
+          description: data.description ?? undefined,
           creatorId: user.id,
         });
 
@@ -245,6 +249,7 @@ describe("Property 1: Team creation assigns correct roles", () => {
         // Create team
         const team = await createTeam({
           ...data,
+          description: data.description ?? undefined,
           creatorId: user.id,
         });
 

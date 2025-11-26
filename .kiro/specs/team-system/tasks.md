@@ -86,8 +86,8 @@
   - **Property 12: Invitation rate limiting enforced**
   - **Validates: Requirements 2A.5**
 
-- [ ] 5. Implement API routes
-- [ ] 5.1 Create team CRUD endpoints
+- [x] 5. Implement API routes
+- [x] 5.1 Create team CRUD endpoints
   - POST /api/teams (create team)
   - GET /api/teams (list teams)
   - GET /api/teams/:teamId (get team details)
@@ -95,13 +95,13 @@
   - DELETE /api/teams/:teamId (soft delete)
   - _Requirements: 1.1, 4.1, 5.1_
 
-- [ ] 5.2 Create member management endpoints
+- [x] 5.2 Create member management endpoints
   - GET /api/teams/:teamId/members (list members)
   - PATCH /api/teams/:teamId/members/:userId (update roles)
   - DELETE /api/teams/:teamId/members/:userId (remove member)
   - _Requirements: 3.2, 3.4, 8.2_
 
-- [ ] 5.3 Create invitation endpoints
+- [x] 5.3 Create invitation endpoints
   - POST /api/teams/:teamId/invitations (create invitation)
   - GET /api/teams/:teamId/invitations (list invitations)
   - POST /api/teams/:teamId/invitations/:id/resend (resend)
@@ -109,45 +109,45 @@
   - GET /api/teams/invitations/:token/accept (accept invitation)
   - _Requirements: 2.1, 2.2, 2A.1, 2A.2, 2A.3_
 
-- [ ] 5.4 Create team context endpoints
+- [x] 5.4 Create team context endpoints
   - POST /api/teams/:teamId/switch (switch active team)
   - POST /api/teams/:teamId/export (request data export)
   - POST /api/teams/:teamId/transfer-ownership (transfer ownership)
   - _Requirements: 6.1, 9.2, 5A.1_
 
 - [ ] 6. Implement client-side hooks
-- [ ] 6.1 Create team query hooks
+- [x] 6.1 Create team query hooks
   - useTeams (list teams with React Query)
   - useTeam (get team details)
   - useTeamMembers (list members with pagination)
   - _Requirements: 12.1, 12.2_
 
-- [ ] 6.2 Create team mutation hooks
+- [x] 6.2 Create team mutation hooks
   - useCreateTeam (create team)
   - useUpdateTeam (update settings)
   - useDeleteTeam (soft delete)
   - useSwitchTeam (switch active team)
   - _Requirements: 1.1, 4.1, 5.1, 9.2_
 
-- [ ] 6.3 Create member mutation hooks
+- [x] 6.3 Create member mutation hooks
   - useUpdateMemberRoles (update roles)
   - useRemoveMember (remove member)
   - useLeaveTeam (leave team)
   - _Requirements: 3.2, 3.4, 15.1_
 
-- [ ] 6.4 Create invitation mutation hooks
+- [x] 6.4 Create invitation mutation hooks
   - useCreateInvitation (send invitation)
   - useResendInvitation (resend)
   - useCancelInvitation (cancel)
   - _Requirements: 2.1, 2A.2, 2A.3_
 
-- [ ] 6.5 Create permission hooks
+- [x] 6.5 Create permission hooks
   - useTeamPermissions (check permissions)
   - useCanManageTeam (check owner/admin)
   - useCanManageMembers (check admin permissions)
   - _Requirements: 12.4_
 
-- [ ] 6.6 Write property test for cache invalidation
+- [x] 6.6 Write property test for cache invalidation
   - **Property 42: Cache invalidation on team changes**
   - **Validates: Requirements 12.2**
 
