@@ -151,62 +151,62 @@
   - **Property 42: Cache invalidation on team changes**
   - **Validates: Requirements 12.2**
 
-- [ ] 7. Update onboarding page for team creation
-- [ ] 7.1 Modify onboarding page to handle team creation
+- [x] 7. Update onboarding page for team creation
+- [x] 7.1 Modify onboarding page to handle team creation
   - Update /app/(protected)/onboarding/page.tsx to check for existing teams
   - Reuse OnboardingForm component from features/auth/components
   - Reuse PlanSelector component from features/auth/components
   - Integrate useCreateTeam hook for form submission
   - _Requirements: 16.1, 16.2, 17.1, 17.2_
 
-- [ ] 7.2 Write property test for onboarding redirect
+- [x] 7.2 Write property test for onboarding redirect
   - **Property 55: Onboarding page redirects verified users**
   - **Validates: Requirements 16.1**
 
-- [ ] 7.3 Write property test for team switching on creation
+- [x] 7.3 Write property test for team switching on creation
   - **Property 57: Team creation switches active team**
   - **Validates: Requirements 17.3**
 
-- [ ] 7.3 Add team creation success handling
+- [x] 7.3 Add team creation success handling
   - Implement automatic team switching after creation
   - Implement redirect to projects page
   - Show success toast notification
   - _Requirements: 16.5, 17.3, 17.4_
 
-- [ ] 8. Implement team settings UI
-- [ ] 8.1 Create team settings page
-  - Create /app/(protected)/(team)/team/settings/page.tsx
-  - Implement general settings tab (name, description, image)
-  - Add permission checks for owner/admin access
+- [/] 8. Implement team settings UI <!-- id: 8 -->
+- [x] 8.1 Create team settings page <!-- id: 8.1 -->
+  - [x] Create /app/(protected)/(team)/team/settings/page.tsx (Updated to use real data)
+  - [x] Implement general settings tab (name, description, image)
+  - [x] Add permission checks for owner/admin access
   - _Requirements: 4.1, 4.2, 8.4_
 
-- [ ] 8.2 Create members management UI
-  - Create team members list component
-  - Implement role update dialog
-  - Implement member removal confirmation
-  - Add project ownership warnings
+- [x] 8.2 Create members management UI <!-- id: 8.2 -->
+  - [x] Create team members list component
+  - [x] Implement role update dialog
+  - [x] Implement member removal confirmation
+  - [x] Add project ownership warnings
   - _Requirements: 3.2, 3.3, 3.4, 8.2_
 
-- [ ] 8.3 Create invitations management UI
-  - Create pending invitations list
-  - Implement invitation creation form
-  - Add resend and cancel actions
-  - Show invitation status and expiration
+- [x] 8.3 Create invitations management UI <!-- id: 8.3 -->
+  - [x] Create pending invitations list
+  - [x] Implement invitation creation form
+  - [x] Add resend and cancel actions
+  - [x] Show invitation status and expiration
   - _Requirements: 2.1, 2A.1, 2A.2, 2A.3_
 
-- [ ] 9. Implement team switcher
-- [ ] 9.1 Create team switcher component
+- [x] 9. Implement team switcher
+- [x] 9.1 Create team switcher component
   - Create TeamSwitcher component in components/shared
   - Display team list with plan badges
   - Implement team switching with useSwitchTeam hook
   - Add "Create Team" option that redirects to /onboarding
   - _Requirements: 9.1, 9.2, 17.1_
 
-- [ ] 9.2 Write property test for team switching
+- [x] 9.2 Write property test for team switching
   - **Property 35: Team switching updates database and cookie**
   - **Validates: Requirements 9.2, 9.3**
 
-- [ ] 9.3 Integrate team switcher into navigation
+- [x] 9.3 Integrate team switcher into navigation
   - Add TeamSwitcher to AppHeader
   - Update sidebar to show current team context
   - Handle team context changes across app

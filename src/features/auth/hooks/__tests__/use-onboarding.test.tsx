@@ -36,6 +36,12 @@ describe("useOnboarding", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseTeams.mockReturnValue({ data: { teams: [] }, isLoading: false });
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({}),
+      })
+    ) as any;
   });
 
   it("should initialize with create mode when no token is provided", () => {

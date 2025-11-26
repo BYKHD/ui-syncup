@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/server/auth/session';
-import { createTeam, getTeams } from '@/server/teams/team-service';
+import { createTeam, getTeam, getTeams } from '@/server/teams/team-service';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
 
@@ -90,12 +90,19 @@ export async function POST(request: NextRequest) {
     const { name, description, image } = validation.data;
     
     // Create team
-    const team = await createTeam({
+    const createdTeam = await createTeam({
       name,
       description,
       image,
       creatorId: user.id,
     });
+    
+    // Fetch team with member info to return complete data
+    const team = await getTeam(createdTeam.id, user.id);
+    
+    if (!team) {
+      throw new Error('Failed to fetch created team');
+    }
     
     logger.info('api.teams.create.success', {
       requestId,
@@ -104,12 +111,21 @@ export async function POST(request: NextRequest) {
       teamName: team.name,
     });
     
+    // Serialize dates to strings for API response
+    const serializedTeam = {
+      ...team,
+      createdAt: team.createdAt.toISOString(),
+      updatedAt: team.updatedAt.toISOString(),
+      deletedAt: team.deletedAt?.toISOString() ?? null,
+    };
+    
     return NextResponse.json(
-      { team },
+      { team: serializedTeam },
       { status: 201 }
     );
     
   } catch (error) {
+    console.error('Team creation error:', error);
     logger.error('api.teams.create.error', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -208,12 +224,21 @@ export async function GET(request: NextRequest) {
       teamCount: teams.length,
     });
     
+    // Serialize dates to strings for API response
+    const serializedTeams = teams.map(team => ({
+      ...team,
+      createdAt: team.createdAt.toISOString(),
+      updatedAt: team.updatedAt.toISOString(),
+      deletedAt: team.deletedAt?.toISOString() ?? null,
+    }));
+    
     return NextResponse.json(
-      { teams },
+      { teams: serializedTeams },
       { status: 200 }
     );
     
   } catch (error) {
+    console.error('GET teams error:', error);
     logger.error('api.teams.list.error', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',

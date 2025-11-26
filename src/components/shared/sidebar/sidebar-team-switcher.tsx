@@ -1,7 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { RiExpandUpDownLine, RiAddLine } from "@remixicon/react";
+import { toast } from "sonner";
+import Cookies from "js-cookie";
 
 import {
   DropdownMenu,
@@ -13,13 +16,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { CreateTeamDialog } from "@/features/teams";
+import { useTeams, useSwitchTeam } from "@/features/teams";
 import { TeamAvatar } from "./sidebar-team-avatar";
-import { MOCK_TEAMS, getPlanDisplayName, type Team } from "./type";
+import { getPlanDisplayName } from "./type";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // ============================================================================
 // TEAM SWITCHER DESIGN CONSTANTS
@@ -36,43 +39,77 @@ const TEAM_SWITCHER_DESIGN = {
 const VISIBLE_TEAM_LIMIT = 5;
 
 export function TeamSwitcher() {
+  const router = useRouter();
   const { isMobile, state } = useSidebar();
-  const [currentTeam, setCurrentTeam] = useState<Team>(MOCK_TEAMS[0]);
-  const [teams] = useState<Team[]>(MOCK_TEAMS);
+  const { data: teamsData, isLoading } = useTeams();
+  const { mutate: switchTeam, isPending: isSwitching } = useSwitchTeam();
+  
   const isCollapsed = state === "collapsed";
+  const teams = teamsData?.teams ?? [];
+  
+  // Determine current team from cookie or first team
+  const teamIdCookie = Cookies.get("team_id");
+  const currentTeam = teams.find((t) => t.id === teamIdCookie) ?? teams[0];
+  
   const visibleTeams = useMemo(
     () => teams.slice(0, VISIBLE_TEAM_LIMIT),
     [teams]
   );
 
   const handleTeamSwitch = (teamId: string) => {
-    const team = teams.find((t) => t.id === teamId);
-    if (team) {
-      setCurrentTeam(team);
-      console.log("Switched to team:", team.name);
-    }
+    if (teamId === currentTeam?.id) return;
+    
+    switchTeam(teamId, {
+      onSuccess: () => {
+        toast.success("Team switched successfully");
+        // Reload page to update team context
+        window.location.reload();
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to switch team");
+      },
+    });
   };
 
-  const handleTeamCreated = () => {
-    console.log("New team created");
+  const handleCreateTeam = () => {
+    router.push("/onboarding");
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <div className="flex w-full items-center gap-2">
+            <Skeleton className="h-10 w-full rounded-lg" />
+          </div>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
+  }
+
+  // No teams state - shouldn't happen as users are redirected to onboarding
+  if (!currentTeam) {
+    return null;
+  }
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <div className="flex w-full items-center gap-2">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <div
+            <DropdownMenuTrigger asChild disabled={isSwitching}>
+              <button
                 className={`
-                  ${!isCollapsed ? TEAM_SWITCHER_DESIGN.backgroundColor:""}
+                  ${!isCollapsed ? TEAM_SWITCHER_DESIGN.backgroundColor : ""}
                   ${TEAM_SWITCHER_DESIGN.borderRadius}
                   ${!isCollapsed ? TEAM_SWITCHER_DESIGN.padding : "p-1"}
-                  ${!isCollapsed ? "justify-start" : "justify-start"}
-                  ${!isCollapsed ? TEAM_SWITCHER_DESIGN.border:""}
+                  ${!isCollapsed ? TEAM_SWITCHER_DESIGN.border : ""}
                   ${TEAM_SWITCHER_DESIGN.hoverState}
-                  flex w-full items-center gap-2
+                  flex w-full items-center gap-2 transition-colors
+                  ${isSwitching ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                 `}
+                disabled={isSwitching}
               >
                 <TeamAvatar
                   team={currentTeam}
@@ -87,7 +124,7 @@ export function TeamSwitcher() {
                     <RiExpandUpDownLine className="ml-auto size-4 text-sidebar-accent-foreground/70" />
                   </>
                 )}
-              </div>
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               className="w-[--radix-dropdown-menu-trigger-width] min-w-[220px] rounded-2xl border border-sidebar-border/60 p-1 shadow-lg"
@@ -102,6 +139,7 @@ export function TeamSwitcher() {
                 <DropdownMenuItem
                   key={team.id}
                   onClick={() => handleTeamSwitch(team.id)}
+                  disabled={isSwitching || team.id === currentTeam.id}
                   className={`gap-2 rounded-xl px-2 py-2 text-sm ${
                     currentTeam.id === team.id ? "bg-sidebar-accent/30" : ""
                   }`}
@@ -110,34 +148,35 @@ export function TeamSwitcher() {
                   <div className="flex flex-1 flex-col truncate">
                     <span className="truncate font-medium">{team.name}</span>
                     <span className="truncate text-[11px] text-muted-foreground">
-                      {getPlanDisplayName(team.plan)}
+                      {getPlanDisplayName(team.planId)}
                     </span>
                   </div>
                 </DropdownMenuItem>
               ))}
               {teams.length > visibleTeams.length && (
-                <DropdownMenuItem className="rounded-xl px-2 py-2 text-xs text-muted-foreground">
-                  View all teams
+                <DropdownMenuItem 
+                  className="rounded-xl px-2 py-2 text-xs text-muted-foreground"
+                  disabled
+                >
+                  +{teams.length - visibleTeams.length} more teams
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator className="my-1" />
-              <CreateTeamDialog onTeamCreated={handleTeamCreated}>
-                <DropdownMenuItem
-                  className="gap-2 rounded-xl px-2 py-2 text-sm font-medium text-sidebar-accent-foreground/90"
-                  onSelect={(event) => event.preventDefault()}
-                >
-                  <div className="flex size-7 items-center justify-center rounded-full bg-sidebar-accent/30 text-sidebar-accent-foreground">
-                    <RiAddLine className="size-4" />
-                  </div>
-                  Create team
-                </DropdownMenuItem>
-              </CreateTeamDialog>
+              <DropdownMenuItem
+                onClick={handleCreateTeam}
+                className="gap-2 rounded-xl px-2 py-2 text-sm font-medium text-sidebar-accent-foreground/90"
+              >
+                <div className="flex size-7 items-center justify-center rounded-full bg-sidebar-accent/30 text-sidebar-accent-foreground">
+                  <RiAddLine className="size-4" />
+                </div>
+                Create team
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
           {!isCollapsed && (
             <span className="rounded-full border border-sidebar-border/50 px-3 py-1 text-xs font-semibold text-sidebar-accent-foreground/80">
-              {getPlanDisplayName(currentTeam.plan)}
+              {getPlanDisplayName(currentTeam.planId)}
             </span>
           )}
         </div>

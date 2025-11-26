@@ -40,10 +40,10 @@ import { cookies } from 'next/headers';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { teamId: string } }
+  { params }: { params: Promise<{ teamId: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const { teamId } = params;
+  const { teamId } = await params;
   
   try {
     // Authenticate user
@@ -85,7 +85,7 @@ export async function POST(
     // Set team_id cookie
     const cookieStore = await cookies();
     cookieStore.set('team_id', teamId, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 365, // 1 year
@@ -106,8 +106,16 @@ export async function POST(
       teamId,
     });
     
+    // Serialize dates to strings for API response
+    const serializedTeam = {
+      ...team,
+      createdAt: team.createdAt.toISOString(),
+      updatedAt: team.updatedAt.toISOString(),
+      deletedAt: team.deletedAt?.toISOString() ?? null,
+    };
+    
     return NextResponse.json(
-      { team },
+      { team: serializedTeam },
       { status: 200 }
     );
     

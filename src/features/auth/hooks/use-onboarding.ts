@@ -30,6 +30,7 @@ export function useOnboarding(
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PlanTier>("free");
+  const [hasExistingTeams, setHasExistingTeams] = useState(false);
 
   const form = useForm<OnboardingSchema>({
     resolver: zodResolver(onboardingSchema),
@@ -38,7 +39,7 @@ export function useOnboarding(
     },
   });
 
-  // Check for existing teams and redirect if not creating a new one
+  // Check for existing teams (Requirement 17.5)
   useEffect(() => {
     if (
       !isLoadingTeams &&
@@ -47,11 +48,7 @@ export function useOnboarding(
       !invitationToken &&
       mode === "create"
     ) {
-      // If user has teams and is on onboarding without intent to create (implied by just landing here),
-      // we might want to redirect. But Requirement 17.1 says existing users come here to create new teams.
-      // Requirement 17.3 says "show appropriate messaging".
-      // So we don't auto-redirect, but we could show a message.
-      // For now, we'll just let them create a new team.
+      setHasExistingTeams(true);
     }
   }, [teamsData, isLoadingTeams, invitationToken, mode]);
 
@@ -86,7 +83,7 @@ export function useOnboarding(
     }
   }, [invitationToken, invitedTeamName, form]);
 
-  const handleCreateTeam = form.handleSubmit((data) => {
+  const handleCreateTeam = form.handleSubmit(async (data) => {
     setError(null);
     setMessage(null);
     
@@ -98,14 +95,28 @@ export function useOnboarding(
     createTeam(
       { name: data.teamName, description: "" },
       {
-        onSuccess: (response) => {
+        onSuccess: async (response) => {
           toast.success("Team created successfully");
-          // The useCreateTeam hook invalidates queries, but we also need to switch context?
-          // Requirement 17.3: "Team creation switches active team"
-          // The backend might set it, or we might need to do it.
-          // For now, let's assume the backend or the redirect handles it.
-          // Requirement 17.4: Redirect to projects page.
-          router.push("/projects");
+          
+          // Requirement 17.3: Switch to the new team as active team
+          try {
+            const switchResponse = await fetch(`/api/teams/${response.team.id}/switch`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+
+            if (!switchResponse.ok) {
+              throw new Error('Failed to switch team context');
+            }
+
+            // Requirement 17.4: Redirect to projects page with new team context
+            router.push("/projects");
+          } catch (err) {
+            setError("Team created but failed to switch context. Please refresh the page.");
+          }
         },
         onError: (err) => {
           setError(err.message || "Failed to create team");
@@ -151,5 +162,6 @@ export function useOnboarding(
     handleCreateTeam,
     handleAcceptInvitation,
     switchMode,
+    hasExistingTeams,
   };
 }

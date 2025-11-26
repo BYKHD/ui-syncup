@@ -4,7 +4,7 @@
  */
 
 // Core settings components
-export { SettingsCard } from "./settings-card";
+export { default as TeamSettingsGeneral } from "./team-settings-general";
 export { SettingsSection } from "./settings-section";
 export { SettingsNavigation } from "./settings-navigation";
 

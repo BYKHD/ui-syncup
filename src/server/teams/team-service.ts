@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { teams } from "@/server/db/schema/teams";
 import { teamMembers } from "@/server/db/schema/team-members";
 import { users } from "@/server/db/schema/users";
-import { eq, and, isNull, sql, desc } from "drizzle-orm";
+import { eq, and, isNull, inArray, sql, desc } from "drizzle-orm";
 import { generateUniqueSlug } from "./slug";
 import { calculateBillableSeats } from "./billable-seats";
 import { logger } from "@/lib/logger";
@@ -95,7 +95,7 @@ export async function getTeam(
     .from(teamMembers)
     .where(eq(teamMembers.teamId, teamId));
 
-  const memberCount = memberCountResult[0]?.count ?? 0;
+  const memberCount = parseInt(String(memberCountResult[0]?.count ?? '0'), 10);
 
   // Get user's roles
   const member = await db.query.teamMembers.findFirst({
@@ -153,11 +153,11 @@ export async function getTeams(userId: string): Promise<TeamWithMemberInfo[]> {
       count: sql<number>`count(*)`,
     })
     .from(teamMembers)
-    .where(sql`${teamMembers.teamId} = ANY(${teamIds})`)
+    .where(inArray(teamMembers.teamId, teamIds))
     .groupBy(teamMembers.teamId);
 
   const memberCountMap = new Map<string, number>(
-    memberCounts.map((mc: { teamId: string; count: number }) => [mc.teamId, mc.count])
+    memberCounts.map((mc: { teamId: string; count: number }) => [mc.teamId, parseInt(String(mc.count), 10)])
   );
 
   return memberships.map((m: { team: Team; managementRole: string | null; operationalRole: string }) => ({

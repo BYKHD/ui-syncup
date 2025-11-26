@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SettingsCard } from "./settings-card";
 import { LoadingButton } from "./loading-states";
-import type { TeamGeneralFormData, Team } from "../types";
+import type { TeamGeneralFormData } from "../types";
+import type { Team } from "@/features/teams/api";
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from "../utils";
 
 export interface TeamInformationFormProps {
