@@ -1,10 +1,14 @@
 # Implementation Plan
 
 - [x] 1. Set up database schema and migrations
-  - Create teams, team_members, team_invitations tables with proper indexes
+  - Create teams table with partial unique index on slug (WHERE deleted_at IS NULL)
+  - Create team_members table with proper indexes
+  - Create team_invitations table with tokenHash column (not raw token)
   - Add lastActiveTeamId column to users table
   - Set up foreign key constraints and cascade rules
   - _Requirements: 1.1, 1.2, 2.1, 3.1_
+  - _Critical: Partial unique index prevents slug conflicts with soft deletes_
+  - _Critical: Token hash storage prevents database compromise attacks_
 
 - [ ] 2. Implement core team service layer
 - [ ] 2.1 Create team CRUD operations
@@ -34,10 +38,11 @@
 - [ ] 3. Implement team member management
 - [ ] 3.1 Create member service operations
   - Implement addMember with role validation
-  - Implement updateMemberRoles with project ownership checks
-  - Implement removeMember with cascade logic
+  - Implement updateMemberRoles with project ownership checks (blocks demotion if owns projects)
+  - Implement removeMember with project ownership checks (blocks removal if owns projects)
   - Implement getMembersByTeam with pagination
   - _Requirements: 3.1, 3.3, 3.4, 8.2_
+  - _Critical: Both demotion AND removal must check project ownership_
 
 - [ ] 3.2 Write property test for role assignment
   - **Property 13: Management roles require operational roles**
@@ -53,11 +58,12 @@
 
 - [ ] 4. Implement invitation system
 - [ ] 4.1 Create invitation service operations
-  - Implement createInvitation with token generation (7-day expiry)
-  - Implement acceptInvitation with validation
-  - Implement resendInvitation with token invalidation
+  - Implement createInvitation with secure token generation and SHA-256 hashing (7-day expiry)
+  - Implement acceptInvitation with hash-based token verification
+  - Implement resendInvitation with new token generation and hashing
   - Implement cancelInvitation
   - _Requirements: 2.1, 2.3, 2.4, 2A.2, 2A.3_
+  - _Critical: Store only SHA-256 hash of token, send raw token in email_
 
 - [ ] 4.2 Write property test for invitation expiration
   - **Property 6: Invitations have 7-day expiration**

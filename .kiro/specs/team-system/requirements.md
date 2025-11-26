@@ -64,8 +64,8 @@ This document specifies the requirements for the Team Management system in UI Sy
 
 1. WHEN a team owner assigns a management role (TEAM_OWNER, TEAM_ADMIN) THEN the System SHALL require an operational role to be assigned simultaneously
 2. WHEN a team owner changes a member's operational role to TEAM_EDITOR THEN the System SHALL increment billable seat count and validate against plan limits
-3. WHEN a team owner demotes a member from TEAM_EDITOR THEN the System SHALL check if the member owns any projects and block demotion if ownership exists
-4. WHEN a team owner removes a member THEN the System SHALL delete all team-level role assignments and log the removal event
+3. WHEN a team owner demotes a member from TEAM_EDITOR or removes a member THEN the System SHALL check if the member owns any projects and block the operation if ownership exists
+4. WHEN a team owner removes a member who does not own projects THEN the System SHALL delete all team-level role assignments and log the removal event
 5. WHEN role changes occur THEN the System SHALL recalculate billable seats and update the team's billing record
 
 ### Requirement 4

@@ -125,7 +125,7 @@ The team creation experience is integrated into the existing onboarding flow rat
 export const teams = pgTable("teams", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name", { length: 50 }).notNull(),
-  slug: varchar("slug", { length: 60 }).notNull().unique(),
+  slug: varchar("slug", { length: 60 }).notNull(),
   description: text("description"),
   image: text("image"),
   planId: varchar("plan_id", { length: 20 }).notNull().default("free"),
@@ -134,10 +134,14 @@ export const teams = pgTable("teams", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (table) => ({
+  // Partial unique index: only enforce uniqueness for non-deleted teams
+  slugUniqueIdx: uniqueIndex("teams_slug_unique_idx").on(table.slug).where(sql`deleted_at IS NULL`),
   slugIdx: index("teams_slug_idx").on(table.slug),
   planIdx: index("teams_plan_idx").on(table.planId),
 }));
 ```
+
+**Note on Slug Uniqueness:** The partial unique index ensures that only active (non-deleted) teams must have unique slugs. This allows slug reuse after a team is soft-deleted, preventing the 30-day retention period from blocking new teams with the same name.
 
 **team_members table:**
 ```typescript
@@ -162,7 +166,7 @@ export const teamInvitations = pgTable("team_invitations", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   teamId: uuid("team_id").references(() => teams.id, { onDelete: "cascade" }).notNull(),
   email: varchar("email", { length: 320 }).notNull(),
-  token: varchar("token", { length: 255 }).notNull().unique(),
+  tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(), // SHA-256 hash of token
   managementRole: varchar("management_role", { length: 20 }), // TEAM_OWNER | TEAM_ADMIN | null
   operationalRole: varchar("operational_role", { length: 20 }).notNull(), // TEAM_EDITOR | TEAM_MEMBER | TEAM_VIEWER
   invitedBy: uuid("invited_by").references(() => users.id).notNull(),
@@ -171,11 +175,13 @@ export const teamInvitations = pgTable("team_invitations", {
   cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
-  tokenIdx: uniqueIndex("team_invitations_token_idx").on(table.token),
+  tokenHashIdx: uniqueIndex("team_invitations_token_hash_idx").on(table.tokenHash),
   teamEmailIdx: index("team_invitations_team_email_idx").on(table.teamId, table.email),
   expiresIdx: index("team_invitations_expires_idx").on(table.expiresAt),
 }));
 ```
+
+**Security Note on Invitation Tokens:** The database stores only a SHA-256 hash of the invitation token (not the raw token). The raw token is sent in the invitation email. When a user accepts an invitation, the system hashes the provided token and looks up the matching hash. This prevents token theft if the database is compromised.
 
 **users table (updated):**
 ```typescript
@@ -230,7 +236,7 @@ export const users = pgTable("users", {
 **DELETE /api/teams/:teamId/members/:userId**
 - Request: none
 - Response: `{ message: "Member removed successfully" }`
-- Errors: 401 (not authenticated), 403 (insufficient permissions), 404 (not found), 409 (project ownership conflict)
+- Errors: 401 (not authenticated), 403 (insufficient permissions), 404 (not found), 409 (project ownership conflict, member owns projects)
 
 **POST /api/teams/:teamId/invitations**
 - Request: `{ email, managementRole?, operationalRole }`
@@ -384,8 +390,8 @@ interface TeamWithMemberInfo extends Team {
 *For any* member who owns projects, attempting to demote them from TEAM_EDITOR should be blocked with an error listing owned projects.
 **Validates: Requirements 3.3, 15.3**
 
-### Property 16: Member removal deletes roles and logs event
-*For any* member removal, all their team-level role assignments should be deleted and the removal should be logged.
+### Property 16: Member removal blocked when projects owned
+*For any* member who owns projects, attempting to remove them should be blocked with an error listing owned projects.
 **Validates: Requirements 3.4**
 
 ### Property 17: Role changes recalculate billable seats
@@ -1054,14 +1060,42 @@ The team system uses the existing email infrastructure:
 1. **Server-Side Checks**: Always validate permissions on server
 2. **Team Context**: Validate user has access to team before operations
 3. **Role Hierarchy**: Enforce role hierarchy (owner > admin > member)
-4. **Invitation Tokens**: Use cryptographically secure tokens
+4. **Invitation Tokens**: Use cryptographically secure tokens with hash-based storage
+
+### Invitation Token Security (Critical)
+
+**Problem:** Storing raw invitation tokens in the database creates a security vulnerability. If the database is compromised, an attacker could use valid pending invitations to join teams.
+
+**Solution:** Store only a SHA-256 hash of the token:
+1. Generate a cryptographically secure random token (64 characters)
+2. Hash the token using SHA-256
+3. Store the hash in the database
+4. Send the raw token in the invitation email
+5. When accepting, hash the provided token and look up the matching hash
+
+**Implementation:**
+```typescript
+// Token generation
+const rawToken = crypto.randomBytes(32).toString('hex');
+const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+// Store tokenHash in database, send rawToken in email
+
+// Token verification
+const providedHash = crypto.createHash('sha256').update(providedToken).digest('hex');
+const invitation = await db.query.teamInvitations.findFirst({
+  where: eq(teamInvitations.tokenHash, providedHash)
+});
+```
 
 ### Data Protection
 
 1. **Soft Deletes**: Retain data for 30 days for recovery
-2. **Audit Logs**: Log all team operations for compliance
-3. **Data Export**: Provide data export before deletion
-4. **PII Protection**: Hash emails in logs
+2. **Slug Reuse**: Partial unique index allows slug reuse after soft delete
+3. **Audit Logs**: Log all team operations for compliance
+4. **Data Export**: Provide data export before deletion
+5. **PII Protection**: Hash emails in logs
+6. **Token Security**: Store only hashed invitation tokens
 
 ### Rate Limiting
 
@@ -1070,13 +1104,68 @@ The team system uses the existing email infrastructure:
 3. **Team Creation**: Limit to 5 teams per hour per user
 4. **API Calls**: General rate limit of 100 requests per minute per user
 
+## Critical Design Decisions
+
+### 1. Slug Uniqueness with Soft Deletes
+
+**Problem:** A unique constraint on `slug` combined with soft deletes prevents slug reuse. If team "acme" is soft-deleted, no one can create a new team with slug "acme" for 30 days.
+
+**Solution:** Use a partial unique index that only enforces uniqueness for non-deleted teams:
+```sql
+CREATE UNIQUE INDEX teams_slug_unique_idx ON teams (slug) WHERE deleted_at IS NULL;
+```
+
+This allows immediate slug reuse after soft deletion while maintaining uniqueness for active teams.
+
+### 2. Project Ownership Blocking
+
+**Problem:** If a member who owns projects is removed or demoted, those projects become orphaned.
+
+**Solution:** Block both demotion and removal operations for members who own projects:
+- Check project ownership before any role change that removes TEAM_EDITOR
+- Check project ownership before member removal
+- Return error with list of owned projects
+- Require ownership transfer before proceeding
+
+**Implementation:**
+```typescript
+// Before demotion or removal
+const ownedProjects = await getProjectsByOwner(userId, teamId);
+if (ownedProjects.length > 0) {
+  throw new ConflictError('MEMBER_OWNS_PROJECTS', {
+    projects: ownedProjects.map(p => ({ id: p.id, name: p.name }))
+  });
+}
+```
+
+### 3. Invitation Token Security
+
+**Problem:** Storing raw tokens allows database compromise to lead to unauthorized team access.
+
+**Solution:** Store only SHA-256 hashes of tokens (see Security Considerations section above).
+
+### 4. Team Context Synchronization
+
+**Problem:** Cookie and database can disagree on last active team, causing confusion.
+
+**Solution:** Always prioritize database value and update cookie to match:
+```typescript
+const dbTeamId = user.lastActiveTeamId;
+const cookieTeamId = cookies().get('team_id')?.value;
+
+if (dbTeamId !== cookieTeamId) {
+  // Database wins, update cookie
+  cookies().set('team_id', dbTeamId);
+}
+```
+
 ## Migration Strategy
 
 ### Database Migration
 
 1. **Create Tables**: Add teams, team_members, team_invitations tables
 2. **Update Users**: Add lastActiveTeamId column to users table
-3. **Indexes**: Add indexes for performance
+3. **Indexes**: Add indexes for performance including partial unique index for slugs
 4. **Constraints**: Add foreign keys and unique constraints
 
 ### Data Migration
@@ -1097,6 +1186,11 @@ The team system uses the existing email infrastructure:
 ### Phase 2 Features
 
 1. **Pro Plan**: Implement Stripe integration for Pro plan billing
+   - **Billing Model**: Charge per TEAM_EDITOR seat at $8/month
+   - **Proration**: Implement prorated charges for mid-cycle seat additions
+   - **Seat Tracking**: billableSeats field tracks current count, not historical billing
+   - **Billing Sync**: Webhook to sync Stripe subscription with billableSeats count
+   - **Downgrade Handling**: Block seat reduction if it would exceed new limit
 2. **Team Templates**: Pre-configured team setups for common use cases
 3. **Team Analytics**: Usage statistics and activity dashboards
 4. **Team Branding**: Custom colors, logos, and themes
