@@ -37,6 +37,10 @@ export default defineConfig(({ mode }) => ({
       "@types": path.resolve(__dirname, "src/types"),
       "@/config": path.resolve(__dirname, "src/config"),
       "@services": path.resolve(__dirname, "src/services"),
+      "@hookform/resolvers/zod": path.resolve(
+        __dirname,
+        "node_modules/@hookform/resolvers/zod/dist/zod.js",
+      ),
     },
   },
 }))
