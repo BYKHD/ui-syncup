@@ -780,6 +780,20 @@ describe("Property 37: Deleted active team triggers auto-switch", () => {
           });
           testTeamIds.push(team2.id);
 
+          // Verify both team memberships exist before deletion
+          const membershipsBefore = await db
+            .select()
+            .from(teamMembers)
+            .where(eq(teamMembers.userId, user.id));
+          
+          expect(membershipsBefore.length).toBe(2);
+
+          // Set team1 as the user's active team
+          await db
+            .update(users)
+            .set({ lastActiveTeamId: team1.id })
+            .where(eq(users.id, user.id));
+
           // Remove user's membership from team1 ONLY
           await db
             .delete(teamMembers)
@@ -790,8 +804,26 @@ describe("Property 37: Deleted active team triggers auto-switch", () => {
               )
             );
 
-          // Import validateTeamAccessWithEdgeCases
-          const { validateTeamAccessWithEdgeCases } = await import("../team-context");
+          // Verify team2 membership still exists
+          const team2Membership = await db
+            .select()
+            .from(teamMembers)
+            .where(
+              and(
+                eq(teamMembers.teamId, team2.id),
+                eq(teamMembers.userId, user.id)
+              )
+            );
+          
+          expect(team2Membership.length).toBe(1);
+
+          // Import functions
+          const { validateTeamAccessWithEdgeCases, getFirstAvailableTeam } = await import("../team-context");
+
+          // Verify getFirstAvailableTeam returns team2
+          const availableTeam = await getFirstAvailableTeam(user.id);
+          expect(availableTeam).toBeDefined();
+          expect(availableTeam?.id).toBe(team2.id);
 
           // Try to validate access to team1 (should fail and auto-switch)
           const result = await validateTeamAccessWithEdgeCases(user.id, team1.id);
@@ -801,15 +833,9 @@ describe("Property 37: Deleted active team triggers auto-switch", () => {
           expect(result.team).toBeNull();
           
           // Should auto-switch to team2 since user still has access to it
-          if (result.autoSwitched) {
-            expect(result.newTeam).toBeDefined();
-            expect(result.newTeam?.id).toBe(team2.id);
-          } else {
-            // If not auto-switched, verify user has no teams
-            const { getFirstAvailableTeam } = await import("../team-context");
-            const availableTeam = await getFirstAvailableTeam(user.id);
-            expect(availableTeam).toBeNull();
-          }
+          expect(result.autoSwitched).toBe(true);
+          expect(result.newTeam).toBeDefined();
+          expect(result.newTeam?.id).toBe(team2.id);
 
           // Clean up
           await db.delete(teams).where(eq(teams.id, team1.id));

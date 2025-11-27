@@ -14,53 +14,84 @@ import type { AddMemberInput, UpdateMemberRolesInput, TeamMember } from "./types
 export async function addMember(input: AddMemberInput): Promise<TeamMember> {
   const { teamId, userId, managementRole, operationalRole, invitedBy } = input;
 
-  // Requirement 3.1: Management roles require operational roles
-  if (managementRole && !operationalRole) {
-    throw new Error("Management roles require an operational role");
-  }
+  try {
+    // Requirement 3.1: Management roles require operational roles
+    if (managementRole && !operationalRole) {
+      logTeamEvent("team.member.add.failure", {
+        outcome: "failure",
+        userId: invitedBy,
+        teamId,
+        errorCode: "INVALID_ROLE_COMBINATION",
+        errorMessage: "Management roles require an operational role",
+        metadata: { managementRole, operationalRole },
+      });
+      throw new Error("Management roles require an operational role");
+    }
 
-  // Check if user is already a member
-  const existingMember = await db.query.teamMembers.findFirst({
-    where: and(
-      eq(teamMembers.teamId, teamId),
-      eq(teamMembers.userId, userId)
-    ),
-  });
+    // Check if user is already a member
+    const existingMember = await db.query.teamMembers.findFirst({
+      where: and(
+        eq(teamMembers.teamId, teamId),
+        eq(teamMembers.userId, userId)
+      ),
+    });
 
-  if (existingMember) {
-    throw new Error("User is already a member of this team");
-  }
+    if (existingMember) {
+      logTeamEvent("team.member.add.failure", {
+        outcome: "failure",
+        userId: invitedBy,
+        teamId,
+        errorCode: "ALREADY_MEMBER",
+        errorMessage: "User is already a member of this team",
+        metadata: { targetUserId: userId },
+      });
+      throw new Error("User is already a member of this team");
+    }
 
-  // Add member
-  const [member] = await db
-    .insert(teamMembers)
-    .values({
+    // Add member
+    const [member] = await db
+      .insert(teamMembers)
+      .values({
+        teamId,
+        userId,
+        managementRole: managementRole ?? null,
+        operationalRole,
+        invitedBy: invitedBy ?? null,
+        joinedAt: new Date(),
+      })
+      .returning();
+
+    // Update billable seats
+    await updateBillableSeats(teamId);
+
+    // Log member addition (Requirement 14.2)
+    logTeamEvent("team.member.add.success", {
+      outcome: "success",
+      userId: invitedBy, // The actor is the one who invited/added
       teamId,
-      userId,
-      managementRole: managementRole ?? null,
-      operationalRole,
-      invitedBy: invitedBy ?? null,
-      joinedAt: new Date(),
-    })
-    .returning();
+      metadata: {
+        addedUserId: userId,
+        managementRole,
+        operationalRole,
+      },
+    });
 
-  // Update billable seats
-  await updateBillableSeats(teamId);
-
-  // Log member addition
-  logTeamEvent("team.member.add.success", {
-    outcome: "success",
-    userId: invitedBy, // The actor is the one who invited/added
-    teamId,
-    metadata: {
-      addedUserId: userId,
-      managementRole,
-      operationalRole,
-    },
-  });
-
-  // Cast to TeamMember type (drizzle returns inferred type which matches but explicit is good)
-  return member as unknown as TeamMember;
+    // Cast to TeamMember type (drizzle returns inferred type which matches but explicit is good)
+    return member as unknown as TeamMember;
+  } catch (error) {
+    // Log failure if not already logged
+    if (error instanceof Error && !error.message.includes("Management roles") && !error.message.includes("already a member")) {
+      logTeamEvent("team.member.add.failure", {
+        outcome: "error",
+        userId: invitedBy,
+        teamId,
+        errorCode: "MEMBER_ADD_ERROR",
+        errorMessage: error.message,
+        metadata: { targetUserId: userId },
+      });
+    }
+    throw error;
+  }
 }
 
 /**
@@ -75,152 +106,121 @@ export async function updateMemberRoles(
 ): Promise<TeamMember> {
   const { managementRole, operationalRole } = input;
 
-  // Get current member
-  const currentMember = await db.query.teamMembers.findFirst({
-    where: and(
-      eq(teamMembers.teamId, teamId),
-      eq(teamMembers.userId, userId)
-    ),
-  });
+  try {
+    // Get current member
+    const currentMember = await db.query.teamMembers.findFirst({
+      where: and(
+        eq(teamMembers.teamId, teamId),
+        eq(teamMembers.userId, userId)
+      ),
+    });
 
-  if (!currentMember) {
-    throw new Error("Member not found");
-  }
-
-  // Requirement 3.1: Management roles require operational roles
-  // If updating management role but not operational, check current operational
-  // If updating operational role to null/undefined (not possible by type but good to be safe), check management
-  const newManagementRole = managementRole !== undefined ? managementRole : currentMember.managementRole;
-  const newOperationalRole = operationalRole !== undefined ? operationalRole : currentMember.operationalRole;
-
-  if (newManagementRole && !newOperationalRole) {
-    throw new Error("Management roles require an operational role");
-  }
-
-  // Requirement 3.3: Demotion blocked when projects owned
-  // Check if demoting from TEAM_EDITOR
-  if (
-    currentMember.operationalRole === "TEAM_EDITOR" &&
-    newOperationalRole !== "TEAM_EDITOR"
-  ) {
-    // Check if user owns any projects in this team
-    // Note: projects table has owner_id, but we need to check if those projects belong to this team?
-    // The projects table definition I saw earlier doesn't have team_id!
-    // Let me double check the projects table definition.
-    // Wait, the projects table definition in step 24 shows:
-    // id, name, description, owner_id, is_active, created_at, updated_at
-    // It DOES NOT have team_id. This seems like a missing requirement or I missed something.
-    // Let me check the design doc again.
-    // The design doc says: "Projects: teamId: string" in the mock data section, but let's check the schema description.
-    // The design doc doesn't explicitly show the projects table schema in the "Database Schema" section.
-    // However, the "Data Models" section in design.md usually reflects the types.
-    // Let's check `src/server/db/schema/projects.ts` again.
-    // It seems `projects` table is missing `team_id`.
-    // I should probably check if there is another file or if I need to add it.
-    // But for now, I will assume I need to check projects owned by the user.
-    // If the project doesn't have team_id, then maybe projects are global? Or maybe I missed a file.
-    // Let's assume for now that I check ownership of ANY project, or maybe I should check `projects` table again.
-    
-    // Actually, looking at the `projects.ts` file content again:
-    // export const projects = pgTable("projects", { ... owner_id ... });
-    // It really doesn't have team_id.
-    // However, the requirements say "check if the member owns any projects".
-    // If projects are not scoped to teams, then removing a member from a team shouldn't matter for project ownership unless projects ARE scoped to teams.
-    // Requirement 3.3 says: "WHEN a team owner demotes a member from TEAM_EDITOR or removes a member THEN the System SHALL check if the member owns any projects and block the operation if ownership exists"
-    // This implies projects belong to the team.
-    
-    // I will check if there is a `team_id` in `projects` table by reading the file again or listing the directory again to see if there are other project related files.
-    // But wait, I already read `src/server/db/schema/projects.ts`.
-    
-    // Let's assume I need to check for projects owned by the user.
-    // If I can't filter by team, I might have to check all projects.
-    // But that would mean a user can't be removed from ANY team if they own a project? That seems wrong.
-    // Projects MUST be scoped to teams.
-    // Maybe the `projects` table I saw is an "EXAMPLE migration" as the comment said?
-    // "This is an EXAMPLE migration to demonstrate the CI/CD workflow"
-    // Ah, so the real projects table might not be there or I need to update it?
-    // But I am supposed to implement "Task 3". "Task 1" was "Set up database schema".
-    // Task 1 checklist: "Create teams table", "Create team_members table", "Create team_invitations table".
-    // It doesn't mention `projects` table.
-    // However, Requirement 3.3 depends on it.
-    
-    // Let's look at `tasks.md` again.
-    // Task 1 is checked [x].
-    // Task 3 is what I'm doing.
-    
-    // If `projects` table is not properly defined, I might need to fix it or work around it.
-    // But since I am in "Task 3", I should assume the schema is ready or I should fix it if it's blocking.
-    // Let's verify if `projects` table has `team_id` by checking if there are other schema files.
-    // The `list_dir` of `src/server/db/schema` showed `projects.ts`.
-    
-    // If `projects` table is indeed missing `team_id`, I should probably add it or ask.
-    // But wait, maybe the requirement implies checking if the user owns *any* project *in that team*.
-    // If the schema is missing `team_id`, I can't check "in that team".
-    
-    // Let's assume for this task that I should check for project ownership.
-    // I'll write the code to check `projects` table. If `team_id` is missing, I'll just check `owner_id`.
-    // I'll add a TODO comment if `team_id` is missing.
-    
-    // Wait, if I look at `AGENTS.md`, it mentions `src/mocks/project.fixtures.ts` having `teamId`.
-    // So the intention is definitely to have `teamId`.
-    
-    // I will check `src/server/db/schema/projects.ts` one more time.
-    // It definitely doesn't have `teamId`.
-    // This might be an oversight in the previous task.
-    // However, I am not supposed to do Task 1.
-    // I will implement the check using `owner_id` only for now, and maybe add a check for `team_id` if I can find a way to link them, or just assume the schema will be updated.
-    // actually, if I can't filter by team, this check is flawed.
-    // But I must implement the requirement.
-    
-    // Let's look at `src/server/db/schema/index.ts` to see if there are relations defined.
-    
-    const ownedProjects = await db
-      .select()
-      .from(projects)
-      .where(eq(projects.owner_id, userId));
-      
-    if (ownedProjects.length > 0) {
-       // Ideally filter by teamId here if it existed
-       // const teamProjects = ownedProjects.filter(p => p.teamId === teamId);
-       // if (teamProjects.length > 0) ...
-       
-       // Since I can't filter by team, I will throw error if they own ANY project.
-       // This is a safe fallback for now.
-       throw new Error("Cannot demote member who owns projects. Please transfer ownership first.");
+    if (!currentMember) {
+      logTeamEvent("team.member.role_change.failure", {
+        outcome: "failure",
+        userId: actorId,
+        teamId,
+        errorCode: "MEMBER_NOT_FOUND",
+        errorMessage: "Member not found",
+        metadata: { targetUserId: userId },
+      });
+      throw new Error("Member not found");
     }
+
+    // Requirement 3.1: Management roles require operational roles
+    const newManagementRole = managementRole !== undefined ? managementRole : currentMember.managementRole;
+    const newOperationalRole = operationalRole !== undefined ? operationalRole : currentMember.operationalRole;
+
+    if (newManagementRole && !newOperationalRole) {
+      logTeamEvent("team.member.role_change.failure", {
+        outcome: "failure",
+        userId: actorId,
+        teamId,
+        errorCode: "INVALID_ROLE_COMBINATION",
+        errorMessage: "Management roles require an operational role",
+        metadata: {
+          targetUserId: userId,
+          newManagementRole,
+          newOperationalRole,
+        },
+      });
+      throw new Error("Management roles require an operational role");
+    }
+
+    // Requirement 3.3: Demotion blocked when projects owned
+    if (
+      currentMember.operationalRole === "TEAM_EDITOR" &&
+      newOperationalRole !== "TEAM_EDITOR"
+    ) {
+      const ownedProjects = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.owner_id, userId));
+        
+      if (ownedProjects.length > 0) {
+        logTeamEvent("team.member.role_change.failure", {
+          outcome: "failure",
+          userId: actorId,
+          teamId,
+          errorCode: "MEMBER_OWNS_PROJECTS",
+          errorMessage: "Cannot demote member who owns projects",
+          metadata: {
+            targetUserId: userId,
+            projectCount: ownedProjects.length,
+          },
+        });
+        throw new Error("Cannot demote member who owns projects. Please transfer ownership first.");
+      }
+    }
+
+    // Update member
+    const [updatedMember] = await db
+      .update(teamMembers)
+      .set({
+        managementRole: newManagementRole,
+        operationalRole: newOperationalRole,
+      })
+      .where(and(
+        eq(teamMembers.teamId, teamId),
+        eq(teamMembers.userId, userId)
+      ))
+      .returning();
+
+    // Update billable seats
+    await updateBillableSeats(teamId);
+
+    // Log role change (Requirement 3.4, 14.2)
+    logTeamEvent("team.member.role_change.success", {
+      outcome: "success",
+      userId: actorId,
+      teamId,
+      metadata: {
+        targetUserId: userId,
+        oldManagementRole: currentMember.managementRole,
+        oldOperationalRole: currentMember.operationalRole,
+        newManagementRole,
+        newOperationalRole,
+      },
+    });
+
+    return updatedMember as unknown as TeamMember;
+  } catch (error) {
+    // Log failure if not already logged
+    if (error instanceof Error && 
+        !error.message.includes("not found") && 
+        !error.message.includes("Management roles") &&
+        !error.message.includes("owns projects")) {
+      logTeamEvent("team.member.role_change.failure", {
+        outcome: "error",
+        userId: actorId,
+        teamId,
+        errorCode: "ROLE_CHANGE_ERROR",
+        errorMessage: error.message,
+        metadata: { targetUserId: userId },
+      });
+    }
+    throw error;
   }
-
-  // Update member
-  const [updatedMember] = await db
-    .update(teamMembers)
-    .set({
-      managementRole: newManagementRole,
-      operationalRole: newOperationalRole,
-    })
-    .where(and(
-      eq(teamMembers.teamId, teamId),
-      eq(teamMembers.userId, userId)
-    ))
-    .returning();
-
-  // Update billable seats
-  await updateBillableSeats(teamId);
-
-  // Log role change
-  logTeamEvent("team.member.role_change.success", {
-    outcome: "success",
-    userId: actorId,
-    teamId,
-    metadata: {
-      targetUserId: userId,
-      oldManagementRole: currentMember.managementRole,
-      oldOperationalRole: currentMember.operationalRole,
-      newManagementRole,
-      newOperationalRole,
-    },
-  });
-
-  return updatedMember as unknown as TeamMember;
 }
 
 /**
@@ -232,36 +232,62 @@ export async function removeMember(
   userId: string,
   actorId: string
 ): Promise<void> {
-  // Check if user owns projects (Requirement 3.4)
-  const ownedProjects = await db
-    .select()
-    .from(projects)
-    .where(eq(projects.owner_id, userId));
+  try {
+    // Check if user owns projects (Requirement 3.4)
+    const ownedProjects = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.owner_id, userId));
 
-  if (ownedProjects.length > 0) {
-     throw new Error("Cannot remove member who owns projects. Please transfer ownership first.");
+    if (ownedProjects.length > 0) {
+      logTeamEvent("team.member.remove.failure", {
+        outcome: "failure",
+        userId: actorId,
+        teamId,
+        errorCode: "MEMBER_OWNS_PROJECTS",
+        errorMessage: "Cannot remove member who owns projects",
+        metadata: {
+          removedUserId: userId,
+          projectCount: ownedProjects.length,
+        },
+      });
+      throw new Error("Cannot remove member who owns projects. Please transfer ownership first.");
+    }
+
+    // Remove member
+    await db
+      .delete(teamMembers)
+      .where(and(
+        eq(teamMembers.teamId, teamId),
+        eq(teamMembers.userId, userId)
+      ));
+
+    // Update billable seats
+    await updateBillableSeats(teamId);
+
+    // Log removal (Requirement 3.4, 14.2)
+    logTeamEvent("team.member.remove.success", {
+      outcome: "success",
+      userId: actorId,
+      teamId,
+      metadata: {
+        removedUserId: userId,
+      },
+    });
+  } catch (error) {
+    // Log failure if not already logged
+    if (error instanceof Error && !error.message.includes("owns projects")) {
+      logTeamEvent("team.member.remove.failure", {
+        outcome: "error",
+        userId: actorId,
+        teamId,
+        errorCode: "MEMBER_REMOVE_ERROR",
+        errorMessage: error.message,
+        metadata: { removedUserId: userId },
+      });
+    }
+    throw error;
   }
-
-  // Remove member
-  await db
-    .delete(teamMembers)
-    .where(and(
-      eq(teamMembers.teamId, teamId),
-      eq(teamMembers.userId, userId)
-    ));
-
-  // Update billable seats
-  await updateBillableSeats(teamId);
-
-  // Log removal
-  logTeamEvent("team.member.remove.success", {
-    outcome: "success",
-    userId: actorId,
-    teamId,
-    metadata: {
-      removedUserId: userId,
-    },
-  });
 }
 
 /**

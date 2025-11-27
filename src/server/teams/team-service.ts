@@ -12,64 +12,85 @@ import type { CreateTeamInput, UpdateTeamInput, Team, TeamWithMemberInfo } from 
 
 /**
  * Creates a new team with the creator as TEAM_OWNER + TEAM_EDITOR
- * Implements Requirements 1.1, 1.2, 1.4, 13.1
+ * Implements Requirements 1.1, 1.2, 1.4, 13.1, 14.1
  */
 export async function createTeam(input: CreateTeamInput): Promise<Team> {
   const { name, description, image, creatorId } = input;
 
-  // Validate team name
-  const validation = validateTeamName(name);
-  if (!validation.valid) {
-    throw new Error(validation.error || "Invalid team name");
+  try {
+    // Validate team name
+    const validation = validateTeamName(name);
+    if (!validation.valid) {
+      logTeamEvent("team.create.failure", {
+        outcome: "failure",
+        userId: creatorId,
+        errorCode: "INVALID_TEAM_NAME",
+        errorMessage: validation.error || "Invalid team name",
+        metadata: { name },
+      });
+      throw new Error(validation.error || "Invalid team name");
+    }
+
+    // Generate unique slug
+    const slug = await generateUniqueSlug(name);
+
+    // Create team
+    const [team] = await db
+      .insert(teams)
+      .values({
+        name,
+        slug,
+        description: description ?? null,
+        image: image ?? null,
+        planId: "free",
+        billableSeats: 1, // Creator is TEAM_EDITOR (billable)
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    // Assign creator as TEAM_OWNER + TEAM_EDITOR
+    await db.insert(teamMembers).values({
+      teamId: team.id,
+      userId: creatorId,
+      managementRole: "TEAM_OWNER",
+      operationalRole: "TEAM_EDITOR",
+      joinedAt: new Date(),
+      invitedBy: null, // Creator is not invited
+    });
+
+    // Update user's lastActiveTeamId
+    await db
+      .update(users)
+      .set({ lastActiveTeamId: team.id })
+      .where(eq(users.id, creatorId));
+
+    // Log team creation (Requirement 1.5, 14.1)
+    logTeamEvent("team.create.success", {
+      outcome: "success",
+      userId: creatorId,
+      teamId: team.id,
+      teamName: team.name,
+      metadata: {
+        slug: team.slug,
+        planId: team.planId,
+      },
+    });
+
+    return team;
+  } catch (error) {
+    // Log failure if not already logged
+    if (error instanceof Error && !error.message.includes("Invalid team name")) {
+      logTeamEvent("team.create.failure", {
+        outcome: "error",
+        userId: creatorId,
+        errorCode: "TEAM_CREATE_ERROR",
+        errorMessage: error.message,
+        metadata: { name },
+      });
+    }
+    throw error;
   }
-
-  // Generate unique slug
-  const slug = await generateUniqueSlug(name);
-
-  // Create team
-  const [team] = await db
-    .insert(teams)
-    .values({
-      name,
-      slug,
-      description: description ?? null,
-      image: image ?? null,
-      planId: "free",
-      billableSeats: 1, // Creator is TEAM_EDITOR (billable)
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .returning();
-
-  // Assign creator as TEAM_OWNER + TEAM_EDITOR
-  await db.insert(teamMembers).values({
-    teamId: team.id,
-    userId: creatorId,
-    managementRole: "TEAM_OWNER",
-    operationalRole: "TEAM_EDITOR",
-    joinedAt: new Date(),
-    invitedBy: null, // Creator is not invited
-  });
-
-  // Update user's lastActiveTeamId
-  await db
-    .update(users)
-    .set({ lastActiveTeamId: team.id })
-    .where(eq(users.id, creatorId));
-
-  // Log team creation
-  logTeamEvent("team.create.success", {
-    outcome: "success",
-    userId: creatorId,
-    teamId: team.id,
-    teamName: team.name,
-    metadata: {
-      slug: team.slug,
-      planId: team.planId,
-    },
-  });
-
-  return team;
 }
 
 /**
@@ -170,7 +191,7 @@ export async function getTeams(userId: string): Promise<TeamWithMemberInfo[]> {
 
 /**
  * Updates team settings
- * Implements Requirements 4.1, 4.2, 4.3
+ * Implements Requirements 4.1, 4.2, 4.3, 14.3
  */
 export async function updateTeam(
   teamId: string,
@@ -179,123 +200,203 @@ export async function updateTeam(
 ): Promise<Team> {
   const { name, description, image } = input;
 
-  // Get current team for logging
-  const currentTeam = await db.query.teams.findFirst({
-    where: and(eq(teams.id, teamId), isNull(teams.deletedAt)),
-  });
+  try {
+    // Get current team for logging
+    const currentTeam = await db.query.teams.findFirst({
+      where: and(eq(teams.id, teamId), isNull(teams.deletedAt)),
+    });
 
-  if (!currentTeam) {
-    throw new Error("Team not found");
-  }
-
-  const updates: Partial<Team> = {
-    updatedAt: new Date(),
-  };
-
-  // If name changed, validate and regenerate slug
-  if (name && name !== currentTeam.name) {
-    const validation = validateTeamName(name);
-    if (!validation.valid) {
-      throw new Error(validation.error || "Invalid team name");
+    if (!currentTeam) {
+      logTeamEvent("team.update.failure", {
+        outcome: "failure",
+        userId,
+        teamId,
+        errorCode: "TEAM_NOT_FOUND",
+        errorMessage: "Team not found",
+      });
+      throw new Error("Team not found");
     }
-    updates.name = name;
-    updates.slug = await generateUniqueSlug(name);
-  }
 
-  if (description !== undefined) {
-    updates.description = description;
-  }
+    const updates: Partial<Team> = {
+      updatedAt: new Date(),
+    };
 
-  if (image !== undefined) {
-    updates.image = image;
-  }
+    // If name changed, validate and regenerate slug
+    if (name && name !== currentTeam.name) {
+      const validation = validateTeamName(name);
+      if (!validation.valid) {
+        logTeamEvent("team.update.failure", {
+          outcome: "failure",
+          userId,
+          teamId,
+          teamName: currentTeam.name,
+          errorCode: "INVALID_TEAM_NAME",
+          errorMessage: validation.error || "Invalid team name",
+          metadata: { name },
+        });
+        throw new Error(validation.error || "Invalid team name");
+      }
+      updates.name = name;
+      updates.slug = await generateUniqueSlug(name);
+    }
 
-  const [updatedTeam] = await db
-    .update(teams)
-    .set(updates)
-    .where(eq(teams.id, teamId))
-    .returning();
+    if (description !== undefined) {
+      updates.description = description;
+    }
 
-  // Log team update
-  logTeamEvent("team.update.success", {
-    outcome: "success",
-    userId,
-    teamId,
-    teamName: updatedTeam.name,
-    metadata: {
-      changes: Object.keys(updates),
-      oldValues: {
-        name: currentTeam.name,
-        description: currentTeam.description,
-        image: currentTeam.image,
+    if (image !== undefined) {
+      updates.image = image;
+    }
+
+    const [updatedTeam] = await db
+      .update(teams)
+      .set(updates)
+      .where(eq(teams.id, teamId))
+      .returning();
+
+    // Log team update (Requirement 4.5, 14.3)
+    logTeamEvent("team.update.success", {
+      outcome: "success",
+      userId,
+      teamId,
+      teamName: updatedTeam.name,
+      metadata: {
+        changes: Object.keys(updates),
+        oldValues: {
+          name: currentTeam.name,
+          description: currentTeam.description,
+          image: currentTeam.image,
+        },
+        newValues: {
+          name: updatedTeam.name,
+          description: updatedTeam.description,
+          image: updatedTeam.image,
+        },
       },
-      newValues: {
-        name: updatedTeam.name,
-        description: updatedTeam.description,
-        image: updatedTeam.image,
-      },
-    },
-  });
+    });
 
-  return updatedTeam;
+    return updatedTeam;
+  } catch (error) {
+    // Log failure if not already logged
+    if (error instanceof Error && !error.message.includes("not found") && !error.message.includes("Invalid")) {
+      logTeamEvent("team.update.failure", {
+        outcome: "error",
+        userId,
+        teamId,
+        errorCode: "TEAM_UPDATE_ERROR",
+        errorMessage: error.message,
+      });
+    }
+    throw error;
+  }
 }
 
 /**
  * Soft deletes a team with 30-day retention
- * Implements Requirements 5.2, 5.3
+ * Implements Requirements 5.2, 5.3, 14.1
  */
 export async function softDeleteTeam(
   teamId: string,
   userId: string
 ): Promise<void> {
-  const team = await db.query.teams.findFirst({
-    where: and(eq(teams.id, teamId), isNull(teams.deletedAt)),
-  });
+  try {
+    const team = await db.query.teams.findFirst({
+      where: and(eq(teams.id, teamId), isNull(teams.deletedAt)),
+    });
 
-  if (!team) {
-    throw new Error("Team not found");
+    if (!team) {
+      logTeamEvent("team.delete.failure", {
+        outcome: "failure",
+        userId,
+        teamId,
+        errorCode: "TEAM_NOT_FOUND",
+        errorMessage: "Team not found",
+      });
+      throw new Error("Team not found");
+    }
+
+    // Soft delete team
+    await db
+      .update(teams)
+      .set({
+        deletedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(teams.id, teamId));
+
+    // Log team deletion (Requirement 14.1)
+    logTeamEvent("team.delete.success", {
+      outcome: "success",
+      userId,
+      teamId,
+      teamName: team.name,
+      metadata: {
+        retentionDays: 30,
+      },
+    });
+  } catch (error) {
+    // Log failure if not already logged
+    if (error instanceof Error && !error.message.includes("not found")) {
+      logTeamEvent("team.delete.failure", {
+        outcome: "error",
+        userId,
+        teamId,
+        errorCode: "TEAM_DELETE_ERROR",
+        errorMessage: error.message,
+      });
+    }
+    throw error;
   }
-
-  // Soft delete team
-  await db
-    .update(teams)
-    .set({
-      deletedAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(eq(teams.id, teamId));
-
-  // Log team deletion
-  logTeamEvent("team.delete.success", {
-    outcome: "success",
-    userId,
-    teamId,
-    teamName: team.name,
-    metadata: {
-      retentionDays: 30,
-    },
-  });
 }
 
 /**
  * Team event types for structured logging
+ * Implements Requirements 14.1, 14.2, 14.3, 14.4
  */
 export type TeamEventType =
+  // Team lifecycle events
   | "team.create.success"
   | "team.create.failure"
   | "team.update.success"
   | "team.update.failure"
   | "team.delete.success"
   | "team.delete.failure"
+  // Member management events
   | "team.member.add.success"
+  | "team.member.add.failure"
   | "team.member.remove.success"
+  | "team.member.remove.failure"
   | "team.member.role_change.success"
-  | "team.switch.success"
-  | "team.context.invalid"
+  | "team.member.role_change.failure"
+  | "team.member.leave.success"
+  | "team.member.leave.failure"
+  // Invitation events
   | "team.invitation.create.success"
+  | "team.invitation.create.failure"
   | "team.invitation.accept.success"
+  | "team.invitation.accept.failure"
   | "team.invitation.resend.success"
-  | "team.invitation.cancel.success";
+  | "team.invitation.resend.failure"
+  | "team.invitation.cancel.success"
+  | "team.invitation.cancel.failure"
+  | "team.invitation.expire"
+  // Ownership events
+  | "team.ownership.transfer.success"
+  | "team.ownership.transfer.failure"
+  // Context management events
+  | "team.switch.success"
+  | "team.switch.failure"
+  | "team.context.invalid"
+  | "team.context.cleared"
+  | "team.context.auto_switch"
+  | "team.access.denied"
+  // Data export events
+  | "team.export.requested"
+  | "team.export.completed"
+  | "team.export.failure"
+  // Limit events
+  | "team.limit.reached"
+  | "team.rate_limit.exceeded";
 
 export type TeamEventOutcome = "success" | "failure" | "error";
 

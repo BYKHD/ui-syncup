@@ -102,6 +102,9 @@ export function createTestDb(): TestDbContext {
       "verification_tokens",
       "sessions",
       "account",
+      "team_invitations",
+      "team_members",
+      "teams",
       "projects",
       "users",
     ]

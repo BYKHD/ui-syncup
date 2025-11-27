@@ -258,19 +258,19 @@
   - **Property 37: Deleted active team triggers auto-switch**
   - **Validates: Requirements 9A.1**
 
-- [-] 12. Implement logging and observability
-- [-] 12.1 Add structured logging for team events
+- [x] 12. Implement logging and observability
+- [x] 12.1 Add structured logging for team events
   - Log team creation, updates, deletion
   - Log member additions, removals, role changes
   - Log invitation creation, acceptance, cancellation
   - Log ownership transfers
   - _Requirements: 1.5, 3.4, 4.5, 6.5, 14.1, 14.2, 14.3, 14.4_
 
-- [ ] 12.2 Write property test for logging
+- [x] 12.2 Write property test for logging
   - **Property 5: Team creation is logged**
   - **Validates: Requirements 1.5, 14.1**
 
-- [ ] 12.3 Set up monitoring and alerts
+- [x] 12.3 Set up monitoring and alerts
   - Configure alerts for high team creation rate
   - Configure alerts for invitation spam
   - Configure alerts for plan limit hits
