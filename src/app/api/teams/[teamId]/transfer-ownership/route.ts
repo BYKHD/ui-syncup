@@ -9,14 +9,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/server/auth/session';
 import { hasRole } from '@/server/auth/rbac';
+import { transferOwnership } from '@/server/teams/team-service';
+import { verifyPassword } from '@/server/auth/password';
+import { db } from '@/lib/db';
+import { users } from '@/server/db/schema/users';
+import { eq } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
 
 /**
  * Zod schema for ownership transfer
+ * Requires password for re-authentication (Requirement 6.1)
  */
 const TransferOwnershipSchema = z.object({
   newOwnerId: z.string().uuid(),
+  password: z.string().min(1, 'Password is required for re-authentication'),
 });
 
 /**
@@ -26,7 +33,8 @@ const TransferOwnershipSchema = z.object({
  * 
  * Request body:
  * {
- *   "newOwnerId": "uuid"
+ *   "newOwnerId": "uuid",
+ *   "password": "string" // Required for re-authentication (Requirement 6.1)
  * }
  * 
  * Success response (200):
@@ -36,20 +44,17 @@ const TransferOwnershipSchema = z.object({
  * 
  * Error responses:
  * - 400: Invalid input
- * - 401: Not authenticated
+ * - 401: Not authenticated or invalid password
  * - 403: Not team owner
  * - 404: Team or new owner not found
  * - 500: Internal server error
- * 
- * Note: This is a placeholder implementation. Full ownership transfer
- * functionality will be implemented in Task 14.
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { teamId: string } }
+  { params }: { params: Promise<{ teamId: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const { teamId } = params;
+  const { teamId } = await params;
   
   try {
     // Authenticate user
@@ -99,25 +104,62 @@ export async function POST(
       );
     }
     
-    const { newOwnerId } = validation.data;
+    const { newOwnerId, password } = validation.data;
     
-    // TODO: Implement re-authentication check
-    // TODO: Verify new owner is a team member
-    // TODO: Update roles (new owner gets TEAM_OWNER, old owner gets TEAM_ADMIN)
-    // TODO: Send notification emails
-    // TODO: Log ownership transfer
+    // Re-authenticate user (Requirement 6.1)
+    const userRecord = await db.query.users.findFirst({
+      where: eq(users.id, user.id),
+    });
     
-    logger.info('api.teams.transfer_ownership.requested', {
+    if (!userRecord || !userRecord.passwordHash) {
+      logger.warn('api.teams.transfer_ownership.no_password', {
+        requestId,
+        userId: user.id,
+        teamId,
+      });
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_PASSWORD',
+            message: 'Invalid password',
+          },
+        },
+        { status: 401 }
+      );
+    }
+    
+    const isPasswordValid = await verifyPassword(password, userRecord.passwordHash);
+    
+    if (!isPasswordValid) {
+      logger.warn('api.teams.transfer_ownership.invalid_password', {
+        requestId,
+        userId: user.id,
+        teamId,
+      });
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_PASSWORD',
+            message: 'Invalid password. Please verify your password and try again.',
+          },
+        },
+        { status: 401 }
+      );
+    }
+    
+    // Perform ownership transfer
+    await transferOwnership(teamId, user.id, newOwnerId);
+    
+    logger.info('api.teams.transfer_ownership.success', {
       requestId,
       userId: user.id,
       teamId,
       newOwnerId,
     });
     
-    // Placeholder response
     return NextResponse.json(
       {
-        message: 'Ownership transfer functionality will be implemented in Task 14',
+        message: 'Ownership transferred successfully',
       },
       { status: 200 }
     );
@@ -129,6 +171,33 @@ export async function POST(
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
     });
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Handle specific business logic errors
+    if (errorMessage.includes("Target user must be a Team Admin")) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_TARGET_ROLE',
+            message: errorMessage,
+          },
+        },
+        { status: 400 }
+      );
+    }
+    
+    if (errorMessage.includes("Target user is not a member")) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'USER_NOT_FOUND',
+            message: errorMessage,
+          },
+        },
+        { status: 404 }
+      );
+    }
     
     return NextResponse.json(
       {

@@ -6,7 +6,7 @@ import { useTeamSettings } from "../hooks/use-team-settings";
 import { SettingsCard } from "./settings-card";
 import { TeamInformationForm } from "./team-information-form";
 import { SettingsSection } from "./settings-section";
-import { TeamDeletionDialog } from "./team-deletion-dialog";
+import { TeamDangerZone } from "./team-danger-zone";
 import { useTeam } from "@/features/teams";
 
 import type { TeamResponse } from "@/features/teams/api";
@@ -116,7 +116,7 @@ function TeamSettingsContent({
           </div>
         </SettingsCard>
 
-        <TeamDeletionDialog
+        <TeamDangerZone
           teamId={team.id}
           teamName={team.name}
           userRole={userRole}

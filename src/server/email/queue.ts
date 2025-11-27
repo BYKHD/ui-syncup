@@ -23,7 +23,7 @@ import { sendEmail } from './client';
 export interface EmailJobInput {
   userId: string;
   tokenId?: string;
-  type: 'verification' | 'password_reset' | 'welcome' | 'security_alert' | 'team_invitation';
+  type: 'verification' | 'password_reset' | 'welcome' | 'security_alert' | 'team_invitation' | 'ownership_transfer';
   to: string;
   template: EmailTemplate;
 }

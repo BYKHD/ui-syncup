@@ -18,9 +18,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { SettingsCard } from "./settings-card";
+import { TransferOwnershipModal } from "./transfer-ownership-modal";
 import type { TeamRole } from "../types";
 
-export interface TeamDeletionDialogProps {
+export interface TeamDangerZoneProps {
   teamId: string;
   teamName: string;
   userRole: TeamRole | null;
@@ -28,13 +29,13 @@ export interface TeamDeletionDialogProps {
   onDelete?: (teamId: string) => void | Promise<void>;
 }
 
-export function TeamDeletionDialog({
+export function TeamDangerZone({
   teamId,
   teamName,
   userRole,
   isLastTeam = false,
   onDelete,
-}: TeamDeletionDialogProps) {
+}: TeamDangerZoneProps) {
   const [isDeletingTeam, setIsDeletingTeam] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -86,17 +87,23 @@ export function TeamDeletionDialog({
   return (
     <SettingsCard
       title="Danger Zone"
-      description="Permanently delete this team and all associated data"
+      description="Irreversible and destructive actions"
     >
-      <div className="space-y-4">
-        <Alert variant="destructive">
-          <AlertDescription>
-            <strong>Warning:</strong> This action cannot be undone. This will permanently delete the team, 
-            all projects, issues, and remove all team members.
-          </AlertDescription>
-        </Alert>
-
-        <Separator />
+      <div className="space-y-6">
+        {userRole === "owner" && (
+          <>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-medium">Transfer Ownership</h4>
+                <p className="text-sm text-muted-foreground">
+                  Transfer this team to another administrator.
+                </p>
+              </div>
+              <TransferOwnershipModal teamId={teamId} teamName={teamName} />
+            </div>
+            <Separator />
+          </>
+        )}
 
         <div className="flex items-center justify-between">
           <div>

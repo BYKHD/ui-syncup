@@ -8,6 +8,7 @@ import { calculateBillableSeats } from "./billable-seats";
 import { logger } from "@/lib/logger";
 import { randomUUID } from "crypto";
 import { validateTeamName } from "./validation";
+import { enqueueEmail } from "@/server/email";
 import type { CreateTeamInput, UpdateTeamInput, Team, TeamWithMemberInfo } from "./types";
 
 /**
@@ -345,6 +346,146 @@ export async function softDeleteTeam(
         errorMessage: error.message,
       });
     }
+    throw error;
+  }
+}
+
+/**
+ * Transfers team ownership to another admin
+ * Implements Requirements 14.1, 14.2, 14.3, 14.4
+ */
+export async function transferOwnership(
+  teamId: string,
+  currentOwnerId: string,
+  newOwnerId: string
+): Promise<void> {
+  try {
+    await db.transaction(async (tx) => {
+      // 1. Validate current owner
+      const currentOwnerMember = await tx.query.teamMembers.findFirst({
+        where: and(
+          eq(teamMembers.teamId, teamId),
+          eq(teamMembers.userId, currentOwnerId),
+          eq(teamMembers.managementRole, "TEAM_OWNER")
+        ),
+        with: {
+          user: true,
+          team: true,
+        },
+      });
+
+      if (!currentOwnerMember) {
+        throw new Error("Current user is not the team owner");
+      }
+
+      // 2. Validate new owner
+      const newOwnerMember = await tx.query.teamMembers.findFirst({
+        where: and(
+          eq(teamMembers.teamId, teamId),
+          eq(teamMembers.userId, newOwnerId)
+        ),
+        with: {
+          user: true,
+        },
+      });
+
+      if (!newOwnerMember) {
+        throw new Error("Target user is not a member of this team");
+      }
+
+      if (newOwnerMember.managementRole !== "TEAM_ADMIN") {
+        throw new Error("Target user must be a Team Admin to receive ownership");
+      }
+
+      // 3. Update roles
+      // Downgrade current owner to TEAM_ADMIN
+      await tx
+        .update(teamMembers)
+        .set({
+          managementRole: "TEAM_ADMIN",
+        })
+        .where(
+          and(
+            eq(teamMembers.teamId, teamId),
+            eq(teamMembers.userId, currentOwnerId)
+          )
+        );
+
+      // Upgrade new owner to TEAM_OWNER
+      await tx
+        .update(teamMembers)
+        .set({
+          managementRole: "TEAM_OWNER",
+        })
+        .where(
+          and(
+            eq(teamMembers.teamId, teamId),
+            eq(teamMembers.userId, newOwnerId)
+          )
+        );
+
+      // 4. Send emails
+      const owner = currentOwnerMember as any;
+      const newOwner = newOwnerMember as any;
+      const teamUrl = `${process.env.NEXT_PUBLIC_APP_URL}/team/${owner.team.slug}/settings`;
+
+      // Email to previous owner
+      await enqueueEmail({
+        userId: owner.userId,
+        type: "ownership_transfer",
+        to: owner.user.email,
+        template: {
+          type: "ownership_transfer",
+          data: {
+            teamName: owner.team.name,
+            previousOwnerName: owner.user.name ?? "Unknown",
+            newOwnerName: newOwner.user.name ?? "Unknown",
+            isNewOwner: false,
+            teamUrl,
+          },
+        },
+      });
+
+      // Email to new owner
+      await enqueueEmail({
+        userId: newOwner.userId,
+        type: "ownership_transfer",
+        to: newOwner.user.email,
+        template: {
+          type: "ownership_transfer",
+          data: {
+            teamName: owner.team.name,
+            previousOwnerName: owner.user.name ?? "Unknown",
+            newOwnerName: newOwner.user.name ?? "Unknown",
+            isNewOwner: true,
+            teamUrl,
+          },
+        },
+      });
+
+      // 5. Log event
+      logTeamEvent("team.ownership.transfer.success", {
+        outcome: "success",
+        userId: currentOwnerId,
+        teamId,
+        teamName: owner.team.name,
+        metadata: {
+          previousOwnerId: currentOwnerId,
+          newOwnerId: newOwnerId,
+        },
+      });
+    });
+  } catch (error) {
+    logTeamEvent("team.ownership.transfer.failure", {
+      outcome: "error",
+      userId: currentOwnerId,
+      teamId,
+      errorCode: "OWNERSHIP_TRANSFER_ERROR",
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
+      metadata: {
+        newOwnerId,
+      },
+    });
     throw error;
   }
 }

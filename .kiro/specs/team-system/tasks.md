@@ -303,18 +303,18 @@
   - **Property 46: API errors have standardized shape**
   - **Validates: Requirements 12A.4**
 
-- [ ] 14. Implement ownership transfer
-- [ ] 14.1 Create ownership transfer service
+- [x] 14. Implement ownership transfer
+- [x] 14.1 Create ownership transfer service
   - Implement transferOwnership with re-auth check
   - Update roles for old and new owners
   - Send notification emails
   - _Requirements: 6.1, 6.2, 6.3_
 
-- [ ] 14.2 Write property test for ownership transfer
+- [x] 14.2 Write property test for ownership transfer
   - **Property 24: Ownership transfer updates roles correctly**
   - **Validates: Requirements 6.2**
 
-- [ ] 14.2 Create ownership transfer UI
+- [x] 14.2 Create ownership transfer UI
   - Create transfer ownership dialog
   - Add member selector
   - Implement re-authentication flow
