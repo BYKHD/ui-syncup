@@ -212,54 +212,54 @@
   - Handle team context changes across app
   - _Requirements: 9.1, 9.4_
 
-- [ ] 10. Implement plan limit enforcement
-- [ ] 10.1 Create plan limit checking utilities
+- [x] 10. Implement plan limit enforcement
+- [x] 10.1 Create plan limit checking utilities
   - Implement checkMemberLimit function
   - Implement checkProjectLimit function
   - Implement checkIssueLimit function
   - _Requirements: 10.1, 10.2, 10.3_
 
-- [ ] 10.2 Write property test for member limit
+- [x] 10.2 Write property test for member limit
   - **Property 41: Free plan member limit enforced**
   - **Validates: Requirements 10.1, 10.5**
 
-- [ ] 10.3 Integrate limit checks into API routes
+- [x] 10.3 Integrate limit checks into API routes
   - Add limit checks to team member addition
   - Add limit checks to project creation
   - Add limit checks to issue creation
   - Return specific error codes for limit violations
   - _Requirements: 10.1, 10.2, 10.3, 10.5_
 
-- [ ] 10.4 Create upgrade prompts UI
+- [x] 10.4 Create upgrade prompts UI
   - Create PlanLimitDialog component
   - Show "Coming Soon" badge for Pro plan
   - Display current usage vs limits
   - _Requirements: 11.1, 11.2, 11.3_
 
-- [ ] 11. Implement team context management
-- [ ] 11.1 Create team context utilities
+- [x] 11. Implement team context management
+- [x] 11.1 Create team context utilities
   - Implement getActiveTeam (database + cookie fallback)
   - Implement setActiveTeam (database + cookie)
   - Implement validateTeamAccess
   - _Requirements: 9.3, 9.4, 9A.3_
 
-- [ ] 11.2 Write property test for context persistence
+- [x] 11.2 Write property test for context persistence
   - **Property 36: Last active team loads from database first**
   - **Validates: Requirements 9.4**
 
-- [ ] 11.3 Handle team context edge cases
+- [x] 11.3 Handle team context edge cases
   - Implement auto-switch on deleted team
   - Implement auto-switch on lost access
   - Implement database-cookie conflict resolution
   - Show error and redirect on invalid team access
   - _Requirements: 9A.1, 9A.2, 9A.3, 9A.4_
 
-- [ ] 11.4 Write property test for deleted team handling
+- [x] 11.4 Write property test for deleted team handling
   - **Property 37: Deleted active team triggers auto-switch**
   - **Validates: Requirements 9A.1**
 
-- [ ] 12. Implement logging and observability
-- [ ] 12.1 Add structured logging for team events
+- [-] 12. Implement logging and observability
+- [-] 12.1 Add structured logging for team events
   - Log team creation, updates, deletion
   - Log member additions, removals, role changes
   - Log invitation creation, acceptance, cancellation

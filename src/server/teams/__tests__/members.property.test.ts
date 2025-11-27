@@ -38,8 +38,10 @@ describe("Team Member Management Properties", () => {
       await db.delete(projects).where(eq(projects.id, testProjectIds[0]));
       testProjectIds.length = 0;
     }
-    // Teams cleanup cascades to members
+    
+    // Explicitly delete team members first to avoid FK violations
     for (const teamId of testTeamIds) {
+      await db.delete(teamMembers).where(eq(teamMembers.teamId, teamId));
       await db.delete(teams).where(eq(teams.id, teamId));
     }
     testTeamIds.length = 0;

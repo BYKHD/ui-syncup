@@ -116,6 +116,27 @@ export async function POST(
     
     const { email, managementRole, operationalRole } = validation.data;
     
+    // Check member limit before creating invitation
+    const { checkMemberLimit, PlanLimitError } = await import('@/server/teams/plan-limits');
+    try {
+      await checkMemberLimit(teamId);
+    } catch (error) {
+      if (error instanceof PlanLimitError) {
+        return NextResponse.json(
+          {
+            error: {
+              code: error.code,
+              message: error.message,
+              limit: error.limit,
+              current: error.current,
+            },
+          },
+          { status: 422 }
+        );
+      }
+      throw error;
+    }
+    
     // Create invitation
     const { invitation } = await createInvitation({
       teamId,

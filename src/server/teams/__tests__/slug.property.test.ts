@@ -150,8 +150,16 @@ describe("Property 2: Slug generation produces URL-friendly unique slugs", () =>
           // Different names should produce different slugs (most of the time)
           // Note: Some collisions are acceptable (e.g., "Hello World" and "hello-world")
           // but we expect most to be different
-          if (name1.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-") !== 
-              name2.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-")) {
+          // Normalize names to check if they should theoretically produce different slugs
+          const normalize = (s: string) => s
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-")
+            .replace(/^-+|-+$/g, "");
+
+          if (normalize(name1) !== normalize(name2)) {
             // If the normalized forms are different, slugs should be different
             expect(slug1).not.toBe(slug2);
           }

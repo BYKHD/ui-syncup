@@ -13,13 +13,16 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-const mockToast = {
-  success: vi.fn(),
-  error: vi.fn(),
-};
 vi.mock("sonner", () => ({
-  toast: mockToast,
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
 }));
+
+// We need to access the mocked toast to assert on it
+import { toast } from "sonner";
+const mockToast = toast as unknown as { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
 
 const mockCreateTeam = vi.fn();
 const mockUseTeams = vi.fn();

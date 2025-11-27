@@ -14,6 +14,7 @@
 
 // Components
 export { CreateTeamDialog } from './components/create-team-dialog'
+export { PlanLimitDialog } from './components/plan-limit-dialog'
 
 // Hooks - Query
 export {

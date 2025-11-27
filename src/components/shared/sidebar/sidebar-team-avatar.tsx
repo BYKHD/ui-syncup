@@ -1,14 +1,15 @@
-"use client"
-
 import { cn } from "@/lib/utils"
-import type { Team } from "./type"
 
 // ============================================================================
 // TYPES AND CONSTANTS
 // ============================================================================
 
 interface TeamAvatarProps {
-  team: Team;
+  team: {
+    id: string;
+    name: string;
+    image?: string | null;
+  };
   size?: 'sm' | 'md' | 'lg';
   showFallback?: boolean;
   className?: string;

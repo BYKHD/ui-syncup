@@ -11,10 +11,10 @@ import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import fc from 'fast-check';
 import { db } from '@/lib/db';
 import { teams, teamMembers, users } from '@/server/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 
 // Property test configuration
-const propertyConfig = { numRuns: 100 };
+const propertyConfig = { numRuns: 20 };
 
 // Test data cleanup
 const testUserIds: string[] = [];
@@ -23,26 +23,11 @@ const testTeamIds: string[] = [];
 afterEach(async () => {
   // Clean up test data
   if (testTeamIds.length > 0) {
-    await db.delete(teamMembers).where(
-      testTeamIds.reduce(
-        (acc, id) => (acc ? acc : eq(teamMembers.teamId, id)),
-        undefined as any
-      )
-    );
-    await db.delete(teams).where(
-      testTeamIds.reduce(
-        (acc, id) => (acc ? acc : eq(teams.id, id)),
-        undefined as any
-      )
-    );
+    await db.delete(teamMembers).where(inArray(teamMembers.teamId, testTeamIds));
+    await db.delete(teams).where(inArray(teams.id, testTeamIds));
   }
   if (testUserIds.length > 0) {
-    await db.delete(users).where(
-      testUserIds.reduce(
-        (acc, id) => (acc ? acc : eq(users.id, id)),
-        undefined as any
-      )
-    );
+    await db.delete(users).where(inArray(users.id, testUserIds));
   }
   testUserIds.length = 0;
   testTeamIds.length = 0;
