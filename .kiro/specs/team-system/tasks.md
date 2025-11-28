@@ -321,19 +321,19 @@
   - Show confirmation with consequences
   - _Requirements: 6.1, 6.4_
 
-- [ ] 15. Implement data export
-- [ ] 15.1 Create data export service
+- [x] 15. Implement data export
+- [x] 15.1 Create data export service
   - Implement exportTeamData function
   - Generate JSON with all team data
   - Queue export job
   - Send email with download link
   - _Requirements: 5A.1, 5A.2, 5A.3_
 
-- [ ] 15.2 Write property test for data export
+- [x] 15.2 Write property test for data export
   - **Property 22: Data export generates complete JSON**
   - **Validates: Requirements 5A.2**
 
-- [ ] 15.2 Integrate export into deletion flow
+- [x] 15.2 Integrate export into deletion flow
   - Add export option to delete confirmation
   - Show export progress
   - Proceed with deletion after export completes

@@ -134,7 +134,7 @@ export function createErrorResponse(
         code,
         message,
         ...(field && { field }),
-        ...(details && { details }),
+        ...(details ? { details } : {}),
       },
     },
     { status: statusCode }

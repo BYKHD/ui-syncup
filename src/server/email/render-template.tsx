@@ -15,12 +15,13 @@ export type EmailTemplate =
   | { type: 'welcome'; data: { name: string; dashboardUrl: string } }
   | { type: 'security_alert'; data: { 
       name: string; 
-      alertType: 'password_changed' | 'new_signin' | 'suspicious_activity';
+      alertType: 'password_changed' | 'new_signin' | 'suspicious_activity' | 'team_data_export';
       timestamp: string;
       ipAddress?: string;
       location?: string;
       device?: string;
       actionUrl?: string;
+      customMessage?: string;
     }}
   | { type: 'team_invitation'; data: {
       inviterName: string;
@@ -89,6 +90,8 @@ export function getEmailSubject(template: EmailTemplate): string {
         return 'Your password was changed - UI SyncUp';
       } else if (alertType === 'new_signin') {
         return 'New sign-in to your account - UI SyncUp';
+      } else if (alertType === 'team_data_export') {
+        return 'Your team data export is ready - UI SyncUp';
       } else {
         return 'Security alert for your account - UI SyncUp';
       }

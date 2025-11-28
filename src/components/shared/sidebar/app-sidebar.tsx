@@ -29,64 +29,83 @@ import {
 import type { NavItem } from '@/components/shared/sidebar';
 import { Separator } from '@/components/ui/separator';
 
+import Cookies from 'js-cookie';
+import { useCanManageTeam } from '@/features/teams/hooks/use-can-manage-team';
+import { useTeams } from '@/features/teams';
+
 // Mock navigation data for mockup UI
-const MOCK_NAV_ITEMS: NavItem[] = [
-  {
-    title: 'Home',
-    url: '/',
-    icon: RiHome3Line,
-  },
-  {
-    title: 'Projects',
-    url: '/projects',
-    icon: RiBox2Line,
-  },
-  {
-    title: 'Team',
-    url: '#',
-    icon: RiTeamLine,
-  },
-  {
-    title: 'Analytics',
-    url: '#',
-    icon: RiBarChartBoxLine,
-  },
-  {
-    title: 'Team Settings',
-    url: '#',
-    icon: RiListSettingsLine,
-    items: [
-      {
-        title: 'General',
-        url: '#',
-      },
-      {
-        title: 'Members',
-        url: '#',
-      },
-      {
-        title: 'Invitations',
-        url: '#',
-      },
-      {
-        title: 'Billing',
-        url: '#',
-      },
-    ],
-  },
-  // Dev-only: Auth testing page
-  ...(process.env.NODE_ENV !== 'production'
-    ? [
-        {
-          title: 'Dev: Auth Testing',
-          url: '/dev/auth',
-          icon: RiBugLine,
-        },
-      ]
-    : []),
-];
+// const MOCK_NAV_ITEMS: NavItem[] = [ ... ] - Moved inside component for dynamic permissions
+
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const teamIdCookie = Cookies.get("team_id");
+  const { data: teamsData } = useTeams();
+  const teams = teamsData?.teams ?? [];
+  
+  // Use cookie if available and valid, otherwise fallback to first team
+  const currentTeam = teams.find((t) => t.id === teamIdCookie) ?? teams[0];
+  const teamId = currentTeam?.id;
+  
+  const canManageTeam = useCanManageTeam(teamId);
+
+  const navItems = React.useMemo(() => {
+    const items: NavItem[] = [
+      {
+        title: 'Home',
+        url: '/',
+        icon: RiHome3Line,
+      },
+      {
+        title: 'Projects',
+        url: '/projects',
+        icon: RiBox2Line,
+      },
+      {
+        title: 'Team',
+        url: '/team',
+        icon: RiTeamLine,
+      },
+      {
+        title: 'Analytics',
+        url: '/analytics',
+        icon: RiBarChartBoxLine,
+      },
+    ];
+
+    if (canManageTeam) {
+      items.push({
+        title: 'Team Settings',
+        url: '/team/settings',
+        icon: RiListSettingsLine,
+        items: [
+          {
+            title: 'General',
+            url: '/team/settings',
+          },
+          {
+            title: 'Members',
+            url: '/team/settings/members',
+          },
+          {
+            title: 'Billing',
+            url: '/team/settings/billing',
+          },
+        ],
+      });
+    }
+
+    // Dev-only: Auth testing page
+    if (process.env.NODE_ENV !== 'production') {
+      items.push({
+        title: 'Dev: Auth Testing',
+        url: '/dev/auth',
+        icon: RiBugLine,
+      });
+    }
+
+    return items;
+  }, [canManageTeam]);
+
   return (
     <Sidebar
       collapsible="icon"
@@ -112,7 +131,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <Separator/>
       <SidebarContent>
-        <NavMain items={MOCK_NAV_ITEMS} />
+        <NavMain items={navItems} />
         <NavProjects projects={MOCK_PROJECTS} />
       </SidebarContent>
       <SidebarFooter>
