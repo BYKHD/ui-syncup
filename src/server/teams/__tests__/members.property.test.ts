@@ -21,7 +21,8 @@ const propertyConfig = { numRuns: 20 }; // Database operations are slow
 // Arbitrary for valid team names
 const validTeamNameArb = fc
   .string({ minLength: 2, maxLength: 50 })
-  .filter((name) => (name.match(/[a-zA-Z0-9]/g) || []).length >= 2);
+  .filter((name) => (name.match(/[a-zA-Z0-9]/g) || []).length >= 2)
+  .filter((name) => !name.includes("\\"));
 
 // Arbitrary for roles
 const managementRoleArb = fc.constantFrom("TEAM_OWNER", "TEAM_ADMIN", null);

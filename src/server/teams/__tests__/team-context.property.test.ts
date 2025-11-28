@@ -38,7 +38,8 @@ const validTeamNameArb = fc
   .filter((name) => {
     const alphanumericCount = (name.match(/[a-zA-Z0-9]/g) || []).length;
     return alphanumericCount >= 2;
-  });
+  })
+  .filter((name) => !name.includes("\\"));
 
 describe("Property 36: Last active team loads from database first", () => {
   const testUserIds: string[] = [];

@@ -414,3 +414,17 @@ export default function IssuesListScreen({ teamId, search }: { teamId: string; s
   return <IssuesTable rows={data?.items ?? []} loading={isLoading} />
 }
 ```
+
+## Testing
+This project uses **Vitest** for unit/integration tests and **Playwright** for E2E tests.
+### ⚠️ Important
+**ALWAYS** use `bun run test` (or `vitest`).
+**NEVER** use `bun test` (Bun's native runner), as it ignores our test configuration and will write junk data to your local database.
+### Commands
+```bash
+# Run unit & integration tests (Safe - uses in-memory DB)
+bun run test
+# Run tests in watch mode
+bun run test:watch
+# Run E2E tests (Uses local DB)
+bun run test:ui

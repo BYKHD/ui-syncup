@@ -339,7 +339,7 @@
   - Proceed with deletion after export completes
   - _Requirements: 5A.1_
 
-- [ ] 16. Checkpoint - Ensure all tests pass
+- [x] 16. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 17. Integration testing
