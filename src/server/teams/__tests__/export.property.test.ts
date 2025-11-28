@@ -167,7 +167,7 @@ describe("Property 22: Data export generates complete JSON", () => {
               teamId: team.id,
               userId: member.id,
               operationalRole: "TEAM_MEMBER",
-              addedBy: owner.id,
+              invitedBy: owner.id,
             });
           }
 
@@ -433,7 +433,7 @@ describe("Property 22: Data export generates complete JSON", () => {
               teamId: team.id,
               userId: member.id,
               operationalRole: "TEAM_MEMBER",
-              addedBy: owner.id,
+              invitedBy: owner.id,
             });
           }
 

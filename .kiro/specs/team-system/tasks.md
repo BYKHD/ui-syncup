@@ -342,33 +342,33 @@
 - [x] 16. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 17. Integration testing
-- [ ] 17.1 Test complete team creation flow
+- [x] 17. Integration testing, ask the user if questions arise.
+- [x] 17.1 Test complete team creation flow
   - Test onboarding page team creation
   - Test role assignment
   - Test team switching
   - Test plan limit enforcement
   - _Requirements: 1.1, 3.1, 9.2, 10.1_
 
-- [ ] 17.2 Test invitation flow
+- [x] 17.2 Test invitation flow
   - Test invitation creation and email sending
   - Test invitation acceptance
   - Test invitation expiration
   - Test rate limiting
   - _Requirements: 2.1, 2.3, 2.5, 2A.5_
 
-- [ ] 17.3 Test member management flow
+- [x] 17.3 Test member management flow
   - Test role updates
   - Test member removal
   - Test project ownership blocking
   - Test billable seat calculation
   - _Requirements: 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 17.4 Test team context management
+- [x] 17.4 Test team context management
   - Test team switching
   - Test context persistence
   - Test edge case handling
   - _Requirements: 9.2, 9.3, 9A.1, 9A.2_
 
-- [ ] 18. Final checkpoint - Ensure all tests pass
+- [x] 18. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
