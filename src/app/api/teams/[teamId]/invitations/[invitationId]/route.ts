@@ -30,10 +30,10 @@ import { logger } from '@/lib/logger';
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { teamId: string; invitationId: string } }
+  { params }: { params: Promise<{ teamId: string; invitationId: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const { teamId, invitationId } = params;
+  const { teamId, invitationId } = await params;
   
   try {
     // Authenticate user

@@ -103,7 +103,7 @@ export function TransferOwnershipModal({ teamId, teamName }: TransferOwnershipMo
                 ) : (
                   adminMembers.map((member) => (
                     <SelectItem key={member.userId} value={member.userId}>
-                      {member.name} ({member.email})
+                      {member.user.name} ({member.user.email})
                     </SelectItem>
                   ))
                 )}

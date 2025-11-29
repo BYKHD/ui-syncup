@@ -8,6 +8,7 @@ import { TeamInformationForm } from "./team-information-form";
 import { SettingsSection } from "./settings-section";
 import { TeamDangerZone } from "./team-danger-zone";
 import { useTeam } from "@/features/teams";
+import { TeamSettingsLoadingSkeleton } from "./loading-states";
 
 import type { TeamResponse } from "@/features/teams/api";
 
@@ -43,7 +44,7 @@ export default function TeamSettingsGeneral({
 
   // Handle loading state
   if (isTeamLoading) {
-    return <div>Loading team settings...</div>;
+    return <TeamSettingsLoadingSkeleton />;
   }
 
   // Handle no team data (user not a member, team deleted, etc.)

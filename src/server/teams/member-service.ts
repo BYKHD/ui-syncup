@@ -332,12 +332,7 @@ export async function getMembersByTeam(
   const total = totalResult[0]?.count ?? 0;
 
   return {
-    members: members as unknown as TeamMember[], // The select includes user info, but return type is TeamMember. 
-    // Wait, the requirement 8.2 says "display all members with their roles and join dates".
-    // The `TeamMember` type in `types.ts` doesn't include user info.
-    // I should probably extend the return type or just return what I have.
-    // For now I will return the basic TeamMember info, but in reality the UI needs user info.
-    // I'll stick to the interface for now to satisfy the type checker.
+    members, // Now properly typed!
     total: typeof total === "string" ? parseInt(total, 10) : total,
   };
 }

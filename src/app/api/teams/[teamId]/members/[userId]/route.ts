@@ -54,10 +54,10 @@ const UpdateMemberRolesSchema = z.object({
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { teamId: string; userId: string } }
+  { params }: { params: Promise<{ teamId: string; userId: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const { teamId, userId } = params;
+  const { teamId, userId } = await params;
   
   try {
     // Authenticate user
@@ -202,10 +202,10 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { teamId: string; userId: string } }
+  { params }: { params: Promise<{ teamId: string; userId: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const { teamId, userId } = params;
+  const { teamId, userId } = await params;
   
   try {
     // Authenticate user

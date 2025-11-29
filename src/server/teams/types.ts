@@ -35,6 +35,12 @@ export interface TeamMember {
   id: string;
   teamId: string;
   userId: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+  };
   managementRole: string | null;
   operationalRole: string;
   joinedAt: Date;

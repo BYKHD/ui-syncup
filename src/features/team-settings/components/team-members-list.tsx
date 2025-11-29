@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { MoreHorizontal, UserMinus, Shield, User, Eye } from "lucide-react";
+import { MoreHorizontal, UserMinus } from "lucide-react";
+import { RiShieldUserLine, RiUserLine, RiEyeLine, RiAdminLine } from "@remixicon/react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -44,19 +45,18 @@ import {
 import { useTeamMembers, useUpdateMemberRoles, useRemoveMember } from "@/features/teams";
 import type { TeamMember } from "@/features/teams/api";
 import { SettingsCard } from "./settings-card";
+import { TeamMembersLoadingSkeleton } from "./loading-states";
 
-const roleIcons: Record<string, typeof Shield> = {
-  owner: Shield,
-  admin: Shield,
-  member: User,
-  viewer: Eye,
+const operationalRoleIcons: Record<string, any> = {
+  TEAM_EDITOR: RiUserLine,
+  TEAM_MEMBER: RiUserLine,
+  TEAM_VIEWER: RiEyeLine,
 };
 
-const roleBadgeVariants: Record<string, "default" | "secondary" | "outline"> = {
-  owner: "default",
-  admin: "secondary",
-  member: "outline",
-  viewer: "outline",
+const operationalRoleLabels: Record<string, string> = {
+  TEAM_EDITOR: "Editor",
+  TEAM_MEMBER: "Member",
+  TEAM_VIEWER: "Viewer",
 };
 
 interface TeamMembersListProps {
@@ -65,7 +65,7 @@ interface TeamMembersListProps {
 }
 
 export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps) {
-  const { data, isLoading } = useTeamMembers(teamId);
+  const { data, isLoading, error, isError } = useTeamMembers(teamId);
   const { mutate: updateRole, isPending: isUpdating } = useUpdateMemberRoles();
   const { mutate: removeMember, isPending: isRemoving } = useRemoveMember();
 
@@ -73,11 +73,15 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
 
   const members = data?.members ?? [];
 
-  const handleUpdateRole = (memberId: string, newRole: string) => {
+  if (isError) {
+    console.error("Failed to load team members:", error);
+  }
+
+  const handleOperationalRoleChange = (memberId: string, newRole: string) => {
     updateRole(
       {
         teamId,
-        userId: memberId, // Note: The API might expect userId or memberId. Checking useUpdateMemberRoles signature.
+        userId: memberId,
         input: { operationalRole: newRole },
       },
       {
@@ -86,6 +90,24 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
         },
         onError: (error) => {
           toast.error(error.message || "Failed to update member role");
+        },
+      }
+    );
+  };
+
+  const handleAdminToggle = (memberId: string, isAdmin: boolean) => {
+    updateRole(
+      {
+        teamId,
+        userId: memberId,
+        input: { managementRole: isAdmin ? 'TEAM_ADMIN' : null },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Admin rights updated successfully");
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to update admin rights");
         },
       }
     );
@@ -132,7 +154,23 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
   const canManageMembers = true; 
 
   if (isLoading) {
-    return <div>Loading members...</div>;
+    return <TeamMembersLoadingSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <SettingsCard
+        title="Members"
+        description="Manage your team members and their roles"
+      >
+        <div className="rounded-md border border-destructive/50 p-4 text-destructive">
+          <div className="font-medium">Failed to load members</div>
+          <div className="text-sm text-muted-foreground">
+            {error instanceof Error ? error.message : "An unknown error occurred"}
+          </div>
+        </div>
+      </SettingsCard>
+    );
   }
 
   return (
@@ -146,32 +184,45 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
             <TableHeader>
               <TableRow>
                 <TableHead>Member</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead>Access Level</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead className="w-[70px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {members.map((member) => {
-                const RoleIcon = roleIcons[member.operationalRole] || User;
+                const RoleIcon = operationalRoleIcons[member.operationalRole] || RiUserLine;
                 const isCurrentUser = member.userId === currentUserId;
-                const canModify = canManageMembers && !isCurrentUser && member.operationalRole !== "owner";
+                const isOwner = member.managementRole === 'TEAM_OWNER';
+                const isAdmin = member.managementRole === 'TEAM_ADMIN';
+                const canModify = canManageMembers && !isCurrentUser && !isOwner;
 
                 return (
                   <TableRow key={member.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          {/* Avatar image would come from user profile, but TeamMember might not have it directly populated if not joined. 
-                              The API response schema has name/email. Image might be missing. */}
+                          <AvatarImage src={member.user.image || undefined} alt={member.user.name} />
                           <AvatarFallback>
-                            {getUserInitials(member.name)}
+                            {getUserInitials(member.user.name)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className="font-medium">{member.name}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{member.user.name}</span>
+                            {isOwner && (
+                              <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-normal">
+                                Owner
+                              </Badge>
+                            )}
+                            {isAdmin && !isOwner && (
+                              <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-normal">
+                                Admin
+                              </Badge>
+                            )}
+                          </div>
                           <div className="text-sm text-muted-foreground">
-                            {member.email}
+                            {member.user.email}
                           </div>
                         </div>
                       </div>
@@ -181,32 +232,43 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
                         <Select
                           value={member.operationalRole}
                           onValueChange={(newRole) => {
-                            handleUpdateRole(member.userId, newRole);
+                            handleOperationalRoleChange(member.userId, newRole);
                           }}
                           disabled={isUpdating}
                         >
-                          <SelectTrigger className="w-[120px]">
+                          <SelectTrigger className="w-[140px]">
                             <SelectValue>
                               <div className="flex items-center gap-2">
-                                <RoleIcon className="h-4 w-4" />
-                                <Badge variant={roleBadgeVariants[member.operationalRole] || "outline"}>
-                                  {member.operationalRole}
-                                </Badge>
+                                <RoleIcon className="h-4 w-4 text-muted-foreground" />
+                                <span>{operationalRoleLabels[member.operationalRole]}</span>
                               </div>
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="member">Member</SelectItem>
-                            <SelectItem value="viewer">Viewer</SelectItem>
+                            <SelectItem value="TEAM_EDITOR">
+                              <div className="flex items-center gap-2">
+                                <RiUserLine className="h-4 w-4 text-muted-foreground" />
+                                <span>Editor</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="TEAM_MEMBER">
+                              <div className="flex items-center gap-2">
+                                <RiUserLine className="h-4 w-4 text-muted-foreground" />
+                                <span>Member</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="TEAM_VIEWER">
+                              <div className="flex items-center gap-2">
+                                <RiEyeLine className="h-4 w-4 text-muted-foreground" />
+                                <span>Viewer</span>
+                              </div>
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (
-                        <div className="flex items-center gap-2">
-                          <RoleIcon className="h-4 w-4" />
-                          <Badge variant={roleBadgeVariants[member.operationalRole] || "outline"}>
-                            {member.operationalRole}
-                          </Badge>
+                        <div className="flex items-center gap-2 px-3 py-2 text-sm">
+                          <RoleIcon className="h-4 w-4 text-muted-foreground" />
+                          <span>{operationalRoleLabels[member.operationalRole]}</span>
                         </div>
                       )}
                     </TableCell>
@@ -217,20 +279,30 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
                       {canModify && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
+                            <Button
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                            >
                               <span className="sr-only">Open menu</span>
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem
+                              onClick={() => handleAdminToggle(member.userId, !isAdmin)}
+                            >
+                              {isAdmin ? "Remove Admin" : "Make Admin"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem disabled>
+                              Transfer Ownership
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              className="text-destructive"
+                              className="text-destructive focus:text-destructive"
                               onClick={() => setMemberToRemove(member)}
                             >
-                              <UserMinus className="mr-2 h-4 w-4" />
-                              Remove from team
+                              Remove Member
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -247,21 +319,19 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
       <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+            <AlertDialogTitle>Remove team member?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove{" "}
-              <strong>{memberToRemove?.name}</strong> from the team? This
-              action cannot be undone.
+              Are you sure you want to remove {memberToRemove?.user.name} from the team?
+              They will lose access to all team resources.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isRemoving}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleRemoveMember}
-              disabled={isRemoving}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleRemoveMember}
             >
-              {isRemoving ? "Removing..." : "Remove Member"}
+              Remove
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -269,3 +339,4 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
     </>
   );
 }
+

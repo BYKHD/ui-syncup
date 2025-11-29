@@ -58,10 +58,10 @@ const PaginationSchema = z.object({
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { teamId: string } }
+  { params }: { params: Promise<{ teamId: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const { teamId } = params;
+  const { teamId } = await params;
   
   try {
     // Authenticate user
@@ -101,8 +101,8 @@ export async function GET(
     // Parse and validate query params
     const { searchParams } = new URL(request.url);
     const paginationValidation = PaginationSchema.safeParse({
-      page: searchParams.get('page'),
-      pageSize: searchParams.get('pageSize'),
+      page: searchParams.get('page') ?? undefined,
+      pageSize: searchParams.get('pageSize') ?? undefined,
     });
     
     if (!paginationValidation.success) {
@@ -134,11 +134,15 @@ export async function GET(
     
     return NextResponse.json(
       {
-        members,
+        members: members.map(member => ({
+          ...member,
+          joinedAt: member.joinedAt.toISOString(),
+        })),
         pagination: {
           page,
           pageSize,
           total,
+          totalPages: Math.ceil(total / pageSize),
         },
       },
       { status: 200 }

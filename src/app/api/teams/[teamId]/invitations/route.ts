@@ -60,10 +60,10 @@ const CreateInvitationSchema = z.object({
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { teamId: string } }
+  { params }: { params: Promise<{ teamId: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const { teamId } = params;
+  const { teamId } = await params;
   
   try {
     // Authenticate user
@@ -233,10 +233,10 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { teamId: string } }
+  { params }: { params: Promise<{ teamId: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const { teamId } = params;
+  const { teamId } = await params;
   
   try {
     // Authenticate user
