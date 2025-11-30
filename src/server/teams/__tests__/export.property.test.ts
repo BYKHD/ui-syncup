@@ -22,11 +22,25 @@ import { eq, inArray } from "drizzle-orm";
 const propertyConfig = { numRuns: 20 };
 
 // Arbitrary for valid team names
+// Must produce valid slugs after transformation (lowercase, trim, remove special chars)
 const validTeamNameArb = fc
   .string({ minLength: 2, maxLength: 50 })
   .filter((name) => {
+    // Must have at least 2 alphanumeric characters
     const alphanumericCount = (name.match(/[a-zA-Z0-9]/g) || []).length;
-    return alphanumericCount >= 2;
+    if (alphanumericCount < 2) return false;
+    
+    // Simulate slug generation to ensure it produces a valid slug
+    const slug = name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    
+    // Slug must be at least 2 characters after transformation
+    return slug.length >= 2;
   });
 
 // Arbitrary for team descriptions
