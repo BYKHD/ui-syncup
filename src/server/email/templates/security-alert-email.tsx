@@ -10,12 +10,13 @@ import { EmailLayout } from './layout';
 
 interface SecurityAlertEmailProps {
   name: string;
-  alertType: 'password_changed' | 'new_signin' | 'suspicious_activity';
+  alertType: 'password_changed' | 'new_signin' | 'suspicious_activity' | 'team_data_export';
   timestamp: string;
   ipAddress?: string;
   location?: string;
   device?: string;
   actionUrl?: string;
+  customMessage?: string;
 }
 
 export function SecurityAlertEmail({ 
@@ -25,7 +26,8 @@ export function SecurityAlertEmail({
   ipAddress, 
   location, 
   device,
-  actionUrl 
+  actionUrl,
+  customMessage
 }: SecurityAlertEmailProps) {
   const getAlertTitle = () => {
     switch (alertType) {
@@ -35,12 +37,16 @@ export function SecurityAlertEmail({
         return 'New Sign-In to Your Account';
       case 'suspicious_activity':
         return 'Suspicious Activity Detected';
+      case 'team_data_export':
+        return 'Team Data Export Ready';
       default:
         return 'Security Alert';
     }
   };
 
   const getAlertMessage = () => {
+    if (customMessage) return customMessage;
+    
     switch (alertType) {
       case 'password_changed':
         return 'Your password was successfully changed. If you made this change, no further action is needed.';
@@ -48,6 +54,8 @@ export function SecurityAlertEmail({
         return 'A new sign-in to your account was detected from a device or location we don\'t recognize.';
       case 'suspicious_activity':
         return 'We detected unusual activity on your account that may indicate unauthorized access.';
+      case 'team_data_export':
+        return 'Your team data export is ready for download.';
       default:
         return 'We detected a security event on your account.';
     }
@@ -61,6 +69,8 @@ export function SecurityAlertEmail({
         return 'If this was you, you can ignore this email. If you don\'t recognize this activity, please secure your account immediately.';
       case 'suspicious_activity':
         return 'Please review your recent account activity and change your password if you notice anything suspicious.';
+      case 'team_data_export':
+        return 'You can download your data from the team settings page.';
       default:
         return 'Please review your account security settings.';
     }

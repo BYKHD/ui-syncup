@@ -25,6 +25,7 @@ export default function OnboardingScreen({
     handleCreateTeam,
     handleAcceptInvitation,
     switchMode,
+    hasExistingTeams,
   } = useOnboarding(invitationToken, invitedTeamName);
 
   return (
@@ -44,6 +45,7 @@ export default function OnboardingScreen({
           onCreateTeam={handleCreateTeam}
           onAcceptInvitation={handleAcceptInvitation}
           onSwitchMode={switchMode}
+          hasExistingTeams={hasExistingTeams}
         />
       </div>
     </section>

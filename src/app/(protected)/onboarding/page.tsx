@@ -8,7 +8,7 @@ import { OnboardingScreen } from "@/features/auth";
 function OnboardingContent() {
   const searchParams = useSearchParams();
   const invitationToken = searchParams.get("token");
-  const invitedTeamName = searchParams.get("team") ?? "Canvas Reviewers";
+  const invitedTeamName = searchParams.get("team") ?? "";
 
   return (
     <OnboardingScreen

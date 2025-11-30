@@ -3,6 +3,8 @@ import { VerificationEmail } from './templates/verification-email';
 import { PasswordResetEmail } from './templates/password-reset-email';
 import { WelcomeEmail } from './templates/welcome-email';
 import { SecurityAlertEmail } from './templates/security-alert-email';
+import { TeamInvitationEmail } from './templates/team-invitation-email';
+import { OwnershipTransferEmail } from './templates/ownership-transfer-email';
 
 /**
  * Template types and their corresponding data structures
@@ -13,12 +15,27 @@ export type EmailTemplate =
   | { type: 'welcome'; data: { name: string; dashboardUrl: string } }
   | { type: 'security_alert'; data: { 
       name: string; 
-      alertType: 'password_changed' | 'new_signin' | 'suspicious_activity';
+      alertType: 'password_changed' | 'new_signin' | 'suspicious_activity' | 'team_data_export';
       timestamp: string;
       ipAddress?: string;
       location?: string;
       device?: string;
       actionUrl?: string;
+      customMessage?: string;
+    }}
+  | { type: 'team_invitation'; data: {
+      inviterName: string;
+      teamName: string;
+      invitationUrl: string;
+
+      expiresIn: string;
+    }}
+  | { type: 'ownership_transfer'; data: {
+      teamName: string;
+      previousOwnerName: string;
+      newOwnerName: string;
+      isNewOwner: boolean;
+      teamUrl: string;
     }};
 
 /**
@@ -42,6 +59,12 @@ export async function renderTemplate(template: EmailTemplate): Promise<string> {
       break;
     case 'security_alert':
       component = <SecurityAlertEmail {...template.data} />;
+      break;
+    case 'team_invitation':
+      component = <TeamInvitationEmail {...template.data} />;
+      break;
+    case 'ownership_transfer':
+      component = <OwnershipTransferEmail {...template.data} />;
       break;
     default:
       throw new Error(`Unknown template type: ${(template as any).type}`);
@@ -67,9 +90,15 @@ export function getEmailSubject(template: EmailTemplate): string {
         return 'Your password was changed - UI SyncUp';
       } else if (alertType === 'new_signin') {
         return 'New sign-in to your account - UI SyncUp';
+      } else if (alertType === 'team_data_export') {
+        return 'Your team data export is ready - UI SyncUp';
       } else {
         return 'Security alert for your account - UI SyncUp';
       }
+    case 'team_invitation':
+      return `Join ${template.data.teamName} on UI SyncUp`;
+    case 'ownership_transfer':
+      return `Ownership transfer for ${template.data.teamName} - UI SyncUp`;
     default:
       return 'UI SyncUp Notification';
   }
