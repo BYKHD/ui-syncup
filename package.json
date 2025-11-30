@@ -28,7 +28,8 @@
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
-    "verify:vercel": "bun run scripts/verify-vercel-integration.ts"
+    "verify:vercel": "bun run scripts/verify-vercel-integration.ts",
+    "validate:migration-system": "bun run scripts/validate-migration-system.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.932.0",

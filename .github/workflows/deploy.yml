@@ -65,6 +65,23 @@ jobs:
           echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
           echo "- **Environment:** Preview (Dev Database)" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Migration failure summary
+        if: failure()
+        run: |
+          echo "## Preview Migration Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ❌ Failed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** Preview (Dev Database)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Troubleshooting" >> $GITHUB_STEP_SUMMARY
+          echo "1. Check the migration output above for SQL errors" >> $GITHUB_STEP_SUMMARY
+          echo "2. Verify DEV_DIRECT_URL secret is correctly configured" >> $GITHUB_STEP_SUMMARY
+          echo "3. Ensure migration files have valid SQL syntax" >> $GITHUB_STEP_SUMMARY
+          echo "4. Check database connectivity and credentials" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "::error::Migration failed - deployment blocked"
 
   migrate-production:
     name: Migrate Production Database
@@ -123,3 +140,20 @@ jobs:
           echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
           echo "- **Environment:** Production" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Migration failure summary
+        if: failure()
+        run: |
+          echo "## Production Migration Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ❌ Failed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** Production" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Troubleshooting" >> $GITHUB_STEP_SUMMARY
+          echo "1. Check the migration output above for SQL errors" >> $GITHUB_STEP_SUMMARY
+          echo "2. Verify PROD_DIRECT_URL secret is correctly configured" >> $GITHUB_STEP_SUMMARY
+          echo "3. Ensure migration files have valid SQL syntax" >> $GITHUB_STEP_SUMMARY
+          echo "4. Check database connectivity and credentials" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "::error::Migration failed - deployment blocked"
