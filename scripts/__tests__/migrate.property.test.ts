@@ -1675,7 +1675,7 @@ describe('Migration Runner - Property-Based Tests', () => {
           
           // Simulate batch execution
           let migrationsApplied = 0;
-          let migrationsSkipped = alreadyAppliedMigrations.length;
+          const migrationsSkipped = alreadyAppliedMigrations.length;
           let migrationsFailed = 0;
           
           if (firstFailureIndex === -1) {
