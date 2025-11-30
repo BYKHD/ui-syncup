@@ -1,5 +1,8 @@
 # UI-Syncup
 
+[![Deploy](https://github.com/BYKHD/ui-syncup/actions/workflows/deploy.yml/badge.svg)](https://github.com/BYKHD/ui-syncup/actions/workflows/deploy.yml)
+[![CI Quality Checks](https://github.com/BYKHD/ui-syncup/actions/workflows/ci.yml/badge.svg)](https://github.com/BYKHD/ui-syncup/actions/workflows/ci.yml)
+
 A visual feedback and issue tracking platform for design-to-development collaboration. UI-Syncup enables designers, QA engineers, and developers to annotate UI mockups, create issues from visual feedback, and track them through a structured workflow from creation to resolution.
 
 ## Features
