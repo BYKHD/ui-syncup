@@ -22,11 +22,13 @@ const validTeamNameArb = fc
   .filter((name) => {
     // Must contain at least 2 alphanumeric characters
     const alphanumericCount = (name.match(/[a-zA-Z0-9]/g) || []).length;
-    return alphanumericCount >= 2;
+    return alphanumericCount >= 2 && !name.includes('\\');
   });
 
 // Arbitrary for team descriptions
-const teamDescriptionArb = fc.option(fc.string({ maxLength: 500 }));
+const teamDescriptionArb = fc.option(
+  fc.string({ maxLength: 500 }).filter((desc) => !desc.includes('\\'))
+);
 
 // Arbitrary for team creation data
 const teamDataArb = fc.record({

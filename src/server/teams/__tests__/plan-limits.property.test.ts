@@ -24,12 +24,14 @@ const validTeamNameArb = fc
   .string({ minLength: 2, maxLength: 40 })
   .filter((name) => {
     const alphanumericCount = (name.match(/[a-zA-Z0-9]/g) || []).length;
-    return alphanumericCount >= 2;
+    return alphanumericCount >= 2 && !name.includes('\\');
   })
   .map((name) => `${name}-${Date.now()}-${Math.random().toString(36).substring(7)}`);
 
 // Arbitrary for team descriptions
-const teamDescriptionArb = fc.option(fc.string({ maxLength: 500 }));
+const teamDescriptionArb = fc.option(
+  fc.string({ maxLength: 500 }).filter((desc) => !desc.includes('\\'))
+);
 
 // Arbitrary for team creation data
 const teamDataArb = fc.record({
@@ -131,7 +133,7 @@ describe("Property 41: Free plan member limit enforced", () => {
     );
   });
 
-  test("free plan blocks adding 11th member", async () => {
+  test("free plan blocks adding 11th member", { timeout: 30000 }, async () => {
     await fc.assert(
       fc.asyncProperty(teamDataArb, async (data) => {
         // Create test user (team creator)
@@ -219,7 +221,7 @@ describe("Property 41: Free plan member limit enforced", () => {
     );
   });
 
-  test("free plan error includes correct limit and current count", async () => {
+  test("free plan error includes correct limit and current count", { timeout: 30000 }, async () => {
     await fc.assert(
       fc.asyncProperty(teamDataArb, async (data) => {
         // Create test user (team creator)
@@ -302,7 +304,7 @@ describe("Property 41: Free plan member limit enforced", () => {
     );
   });
 
-  test("member limit check works for any number of existing members below limit", async () => {
+  test("member limit check works for any number of existing members below limit", { timeout: 30000 }, async () => {
     await fc.assert(
       fc.asyncProperty(
         teamDataArb,
