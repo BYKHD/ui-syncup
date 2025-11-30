@@ -134,7 +134,7 @@ describe('Integration Test: Team Context Management', () => {
       .where(eq(users.id, user.id));
     
     // Verify team1 is active
-    let [currentUser] = await db
+    const [currentUser] = await db
       .select()
       .from(users)
       .where(eq(users.id, user.id))
