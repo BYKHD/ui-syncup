@@ -25,7 +25,7 @@ This project follows a comprehensive testing strategy that emphasizes:
 - **Property-Based Testing**: Using `fast-check` to test invariants across generated inputs
 - **Integration Testing**: Testing complete user flows with real database operations
 - **Test Isolation**: Each test runs independently with a clean database state
-- **Fast Feedback**: In-memory database (pg-mem) for quick test execution
+- **Fast Feedback**: In-memory database (PGlite) for quick test execution
 - **Real-World Scenarios**: Tests mirror actual usage patterns
 
 ### Test Stack
@@ -36,7 +36,7 @@ This project follows a comprehensive testing strategy that emphasizes:
 | Property Testing | fast-check | 4.3.0 |
 | React Testing | @testing-library/react | 16.0.1 |
 | E2E Testing | Playwright | 1.47.2 |
-| Test Database | pg-mem | 3.0.5 |
+| Test Database | PGlite | 0.3.14 |
 | DOM Environment | jsdom | 27.2.0 |
 
 ### Test Types
@@ -108,7 +108,7 @@ Key settings:
 
 This file:
 - Stubs environment variables for all tests
-- Creates in-memory test database (pg-mem)
+- Creates in-memory test database (PGlite)
 - Mocks the database module
 - Resets database before/after each test
 - Closes database after all tests
@@ -124,7 +124,7 @@ This file:
 
 #### 3. `src/lib/testing/test-db.ts` - Test Database Factory
 
-Creates in-memory PostgreSQL with:
+Creates PGlite (WASM Postgres) instance with:
 - All Drizzle migrations applied
 - Custom SQL functions (`gen_random_uuid`, `now`)
 - Full schema with constraints

@@ -1,57 +1,37 @@
 /**
  * Integration tests for database migration runner
  * 
- * Tests end-to-end migration flows using pg-mem (in-memory PostgreSQL).
+ * Tests end-to-end migration flows using PGlite (WASM-based PostgreSQL).
  * 
  * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 4.1, 4.2, 4.3, 4.4, 4.5, 8.1, 8.2, 8.3, 9.1, 9.2, 9.3, 9.4, 9.5
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { newDb, DataType, type IMemoryDb } from 'pg-mem';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { PGlite } from '@electric-sql/pglite';
+import { drizzle } from 'drizzle-orm/pglite';
 import { randomUUID } from 'crypto';
-import fs from 'fs';
-import path from 'path';
 
 // ============================================================================
 // Test Database Setup
 // ============================================================================
 
 interface TestDbContext {
-  memoryDb: IMemoryDb;
+  client: PGlite;
   db: ReturnType<typeof drizzle>;
-  pool: any;
   cleanup: () => Promise<void>;
 }
 
-function createTestDatabase(): TestDbContext {
-  const memoryDb = newDb({ autoCreateForeignKeyIndices: true });
-
-  // Register required PostgreSQL functions
-  memoryDb.public.registerFunction({
-    name: 'gen_random_uuid',
-    returns: DataType.uuid,
-    implementation: randomUUID,
-    impure: true,
-  });
-
-  memoryDb.public.registerFunction({
-    name: 'now',
-    returns: DataType.timestamp,
-    implementation: () => new Date(),
-    impure: true,
-  });
-
-  // Create the pg adapter
-  const pg = memoryDb.adapters.createPg();
-  const pool = new pg.Pool();
-  const db = drizzle(pool);
+async function createTestDatabase(): Promise<TestDbContext> {
+  const client = new PGlite();
+  await client.waitReady;
+  
+  const db = drizzle(client);
 
   const cleanup = async () => {
-    await pool.end();
+    await client.close();
   };
 
-  return { memoryDb, db, pool, cleanup };
+  return { client, db, cleanup };
 }
 
 // ============================================================================
@@ -107,12 +87,12 @@ const CONSTRAINT_VIOLATION_MIGRATION = createMigrationFixture(5, 'duplicate_tabl
 // Helper Functions
 // ============================================================================
 
-async function applyMigration(memoryDb: IMemoryDb, migration: MigrationFile): Promise<void> {
-  memoryDb.public.none(migration.content);
+async function applyMigration(client: PGlite, migration: MigrationFile): Promise<void> {
+  await client.exec(migration.content);
 }
 
-async function createTrackingTable(memoryDb: IMemoryDb): Promise<void> {
-  memoryDb.public.none(`
+async function createTrackingTable(client: PGlite): Promise<void> {
+  await client.exec(`
     CREATE SCHEMA IF NOT EXISTS drizzle;
     CREATE TABLE IF NOT EXISTS drizzle.__drizzle_migrations (
       id SERIAL PRIMARY KEY,
@@ -122,21 +102,21 @@ async function createTrackingTable(memoryDb: IMemoryDb): Promise<void> {
   `);
 }
 
-async function getAppliedMigrations(memoryDb: IMemoryDb): Promise<Array<{ hash: string; created_at: string }>> {
+async function getAppliedMigrations(client: PGlite): Promise<Array<{ hash: string; created_at: string }>> {
   try {
-    const result = memoryDb.public.many(`
+    const result = await client.query(`
       SELECT hash, created_at 
       FROM drizzle.__drizzle_migrations 
       ORDER BY created_at ASC
     `);
-    return result as Array<{ hash: string; created_at: string }>;
+    return result.rows as Array<{ hash: string; created_at: string }>;
   } catch (error) {
     return [];
   }
 }
 
-async function recordMigration(memoryDb: IMemoryDb, hash: string): Promise<void> {
-  memoryDb.public.none(`
+async function recordMigration(client: PGlite, hash: string): Promise<void> {
+  await client.exec(`
     INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
     VALUES ('${hash}', ${Date.now()})
   `);
@@ -147,22 +127,22 @@ function generateMigrationHash(content: string): string {
   return Buffer.from(content).toString('base64').substring(0, 32);
 }
 
-async function tableExists(memoryDb: IMemoryDb, tableName: string): Promise<boolean> {
+async function tableExists(client: PGlite, tableName: string): Promise<boolean> {
   try {
-    memoryDb.public.one(`SELECT 1 FROM ${tableName} LIMIT 1`);
+    await client.query(`SELECT 1 FROM ${tableName} LIMIT 1`);
     return true;
   } catch {
     return false;
   }
 }
 
-async function getTableCount(memoryDb: IMemoryDb): Promise<number> {
-  const result = memoryDb.public.many(`
+async function getTableCount(client: PGlite): Promise<number> {
+  const result = await client.query(`
     SELECT table_name 
     FROM information_schema.tables 
     WHERE table_schema = 'public'
   `);
-  return result.length;
+  return result.rows.length;
 }
 
 // ============================================================================
@@ -172,8 +152,8 @@ async function getTableCount(memoryDb: IMemoryDb): Promise<number> {
 describe('Migration Runner - Integration Tests', () => {
   let testDb: TestDbContext;
 
-  beforeEach(() => {
-    testDb = createTestDatabase();
+  beforeEach(async () => {
+    testDb = await createTestDatabase();
   });
 
   afterEach(async () => {
@@ -183,38 +163,36 @@ describe('Migration Runner - Integration Tests', () => {
   describe('Happy Path - Multiple migrations execute successfully', () => {
     test('should apply all pending migrations in order', async () => {
       // Setup: Create tracking table
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       // Execute: Apply migrations in order
       for (const migration of VALID_MIGRATIONS) {
-        await applyMigration(testDb.memoryDb, migration);
+        await applyMigration(testDb.client, migration);
         const hash = generateMigrationHash(migration.content);
-        await recordMigration(testDb.memoryDb, hash);
+        await recordMigration(testDb.client, hash);
       }
 
       // Verify: All migrations are tracked
-      const appliedMigrations = await getAppliedMigrations(testDb.memoryDb);
+      const appliedMigrations = await getAppliedMigrations(testDb.client);
       expect(appliedMigrations.length).toBe(VALID_MIGRATIONS.length);
 
       // Verify: Tables were created
-      expect(await tableExists(testDb.memoryDb, 'users')).toBe(true);
-      expect(await tableExists(testDb.memoryDb, 'posts')).toBe(true);
+      expect(await tableExists(testDb.client, 'users')).toBe(true);
+      expect(await tableExists(testDb.client, 'posts')).toBe(true);
 
       // Verify: Foreign key relationship works
       const userId = randomUUID();
-      testDb.memoryDb.public.none(`
-        INSERT INTO users (id, email) VALUES ('${userId}', 'test@example.com')
-      `);
-      testDb.memoryDb.public.none(`
-        INSERT INTO posts (user_id, title) VALUES ('${userId}', 'Test Post')
+      await testDb.client.exec(`
+        INSERT INTO users (id, email) VALUES ('${userId}', 'test@example.com');
+        INSERT INTO posts (user_id, title) VALUES ('${userId}', 'Test Post');
       `);
 
-      const posts = testDb.memoryDb.public.many('SELECT * FROM posts');
-      expect(posts.length).toBe(1);
+      const posts = await testDb.client.query('SELECT * FROM posts');
+      expect(posts.rows.length).toBe(1);
     });
 
     test('should execute migrations in chronological order by timestamp', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       // Shuffle migrations to simulate different filesystem ordering
       const shuffled = [...VALID_MIGRATIONS].sort(() => Math.random() - 0.5);
@@ -228,33 +206,33 @@ describe('Migration Runner - Integration Tests', () => {
 
       // Apply in sorted order
       for (const migration of sorted) {
-        await applyMigration(testDb.memoryDb, migration);
+        await applyMigration(testDb.client, migration);
         const hash = generateMigrationHash(migration.content);
-        await recordMigration(testDb.memoryDb, hash);
+        await recordMigration(testDb.client, hash);
       }
 
       // Verify: Migrations were applied in correct order
-      const appliedMigrations = await getAppliedMigrations(testDb.memoryDb);
+      const appliedMigrations = await getAppliedMigrations(testDb.client);
       expect(appliedMigrations.length).toBe(VALID_MIGRATIONS.length);
 
       // Verify: Dependencies work (posts table depends on users table)
-      expect(await tableExists(testDb.memoryDb, 'users')).toBe(true);
-      expect(await tableExists(testDb.memoryDb, 'posts')).toBe(true);
+      expect(await tableExists(testDb.client, 'users')).toBe(true);
+      expect(await tableExists(testDb.client, 'posts')).toBe(true);
     });
 
     test('should report correct count of applied migrations', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       let appliedCount = 0;
 
       for (const migration of VALID_MIGRATIONS) {
-        await applyMigration(testDb.memoryDb, migration);
+        await applyMigration(testDb.client, migration);
         const hash = generateMigrationHash(migration.content);
-        await recordMigration(testDb.memoryDb, hash);
+        await recordMigration(testDb.client, hash);
         appliedCount++;
       }
 
-      const appliedMigrations = await getAppliedMigrations(testDb.memoryDb);
+      const appliedMigrations = await getAppliedMigrations(testDb.client);
       expect(appliedMigrations.length).toBe(appliedCount);
       expect(appliedCount).toBe(VALID_MIGRATIONS.length);
     });
@@ -262,7 +240,7 @@ describe('Migration Runner - Integration Tests', () => {
 
   describe('Partial Failure - First succeeds, second fails, third does not run', () => {
     test('should halt execution after first failure', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       const migrations = [
         VALID_MIGRATIONS[0], // Should succeed
@@ -276,9 +254,9 @@ describe('Migration Runner - Integration Tests', () => {
       for (let i = 0; i < migrations.length; i++) {
         const migration = migrations[i];
         try {
-          await applyMigration(testDb.memoryDb, migration);
+          await applyMigration(testDb.client, migration);
           const hash = generateMigrationHash(migration.content);
-          await recordMigration(testDb.memoryDb, hash);
+          await recordMigration(testDb.client, hash);
         } catch (error) {
           failedMigrationIndex = i;
           break; // Halt on failure
@@ -289,31 +267,31 @@ describe('Migration Runner - Integration Tests', () => {
       expect(failedMigrationIndex).toBe(1);
 
       // Verify: Only first migration was tracked
-      const appliedMigrations = await getAppliedMigrations(testDb.memoryDb);
+      const appliedMigrations = await getAppliedMigrations(testDb.client);
       expect(appliedMigrations.length).toBe(1);
 
       // Verify: First migration's table exists
-      expect(await tableExists(testDb.memoryDb, 'users')).toBe(true);
+      expect(await tableExists(testDb.client, 'users')).toBe(true);
 
       // Verify: Third migration's table does not exist
-      expect(await tableExists(testDb.memoryDb, 'posts')).toBe(false);
+      expect(await tableExists(testDb.client, 'posts')).toBe(false);
     });
 
     test('should preserve successful migrations before failure', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       // Apply first migration successfully
-      await applyMigration(testDb.memoryDb, VALID_MIGRATIONS[0]);
+      await applyMigration(testDb.client, VALID_MIGRATIONS[0]);
       const hash1 = generateMigrationHash(VALID_MIGRATIONS[0].content);
-      await recordMigration(testDb.memoryDb, hash1);
+      await recordMigration(testDb.client, hash1);
 
-      const beforeFailure = await getAppliedMigrations(testDb.memoryDb);
+      const beforeFailure = await getAppliedMigrations(testDb.client);
       expect(beforeFailure.length).toBe(1);
 
       // Try to apply invalid migration (should fail)
       let failed = false;
       try {
-        await applyMigration(testDb.memoryDb, INVALID_MIGRATION);
+        await applyMigration(testDb.client, INVALID_MIGRATION);
       } catch (error) {
         failed = true;
       }
@@ -321,28 +299,28 @@ describe('Migration Runner - Integration Tests', () => {
       expect(failed).toBe(true);
 
       // Verify: First migration is still tracked
-      const afterFailure = await getAppliedMigrations(testDb.memoryDb);
+      const afterFailure = await getAppliedMigrations(testDb.client);
       expect(afterFailure.length).toBe(1);
       expect(afterFailure[0].hash).toBe(hash1);
 
       // Verify: First migration's changes are still present
-      expect(await tableExists(testDb.memoryDb, 'users')).toBe(true);
+      expect(await tableExists(testDb.client, 'users')).toBe(true);
     });
   });
 
   describe('Retry After Failure - Fix failed migration and re-run', () => {
     test('should successfully apply fixed migration on retry', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       // First attempt: Apply valid migration
-      await applyMigration(testDb.memoryDb, VALID_MIGRATIONS[0]);
+      await applyMigration(testDb.client, VALID_MIGRATIONS[0]);
       const hash1 = generateMigrationHash(VALID_MIGRATIONS[0].content);
-      await recordMigration(testDb.memoryDb, hash1);
+      await recordMigration(testDb.client, hash1);
 
       // First attempt: Try invalid migration (fails)
       let firstAttemptFailed = false;
       try {
-        await applyMigration(testDb.memoryDb, INVALID_MIGRATION);
+        await applyMigration(testDb.client, INVALID_MIGRATION);
       } catch (error) {
         firstAttemptFailed = true;
       }
@@ -357,31 +335,31 @@ describe('Migration Runner - Integration Tests', () => {
       `);
 
       // Retry: Apply fixed migration
-      await applyMigration(testDb.memoryDb, fixedMigration);
+      await applyMigration(testDb.client, fixedMigration);
       const hash2 = generateMigrationHash(fixedMigration.content);
-      await recordMigration(testDb.memoryDb, hash2);
+      await recordMigration(testDb.client, hash2);
 
       // Verify: Both migrations are now tracked
-      const appliedMigrations = await getAppliedMigrations(testDb.memoryDb);
+      const appliedMigrations = await getAppliedMigrations(testDb.client);
       expect(appliedMigrations.length).toBe(2);
 
       // Verify: Both tables exist
-      expect(await tableExists(testDb.memoryDb, 'users')).toBe(true);
-      expect(await tableExists(testDb.memoryDb, 'fixed_table')).toBe(true);
+      expect(await tableExists(testDb.client, 'users')).toBe(true);
+      expect(await tableExists(testDb.client, 'fixed_table')).toBe(true);
     });
 
     test('should continue with remaining migrations after fix', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       // Apply first migration
-      await applyMigration(testDb.memoryDb, VALID_MIGRATIONS[0]);
+      await applyMigration(testDb.client, VALID_MIGRATIONS[0]);
       const hash1 = generateMigrationHash(VALID_MIGRATIONS[0].content);
-      await recordMigration(testDb.memoryDb, hash1);
+      await recordMigration(testDb.client, hash1);
 
       // Fail on second migration
       let failed = false;
       try {
-        await applyMigration(testDb.memoryDb, INVALID_MIGRATION);
+        await applyMigration(testDb.client, INVALID_MIGRATION);
       } catch (error) {
         failed = true;
       }
@@ -391,71 +369,71 @@ describe('Migration Runner - Integration Tests', () => {
       const fixedMigration = createMigrationFixture(4, 'fixed', `
         CREATE TABLE temp (id UUID PRIMARY KEY);
       `);
-      await applyMigration(testDb.memoryDb, fixedMigration);
+      await applyMigration(testDb.client, fixedMigration);
       const hash2 = generateMigrationHash(fixedMigration.content);
-      await recordMigration(testDb.memoryDb, hash2);
+      await recordMigration(testDb.client, hash2);
 
       // Continue with remaining migrations
-      await applyMigration(testDb.memoryDb, VALID_MIGRATIONS[1]);
+      await applyMigration(testDb.client, VALID_MIGRATIONS[1]);
       const hash3 = generateMigrationHash(VALID_MIGRATIONS[1].content);
-      await recordMigration(testDb.memoryDb, hash3);
+      await recordMigration(testDb.client, hash3);
 
       // Verify: All three migrations tracked
-      const appliedMigrations = await getAppliedMigrations(testDb.memoryDb);
+      const appliedMigrations = await getAppliedMigrations(testDb.client);
       expect(appliedMigrations.length).toBe(3);
     });
   });
 
   describe('Empty Migration Directory - No migrations to apply', () => {
     test('should handle empty migration directory gracefully', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       const migrations: MigrationFile[] = [];
 
       // Execute with no migrations
       for (const migration of migrations) {
-        await applyMigration(testDb.memoryDb, migration);
+        await applyMigration(testDb.client, migration);
       }
 
       // Verify: No migrations tracked
-      const appliedMigrations = await getAppliedMigrations(testDb.memoryDb);
+      const appliedMigrations = await getAppliedMigrations(testDb.client);
       expect(appliedMigrations.length).toBe(0);
 
       // Verify: No tables created (except tracking table)
-      const tableCount = await getTableCount(testDb.memoryDb);
-      expect(tableCount).toBe(1); // Only tracking table
+      const tableCount = await getTableCount(testDb.client);
+      expect(tableCount).toBe(0); // Only tracking table (in drizzle schema, not public)
     });
 
     test('should report zero migrations applied', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       const migrations: MigrationFile[] = [];
       let appliedCount = 0;
 
       for (const migration of migrations) {
-        await applyMigration(testDb.memoryDb, migration);
+        await applyMigration(testDb.client, migration);
         appliedCount++;
       }
 
       expect(appliedCount).toBe(0);
 
-      const appliedMigrations = await getAppliedMigrations(testDb.memoryDb);
+      const appliedMigrations = await getAppliedMigrations(testDb.client);
       expect(appliedMigrations.length).toBe(0);
     });
   });
 
   describe('All Migrations Applied - All in tracking table', () => {
     test('should skip all migrations when already applied', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       // First run: Apply all migrations
       for (const migration of VALID_MIGRATIONS) {
-        await applyMigration(testDb.memoryDb, migration);
+        await applyMigration(testDb.client, migration);
         const hash = generateMigrationHash(migration.content);
-        await recordMigration(testDb.memoryDb, hash);
+        await recordMigration(testDb.client, hash);
       }
 
-      const afterFirstRun = await getAppliedMigrations(testDb.memoryDb);
+      const afterFirstRun = await getAppliedMigrations(testDb.client);
       expect(afterFirstRun.length).toBe(VALID_MIGRATIONS.length);
 
       // Second run: Check which migrations are pending
@@ -469,22 +447,22 @@ describe('Migration Runner - Integration Tests', () => {
       expect(pendingMigrations.length).toBe(0);
 
       // Verify: Tracking table unchanged
-      const afterSecondRun = await getAppliedMigrations(testDb.memoryDb);
+      const afterSecondRun = await getAppliedMigrations(testDb.client);
       expect(afterSecondRun.length).toBe(afterFirstRun.length);
     });
 
     test('should report correct skipped count', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       // Apply all migrations
       for (const migration of VALID_MIGRATIONS) {
-        await applyMigration(testDb.memoryDb, migration);
+        await applyMigration(testDb.client, migration);
         const hash = generateMigrationHash(migration.content);
-        await recordMigration(testDb.memoryDb, hash);
+        await recordMigration(testDb.client, hash);
       }
 
       // Simulate second run
-      const appliedMigrations = await getAppliedMigrations(testDb.memoryDb);
+      const appliedMigrations = await getAppliedMigrations(testDb.client);
       const appliedHashes = new Set(appliedMigrations.map(m => m.hash));
 
       let skippedCount = 0;
@@ -505,16 +483,16 @@ describe('Migration Runner - Integration Tests', () => {
     });
 
     test('should maintain idempotency across multiple runs', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       // Run 1
       for (const migration of VALID_MIGRATIONS) {
-        await applyMigration(testDb.memoryDb, migration);
+        await applyMigration(testDb.client, migration);
         const hash = generateMigrationHash(migration.content);
-        await recordMigration(testDb.memoryDb, hash);
+        await recordMigration(testDb.client, hash);
       }
 
-      const afterRun1 = await getAppliedMigrations(testDb.memoryDb);
+      const afterRun1 = await getAppliedMigrations(testDb.client);
 
       // Run 2 (should skip all)
       const appliedHashes2 = new Set(afterRun1.map(m => m.hash));
@@ -524,7 +502,7 @@ describe('Migration Runner - Integration Tests', () => {
       expect(pending2.length).toBe(0);
 
       // Run 3 (should still skip all)
-      const afterRun2 = await getAppliedMigrations(testDb.memoryDb);
+      const afterRun2 = await getAppliedMigrations(testDb.client);
       const appliedHashes3 = new Set(afterRun2.map(m => m.hash));
       const pending3 = VALID_MIGRATIONS.filter(m => 
         !appliedHashes3.has(generateMigrationHash(m.content))
@@ -539,15 +517,15 @@ describe('Migration Runner - Integration Tests', () => {
 
   describe('Transaction Atomicity', () => {
     test('should rollback failed migration completely', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       // Get initial table count
-      const initialTableCount = await getTableCount(testDb.memoryDb);
+      const initialTableCount = await getTableCount(testDb.client);
 
       // Try to apply invalid migration
       let failed = false;
       try {
-        await applyMigration(testDb.memoryDb, INVALID_MIGRATION);
+        await applyMigration(testDb.client, INVALID_MIGRATION);
       } catch (error) {
         failed = true;
       }
@@ -555,25 +533,25 @@ describe('Migration Runner - Integration Tests', () => {
       expect(failed).toBe(true);
 
       // Verify: Table count unchanged (no partial changes)
-      const afterFailureTableCount = await getTableCount(testDb.memoryDb);
+      const afterFailureTableCount = await getTableCount(testDb.client);
       expect(afterFailureTableCount).toBe(initialTableCount);
 
       // Verify: Migration not tracked
-      const appliedMigrations = await getAppliedMigrations(testDb.memoryDb);
+      const appliedMigrations = await getAppliedMigrations(testDb.client);
       const invalidHash = generateMigrationHash(INVALID_MIGRATION.content);
       const tracked = appliedMigrations.find(m => m.hash === invalidHash);
       expect(tracked).toBeUndefined();
     });
 
     test('should not update tracking table on failure', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
-      const beforeFailure = await getAppliedMigrations(testDb.memoryDb);
+      const beforeFailure = await getAppliedMigrations(testDb.client);
 
       // Try to apply invalid migration
       let failed = false;
       try {
-        await applyMigration(testDb.memoryDb, INVALID_MIGRATION);
+        await applyMigration(testDb.client, INVALID_MIGRATION);
         // If it didn't fail, don't record it
       } catch (error) {
         failed = true;
@@ -583,17 +561,17 @@ describe('Migration Runner - Integration Tests', () => {
       expect(failed).toBe(true);
 
       // Verify: Tracking table unchanged
-      const afterFailure = await getAppliedMigrations(testDb.memoryDb);
+      const afterFailure = await getAppliedMigrations(testDb.client);
       expect(afterFailure.length).toBe(beforeFailure.length);
     });
   });
 
   describe('Batch Migration Consistency', () => {
     test('should detect multiple pending migrations', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       // Simulate detecting pending migrations
-      const appliedMigrations = await getAppliedMigrations(testDb.memoryDb);
+      const appliedMigrations = await getAppliedMigrations(testDb.client);
       const appliedHashes = new Set(appliedMigrations.map(m => m.hash));
 
       const pendingMigrations = VALID_MIGRATIONS.filter(migration => {
@@ -607,15 +585,15 @@ describe('Migration Runner - Integration Tests', () => {
     });
 
     test('should execute batch in chronological order', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       const executionOrder: string[] = [];
 
       // Execute migrations and track order
       for (const migration of VALID_MIGRATIONS) {
-        await applyMigration(testDb.memoryDb, migration);
+        await applyMigration(testDb.client, migration);
         const hash = generateMigrationHash(migration.content);
-        await recordMigration(testDb.memoryDb, hash);
+        await recordMigration(testDb.client, hash);
         executionOrder.push(migration.filename);
       }
 
@@ -630,14 +608,14 @@ describe('Migration Runner - Integration Tests', () => {
     });
 
     test('should report accurate batch summary', async () => {
-      await createTrackingTable(testDb.memoryDb);
+      await createTrackingTable(testDb.client);
 
       // Apply some migrations first
-      await applyMigration(testDb.memoryDb, VALID_MIGRATIONS[0]);
+      await applyMigration(testDb.client, VALID_MIGRATIONS[0]);
       const hash1 = generateMigrationHash(VALID_MIGRATIONS[0].content);
-      await recordMigration(testDb.memoryDb, hash1);
+      await recordMigration(testDb.client, hash1);
 
-      const alreadyApplied = await getAppliedMigrations(testDb.memoryDb);
+      const alreadyApplied = await getAppliedMigrations(testDb.client);
 
       // Simulate batch run
       const appliedHashes = new Set(alreadyApplied.map(m => m.hash));
@@ -647,9 +625,9 @@ describe('Migration Runner - Integration Tests', () => {
 
       let newlyApplied = 0;
       for (const migration of pending) {
-        await applyMigration(testDb.memoryDb, migration);
+        await applyMigration(testDb.client, migration);
         const hash = generateMigrationHash(migration.content);
-        await recordMigration(testDb.memoryDb, hash);
+        await recordMigration(testDb.client, hash);
         newlyApplied++;
       }
 
@@ -657,7 +635,7 @@ describe('Migration Runner - Integration Tests', () => {
       expect(alreadyApplied.length).toBe(1);
       expect(newlyApplied).toBe(VALID_MIGRATIONS.length - 1);
 
-      const afterBatch = await getAppliedMigrations(testDb.memoryDb);
+      const afterBatch = await getAppliedMigrations(testDb.client);
       expect(afterBatch.length).toBe(VALID_MIGRATIONS.length);
     });
   });

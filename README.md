@@ -22,7 +22,7 @@ A visual feedback and issue tracking platform for design-to-development collabor
 - **Storage**: Cloudflare R2 (S3-compatible)
 - **Auth & Security**: better-auth, @node-rs/argon2, ioredis (rate limiting)
 - **Email**: Resend, React Email
-- **Testing**: Vitest, Playwright, fast-check (property-based), pg-mem (in-memory DB)
+- **Testing**: Vitest, Playwright, fast-check (property-based), PGlite 
 
 ## Getting Started
 
@@ -185,7 +185,7 @@ Each feature follows this structure:
 
 ### Test Types
 
-- **Unit/Integration**: Vitest with in-memory DB (pg-mem) - SAFE
+- **Unit/Integration**: Vitest with PGlite - SAFE
 - **Property-based**: fast-check for generative testing (use `*.property.test.ts` naming)
 - **E2E**: Playwright - uses local Supabase database
 - **Component**: React Testing Library with jsdom/happy-dom

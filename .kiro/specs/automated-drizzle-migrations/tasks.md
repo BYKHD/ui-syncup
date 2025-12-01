@@ -82,7 +82,7 @@
   - **Validates: Requirements 8.1, 8.2, 8.3**
 
 - [x] 6. Create comprehensive test suite
-  - Set up test database using pg-mem for unit tests
+  - Set up test database using PGlite for unit tests
   - Create test fixtures for various migration scenarios
   - Add helper functions for test database setup and teardown
   - _Requirements: All requirements (test infrastructure)_
