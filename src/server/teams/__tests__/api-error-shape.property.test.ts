@@ -15,7 +15,7 @@
  * }
  */
 
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, vi } from "vitest";
 import fc from "fast-check";
 import {
   ERROR_CODES,
@@ -341,6 +341,9 @@ describe("Property 46: API errors have standardized shape", () => {
   });
 
   test("handleGenericError returns standardized error shape for unknown errors", () => {
+    // Mock console.error to prevent test failure from expected error logging
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
     // Test with a fixed error message to avoid JavaScript reserved word issues
     const error = new Error("Database connection failed");
     const response = handleGenericError(error);
@@ -350,7 +353,7 @@ describe("Property 46: API errors have standardized shape", () => {
 
     // Check response body structure
     const body = response.json() as Promise<ApiErrorResponse>;
-    body.then((data) => {
+    return body.then((data) => {
       // Should have standardized error shape
       expect(data).toHaveProperty("error");
       expect(data.error).toHaveProperty("code");
@@ -359,6 +362,12 @@ describe("Property 46: API errors have standardized shape", () => {
       // Code should be INTERNAL_SERVER_ERROR
       expect(data.error.code).toBe(ERROR_CODES.INTERNAL_SERVER_ERROR);
       expect(data.error.message).toBeTruthy();
+
+      // Verify console.error was called
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      
+      // Restore console.error
+      consoleErrorSpy.mockRestore();
     });
   });
 

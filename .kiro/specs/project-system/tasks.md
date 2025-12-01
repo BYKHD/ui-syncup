@@ -20,16 +20,16 @@
     - Export new schema from `src/server/db/schema/index.ts`
     - _Requirements: 9.1, 9.2_
 
-- [ ] 2. Create project server services
-  - [ ] 2.1 Create project service utilities
+- [x] 2. Create project server services
+  - [x] 2.1 Create project service utilities
     - Create `src/server/projects/` directory structure
     - Implement slug generation utility with URL-friendly output
     - Implement project validation functions
     - _Requirements: 3.2_
-  - [ ]* 2.2 Write property test for slug generation
+  - [x] 2.2 Write property test for slug generation
     - **Property 7: Slug generation**
     - **Validates: Requirements 3.2**
-  - [ ] 2.3 Implement project service core functions
+  - [x] 2.3 Implement project service core functions
     - Create `src/server/projects/project-service.ts`
     - Implement `listProjects` with efficient aggregation (single query for stats)
     - Implement `getProject` with user role and canJoin logic
@@ -37,26 +37,26 @@
     - Implement `updateProject` for settings changes
     - Implement `deleteProject` with soft delete (set deleted_at)
     - _Requirements: 1.1, 1.2, 1.3, 1.6, 2.1, 2.3, 2.4, 3.1, 3.2, 4.1, 4.3, 4.4, 5.1, 5.3, 5.4_
-  - [ ]* 2.4 Write property tests for project service
+  - [x] 2.4 Write property tests for project service
     - **Property 1: Project Visibility Access Control**
     - **Validates: Requirements 1.1, 1.2**
-  - [ ]* 2.5 Write property test for project stats
+  - [x] 2.5 Write property test for project stats
     - **Property 2: Project Statistics Completeness**
     - **Validates: Requirements 1.3**
-  - [ ]* 2.6 Write property test for soft deletion
+  - [x] 2.6 Write property test for soft deletion
     - **Property 10: Soft Deletion**
     - **Validates: Requirements 5.1, 5.3**
-  - [ ]* 2.7 Write property test for default values
+  - [x] 2.7 Write property test for default values
     - **Property 17: Default Values**
     - **Validates: Requirements 9.6, 9.7**
 
-- [ ] 3. Checkpoint - Ensure all tests pass
+- [x] 3. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 2: Project Member Service
 
-- [ ] 4. Implement project member service
-  - [ ] 4.1 Create member service
+- [x] 4. Implement project member service
+  - [x] 4.1 Create member service
     - Create `src/server/projects/member-service.ts`
     - Implement `listMembers` with user details
     - Implement `addMember` with role assignment
@@ -65,17 +65,17 @@
     - Implement `joinProject` for public projects (as viewer)
     - Implement `leaveProject` with sole owner protection
     - _Requirements: 6.1, 6.2, 6.3, 7.1, 7.2, 7.3, 8.1, 8.2, 8.3, 8.4, 8.5_
-  - [ ]* 4.2 Write property test for join project
+  - [x] 4.2 Write property test for join project
     - **Property 11: Join Project as Viewer**
     - **Validates: Requirements 6.1**
-  - [ ]* 4.3 Write property test for leave project
+  - [x] 4.3 Write property test for leave project
     - **Property 12: Leave Project**
     - **Validates: Requirements 7.1, 7.3**
-  - [ ]* 4.4 Write property test for member role update
+  - [x] 4.4 Write property test for member role update
     - **Property 14: Member Role Update with Auto-Promotion**
     - **Validates: Requirements 8.2, 8.5**
 
-- [ ] 5. Checkpoint - Ensure all tests pass
+- [x] 5. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 3: API Route Handlers

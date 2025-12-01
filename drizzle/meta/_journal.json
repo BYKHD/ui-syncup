@@ -50,6 +50,20 @@
       "when": 1764142672442,
       "tag": "0006_perpetual_champions",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1764579851397,
+      "tag": "0007_violet_meltdown",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1733097600000,
+      "tag": "0008_create_project_members",
+      "breakpoints": true
     }
   ]
 }
