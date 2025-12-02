@@ -80,16 +80,16 @@
 
 ## Phase 3: API Route Handlers
 
-- [ ] 6. Implement project list and create API routes
-  - [ ] 6.1 Create projects API route handler
+- [x] 6. Implement project list and create API routes
+  - [x] 6.1 Create projects API route handler
     - Create `src/app/api/projects/route.ts`
     - Implement GET handler with filters, pagination, and RBAC
     - Implement POST handler with validation and RBAC (PROJECT_CREATE permission)
     - _Requirements: 1.1, 1.2, 1.4, 1.5, 3.1, 3.3, 3.4_
-  - [ ] 6.2 Write property test for pagination
+  - [x] 6.2 Write property test for pagination
     - **Property 4: Pagination Correctness**
     - **Validates: Requirements 1.5**
-  - [ ] 6.3 Write property test for filter correctness
+  - [x] 6.3 Write property test for filter correctness
     - **Property 3: Filter Correctness & Performance**
     - **Validates: Requirements 1.4**
 
@@ -100,10 +100,10 @@
     - Implement PATCH handler with RBAC (PROJECT_UPDATE permission)
     - Implement DELETE handler with RBAC (PROJECT_DELETE permission)
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 4.1, 4.2, 5.1, 5.2_
-  - [ ]* 7.2 Write property test for project detail response
+  - [ ] 7.2 Write property test for project detail response
     - **Property 5: Project Detail Response Correctness**
     - **Validates: Requirements 2.1, 2.3, 2.4**
-  - [ ]* 7.3 Write property test for visibility change
+  - [ ] 7.3 Write property test for visibility change
     - **Property 9: Visibility Change Member Preservation**
     - **Validates: Requirements 4.3, 4.4**
 

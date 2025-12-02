@@ -17,7 +17,7 @@ import { eq, and } from 'drizzle-orm';
 import { hashPassword, verifyPassword } from '@/server/auth/password';
 import { generateToken, verifyToken, markTokenAsUsed } from '@/server/auth/tokens';
 import { createSession, getSession, deleteSession, extendSession } from '@/server/auth/session';
-import { checkLimit, getRemainingAttempts } from '@/server/auth/rate-limiter';
+import { checkLimit, getRemainingAttempts, clearAllLimits } from '@/server/auth/rate-limiter';
 
 /**
  * Test data cleanup
@@ -80,8 +80,13 @@ async function cleanupTestData() {
 /**
  * Clean up after each test
  */
+beforeEach(async () => {
+  await clearAllLimits();
+});
+
 afterEach(async () => {
   await cleanupTestData();
+  await clearAllLimits();
 });
 
 describe('Integration Test: Complete Registration → Verification → Sign-in Flow', () => {
