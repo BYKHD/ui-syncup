@@ -136,8 +136,18 @@ export const CreateProjectBodySchema = z.object({
     .min(2)
     .max(10)
     .regex(/^[A-Z]+$/, "Key must be uppercase letters only"),
-  description: z.string().max(500).optional(),
-  icon: z.string().max(255).optional(),
+  description: z
+    .string()
+    .max(500)
+    .transform((val) => (val.trim() === "" ? null : val))
+    .nullable()
+    .optional(),
+  icon: z
+    .string()
+    .max(255)
+    .transform((val) => (val.trim() === "" ? null : val))
+    .nullable()
+    .optional(),
   visibility: ProjectVisibilitySchema.default("private"),
 });
 

@@ -21,6 +21,7 @@ import type {
   ProjectStatus,
   ProjectVisibility,
 } from "@/server/projects/types";
+import { CreateProjectBodySchema } from "@/server/projects/schemas";
 
 /**
  * Zod schema for project list query parameters
@@ -34,18 +35,8 @@ const ListProjectsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
-/**
- * Zod schema for project creation
- */
-const CreateProjectSchema = z.object({
-  teamId: z.string().uuid(),
-  name: z.string().min(1).max(100),
-  key: z.string().min(2).max(10).regex(/^[A-Z]+$/),
-  description: z.string().max(500).optional().nullable(),
-  icon: z.string().max(255).optional().nullable(),
-  visibility: z.enum(["public", "private"]).optional(),
-  status: z.enum(["active", "archived"]).optional(),
-});
+// Note: CreateProjectBodySchema is imported from @/server/projects/schemas
+// This ensures a single source of truth for validation
 
 /**
  * GET /api/projects
@@ -260,7 +251,7 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate request body
     const body = await request.json();
-    const validation = CreateProjectSchema.safeParse(body);
+    const validation = CreateProjectBodySchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
@@ -275,7 +266,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { teamId, name, key, description, icon, visibility, status } =
+    const { teamId, name, key, description, icon, visibility } =
       validation.data;
 
     // Check PROJECT_CREATE permission
@@ -310,10 +301,9 @@ export async function POST(request: NextRequest) {
         teamId,
         name,
         key,
-        description,
-        icon,
+        description: description ?? undefined,
+        icon: icon ?? undefined,
         visibility: visibility as ProjectVisibility | undefined,
-        status: status as ProjectStatus | undefined,
       },
       user.id
     );

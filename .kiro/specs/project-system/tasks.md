@@ -196,16 +196,16 @@
     - Ensure createProject uses transaction for project + member creation
     - Ensure deleteProject uses transaction for soft delete
     - _Requirements: 9.5_
-  - [ ]* 15.2 Write property test for transactional integrity
+  - [ ] 15.2 Write property test for transactional integrity
     - **Property 6b: Transactional Integrity**
     - **Validates: Requirements 9.5**
-  - [ ]* 15.3 Write property test for project creation with owner
+  - [ ] 15.3 Write property test for project creation with owner
     - **Property 6: Project Creation with Owner Assignment**
     - **Validates: Requirements 3.1, 3.5**
-  - [ ]* 15.4 Write property test for project update
+  - [ ] 15.4 Write property test for project update
     - **Property 8: Project Update Correctness**
     - **Validates: Requirements 4.1**
-  - [ ]* 15.5 Write property test for schema completeness
+  - [ ] 15.5 Write property test for schema completeness
     - **Property 16: Schema Completeness**
     - **Validates: Requirements 9.1, 9.2**
 
