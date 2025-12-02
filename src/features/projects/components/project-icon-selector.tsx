@@ -23,8 +23,6 @@ interface ProjectIconSelectorProps {
 export function ProjectIconSelector({ value, onChange, className }: ProjectIconSelectorProps) {
   const [open, setOpen] = useState(false)
 
-  const SelectedIconComponent = getIconComponent(value)
-
   const handleSelect = (iconName: string) => {
     onChange(iconName)
     setOpen(false)
@@ -39,7 +37,7 @@ export function ProjectIconSelector({ value, onChange, className }: ProjectIconS
           aria-expanded={open}
           className={cn("aspect-square h-12 w-12 p-0", className)}
         >
-          <SelectedIconComponent className="size-5" />
+          {React.createElement(getIconComponent(value), { className: "size-5" })}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0" align="start">
