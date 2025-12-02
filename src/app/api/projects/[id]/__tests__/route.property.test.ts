@@ -7,8 +7,15 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as fc from "fast-check";
 import { db } from "@/lib/db";
-import { projects, projectMembers, userRoles } from "@/server/db/schema";
-import { users, sessions, teams } from "@/server/db/schema";
+import {
+  projects,
+  projectMembers,
+  userRoles,
+  users,
+  sessions,
+  teams,
+} from "@/server/db/schema";
+import type { User } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { getProject } from "@/server/projects/project-service";
 import { PROJECT_ROLES } from "@/config/roles";
@@ -367,7 +374,7 @@ describe("Project Detail API - Property Tests", () => {
             .returning();
 
           // Create test users and add them as members
-          const memberUsers = [];
+          const memberUsers: User[] = [];
           for (let i = 0; i < numMembers; i++) {
             const [user] = await db
               .insert(users)
@@ -468,7 +475,7 @@ describe("Project Detail API - Property Tests", () => {
       .returning();
 
     // Create test users and add them as members
-    const memberUsers = [];
+    const memberUsers: User[] = [];
     const roles = ["owner", "editor", "developer", "viewer"];
 
     for (let i = 0; i < roles.length; i++) {
@@ -551,7 +558,7 @@ describe("Project Detail API - Property Tests", () => {
       .returning();
 
     // Create test users and add them as members
-    const memberUsers = [];
+    const memberUsers: User[] = [];
     const roles = ["owner", "editor", "developer", "viewer"];
 
     for (let i = 0; i < roles.length; i++) {
