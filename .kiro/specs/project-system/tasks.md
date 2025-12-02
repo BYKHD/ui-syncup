@@ -93,42 +93,42 @@
     - **Property 3: Filter Correctness & Performance**
     - **Validates: Requirements 1.4**
 
-- [ ] 7. Implement project detail API routes
-  - [ ] 7.1 Create project detail route handler
+- [x] 7. Implement project detail API routes
+  - [x] 7.1 Create project detail route handler
     - Create `src/app/api/projects/[id]/route.ts`
     - Implement GET handler with RBAC (PROJECT_VIEW permission)
     - Implement PATCH handler with RBAC (PROJECT_UPDATE permission)
     - Implement DELETE handler with RBAC (PROJECT_DELETE permission)
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 4.1, 4.2, 5.1, 5.2_
-  - [ ] 7.2 Write property test for project detail response
+  - [x] 7.2 Write property test for project detail response
     - **Property 5: Project Detail Response Correctness**
     - **Validates: Requirements 2.1, 2.3, 2.4**
-  - [ ] 7.3 Write property test for visibility change
+  - [x] 7.3 Write property test for visibility change
     - **Property 9: Visibility Change Member Preservation**
     - **Validates: Requirements 4.3, 4.4**
 
-- [ ] 8. Implement project member API routes
-  - [ ] 8.1 Create project members route handler
+- [x] 8. Implement project member API routes
+  - [x] 8.1 Create project members route handler
     - Create `src/app/api/projects/[id]/members/route.ts`
     - Implement GET handler for member list
     - _Requirements: 8.1_
-  - [ ] 8.2 Create join project route handler
+  - [x] 8.2 Create join project route handler
     - Create `src/app/api/projects/[id]/join/route.ts`
     - Implement POST handler for joining public projects
     - _Requirements: 6.1, 6.2, 6.3_
-  - [ ] 8.3 Create leave project route handler
+  - [x] 8.3 Create leave project route handler
     - Create `src/app/api/projects/[id]/members/me/route.ts`
     - Implement DELETE handler for leaving project
     - _Requirements: 7.1, 7.2, 7.3_
-  - [ ] 8.4 Create member management route handler
+  - [x] 8.4 Create member management route handler
     - Create `src/app/api/projects/[id]/members/[memberId]/route.ts`
     - Implement PATCH handler for role updates with RBAC
     - Implement DELETE handler for member removal with RBAC
     - _Requirements: 8.2, 8.3, 8.4, 8.5, 8.6_
-  - [ ]* 8.5 Write property test for member list
+  - [x] 8.5 Write property test for member list
     - **Property 13: Member List Retrieval**
     - **Validates: Requirements 8.1**
-  - [ ]* 8.6 Write property test for member removal
+  - [x] 8.6 Write property test for member removal
     - **Property 15: Member Removal**
     - **Validates: Requirements 8.3**
 
@@ -137,15 +137,15 @@
 
 ## Phase 4: Schema Validation & Serialization
 
-- [ ] 10. Implement Zod schema validation
-  - [ ] 10.1 Create server-side Zod schemas
+- [x] 10. Implement Zod schema validation
+  - [x] 10.1 Create server-side Zod schemas
     - Create `src/server/projects/schemas.ts` with request/response validation
     - Ensure schemas match frontend types in `src/features/projects/api/types.ts`
     - _Requirements: 9.8, 9.9_
-  - [ ]* 10.2 Write property test for schema validation
+  - [x] 10.2 Write property test for schema validation
     - **Property 18: Schema Validation**
     - **Validates: Requirements 9.8, 9.9**
-  - [ ]* 10.3 Write property test for serialization round-trip
+  - [x] 10.3 Write property test for serialization round-trip
     - **Property 19: Serialization Round-Trip**
     - **Validates: Requirements 10.1, 10.2**
 
