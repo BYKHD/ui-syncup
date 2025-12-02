@@ -42,34 +42,29 @@ export async function updateMemberRole(
   const validatedBody = UpdateMemberRoleBodySchema.parse(body)
 
   // TODO: Replace with actual API call
-  // const response = await fetch(`/api/projects/${projectId}/members/${memberId}`, {
-  //   method: 'PATCH',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   credentials: 'include', // Include httpOnly cookies
-  //   body: JSON.stringify(validatedBody),
-  // })
-  //
-  // if (!response.ok) {
-  //   if (response.status === 404) {
-  //     throw new Error('Project or member not found')
-  //   }
-  //   if (response.status === 403) {
-  //     throw new Error('You do not have permission to update member roles')
-  //   }
-  //   if (response.status === 400) {
-  //     const error = await response.json()
-  //     throw new Error(error.message || 'Invalid role update')
-  //   }
-  //   throw new Error(`Failed to update member role: ${response.statusText}`)
-  // }
-  //
-  // const data = await response.json()
-  // return UpdateMemberRoleResponseSchema.parse(data)
+  const response = await fetch(`/api/projects/${projectId}/members/${memberId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include httpOnly cookies
+    body: JSON.stringify(validatedBody),
+  })
 
-  // Mock implementation for now
-  await new Promise((resolve) => setTimeout(resolve, 600))
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Project or member not found')
+    }
+    if (response.status === 403) {
+      throw new Error('You do not have permission to update member roles')
+    }
+    if (response.status === 400) {
+      const error = await response.json()
+      throw new Error(error.message || 'Invalid role update')
+    }
+    throw new Error(`Failed to update member role: ${response.statusText}`)
+  }
 
-  throw new Error('Mock: Update not implemented - wire to real API')
+  const data = await response.json()
+  return UpdateMemberRoleResponseSchema.parse(data)
 }

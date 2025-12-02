@@ -59,57 +59,34 @@ export function useUpdateMemberRole(
 ): UseUpdateMemberRoleResult {
   const queryClient = useQueryClient()
 
-  // TODO: Uncomment when backend is ready
-  // const mutation = useMutation({
-  //   mutationFn: ({ projectId, memberId, data }: UseUpdateMemberRoleParams) =>
-  //     updateMemberRole(projectId, memberId, data),
-  //   onSuccess: (data, variables) => {
-  //     // Invalidate project members
-  //     queryClient.invalidateQueries({ queryKey: projectKeys.members(variables.projectId) })
-  //
-  //     // Show success toast
-  //     toast.success('Member role updated successfully')
-  //
-  //     // Call custom success handler
-  //     options?.onSuccess?.(data)
-  //   },
-  //   onError: (error: Error) => {
-  //     // Show error toast
-  //     toast.error(error.message || 'Failed to update member role')
-  //
-  //     // Call custom error handler
-  //     options?.onError?.(error)
-  //   },
-  // })
-  //
-  // return {
-  //   mutate: mutation.mutate,
-  //   mutateAsync: mutation.mutateAsync,
-  //   isPending: mutation.isPending,
-  //   isError: mutation.isError,
-  //   error: mutation.error,
-  //   reset: mutation.reset,
-  // }
-
-  // Mock implementation for now
-  return {
-    mutate: async ({ projectId, memberId, data }: UseUpdateMemberRoleParams) => {
-      try {
-        const result = await updateMemberRole(projectId, memberId, data)
-        queryClient.invalidateQueries({ queryKey: projectKeys.members(projectId) })
-        toast.success('Member role updated successfully')
-        options?.onSuccess?.(result)
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error('Failed to update member role')
-        toast.error(err.message)
-        options?.onError?.(err)
-      }
-    },
-    mutateAsync: async ({ projectId, memberId, data }: UseUpdateMemberRoleParams) =>
+  const mutation = useMutation({
+    mutationFn: ({ projectId, memberId, data }: UseUpdateMemberRoleParams) =>
       updateMemberRole(projectId, memberId, data),
-    isPending: false,
-    isError: false,
-    error: null,
-    reset: () => {},
+    onSuccess: (data, variables) => {
+      // Invalidate project members
+      queryClient.invalidateQueries({ queryKey: projectKeys.members(variables.projectId) })
+
+      // Show success toast
+      toast.success('Member role updated successfully')
+
+      // Call custom success handler
+      options?.onSuccess?.(data)
+    },
+    onError: (error: Error) => {
+      // Show error toast
+      toast.error(error.message || 'Failed to update member role')
+
+      // Call custom error handler
+      options?.onError?.(error)
+    },
+  })
+
+  return {
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    reset: mutation.reset,
   }
 }

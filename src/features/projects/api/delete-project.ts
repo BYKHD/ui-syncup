@@ -27,32 +27,24 @@ export async function deleteProject(projectId: string): Promise<DeleteProjectRes
   }
 
   // TODO: Replace with actual API call
-  // const response = await fetch(`/api/projects/${projectId}`, {
-  //   method: 'DELETE',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   credentials: 'include', // Include httpOnly cookies
-  // })
-  //
-  // if (!response.ok) {
-  //   if (response.status === 404) {
-  //     throw new Error('Project not found')
-  //   }
-  //   if (response.status === 403) {
-  //     throw new Error('Only project owners can delete projects')
-  //   }
-  //   throw new Error(`Failed to delete project: ${response.statusText}`)
-  // }
-  //
-  // const data = await response.json()
-  // return DeleteProjectResponseSchema.parse(data)
-
-  // Mock implementation for now
-  await new Promise((resolve) => setTimeout(resolve, 800))
-
-  return DeleteProjectResponseSchema.parse({
-    success: true,
-    message: 'Project deleted successfully',
+  const response = await fetch(`/api/projects/${projectId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include httpOnly cookies
   })
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Project not found')
+    }
+    if (response.status === 403) {
+      throw new Error('Only project owners can delete projects')
+    }
+    throw new Error(`Failed to delete project: ${response.statusText}`)
+  }
+
+  const data = await response.json()
+  return DeleteProjectResponseSchema.parse(data)
 }

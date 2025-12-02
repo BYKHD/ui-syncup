@@ -55,58 +55,34 @@ export interface UseUpdateProjectResult {
 export function useUpdateProject(options?: UseUpdateProjectOptions): UseUpdateProjectResult {
   const queryClient = useQueryClient()
 
-  // TODO: Uncomment when backend is ready
-  // const mutation = useMutation({
-  //   mutationFn: ({ projectId, data }: UseUpdateProjectParams) => updateProject(projectId, data),
-  //   onSuccess: (data, variables) => {
-  //     // Invalidate specific project and lists
-  //     queryClient.invalidateQueries({ queryKey: projectKeys.detail(variables.projectId) })
-  //     queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
-  //
-  //     // Show success toast
-  //     toast.success('Project updated successfully')
-  //
-  //     // Call custom success handler
-  //     options?.onSuccess?.(data)
-  //   },
-  //   onError: (error: Error) => {
-  //     // Show error toast
-  //     toast.error(error.message || 'Failed to update project')
-  //
-  //     // Call custom error handler
-  //     options?.onError?.(error)
-  //   },
-  // })
-  //
-  // return {
-  //   mutate: mutation.mutate,
-  //   mutateAsync: mutation.mutateAsync,
-  //   isPending: mutation.isPending,
-  //   isError: mutation.isError,
-  //   error: mutation.error,
-  //   reset: mutation.reset,
-  // }
+  const mutation = useMutation({
+    mutationFn: ({ projectId, data }: UseUpdateProjectParams) => updateProject(projectId, data),
+    onSuccess: (data, variables) => {
+      // Invalidate specific project and lists
+      queryClient.invalidateQueries({ queryKey: projectKeys.detail(variables.projectId) })
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
 
-  // Mock implementation for now
-  return {
-    mutate: async ({ projectId, data }: UseUpdateProjectParams) => {
-      try {
-        const result = await updateProject(projectId, data)
-        queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) })
-        queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
-        toast.success('Project updated successfully')
-        options?.onSuccess?.(result)
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error('Failed to update project')
-        toast.error(err.message)
-        options?.onError?.(err)
-      }
+      // Show success toast
+      toast.success('Project updated successfully')
+
+      // Call custom success handler
+      options?.onSuccess?.(data)
     },
-    mutateAsync: async ({ projectId, data }: UseUpdateProjectParams) =>
-      updateProject(projectId, data),
-    isPending: false,
-    isError: false,
-    error: null,
-    reset: () => {},
+    onError: (error: Error) => {
+      // Show error toast
+      toast.error(error.message || 'Failed to update project')
+
+      // Call custom error handler
+      options?.onError?.(error)
+    },
+  })
+
+  return {
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    reset: mutation.reset,
   }
 }

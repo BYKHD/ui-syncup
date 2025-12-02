@@ -154,15 +154,15 @@
 
 ## Phase 5: Frontend Wiring
 
-- [ ] 12. Wire frontend API callers to real endpoints
-  - [ ] 12.1 Update project API callers
+- [x] 12. Wire frontend API callers to real endpoints
+  - [x] 12.1 Update project API callers
     - Update `src/features/projects/api/get-projects.ts` to use real fetch
     - Update `src/features/projects/api/get-project.ts` to use real fetch
     - Update `src/features/projects/api/create-project.ts` to use real fetch
     - Update `src/features/projects/api/update-project.ts` to use real fetch
     - Update `src/features/projects/api/delete-project.ts` to use real fetch
     - _Requirements: 1.1, 2.1, 3.1, 4.1, 5.1_
-  - [ ] 12.2 Update member API callers
+  - [x] 12.2 Update member API callers
     - Update `src/features/projects/api/get-project-members.ts` to use real fetch
     - Update `src/features/projects/api/join-project.ts` to use real fetch
     - Update `src/features/projects/api/leave-project.ts` to use real fetch
@@ -170,13 +170,13 @@
     - Update `src/features/projects/api/remove-member.ts` to use real fetch
     - _Requirements: 6.1, 7.1, 8.1, 8.2, 8.3_
 
-- [ ] 13. Wire frontend hooks to real API
-  - [ ] 13.1 Update query hooks
+- [x] 13. Wire frontend hooks to real API
+  - [x] 13.1 Update query hooks
     - Update `src/features/projects/hooks/use-projects.ts` to use React Query with real API
     - Update `src/features/projects/hooks/use-project.ts` to use React Query with real API
     - Update `src/features/projects/hooks/use-project-members.ts` to use React Query with real API
     - _Requirements: 1.1, 2.1, 8.1_
-  - [ ] 13.2 Update mutation hooks
+  - [x] 13.2 Update mutation hooks
     - Update `src/features/projects/hooks/use-create-project.ts` to use React Query mutation
     - Update `src/features/projects/hooks/use-update-project.ts` to use React Query mutation
     - Update `src/features/projects/hooks/use-delete-project.ts` to use React Query mutation

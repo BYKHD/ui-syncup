@@ -34,7 +34,7 @@ export default function ProjectsListScreen() {
     filteredProjects,
     totalCount,
     filteredCount,
-  } = useProjectFilters(allProjects || [])
+  } = useProjectFilters(allProjects?.projects || [])
 
   const hasProjects = totalCount > 0
   const hasFilteredProjects = filteredCount > 0

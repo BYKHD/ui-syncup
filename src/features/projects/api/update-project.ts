@@ -41,34 +41,29 @@ export async function updateProject(
   const validatedBody = UpdateProjectBodySchema.parse(body)
 
   // TODO: Replace with actual API call
-  // const response = await fetch(`/api/projects/${projectId}`, {
-  //   method: 'PATCH',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   credentials: 'include', // Include httpOnly cookies
-  //   body: JSON.stringify(validatedBody),
-  // })
-  //
-  // if (!response.ok) {
-  //   if (response.status === 404) {
-  //     throw new Error('Project not found')
-  //   }
-  //   if (response.status === 403) {
-  //     throw new Error('You do not have permission to update this project')
-  //   }
-  //   if (response.status === 400) {
-  //     const error = await response.json()
-  //     throw new Error(error.message || 'Invalid project data')
-  //   }
-  //   throw new Error(`Failed to update project: ${response.statusText}`)
-  // }
-  //
-  // const data = await response.json()
-  // return UpdateProjectResponseSchema.parse(data)
+  const response = await fetch(`/api/projects/${projectId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include httpOnly cookies
+    body: JSON.stringify(validatedBody),
+  })
 
-  // Mock implementation for now
-  await new Promise((resolve) => setTimeout(resolve, 800))
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Project not found')
+    }
+    if (response.status === 403) {
+      throw new Error('You do not have permission to update this project')
+    }
+    if (response.status === 400) {
+      const error = await response.json()
+      throw new Error(error.message || 'Invalid project data')
+    }
+    throw new Error(`Failed to update project: ${response.statusText}`)
+  }
 
-  throw new Error('Mock: Update not implemented - wire to real API')
+  const data = await response.json()
+  return UpdateProjectResponseSchema.parse(data)
 }
