@@ -21,10 +21,12 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     name: mockProject.name,
     description: mockProject.description,
     visibility: mockProject.visibility,
-    progressPercent: mockProject.stats.progressPercent,
-    tickets: mockProject.stats.totalTickets,
-    ticketsDone: mockProject.stats.completedTickets,
-    memberCount: mockProject.stats.memberCount,
+    stats: {
+      progressPercent: mockProject.stats.progressPercent,
+      totalTickets: mockProject.stats.totalTickets,
+      completedTickets: mockProject.stats.completedTickets,
+      memberCount: mockProject.stats.memberCount,
+    },
     createdAt: mockProject.createdAt,
     updatedAt: mockProject.updatedAt,
   };

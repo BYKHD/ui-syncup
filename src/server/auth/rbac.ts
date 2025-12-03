@@ -91,15 +91,15 @@ export async function assignRole(
   const { userId, role, resourceType, resourceId } = assignment;
 
   // Validate role exists
-  if (!(role in ALL_ROLES)) {
+  if (!Object.values(ALL_ROLES).includes(role)) {
     throw new Error(`Invalid role: ${role}`);
   }
 
   // Validate resource type matches role type
-  if (resourceType === "team" && !(role in TEAM_ROLES)) {
+  if (resourceType === "team" && !Object.values(TEAM_ROLES).includes(role as TeamRole)) {
     throw new Error(`Role ${role} is not a team role`);
   }
-  if (resourceType === "project" && !(role in PROJECT_ROLES)) {
+  if (resourceType === "project" && !Object.values(PROJECT_ROLES).includes(role as ProjectRole)) {
     throw new Error(`Role ${role} is not a project role`);
   }
 
@@ -169,7 +169,7 @@ export async function assignRoles(
 
   // Validate all roles
   for (const assignment of assignments) {
-    if (!(assignment.role in ALL_ROLES)) {
+    if (!Object.values(ALL_ROLES).includes(assignment.role)) {
       throw new Error(`Invalid role: ${assignment.role}`);
     }
   }

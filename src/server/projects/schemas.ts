@@ -139,15 +139,13 @@ export const CreateProjectBodySchema = z.object({
   description: z
     .string()
     .max(500)
-    .transform((val) => (val.trim() === "" ? null : val))
-    .nullable()
-    .optional(),
+    .nullish()
+    .transform((val) => (!val || val.trim() === "" ? null : val)),
   icon: z
     .string()
     .max(255)
-    .transform((val) => (val.trim() === "" ? null : val))
-    .nullable()
-    .optional(),
+    .nullish()
+    .transform((val) => (!val || val.trim() === "" ? null : val)),
   visibility: ProjectVisibilitySchema.default("private"),
 });
 

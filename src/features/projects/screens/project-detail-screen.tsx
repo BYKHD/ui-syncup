@@ -10,16 +10,20 @@ import { ProjectOverview } from "../components/project-detail-overview";
 import type { ProjectRole } from "../types";
 import type { IssuePriority, IssueType } from "@/features/issues/types";
 
+interface ProjectStats {
+  memberCount: number;
+  totalTickets: number;
+  completedTickets: number;
+  progressPercent: number;
+}
+
 interface ProjectDetailScreenProps {
   project: {
     id: string;
     name: string;
     description: string | null;
     visibility: "private" | "public";
-    progressPercent: number;
-    tickets: number;
-    ticketsDone: number;
-    memberCount: number;
+    stats: ProjectStats;
     createdAt: string;
     updatedAt: string;
   };

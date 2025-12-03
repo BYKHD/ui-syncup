@@ -13,14 +13,18 @@ import { RiAddLine, RiFolderFill, RiLockLine, RiGlobalLine } from '@remixicon/re
 import { ProjectIconSelector } from './project-icon-selector'
 import { useTeam } from '@/hooks/use-team'
 
-type ProjectPreview = {
+export type ProjectPreview = {
   id: string
   name: string
   description: string
   icon: string | null
-  progressPercent: number
-  tickets: number
-  ticketsDone: number
+  slug: string
+  stats: {
+    progressPercent: number
+    totalTickets: number
+    completedTickets: number
+    memberCount: number
+  }
 }
 
 interface ProjectCreateDialogProps {
@@ -29,8 +33,6 @@ interface ProjectCreateDialogProps {
 }
 
 const KEY_PATTERN = /^[A-Z]{2,6}$/
-
-
 
 export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateDialogProps) {
   const [open, setOpen] = useState(false)
@@ -42,16 +44,6 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
     visibility: 'public' as 'private' | 'public'
   })
   type FormErrors = { key?: string; name?: string; desc?: string }
-
-  type ProjectPreview = {
-    id: string
-    name: string
-    description: string
-    icon: string | null
-    progressPercent: number
-    tickets: number
-    ticketsDone: number
-  }
 
   const [errors, setErrors] = useState<FormErrors>({})
   const [keyStatus, setKeyStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>(
@@ -212,19 +204,21 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
         throw new Error('No active team selected')
       }
 
+      const requestBody = {
+        key: formData.key.trim(),
+        name: formData.name.trim(),
+        description: formData.desc.trim(),
+        icon: formData.icon,
+        visibility: formData.visibility,
+        teamId: currentTeam.id
+      };
+
       const response = await fetch('/api/projects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          key: formData.key.trim(),
-          name: formData.name.trim(),
-          description: formData.desc.trim(),
-          icon: formData.icon,
-          visibility: formData.visibility,
-          teamId: currentTeam.id
-        })
+        body: JSON.stringify(requestBody)
       })
 
       if (!response.ok) {
@@ -249,9 +243,13 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
         name: formData.name.trim(),
         description: formData.desc.trim(),
         icon: formData.icon,
-        progressPercent: 0,
-        tickets: 0,
-        ticketsDone: 0
+        slug: result.slug,
+        stats: {
+          progressPercent: 0,
+          totalTickets: 0,
+          completedTickets: 0,
+          memberCount: 1
+        }
       }
 
       onProjectAdded?.(newProject)

@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/server/auth/session";
+import { getTeamIdCookie } from "@/server/auth/cookies";
 import { hasPermission } from "@/server/auth/rbac";
 import { PERMISSIONS } from "@/config/roles";
 import {
@@ -111,9 +112,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const queryParams = {
       teamId: searchParams.get("teamId"),
-      status: searchParams.get("status"),
-      visibility: searchParams.get("visibility"),
-      search: searchParams.get("search"),
+      status: searchParams.get("status") || undefined,
+      visibility: searchParams.get("visibility") || undefined,
+      search: searchParams.get("search") || undefined,
       page: searchParams.get("page"),
       limit: searchParams.get("limit"),
     };
@@ -136,6 +137,29 @@ export async function GET(request: NextRequest) {
     const { teamId, status, visibility, search, page, limit } =
       validation.data;
 
+    // Validate team context
+    // The requested teamId must match the user's active team context from the cookie
+    const activeTeamId = await getTeamIdCookie();
+    
+    if (teamId !== activeTeamId) {
+      logger.warn("api.projects.list.forbidden_context_mismatch", {
+        requestId,
+        userId: user.id,
+        requestedTeamId: teamId,
+        activeTeamId,
+      });
+
+      return NextResponse.json(
+        {
+          error: {
+            code: "FORBIDDEN",
+            message: "You do not have permission to access this team's data in the current context",
+          },
+        },
+        { status: 403 }
+      );
+    }
+
     // List projects with filters and pagination
     const result = await listProjects({
       teamId,
@@ -156,15 +180,20 @@ export async function GET(request: NextRequest) {
       page: result.page,
     });
 
-    // Serialize dates to strings for API response
+    // Serialize dates to strings and transform to match frontend contract
     const serializedResult = {
-      ...result,
-      items: result.items.map((project) => ({
+      projects: result.items.map((project) => ({
         ...project,
         createdAt: project.createdAt.toISOString(),
         updatedAt: project.updatedAt.toISOString(),
         deletedAt: project.deletedAt?.toISOString() ?? null,
       })),
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+      },
     };
 
     return NextResponse.json(serializedResult, { status: 200 });
@@ -325,7 +354,7 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json(
-      { project: serializedProject },
+      serializedProject,
       { status: 201 }
     );
   } catch (error) {

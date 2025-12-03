@@ -45,14 +45,12 @@ export interface ProjectWithStats extends Project {
 export interface ProjectSummary {
   id: string
   name: string
+  slug: string
   description: string | null
   icon: string | null
   visibility: ProjectVisibility
   status: ProjectStatus
-  progressPercent: number
-  tickets: number
-  ticketsDone: number
-  memberCount: number
+  stats: ProjectStats
   userRole: ProjectRole | null
   canJoin: boolean
   updatedAt: string

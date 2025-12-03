@@ -10,23 +10,23 @@ export interface Team {
   image: string | null
 }
 
-export const MOCK_TEAM_ID = 'team-mock-123'
+export const MOCK_TEAM_ID = '550e8400-e29b-41d4-a716-446655440000'
 
 export const MOCK_MEMBER_ROLE: MemberRole = 'member'
 
 export const MOCK_TEAMS: Team[] = [
   {
-    id: 'team-123',
+    id: '550e8400-e29b-41d4-a716-446655440000',
     name: 'Acme Inc',
     image: null,
   },
   {
-    id: 'team-456',
+    id: '550e8400-e29b-41d4-a716-446655440001',
     name: 'TechCorp',
     image: 'https://api.dicebear.com/7.x/initials/svg?seed=TechCorp',
   },
   {
-    id: 'team-789',
+    id: '550e8400-e29b-41d4-a716-446655440002',
     name: 'Design Studio',
     image: null,
   },

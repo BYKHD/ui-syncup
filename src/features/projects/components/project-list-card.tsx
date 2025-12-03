@@ -74,7 +74,7 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Link href={`/projects/${project.id}`} className="block h-full">
+      <Link href={`/${project.slug}`} className="block h-full">
         <Card className="h-full justify-between shadow-none hover:shadow-lg transition-shadow duration-200 cursor-pointer">
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
@@ -126,10 +126,10 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Progress</span>
                   <span className="font-medium">
-                    {project.progressPercent}%
+                    {project.stats.progressPercent}%
                   </span>
                 </div>
-                <Progress value={project.progressPercent} className="h-2" />
+                <Progress value={project.stats.progressPercent} className="h-2" />
               </div>
             )}
 
@@ -142,8 +142,8 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
                 <div className="flex items-center gap-1">
                   <RiTeamLine className="h-3 w-3" />
                   <span>
-                    {project.memberCount} member
-                    {project.memberCount !== 1 ? "s" : ""}
+                    {project.stats.memberCount} member
+                    {project.stats.memberCount !== 1 ? "s" : ""}
                   </span>
                 </div>
               </div>

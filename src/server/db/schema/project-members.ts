@@ -18,7 +18,7 @@ export const projectMembers = pgTable("project_members", {
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  role: varchar("role", { length: 10 }).notNull(),
+  role: varchar("role", { length: 50 }).notNull(),
   joinedAt: timestamp("joined_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

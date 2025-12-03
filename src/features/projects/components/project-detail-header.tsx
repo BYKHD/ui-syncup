@@ -5,15 +5,19 @@ import { ProjectTitleSection } from './project-title-section';
 import { ProjectStats } from './project-stats';
 import { ProjectActions } from './project-actions';
 
+interface ProjectStats {
+  memberCount: number;
+  totalTickets: number;
+  completedTickets: number;
+  progressPercent: number;
+}
+
 interface Project {
   id: string;
   name: string;
   description: string | null;
   visibility: 'private' | 'public';
-  memberCount: number;
-  tickets: number;
-  ticketsDone: number;
-  progressPercent: number;
+  stats: ProjectStats;
 }
 
 interface ProjectDetailHeaderRefactoredProps {
@@ -67,12 +71,7 @@ export function ProjectDetailHeader({
             userRole={userRole}
           />
 
-          <ProjectStats
-            memberCount={project.memberCount}
-            tickets={project.tickets}
-            ticketsDone={project.ticketsDone}
-            progressPercent={project.progressPercent}
-          />
+          <ProjectStats stats={project.stats} />
         </div>
 
         {/* Right section: Action buttons */}
