@@ -148,3 +148,15 @@ export function getSessionCookieName(): string {
 export function getSessionMaxAge(): number {
   return SESSION_MAX_AGE;
 }
+
+/**
+ * Gets the team ID from the cookie
+ * 
+ * @returns The team ID string if present, null otherwise
+ */
+export async function getTeamIdCookie(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const teamIdCookie = cookieStore.get('team_id');
+  
+  return teamIdCookie?.value ?? null;
+}

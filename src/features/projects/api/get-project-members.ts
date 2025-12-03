@@ -30,31 +30,24 @@ export async function getProjectMembers(projectId: string): Promise<GetProjectMe
   }
 
   // TODO: Replace with actual API call
-  // const response = await fetch(`/api/projects/${projectId}/members`, {
-  //   method: 'GET',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   credentials: 'include', // Include httpOnly cookies
-  // })
-  //
-  // if (!response.ok) {
-  //   if (response.status === 404) {
-  //     throw new Error('Project not found')
-  //   }
-  //   if (response.status === 403) {
-  //     throw new Error('You do not have permission to view project members')
-  //   }
-  //   throw new Error(`Failed to fetch project members: ${response.statusText}`)
-  // }
-  //
-  // const data = await response.json()
-  // return GetProjectMembersResponseSchema.parse(data)
-
-  // Mock implementation for now
-  await new Promise((resolve) => setTimeout(resolve, 600))
-
-  return GetProjectMembersResponseSchema.parse({
-    members: [],
+  const response = await fetch(`/api/projects/${projectId}/members`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include httpOnly cookies
   })
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Project not found')
+    }
+    if (response.status === 403) {
+      throw new Error('You do not have permission to view project members')
+    }
+    throw new Error(`Failed to fetch project members: ${response.statusText}`)
+  }
+
+  const data = await response.json()
+  return GetProjectMembersResponseSchema.parse(data)
 }

@@ -48,29 +48,19 @@ export interface UseProjectResult {
  * - Uncomment the useQuery implementation below
  */
 export function useProject({ projectId, enabled = true }: UseProjectParams): UseProjectResult {
-  // TODO: Uncomment when backend is ready
-  // const query = useQuery({
-  //   queryKey: projectKeys.detail(projectId),
-  //   queryFn: () => getProject(projectId),
-  //   enabled: enabled && !!projectId,
-  //   staleTime: 30 * 1000, // 30 seconds
-  //   retry: 1,
-  // })
-  //
-  // return {
-  //   data: query.data,
-  //   isLoading: query.isLoading,
-  //   isError: query.isError,
-  //   error: query.error,
-  //   refetch: query.refetch,
-  // }
+  const query = useQuery({
+    queryKey: projectKeys.detail(projectId),
+    queryFn: () => getProject(projectId),
+    enabled: enabled && !!projectId,
+    staleTime: 60 * 1000, // 1 minute
+    retry: 1,
+  })
 
-  // Mock implementation for now
   return {
-    data: undefined,
-    isLoading: false,
-    isError: false,
-    error: null,
-    refetch: () => {},
+    data: query.data,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
   }
 }

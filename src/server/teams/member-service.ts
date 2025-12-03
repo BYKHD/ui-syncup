@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { teamMembers } from "@/server/db/schema/team-members";
-import { projects } from "@/server/db/schema/projects";
+import { projectMembers } from "@/server/db/schema/project-members";
 import { users } from "@/server/db/schema/users";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { updateBillableSeats } from "./billable-seats";
@@ -154,8 +154,11 @@ export async function updateMemberRoles(
     ) {
       const ownedProjects = await db
         .select()
-        .from(projects)
-        .where(eq(projects.owner_id, userId));
+        .from(projectMembers)
+        .where(and(
+          eq(projectMembers.userId, userId),
+          eq(projectMembers.role, "owner")
+        ));
         
       if (ownedProjects.length > 0) {
         logTeamEvent("team.member.role_change.failure", {
@@ -236,8 +239,11 @@ export async function removeMember(
     // Check if user owns projects (Requirement 3.4)
     const ownedProjects = await db
       .select()
-      .from(projects)
-      .where(eq(projects.owner_id, userId));
+      .from(projectMembers)
+      .where(and(
+        eq(projectMembers.userId, userId),
+        eq(projectMembers.role, "owner")
+      ));
 
     if (ownedProjects.length > 0) {
       logTeamEvent("team.member.remove.failure", {

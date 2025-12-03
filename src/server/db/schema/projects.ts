@@ -1,22 +1,46 @@
-import { pgTable, uuid, varchar, text, timestamp, boolean } from "drizzle-orm/pg-core";
-import { users } from "./users";
+import { pgTable, uuid, varchar, text, timestamp, index, uniqueIndex, pgEnum } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { teams } from "./teams";
+
+/**
+ * Project visibility enum
+ */
+export const projectVisibilityEnum = pgEnum('project_visibility', ['public', 'private']);
+
+/**
+ * Project status enum
+ */
+export const projectStatusEnum = pgEnum('project_status', ['active', 'archived']);
 
 /**
  * Projects table - stores UI projects for tracking feedback and issues
- * This is an EXAMPLE migration to demonstrate the CI/CD workflow
  */
 export const projects = pgTable("projects", {
   id: uuid("id").primaryKey().defaultRandom(),
-  name: varchar("name", { length: 200 }).notNull(),
-  description: text("description"),
-  owner_id: uuid("owner_id")
+  teamId: uuid("team_id")
     .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  is_active: boolean("is_active").default(true).notNull(),
-  created_at: timestamp("created_at", { withTimezone: true })
+    .references(() => teams.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 100 }).notNull(),
+  key: varchar("key", { length: 10 }).notNull(),
+  slug: varchar("slug", { length: 120 }).notNull(),
+  description: text("description"),
+  icon: varchar("icon", { length: 255 }),
+  visibility: varchar("visibility", { length: 10 }).notNull().default('private'),
+  status: varchar("status", { length: 10 }).notNull().default('active'),
+  createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
-  updated_at: timestamp("updated_at", { withTimezone: true })
+  updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
-});
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+}, (table) => ({
+  teamIdIdx: index("projects_team_id_idx").on(table.teamId),
+  statusIdx: index("projects_status_idx").on(table.status),
+  visibilityIdx: index("projects_visibility_idx").on(table.visibility),
+  // Composite index for performance
+  teamFiltersIdx: index("projects_team_filters_idx").on(table.teamId, table.status, table.visibility),
+  // Partial unique indexes (only for non-deleted projects)
+  teamKeyUnique: uniqueIndex("projects_team_key_unique").on(table.teamId, table.key).where(sql`deleted_at IS NULL`),
+  teamSlugUnique: uniqueIndex("projects_team_slug_unique").on(table.teamId, table.slug).where(sql`deleted_at IS NULL`),
+}));

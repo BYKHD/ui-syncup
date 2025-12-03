@@ -44,31 +44,18 @@ export async function getProjects(params: GetProjectsParams): Promise<GetProject
   queryParams.append('limit', validatedParams.limit.toString())
 
   // TODO: Replace with actual API call
-  // const response = await fetch(`/api/projects?${queryParams.toString()}`, {
-  //   method: 'GET',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   credentials: 'include', // Include httpOnly cookies
-  // })
-  //
-  // if (!response.ok) {
-  //   throw new Error(`Failed to fetch projects: ${response.statusText}`)
-  // }
-  //
-  // const data = await response.json()
-  // return GetProjectsResponseSchema.parse(data)
-
-  // Mock implementation for now
-  await new Promise((resolve) => setTimeout(resolve, 800))
-
-  return GetProjectsResponseSchema.parse({
-    projects: [],
-    pagination: {
-      page: validatedParams.page,
-      limit: validatedParams.limit,
-      total: 0,
-      totalPages: 0,
+  const response = await fetch(`/api/projects?${queryParams.toString()}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
     },
+    credentials: 'include', // Include httpOnly cookies
   })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch projects: ${response.statusText}`)
+  }
+
+  const data = await response.json()
+  return GetProjectsResponseSchema.parse(data)
 }

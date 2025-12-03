@@ -1,44 +1,43 @@
-/**
- * USE JOIN PROJECT HOOK
- * Mock implementation for joining a project (visual mockup only)
- */
-
-import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { joinProject } from '../api'
-
-// ============================================================================
-// MUTATION HOOK (MOCKUP VERSION - NO REACT QUERY)
-// ============================================================================
+import { projectKeys } from './use-project'
 
 interface UseJoinProjectOptions {
   onSuccess?: () => void
+  onError?: (error: Error) => void
 }
 
 export function useJoinProject(options?: UseJoinProjectOptions) {
-  const [isPending, setIsPending] = useState(false)
+  const queryClient = useQueryClient()
 
-  const mutate = async (projectId: string) => {
-    setIsPending(true)
-
-    try {
-      const data = await joinProject(projectId)
+  const mutation = useMutation({
+    mutationFn: joinProject,
+    onSuccess: (data, projectId) => {
+      // Invalidate project detail and members
+      queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) })
+      queryClient.invalidateQueries({ queryKey: projectKeys.members(projectId) })
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
 
       // Show success message
       toast.success(data.message)
 
       // Call optional success callback
       options?.onSuccess?.()
-    } catch (error) {
+    },
+    onError: (error: Error) => {
       const message = error instanceof Error ? error.message : 'Failed to join project'
       toast.error(message)
-    } finally {
-      setIsPending(false)
-    }
-  }
+      options?.onError?.(error)
+    },
+  })
 
   return {
-    mutate,
-    isPending,
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    reset: mutation.reset,
   }
 }

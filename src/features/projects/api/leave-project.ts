@@ -27,33 +27,25 @@ export async function leaveProject(projectId: string): Promise<LeaveMemberRespon
   }
 
   // TODO: Replace with actual API call
-  // const response = await fetch(`/api/projects/${projectId}/members/me`, {
-  //   method: 'DELETE',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   credentials: 'include', // Include httpOnly cookies
-  // })
-  //
-  // if (!response.ok) {
-  //   if (response.status === 404) {
-  //     throw new Error('Project not found')
-  //   }
-  //   if (response.status === 400) {
-  //     const error = await response.json()
-  //     throw new Error(error.message || 'Cannot leave project')
-  //   }
-  //   throw new Error(`Failed to leave project: ${response.statusText}`)
-  // }
-  //
-  // const data = await response.json()
-  // return LeaveMemberResponseSchema.parse(data)
-
-  // Mock implementation for now
-  await new Promise((resolve) => setTimeout(resolve, 800))
-
-  return LeaveMemberResponseSchema.parse({
-    success: true,
-    message: 'You have left the project',
+  const response = await fetch(`/api/projects/${projectId}/members/me`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include httpOnly cookies
   })
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Project not found')
+    }
+    if (response.status === 400) {
+      const error = await response.json()
+      throw new Error(error.message || 'Cannot leave project')
+    }
+    throw new Error(`Failed to leave project: ${response.statusText}`)
+  }
+
+  const data = await response.json()
+  return LeaveMemberResponseSchema.parse(data)
 }

@@ -10,6 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/server/auth/session';
+import { getTeamIdCookie } from '@/server/auth/cookies';
 import { getTeam, updateTeam, softDeleteTeam } from '@/server/teams/team-service';
 import { hasRole } from '@/server/auth/rbac';
 import { logger } from '@/lib/logger';
@@ -76,6 +77,26 @@ export async function GET(
     }
     
     // Get team
+    const activeTeamId = await getTeamIdCookie();
+    if (teamId !== activeTeamId) {
+      logger.warn('api.teams.get.forbidden_context_mismatch', {
+        requestId,
+        userId: user.id,
+        requestedTeamId: teamId,
+        activeTeamId,
+      });
+
+      return NextResponse.json(
+        {
+          error: {
+            code: 'FORBIDDEN',
+            message: "You do not have permission to access this team's data in the current context",
+          },
+        },
+        { status: 403 }
+      );
+    }
+
     const team = await getTeam(teamId, user.id);
     
     if (!team) {
@@ -174,6 +195,19 @@ export async function PATCH(
     }
     
     // Check permissions (TEAM_OWNER or TEAM_ADMIN)
+    const activeTeamId = await getTeamIdCookie();
+    if (teamId !== activeTeamId) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'FORBIDDEN',
+            message: "You do not have permission to access this team's data in the current context",
+          },
+        },
+        { status: 403 }
+      );
+    }
+
     const isOwner = await hasRole(user.id, 'TEAM_OWNER', 'team', teamId);
     const isAdmin = await hasRole(user.id, 'TEAM_ADMIN', 'team', teamId);
     
@@ -313,6 +347,19 @@ export async function DELETE(
     }
     
     // Check permissions (TEAM_OWNER only)
+    const activeTeamId = await getTeamIdCookie();
+    if (teamId !== activeTeamId) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'FORBIDDEN',
+            message: "You do not have permission to access this team's data in the current context",
+          },
+        },
+        { status: 403 }
+      );
+    }
+
     const isOwner = await hasRole(user.id, 'TEAM_OWNER', 'team', teamId);
     
     if (!isOwner) {

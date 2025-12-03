@@ -64,6 +64,9 @@ type ProjectSeed = {
   name: string;
   description: string;
   ownerEmail: string;
+  teamSlug: string;
+  slug: string;
+  key: string;
 };
 
 const USER_SEEDS: SeedUser[] = [
@@ -218,11 +221,17 @@ const PROJECT_SEEDS: ProjectSeed[] = [
     name: "Design System Refresh",
     description: "Component audit that keeps Alice as the blocking owner.",
     ownerEmail: "alice@ui-syncup.com",
+    teamSlug: "product-design",
+    slug: "design-system-refresh",
+    key: "DSR",
   },
   {
     name: "Release Regression Suite",
     description: "Regression checklist Bob owns, blocks demotion/removal tests.",
     ownerEmail: "bob@ui-syncup.com",
+    teamSlug: "qa-guild",
+    slug: "release-regression-suite",
+    key: "RRS",
   },
 ];
 
@@ -486,13 +495,25 @@ async function main() {
           `Owner ${projectSeed.ownerEmail} not found`
         );
 
+        const team = ensure(
+          teamsBySlug.get(projectSeed.teamSlug),
+          `Team ${projectSeed.teamSlug} not found for project ${projectSeed.name}`
+        );
+
         const [project] = await db
           .insert(schema.projects)
           .values({
             name: projectSeed.name,
             description: projectSeed.description,
-            owner_id: owner.id,
-            is_active: true,
+            teamId: team.id,
+            slug: projectSeed.slug,
+            key: projectSeed.key,
+            // owner_id is not in the schema, projects are owned by teams
+            // We might want to track who created it, but schema doesn't have it right now
+            // or maybe it does but under a different name? 
+            // Checking schema: id, teamId, name, key, slug, description, icon, visibility, status, createdAt, updatedAt, deletedAt
+            // No owner_id or creator_id.
+            // So we just omit it.
           })
           .returning();
 

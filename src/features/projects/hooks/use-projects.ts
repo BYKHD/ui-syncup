@@ -1,28 +1,49 @@
-import { useMemo } from 'react'
-import type { ProjectSummary } from '@/features/projects/types'
-import { MOCK_PROJECT_SUMMARIES } from '@/mocks'
+import { useQuery } from '@tanstack/react-query'
+import { getProjects } from '@/features/projects/api'
+import { projectKeys } from './use-project'
+import type { GetProjectsResponse } from '@/features/projects/api/types'
 
 interface UseProjectsParams {
   teamId?: string
+  status?: 'active' | 'archived'
+  visibility?: 'public' | 'private'
+  search?: string
+  page?: number
+  limit?: number
+  enabled?: boolean
 }
 
 interface UseProjectsResult {
-  data: ProjectSummary[] | undefined
+  data: GetProjectsResponse | undefined
   isLoading: boolean
   error: Error | null
+  refetch: () => void
 }
 
-export function useProjects({ teamId }: UseProjectsParams): UseProjectsResult {
-  // TODO: wire: GET /api/projects?teamId={teamId}
-  // For now, return mock data filtered by teamId
-  const data = useMemo(() => {
-    if (!teamId) return undefined
-    return MOCK_PROJECT_SUMMARIES.filter((p) => p.status === 'active')
-  }, [teamId])
+export function useProjects({ 
+  teamId, 
+  status, 
+  visibility, 
+  search, 
+  page = 1, 
+  limit = 20,
+  enabled = true 
+}: UseProjectsParams): UseProjectsResult {
+  const query = useQuery({
+    queryKey: projectKeys.list({ teamId, status, visibility, search, page, limit }),
+    queryFn: () => {
+      if (!teamId) throw new Error('Team ID is required')
+      return getProjects({ teamId, status, visibility, search, page, limit })
+    },
+    enabled: enabled && !!teamId,
+    staleTime: 60 * 1000, // 1 minute
+    retry: 1,
+  })
 
   return {
-    data,
-    isLoading: false,
-    error: null,
+    data: query.data,
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
   }
 }

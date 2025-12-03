@@ -55,59 +55,35 @@ export interface UseRemoveMemberResult {
 export function useRemoveMember(options?: UseRemoveMemberOptions): UseRemoveMemberResult {
   const queryClient = useQueryClient()
 
-  // TODO: Uncomment when backend is ready
-  // const mutation = useMutation({
-  //   mutationFn: ({ projectId, memberId }: UseRemoveMemberParams) =>
-  //     removeMember(projectId, memberId),
-  //   onSuccess: (data, variables) => {
-  //     // Invalidate project members and detail
-  //     queryClient.invalidateQueries({ queryKey: projectKeys.members(variables.projectId) })
-  //     queryClient.invalidateQueries({ queryKey: projectKeys.detail(variables.projectId) })
-  //
-  //     // Show success toast
-  //     toast.success('Member removed successfully')
-  //
-  //     // Call custom success handler
-  //     options?.onSuccess?.(data)
-  //   },
-  //   onError: (error: Error) => {
-  //     // Show error toast
-  //     toast.error(error.message || 'Failed to remove member')
-  //
-  //     // Call custom error handler
-  //     options?.onError?.(error)
-  //   },
-  // })
-  //
-  // return {
-  //   mutate: mutation.mutate,
-  //   mutateAsync: mutation.mutateAsync,
-  //   isPending: mutation.isPending,
-  //   isError: mutation.isError,
-  //   error: mutation.error,
-  //   reset: mutation.reset,
-  // }
-
-  // Mock implementation for now
-  return {
-    mutate: async ({ projectId, memberId }: UseRemoveMemberParams) => {
-      try {
-        const result = await removeMember(projectId, memberId)
-        queryClient.invalidateQueries({ queryKey: projectKeys.members(projectId) })
-        queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) })
-        toast.success('Member removed successfully')
-        options?.onSuccess?.(result)
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error('Failed to remove member')
-        toast.error(err.message)
-        options?.onError?.(err)
-      }
-    },
-    mutateAsync: async ({ projectId, memberId }: UseRemoveMemberParams) =>
+  const mutation = useMutation({
+    mutationFn: ({ projectId, memberId }: UseRemoveMemberParams) =>
       removeMember(projectId, memberId),
-    isPending: false,
-    isError: false,
-    error: null,
-    reset: () => {},
+    onSuccess: (data, variables) => {
+      // Invalidate project members and detail
+      queryClient.invalidateQueries({ queryKey: projectKeys.members(variables.projectId) })
+      queryClient.invalidateQueries({ queryKey: projectKeys.detail(variables.projectId) })
+
+      // Show success toast
+      toast.success('Member removed successfully')
+
+      // Call custom success handler
+      options?.onSuccess?.(data)
+    },
+    onError: (error: Error) => {
+      // Show error toast
+      toast.error(error.message || 'Failed to remove member')
+
+      // Call custom error handler
+      options?.onError?.(error)
+    },
+  })
+
+  return {
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    reset: mutation.reset,
   }
 }

@@ -109,7 +109,7 @@ export async function checkProjectLimit(teamId: string): Promise<boolean> {
   const projectCountResult = await db
     .select({ count: sql<number>`count(*)` })
     .from(projects)
-    .where(eq(projects.owner_id, teamId)); // This may need adjustment based on actual schema
+    .where(eq(projects.teamId, teamId));
 
   const currentCount = parseInt(String(projectCountResult[0]?.count ?? '0'), 10);
 
@@ -200,7 +200,7 @@ export async function getTeamUsage(teamId: string): Promise<{
   const projectCountResult = await db
     .select({ count: sql<number>`count(*)` })
     .from(projects)
-    .where(eq(projects.owner_id, teamId)); // May need adjustment
+    .where(eq(projects.teamId, teamId));
 
   const projectCount = parseInt(String(projectCountResult[0]?.count ?? '0'), 10);
 

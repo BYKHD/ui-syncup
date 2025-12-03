@@ -13,6 +13,7 @@ import { teams } from "@/server/db/schema/teams";
 import { teamMembers } from "@/server/db/schema/team-members";
 import { users } from "@/server/db/schema/users";
 import { projects } from "@/server/db/schema/projects";
+import { projectMembers } from "@/server/db/schema/project-members";
 import { eq } from "drizzle-orm";
 
 // Test configuration
@@ -144,9 +145,19 @@ describe("Team Member Management Properties", () => {
 
         // Create a project owned by this user
         const [project] = await db.insert(projects).values({
+          teamId: team.id,
           name: "Test Project",
-          owner_id: projectOwner.id,
+          key: "TEST",
+          slug: `test-project-${Date.now()}`,
+          visibility: "private",
+          status: "active",
         }).returning();
+        
+        await db.insert(projectMembers).values({
+          projectId: project.id,
+          userId: projectOwner.id,
+          role: "owner",
+        });
         testProjectIds.push(project.id);
 
         // Action: Try to demote to TEAM_MEMBER

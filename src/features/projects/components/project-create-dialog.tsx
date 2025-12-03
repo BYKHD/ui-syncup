@@ -9,62 +9,22 @@ import { Field, FieldDescription } from '@/components/ui/field'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { RiAddLine } from '@remixicon/react'
-import {
-  RiRocketFill,
-  RiLightbulbFill,
-  RiCodeBoxFill,
-  RiDashboardFill,
-  RiPuzzleFill,
-  RiBrainFill,
-  RiFlashlightFill,
-  RiCompassFill,
-  RiLeafFill,
-  RiFireFill,
-  RiThunderstormsFill,
-  RiMagicFill,
-  RiSparklingFill,
-  RiFolderFill,
-  RiPlanetFill,
-  RiMeteorFill,
-  RiCactusFill,
-  RiFlowerFill,
-  RiCupFill,
-  RiAnchorFill,
-  RiStarFill,
-  RiHeartFill,
-  RiTrophyFill,
-  RiShieldFill,
-  RiTargetFill,
-  RiBugFill,
-  RiPaletteFill,
-  RiCameraFill,
-  RiBookFill,
-  RiGamepadFill,
-  RiShoppingCartFill,
-  RiSmartphoneFill,
-  RiTvFill,
-  RiMusicFill,
-  RiGiftFill,
-  RiMailFill,
-  RiBellFill,
-  RiTimeFill,
-  RiHomeFill,
-  RiMapPinFill,
-  RiLockLine,
-  RiGlobalLine,
-  RiSearchLine
-} from '@remixicon/react'
+import { RiAddLine, RiFolderFill, RiLockLine, RiGlobalLine } from '@remixicon/react'
+import { ProjectIconSelector } from './project-icon-selector'
 import { useTeam } from '@/hooks/use-team'
 
-type ProjectPreview = {
+export type ProjectPreview = {
   id: string
   name: string
   description: string
   icon: string | null
-  progressPercent: number
-  tickets: number
-  ticketsDone: number
+  slug: string
+  stats: {
+    progressPercent: number
+    totalTickets: number
+    completedTickets: number
+    memberCount: number
+  }
 }
 
 interface ProjectCreateDialogProps {
@@ -74,53 +34,8 @@ interface ProjectCreateDialogProps {
 
 const KEY_PATTERN = /^[A-Z]{2,6}$/
 
-const iconOptions = [
-  { name: 'RiFolderFill', component: RiFolderFill, label: 'Folder' },
-  { name: 'RiRocketFill', component: RiRocketFill, label: 'Rocket' },
-  { name: 'RiLightbulbFill', component: RiLightbulbFill, label: 'Lightbulb' },
-  { name: 'RiCodeBoxFill', component: RiCodeBoxFill, label: 'Code Box' },
-  { name: 'RiDashboardFill', component: RiDashboardFill, label: 'Dashboard' },
-  { name: 'RiPuzzleFill', component: RiPuzzleFill, label: 'Puzzle' },
-  { name: 'RiBrainFill', component: RiBrainFill, label: 'Brain' },
-  { name: 'RiFlashlightFill', component: RiFlashlightFill, label: 'Flashlight' },
-  { name: 'RiCompassFill', component: RiCompassFill, label: 'Compass' },
-  { name: 'RiLeafFill', component: RiLeafFill, label: 'Leaf' },
-  { name: 'RiFireFill', component: RiFireFill, label: 'Fire' },
-  { name: 'RiThunderstormsFill', component: RiThunderstormsFill, label: 'Storm' },
-  { name: 'RiMagicFill', component: RiMagicFill, label: 'Magic' },
-  { name: 'RiSparklingFill', component: RiSparklingFill, label: 'Sparkle' },
-  { name: 'RiPlanetFill', component: RiPlanetFill, label: 'Planet' },
-  { name: 'RiMeteorFill', component: RiMeteorFill, label: 'Meteor' },
-  { name: 'RiCactusFill', component: RiCactusFill, label: 'Cactus' },
-  { name: 'RiFlowerFill', component: RiFlowerFill, label: 'Flower' },
-  { name: 'RiCupFill', component: RiCupFill, label: 'Cup' },
-  { name: 'RiAnchorFill', component: RiAnchorFill, label: 'Anchor' },
-  { name: 'RiStarFill', component: RiStarFill, label: 'Star' },
-  { name: 'RiHeartFill', component: RiHeartFill, label: 'Heart' },
-  { name: 'RiTrophyFill', component: RiTrophyFill, label: 'Trophy' },
-  { name: 'RiShieldFill', component: RiShieldFill, label: 'Shield' },
-  { name: 'RiTargetFill', component: RiTargetFill, label: 'Target' },
-  { name: 'RiBugFill', component: RiBugFill, label: 'Bug' },
-  { name: 'RiPaletteFill', component: RiPaletteFill, label: 'Palette' },
-  { name: 'RiCameraFill', component: RiCameraFill, label: 'Camera' },
-  { name: 'RiBookFill', component: RiBookFill, label: 'Book' },
-  { name: 'RiGamepadFill', component: RiGamepadFill, label: 'Game' },
-  { name: 'RiShoppingCartFill', component: RiShoppingCartFill, label: 'Cart' },
-  { name: 'RiSmartphoneFill', component: RiSmartphoneFill, label: 'Mobile' },
-  { name: 'RiTvFill', component: RiTvFill, label: 'TV' },
-  { name: 'RiMusicFill', component: RiMusicFill, label: 'Music' },
-  { name: 'RiGiftFill', component: RiGiftFill, label: 'Gift' },
-  { name: 'RiMailFill', component: RiMailFill, label: 'Mail' },
-  { name: 'RiBellFill', component: RiBellFill, label: 'Bell' },
-  { name: 'RiTimeFill', component: RiTimeFill, label: 'Time' },
-  { name: 'RiHomeFill', component: RiHomeFill, label: 'Home' },
-  { name: 'RiMapPinFill', component: RiMapPinFill, label: 'Location' }
-]
-
 export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateDialogProps) {
   const [open, setOpen] = useState(false)
-  const [iconPickerOpen, setIconPickerOpen] = useState(false)
-  const [iconSearch, setIconSearch] = useState('')
   const [formData, setFormData] = useState({
     key: '',
     name: '',
@@ -130,29 +45,60 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
   })
   type FormErrors = { key?: string; name?: string; desc?: string }
 
-  type ProjectPreview = {
-    id: string
-    name: string
-    description: string
-    icon: string | null
-    progressPercent: number
-    tickets: number
-    ticketsDone: number
-  }
-
   const [errors, setErrors] = useState<FormErrors>({})
-  const [keyStatus, setKeyStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'error'>(
+  const [keyStatus, setKeyStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>(
     'idle'
   )
-  const [keyHelper, setKeyHelper] = useState('Use 2-6 uppercase letters')
+  const [keyHelper, setKeyHelper] = useState('Auto-generated from project name')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submittingError, setSubmittingError] = useState<string | null>(null)
+  const [isKeyManuallyEdited, setIsKeyManuallyEdited] = useState(false)
   const { currentTeam } = useTeam()
+
+  // Auto-generate project key from name
+  const generateKeyFromName = (name: string): string => {
+    if (!name.trim()) return ''
+    
+    // Remove special characters and split into words
+    const words = name
+      .replace(/[^a-zA-Z\s]/g, '')
+      .trim()
+      .split(/\s+/)
+      .filter(word => word.length > 0)
+    
+    if (words.length === 0) return ''
+    
+    // Take first letter of each word, up to 6 letters
+    let key = words.map(word => word[0].toUpperCase()).join('').slice(0, 6)
+    
+    // If result is less than 2 chars, take first 2-6 chars of first word
+    if (key.length < 2 && words[0]) {
+      key = words[0].slice(0, 6).toUpperCase()
+    }
+    
+    return key
+  }
 
   const handleInputChange = (field: string, value: string) => {
     if (field === 'key') {
       const sanitized = value.replace(/[^a-zA-Z]/g, '').toUpperCase()
       setFormData(prev => ({ ...prev, key: sanitized }))
+      setIsKeyManuallyEdited(true)
+      // Reset status when manually editing
+      setKeyStatus('idle')
+      setKeyHelper('Press Tab or click away to validate')
+    } else if (field === 'name') {
+      setFormData(prev => ({ ...prev, name: value }))
+      // Auto-generate key from name if not manually edited
+      if (!isKeyManuallyEdited) {
+        const autoKey = generateKeyFromName(value)
+        setFormData(prev => ({ ...prev, key: autoKey }))
+        if (autoKey) {
+          setKeyHelper('Auto-generated (you can edit)')
+        } else {
+          setKeyHelper('Auto-generated from project name')
+        }
+      }
     } else {
       setFormData(prev => ({ ...prev, [field]: value }))
     }
@@ -165,13 +111,54 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
 
   const handleIconSelect = (iconName: string) => {
     setFormData(prev => ({ ...prev, icon: iconName }))
-    setIconPickerOpen(false)
-    setIconSearch('')
   }
 
-  const filteredIcons = iconOptions.filter(icon =>
-    icon.label.toLowerCase().includes(iconSearch.toLowerCase())
-  )
+  // Validate project key on blur
+  const handleKeyBlur = async () => {
+    if (!formData.key) {
+      setKeyStatus('idle')
+      setKeyHelper(isKeyManuallyEdited ? 'Use 2-6 uppercase letters' : 'Auto-generated from project name')
+      return
+    }
+
+    if (!KEY_PATTERN.test(formData.key)) {
+      setKeyStatus('invalid')
+      setKeyHelper('')
+      setErrors(prev => ({ ...prev, key: 'Project key must be 2-6 uppercase letters' }))
+      return
+    }
+
+    try {
+      setKeyStatus('checking')
+      setKeyHelper('Checking availability...')
+      setErrors(prev => ({ ...prev, key: undefined }))
+
+      const response = await fetch(`/api/projects?projectKey=${encodeURIComponent(formData.key)}`)
+
+      if (!response.ok) {
+        // If API fails, don't block the user - validate on submit instead
+        setKeyStatus('idle')
+        setKeyHelper('Will validate on submit')
+        return
+      }
+
+      const result = await response.json()
+
+      if (result.exists) {
+        setKeyStatus('taken')
+        setKeyHelper('')
+        setErrors(prev => ({ ...prev, key: 'Project key already exists. Try a different one.' }))
+      } else {
+        setKeyStatus('available')
+        setKeyHelper('✓ Available')
+      }
+    } catch (error) {
+      // Network error - fail gracefully
+      console.error('Failed to validate project key', error)
+      setKeyStatus('idle')
+      setKeyHelper('Will validate on submit')
+    }
+  }
 
   const validateForm = () => {
     const newErrors: FormErrors = {}
@@ -184,8 +171,6 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
       newErrors.key = 'Project key already exists'
     } else if (keyStatus === 'checking') {
       newErrors.key = 'Please wait while the project key is validated'
-    } else if (keyStatus === 'error') {
-      newErrors.key = 'Unable to validate project key'
     }
     
     if (!formData.name.trim()) {
@@ -204,71 +189,6 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
     return Object.keys(newErrors).length === 0
   }
 
-  useEffect(() => {
-    if (!formData.key) {
-      setKeyStatus('idle')
-      setKeyHelper('Use 2-6 uppercase letters')
-      setErrors(prev => ({ ...prev, key: undefined }))
-      return
-    }
-
-    if (!KEY_PATTERN.test(formData.key)) {
-      setKeyStatus('invalid')
-      setKeyHelper('')
-      setErrors(prev => ({ ...prev, key: 'Project key must be 2-6 uppercase letters' }))
-      return
-    }
-
-    let cancelled = false
-    const controller = new AbortController()
-
-    setKeyStatus('checking')
-    setKeyHelper('Checking availability...')
-    setErrors(prev => ({ ...prev, key: undefined }))
-
-    const timeoutId = setTimeout(async () => {
-      try {
-        const response = await fetch(`/api/projects?projectKey=${encodeURIComponent(formData.key)}`, {
-          signal: controller.signal
-        })
-
-        if (!response.ok) {
-          throw new Error('Request failed')
-        }
-
-        const result = await response.json()
-
-        if (cancelled) {
-          return
-        }
-
-        if (result.exists) {
-          setKeyStatus('taken')
-          setKeyHelper('')
-          setErrors(prev => ({ ...prev, key: 'Project key already exists' }))
-        } else {
-          setKeyStatus('available')
-          setKeyHelper('Project key is available')
-          setErrors(prev => ({ ...prev, key: undefined }))
-        }
-      } catch (error) {
-        if (cancelled || controller.signal.aborted) {
-          return
-        }
-        console.error('Failed to validate project key', error)
-        setKeyStatus('error')
-        setKeyHelper('')
-        setErrors(prev => ({ ...prev, key: 'Unable to validate project key' }))
-      }
-    }, 300)
-
-    return () => {
-      cancelled = true
-      controller.abort()
-      clearTimeout(timeoutId)
-    }
-  }, [formData.key])
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
@@ -284,23 +204,36 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
         throw new Error('No active team selected')
       }
 
+      const requestBody = {
+        key: formData.key.trim(),
+        name: formData.name.trim(),
+        description: formData.desc.trim(),
+        icon: formData.icon,
+        visibility: formData.visibility,
+        teamId: currentTeam.id
+      };
+
       const response = await fetch('/api/projects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          projectKey: formData.key.trim(),
-          name: formData.name.trim(),
-          description: formData.desc.trim(),
-          icon: formData.icon,
-          visibility: formData.visibility,
-          teamId: currentTeam.id
-        })
+        body: JSON.stringify(requestBody)
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create project')
+        const errorData = await response.json().catch(() => null)
+        
+        // Handle duplicate key error specifically
+        // Handle duplicate key error specifically
+        if (response.status === 409 || errorData?.error?.code === 'DUPLICATE_KEY' || errorData?.error?.message?.includes('key')) {
+          setKeyStatus('taken')
+          setErrors(prev => ({ ...prev, key: `Key "${formData.key}" is already in use. Try "${formData.key}2" or a different key.` }))
+          setIsSubmitting(false)
+          return
+        }
+        
+        throw new Error(errorData?.error?.message || 'Failed to create project')
       }
 
       const result = await response.json()
@@ -310,18 +243,23 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
         name: formData.name.trim(),
         description: formData.desc.trim(),
         icon: formData.icon,
-        progressPercent: 0,
-        tickets: 0,
-        ticketsDone: 0
+        slug: result.slug,
+        stats: {
+          progressPercent: 0,
+          totalTickets: 0,
+          completedTickets: 0,
+          memberCount: 1
+        }
       }
 
       onProjectAdded?.(newProject)
 
+      // Reset form
       setFormData({ key: '', name: '', desc: '', icon: 'RiFolderFill', visibility: 'public' })
       setErrors({})
       setKeyStatus('idle')
-      setKeyHelper('Use 2-6 uppercase letters')
-      setIconSearch('')
+      setKeyHelper('Auto-generated from project name')
+      setIsKeyManuallyEdited(false)
       setOpen(false)
     } catch (error) {
       console.error('Error creating project', error)
@@ -335,13 +273,13 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
     setFormData({ key: '', name: '', desc: '', icon: 'RiFolderFill', visibility: 'public' })
     setErrors({})
     setKeyStatus('idle')
-    setKeyHelper('Use 2-6 uppercase letters')
-    setIconSearch('')
+    setKeyHelper('Auto-generated from project name')
+    setIsKeyManuallyEdited(false)
+    setSubmittingError(null)
     setOpen(false)
   }
 
-  const selectedIcon = iconOptions.find(option => option.name === formData.icon)
-  const SelectedIconComponent = selectedIcon?.component || RiFolderFill
+
   const isCheckingKey = keyStatus === 'checking'
   const disableSubmit = isSubmitting || isCheckingKey || !currentTeam?.id
 
@@ -361,78 +299,12 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
-            
-
             {/* Project Icon Selection */}
             <Field className="w-fit">
-              <Popover open={iconPickerOpen} onOpenChange={setIconPickerOpen}>
-                <PopoverTrigger className="w-fit" asChild>
-                  <button
-                    type="button"
-                    className="flex items-start transition-all hover:scale-105"
-                  >
-                    <div className="p-3 bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors">
-                      <SelectedIconComponent className="h-6 w-6 text-primary" />
-                    </div>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="p-0 w-80">
-                  <div className="p-4">
-                    <div className="text-sm font-medium mb-3">
-                      Choose an icon for your project
-                    </div>
-
-                    {/* Search Input */}
-                    <div className="relative mb-3">
-                      <RiSearchLine className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="text"
-                        placeholder="Search icons..."
-                        value={iconSearch}
-                        onChange={(e) => setIconSearch(e.target.value)}
-                        className="pl-9 h-9"
-                      />
-                    </div>
-
-                    {/* Icon Grid */}
-                    <div
-                      className="grid grid-cols-5 gap-1.5 max-h-[480px] overflow-y-visible pr-2 "
-                      style={{
-                        scrollbarWidth: 'thin',
-                        scrollbarColor: 'rgba(0, 0, 0, 0.2) transparent'
-                      }}
-                    >
-                      {filteredIcons.length > 0 ? (
-                        filteredIcons.map(({ name, component: IconComponent, label }) => {
-                          const isSelected = formData.icon === name;
-                          return (
-                            <button
-                              type="button"
-                              key={name}
-                              title={label}
-                              className={`
-                                h-12 w-12 flex items-center justify-center rounded-md
-                                transition-all hover:scale-110
-                                ${isSelected
-                                  ? 'bg-primary text-primary-foreground shadow-sm'
-                                  : 'hover:bg-accent'
-                                }
-                              `}
-                              onClick={() => handleIconSelect(name)}
-                            >
-                              <IconComponent className="h-5 w-5" />
-                            </button>
-                          );
-                        })
-                      ) : (
-                        <div className="col-span-5 text-center py-8 text-sm text-muted-foreground">
-                          No icons found
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <ProjectIconSelector
+                value={formData.icon}
+                onChange={handleIconSelect}
+              />
             </Field>
 
             {/* Project Name */}
@@ -444,6 +316,7 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
                 placeholder="Enter project name"
                 maxLength={32}
                 className={errors.name ? 'border-destructive' : ''}
+                autoFocus
               />
 
               <FieldDescription className="flex justify-between text-xs text-muted-foreground">
@@ -453,18 +326,20 @@ export function ProjectCreateDialog({ children, onProjectAdded }: ProjectCreateD
                 <span>{formData.name.length}/32</span>
               </FieldDescription>
             </Field>
+
             {/* Project Key */}
             <Field>
               <Input
                 id="project-key"
                 value={formData.key}
                 onChange={(e) => handleInputChange('key', e.target.value)}
-                placeholder="Enter project key"
+                onBlur={handleKeyBlur}
+                placeholder="Auto-generated from name"
                 maxLength={6}
-                className={errors.key ? 'border-destructive' : ''}
+                className={errors.key ? 'border-destructive' : keyStatus === 'available' ? 'border-green-500' : ''}
               />
               <FieldDescription className="flex justify-between text-xs text-muted-foreground">
-                <span className={errors.key ? 'text-destructive' : ''}>
+                <span className={errors.key ? 'text-destructive' : keyStatus === 'available' ? 'text-green-600' : ''}>
                   {errors.key || keyHelper}
                 </span>
                 <span>{formData.key.length}/6</span>

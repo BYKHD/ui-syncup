@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { MOCK_DEFAULT_TEAM } from '@/mocks'
+import { useTeams } from '@/features/teams/hooks/use-teams'
+import Cookies from 'js-cookie'
 
 interface Team {
   id: string
@@ -13,11 +13,20 @@ interface UseTeamResult {
 }
 
 export function useTeam(): UseTeamResult {
-  // TODO: wire: GET /api/teams/current
-  const currentTeam = useMemo(() => MOCK_DEFAULT_TEAM, [])
+  const { data, isLoading } = useTeams()
+  
+  // Get the team ID from the cookie
+  const teamIdCookie = Cookies.get('team_id')
+  
+  // Find the team that matches the cookie, or fall back to the first team
+  const currentTeam = data?.teams?.find(t => t.id === teamIdCookie) ?? data?.teams?.[0] ?? null
 
   return {
-    currentTeam,
-    isLoading: false,
+    currentTeam: currentTeam ? {
+      id: currentTeam.id,
+      name: currentTeam.name,
+      image: currentTeam.image ?? null
+    } : null,
+    isLoading,
   }
 }

@@ -252,9 +252,9 @@ describe('Migration Runner - Property-Based Tests', () => {
           if (invalidUrl === '' || invalidUrl.trim() === '') {
             expect(result.error).toMatch(/not set|empty/i);
           } else if (!invalidUrl.includes('://')) {
-            expect(result.error).toMatch(/invalid.*format/i);
+            expect(result.error).toMatch(/invalid.*url.*format/i);
           } else if (!invalidUrl.startsWith('postgres')) {
-            expect(result.error).toMatch(/protocol/i);
+            expect(result.error).toMatch(/invalid.*protocol|protocol/i);
           }
         }
       ),

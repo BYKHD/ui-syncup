@@ -26,13 +26,27 @@ export type JoinProjectResponse = z.infer<typeof JoinProjectResponseSchema>
  * In production, this would call POST /api/projects/:projectId/join
  */
 export async function joinProject(projectId: string): Promise<JoinProjectResponse> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 800))
+  const response = await fetch(`/api/projects/${projectId}/join`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include httpOnly cookies
+  })
 
-  // Mock successful join - assign 'member' role by default
-  return {
-    success: true,
-    message: 'Successfully joined project',
-    role: 'member',
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Project not found')
+    }
+    if (response.status === 403) {
+      throw new Error('Cannot join private project')
+    }
+    if (response.status === 409) {
+      throw new Error('You are already a member of this project')
+    }
+    throw new Error(`Failed to join project: ${response.statusText}`)
   }
+
+  const data = await response.json()
+  return JoinProjectResponseSchema.parse(data)
 }
