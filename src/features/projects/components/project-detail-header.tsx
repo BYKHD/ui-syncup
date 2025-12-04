@@ -60,36 +60,38 @@ export function ProjectDetailHeader({
   const canLeaveProject = userRole !== null && userRole !== 'owner';
 
   return (
-    <div className="border-b p-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        {/* Left section: Title, visibility, role, description, stats */}
-        <div className="space-y-3 flex-1">
-          <ProjectTitleSection
-            name={project.name}
-            description={project.description}
-            visibility={project.visibility}
+    <div className="border-b bg-card">
+      <div className="mx-auto max-w-7xl px-6 py-6 lg:px-8">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          {/* Left section: Title, visibility, role, description, stats */}
+          <div className="space-y-4 flex-1">
+            <ProjectTitleSection
+              name={project.name}
+              description={project.description}
+              visibility={project.visibility}
+              userRole={userRole}
+            />
+
+            <ProjectStats stats={project.stats} />
+          </div>
+
+          {/* Right section: Action buttons */}
+          <ProjectActions
+            projectId={project.id}
+            projectName={project.name}
             userRole={userRole}
+            canManageMembers={canManageMembers}
+            canEditSettings={canEditSettings}
+            canLeaveProject={canLeaveProject}
+            onMembershipChanged={onMembershipChanged}
+            onProjectUpdated={onProjectUpdated}
+            onLeftProject={onLeftProject}
+            renderIssueDialog={renderIssueDialog}
+            renderMemberDialog={renderMemberDialog}
+            renderSettingsDialog={renderSettingsDialog}
+            renderLeaveButton={renderLeaveButton}
           />
-
-          <ProjectStats stats={project.stats} />
         </div>
-
-        {/* Right section: Action buttons */}
-        <ProjectActions
-          projectId={project.id}
-          projectName={project.name}
-          userRole={userRole}
-          canManageMembers={canManageMembers}
-          canEditSettings={canEditSettings}
-          canLeaveProject={canLeaveProject}
-          onMembershipChanged={onMembershipChanged}
-          onProjectUpdated={onProjectUpdated}
-          onLeftProject={onLeftProject}
-          renderIssueDialog={renderIssueDialog}
-          renderMemberDialog={renderMemberDialog}
-          renderSettingsDialog={renderSettingsDialog}
-          renderLeaveButton={renderLeaveButton}
-        />
       </div>
     </div>
   );

@@ -5,14 +5,19 @@ on:
     branches:
       - main
       - develop
-      - 'feature/**'
 
 jobs:
   migrate-preview:
     name: Migrate Preview Database
-    if: github.ref != 'refs/heads/main'
+    # Only run this job when pushing to `develop`
+    if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     environment: Preview
+
+    # Prevent two preview migrations from running at the same time
+    concurrency:
+      group: db-migrate-preview
+      cancel-in-progress: false
     
     steps:
       - name: Checkout code
@@ -83,11 +88,24 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "::error::Migration failed - deployment blocked"
 
+      - name: Upload migration logs
+        if: always() # even if previous step fails
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-migration-logs-${{ github.sha }}
+          path: migration-output.txt
+
   migrate-production:
     name: Migrate Production Database
+    # Only run this job when pushing to `main`
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: Production
+    
+    # Prevent overlapping prod migrations
+    concurrency:
+      group: db-migrate-production
+      cancel-in-progress: false
     
     steps:
       - name: Checkout code
@@ -157,3 +175,10 @@ jobs:
           echo "4. Check database connectivity and credentials" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "::error::Migration failed - deployment blocked"
+
+      - name: Upload migration logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-migration-logs-${{ github.sha }}
+          path: migration-output.txt
