@@ -4,11 +4,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { AppShell } from './app-shell';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useTeams } from '@/features/teams';
 
 // Mock Next.js navigation
 vi.mock('next/navigation', () => ({
   usePathname: vi.fn(),
+  useRouter: vi.fn(),
+}));
+
+// Mock useTeams hook
+vi.mock('@/features/teams', () => ({
+  useTeams: vi.fn(),
 }));
 
 // Mock Sidebar components to avoid complex rendering
@@ -26,9 +33,16 @@ vi.mock('@/components/shared/headers', () => ({
 }));
 
 describe('AppShell', () => {
+  const mockPush = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
     (usePathname as Mock).mockReturnValue('/');
+    (useRouter as Mock).mockReturnValue({ push: mockPush });
+    (useTeams as Mock).mockReturnValue({ 
+      data: { teams: [{ id: 'team-1', name: 'Test Team' }] }, 
+      isLoading: false 
+    });
   });
 
   afterEach(() => {
@@ -81,5 +95,61 @@ describe('AppShell', () => {
 
     expect(screen.getByTestId('child')).toBeInTheDocument();
     expect(screen.queryByTestId('sidebar-provider')).not.toBeInTheDocument();
+  });
+
+  it('redirects to /onboarding when user has no teams and is not on onboarding page', () => {
+    (useTeams as Mock).mockReturnValue({ 
+      data: { teams: [] }, 
+      isLoading: false 
+    });
+
+    render(
+      <AppShell variant="sidebar">
+        <div data-testid="child">Child Content</div>
+      </AppShell>
+    );
+
+    expect(mockPush).toHaveBeenCalledWith('/onboarding');
+  });
+
+  it('does not redirect when user has teams', () => {
+    render(
+      <AppShell variant="sidebar">
+        <div data-testid="child">Child Content</div>
+      </AppShell>
+    );
+
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('does not redirect when loading teams', () => {
+    (useTeams as Mock).mockReturnValue({ 
+      data: undefined, 
+      isLoading: true 
+    });
+
+    render(
+      <AppShell variant="sidebar">
+        <div data-testid="child">Child Content</div>
+      </AppShell>
+    );
+
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('does not redirect when already on onboarding page', () => {
+    (usePathname as Mock).mockReturnValue('/onboarding');
+    (useTeams as Mock).mockReturnValue({ 
+      data: { teams: [] }, 
+      isLoading: false 
+    });
+
+    render(
+      <AppShell variant="sidebar">
+        <div data-testid="child">Child Content</div>
+      </AppShell>
+    );
+
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });

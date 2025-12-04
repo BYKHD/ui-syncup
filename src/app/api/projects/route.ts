@@ -9,7 +9,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/server/auth/session";
-import { getTeamIdCookie } from "@/server/auth/cookies";
 import { hasPermission } from "@/server/auth/rbac";
 import { PERMISSIONS } from "@/config/roles";
 import {
@@ -137,30 +136,8 @@ export async function GET(request: NextRequest) {
     const { teamId, status, visibility, search, page, limit } =
       validation.data;
 
-    // Validate team context
-    // The requested teamId must match the user's active team context from the cookie
-    const activeTeamId = await getTeamIdCookie();
-    
-    if (teamId !== activeTeamId) {
-      logger.warn("api.projects.list.forbidden_context_mismatch", {
-        requestId,
-        userId: user.id,
-        requestedTeamId: teamId,
-        activeTeamId,
-      });
-
-      return NextResponse.json(
-        {
-          error: {
-            code: "FORBIDDEN",
-            message: "You do not have permission to access this team's data in the current context",
-          },
-        },
-        { status: 403 }
-      );
-    }
-
     // List projects with filters and pagination
+    // Access control is handled by listProjects() via userId
     const result = await listProjects({
       teamId,
       userId: user.id,

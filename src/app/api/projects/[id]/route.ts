@@ -417,15 +417,26 @@ export async function DELETE(
       );
     }
 
-    // Delete project (soft delete)
+    // Delete project (soft delete or hard delete based on env)
     try {
-      await deleteProject(projectId);
+      if (process.env.NEXT_PUBLIC_ENABLE_HARD_DELETE === 'true') {
+        const { hardDeleteProject } = await import('@/server/projects/project-service');
+        await hardDeleteProject(projectId);
+        
+        logger.info("api.projects.hard_delete.success", {
+          requestId,
+          userId: user.id,
+          projectId,
+        });
+      } else {
+        await deleteProject(projectId);
 
-      logger.info("api.projects.delete.success", {
-        requestId,
-        userId: user.id,
-        projectId,
-      });
+        logger.info("api.projects.delete.success", {
+          requestId,
+          userId: user.id,
+          projectId,
+        });
+      }
 
       return new NextResponse(null, { status: 204 });
     } catch (error) {

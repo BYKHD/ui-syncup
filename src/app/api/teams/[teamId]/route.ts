@@ -76,27 +76,7 @@ export async function GET(
       );
     }
     
-    // Get team
-    const activeTeamId = await getTeamIdCookie();
-    if (teamId !== activeTeamId) {
-      logger.warn('api.teams.get.forbidden_context_mismatch', {
-        requestId,
-        userId: user.id,
-        requestedTeamId: teamId,
-        activeTeamId,
-      });
-
-      return NextResponse.json(
-        {
-          error: {
-            code: 'FORBIDDEN',
-            message: "You do not have permission to access this team's data in the current context",
-          },
-        },
-        { status: 403 }
-      );
-    }
-
+    // Get team - membership is validated by getTeam() service
     const team = await getTeam(teamId, user.id);
     
     if (!team) {
@@ -346,21 +326,19 @@ export async function DELETE(
       );
     }
     
-    // Check permissions (TEAM_OWNER only)
-    const activeTeamId = await getTeamIdCookie();
-    if (teamId !== activeTeamId) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'FORBIDDEN',
-            message: "You do not have permission to access this team's data in the current context",
-          },
-        },
-        { status: 403 }
-      );
-    }
-
-    const isOwner = await hasRole(user.id, 'TEAM_OWNER', 'team', teamId);
+    // Check ownership (TEAM_OWNER only) - query team_members table directly
+    const { db } = await import('@/lib/db');
+    const { teamMembers } = await import('@/server/db/schema/team-members');
+    const { eq, and } = await import('drizzle-orm');
+    
+    const memberRecord = await db.query.teamMembers.findFirst({
+      where: and(
+        eq(teamMembers.teamId, teamId),
+        eq(teamMembers.userId, user.id)
+      )
+    });
+    
+    const isOwner = memberRecord?.managementRole === 'TEAM_OWNER';
     
     if (!isOwner) {
       return NextResponse.json(
@@ -374,6 +352,23 @@ export async function DELETE(
       );
     }
     
+    // Check for hard delete flag
+    if (process.env.NEXT_PUBLIC_ENABLE_HARD_DELETE === 'true') {
+      const { hardDeleteTeam } = await import('@/server/teams/team-service');
+      await hardDeleteTeam(teamId, user.id);
+      
+      logger.info('api.teams.hard_delete.success', {
+        requestId,
+        userId: user.id,
+        teamId,
+      });
+      
+      return NextResponse.json(
+        { message: 'Team permanently deleted successfully' },
+        { status: 200 }
+      );
+    }
+
     // Soft delete team
     await softDeleteTeam(teamId, user.id);
     

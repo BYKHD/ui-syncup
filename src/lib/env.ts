@@ -121,6 +121,10 @@ const envSchema = z.object({
     .string()
     .optional()
     .describe("Enable debug mode (true/false)"),
+  NEXT_PUBLIC_ENABLE_HARD_DELETE: z
+    .string()
+    .optional()
+    .describe("Enable hard delete for teams and projects (true/false)"),
 
   // Vercel System Variables (Auto-populated by Vercel)
   VERCEL_ENV: z
