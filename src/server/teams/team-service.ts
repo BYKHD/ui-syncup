@@ -351,6 +351,58 @@ export async function softDeleteTeam(
 }
 
 /**
+ * Hard deletes a team (permanent removal)
+ * Implements Requirements 5.2, 5.3, 14.1
+ */
+export async function hardDeleteTeam(
+  teamId: string,
+  userId: string
+): Promise<void> {
+  try {
+    const team = await db.query.teams.findFirst({
+      where: eq(teams.id, teamId),
+    });
+
+    if (!team) {
+      logTeamEvent("team.delete.failure", {
+        outcome: "failure",
+        userId,
+        teamId,
+        errorCode: "TEAM_NOT_FOUND",
+        errorMessage: "Team not found",
+      });
+      throw new Error("Team not found");
+    }
+
+    // Hard delete team
+    await db.delete(teams).where(eq(teams.id, teamId));
+
+    // Log team deletion (Requirement 14.1)
+    logTeamEvent("team.delete.success", {
+      outcome: "success",
+      userId,
+      teamId,
+      teamName: team.name,
+      metadata: {
+        type: "hard_delete",
+      },
+    });
+  } catch (error) {
+    // Log failure if not already logged
+    if (error instanceof Error && !error.message.includes("not found")) {
+      logTeamEvent("team.delete.failure", {
+        outcome: "error",
+        userId,
+        teamId,
+        errorCode: "TEAM_DELETE_ERROR",
+        errorMessage: error.message,
+      });
+    }
+    throw error;
+  }
+}
+
+/**
  * Transfers team ownership to another admin
  * Implements Requirements 14.1, 14.2, 14.3, 14.4
  */

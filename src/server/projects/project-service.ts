@@ -334,6 +334,25 @@ export async function deleteProject(projectId: string): Promise<void> {
   logger.info("project.deleted", { projectId });
 }
 
+/**
+ * Hard delete a project (permanent removal)
+ * 
+ * @param projectId - Project ID
+ * @throws Error if project not found
+ */
+export async function hardDeleteProject(projectId: string): Promise<void> {
+  const [deleted] = await db
+    .delete(projects)
+    .where(eq(projects.id, projectId))
+    .returning();
+
+  if (!deleted) {
+    throw new Error("Project not found");
+  }
+
+  logger.info("project.hard_deleted", { projectId });
+}
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================

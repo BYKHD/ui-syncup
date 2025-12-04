@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { Loader2, Trash2, Download } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useDeleteTeam } from "@/features/teams/hooks/use-delete-team";
+import { useTeams } from "@/features/teams/hooks/use-teams";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -37,6 +40,9 @@ export function TeamDangerZone({
   isLastTeam = false,
   onDelete,
 }: TeamDangerZoneProps) {
+  const router = useRouter();
+  const { data: teamsData } = useTeams();
+  const { mutateAsync: deleteTeam } = useDeleteTeam();
   const [isDeletingTeam, setIsDeletingTeam] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [exportBeforeDelete, setExportBeforeDelete] = useState(false);
@@ -100,27 +106,28 @@ export function TeamDangerZone({
 
       setDeleteDialogOpen(false);
 
-      // UI-only mock: simulate deletion delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Perform deletion
+      await deleteTeam(teamId);
 
       // Call optional onDelete callback if provided
       if (onDelete) {
         await onDelete(teamId);
       }
 
-      // Show appropriate success message
-      if (isLastTeam) {
-        toast.success(
-          "Team deleted successfully. You will be redirected to create a new team.",
-          { duration: 3000 }
-        );
+      // Determine redirect path
+      // Filter out the deleted team from the current list
+      const remainingTeams = teamsData?.teams.filter(t => t.id !== teamId) || [];
+      
+      if (remainingTeams.length > 0) {
+        // Redirect to projects page - the app will auto-switch to the next available team
+        toast.success("Team deleted successfully. Redirecting...");
+        router.push(`/projects`);
       } else {
-        toast.success("Team deleted successfully");
+        // No teams left, redirect to onboarding
+        toast.success("Team deleted successfully. Redirecting to onboarding.");
+        router.push("/onboarding");
       }
 
-      // UI-only mock: log deletion instead of actual redirect
-      console.log(`[MOCK] Team "${teamName}" (${teamId}) deleted`);
-      console.log(`[MOCK] Would redirect to: ${isLastTeam ? "/onboarding" : "/projects"}`);
     } catch (error) {
       // Reset states on error so user can try again
       setIsDeletingTeam(false);
@@ -129,9 +136,6 @@ export function TeamDangerZone({
       console.error("Error deleting team:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to delete team";
       toast.error(errorMessage);
-    } finally {
-      // Reset loading state after mock operation
-      setTimeout(() => setIsDeletingTeam(false), 2000);
     }
   };
 
