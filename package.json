@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
+    "clean": "rm -rf .next node_modules",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "playwright test",

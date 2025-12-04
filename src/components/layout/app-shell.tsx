@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 
 import { AppShellHeaderContext } from "@/components/layout/app-shell-header-store"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
@@ -60,6 +61,8 @@ function SidebarLayout({
   )
 }
 
+
+
 export function AppShell({
   variant = "sidebar",
   sidebar,
@@ -72,7 +75,11 @@ export function AppShell({
   children: React.ReactNode
   className?: string
 }) {
-  if (variant === "blank") return <>{children}</>
+  const pathname = usePathname()
+  const isOnboarding = pathname?.startsWith("/onboarding")
+  const effectiveVariant = isOnboarding ? "blank" : variant
+
+  if (effectiveVariant === "blank") return <>{children}</>
 
   return (
     <SidebarLayout sidebar={sidebar} header={header}>
