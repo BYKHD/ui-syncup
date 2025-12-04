@@ -309,8 +309,8 @@ export default function ProjectDetailScreen({
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
-      {/* Project Header */}
+    <div className="min-h-screen bg-background">
+      {/* Project Header - Full Width */}
       <ProjectDetailHeader
         project={project}
         userRole={userRole}
@@ -415,7 +415,7 @@ export default function ProjectDetailScreen({
         )}
       />
 
-      <div className="space-y-8">
+      <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8 space-y-8">
         {/* Project Issues */}
         <ProjectIssues projectId={project.id} />
       </div>

@@ -36,37 +36,42 @@ export function ProjectTitleSection({
   userRole,
 }: ProjectTitleSectionProps) {
   return (
-    <div className="space-y-3 flex-1">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold">{name}</h1>
+    <div className="space-y-1">
+      <div className="flex items-center gap-3">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          {name}
+        </h1>
 
-        {/* Visibility indicator */}
-        <div className="flex items-center gap-1">
-          {visibility === 'private' ? (
-            <RiLockLine className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <RiGlobalLine className="h-4 w-4 text-muted-foreground" />
-          )}
-          <span className="text-sm text-muted-foreground capitalize">
-            {visibility}
-          </span>
-        </div>
-
-        {/* User role badge */}
-        {userRole && (
-          <div className="flex items-center gap-1">
-            {userRole === 'owner' && (
-              <RiVipCrownLine className="h-3 w-3 text-yellow-500" />
+        <div className="flex items-center gap-2">
+          {/* Visibility indicator */}
+          <div
+            className="flex items-center gap-1.5 rounded-full bg-muted/50 px-2 py-0.5 text-xs font-medium text-muted-foreground"
+            title={`This project is ${visibility}`}
+          >
+            {visibility === 'private' ? (
+              <RiLockLine className="h-3 w-3" />
+            ) : (
+              <RiGlobalLine className="h-3 w-3" />
             )}
-            <Badge variant={getRoleBadgeVariant(userRole)}>
-              {getRoleDisplayName(userRole)}
-            </Badge>
+            <span className="capitalize">{visibility}</span>
           </div>
-        )}
+
+          {/* User role badge - only show if owner or editor for cleaner look */}
+          {userRole && (userRole === 'owner' || userRole === 'editor') && (
+            <Badge
+              variant="secondary"
+              className="h-5 px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:bg-secondary/80"
+            >
+              {userRole}
+            </Badge>
+          )}
+        </div>
       </div>
 
       {description && (
-        <p className="text-muted-foreground max-w-3xl">{description}</p>
+        <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
+          {description}
+        </p>
       )}
     </div>
   );
