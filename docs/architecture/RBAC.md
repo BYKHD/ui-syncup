@@ -7,6 +7,7 @@ UI SyncUp uses a comprehensive Role-Based Access Control (RBAC) system to manage
 ## Table of Contents
 
 - [Role Hierarchy](#role-hierarchy)
+- [Architecture](#architecture)
 - [Permissions Model](#permissions-model)
 - [Billable Seats](#billable-seats)
 - [Usage Examples](#usage-examples)
@@ -15,6 +16,36 @@ UI SyncUp uses a comprehensive Role-Based Access Control (RBAC) system to manage
 - [Security Considerations](#security-considerations)
 
 ---
+
+## Architecture
+
+### Role Storage (Single Source of Truth)
+
+UI SyncUp uses a **consolidated role storage** pattern where each resource type has a single source of truth:
+
+| Resource Type | Table | Columns |
+|---------------|-------|---------|
+| **Team** | `team_members` | `managementRole`, `operationalRole` |
+| **Project** | `project_members` | `role` |
+
+This ensures:
+- ✅ No data inconsistency between tables
+- ✅ Single write location for role changes
+- ✅ Simpler permission queries
+- ✅ Clear ownership of role data
+
+### Permission Resolution
+
+```
+hasPermission(userId, permission, resourceType, resourceId)
+  │
+  ├── resourceType = "project"
+  │   └── Query project_members → Check role permissions
+  │
+  └── resourceType = "team"
+      └── Query team_members → Check management + operational role permissions
+```
+
 
 ## Role Hierarchy
 

@@ -8,7 +8,6 @@
 import { db } from "@/lib/db";
 import { projects } from "@/server/db/schema/projects";
 import { projectMembers } from "@/server/db/schema/project-members";
-import { userRoles } from "@/server/db/schema/user-roles";
 import { eq, and, isNull, or, like, sql, count } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { generateUniqueSlug, validateProjectKey, validateProjectName } from "./utils";
@@ -232,23 +231,19 @@ export async function createProject(
       })
       .returning();
 
-    // Assign creator as PROJECT_OWNER
+    // Assign creator as PROJECT_OWNER (single source of truth)
     await tx.insert(projectMembers).values({
       projectId: newProject.id,
       userId,
       role: PROJECT_ROLES.PROJECT_OWNER,
     });
 
-    // Also add to user_roles for RBAC
-    await tx.insert(userRoles).values({
-      userId,
-      role: PROJECT_ROLES.PROJECT_OWNER,
-      resourceType: "project",
-      resourceId: newProject.id,
-    });
+    // NOTE: user_roles insert removed - project_members is single source of truth
+    // for project permissions per role consolidation refactor
 
     return newProject;
   });
+
 
   // Auto-promote creator to TEAM_EDITOR (billable)
   await autoPromoteToEditor(userId, teamId);
