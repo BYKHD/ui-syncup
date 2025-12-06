@@ -424,7 +424,7 @@ async function runMigrations(): Promise<void> {
 
   try {
     // Create postgres connection for migrations
-    migrationClient = postgres(dbUrl, { max: 1 });
+    migrationClient = postgres(dbUrl, { max: 1, prepare: false });
     const db = drizzle(migrationClient);
 
     // Log migration execution order
