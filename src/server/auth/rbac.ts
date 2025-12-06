@@ -526,7 +526,7 @@ export async function hasRole(
 export async function hasPermission(check: PermissionCheck): Promise<boolean> {
   const { userId, permission, resourceId, resourceType } = check;
 
-  // Get all user roles for the resource
+  // Get all user roles for the resource from user_roles table
   const roles = resourceType
     ? await db
         .select()
@@ -551,13 +551,51 @@ export async function hasPermission(check: PermissionCheck): Promise<boolean> {
   // Check if any role has the permission
   for (const userRole of roles) {
     const rolePermissions = ROLE_PERMISSIONS[userRole.role as Role];
-    if (rolePermissions.includes(permission)) {
+    if (rolePermissions?.includes(permission)) {
       return true;
+    }
+  }
+
+  // For team resources, also check team_members table
+  // This handles the case where roles are stored in team_members but not user_roles
+  if (resourceType === "team" || !resourceType) {
+    const { teamMembers } = await import("@/server/db/schema/team-members");
+    
+    const teamMemberRecord = await db
+      .select()
+      .from(teamMembers)
+      .where(
+        and(
+          eq(teamMembers.userId, userId),
+          eq(teamMembers.teamId, resourceId)
+        )
+      )
+      .limit(1);
+
+    if (teamMemberRecord.length > 0) {
+      const member = teamMemberRecord[0];
+      
+      // Check management role permissions
+      if (member.managementRole) {
+        const managementPermissions = ROLE_PERMISSIONS[member.managementRole as Role];
+        if (managementPermissions?.includes(permission)) {
+          return true;
+        }
+      }
+      
+      // Check operational role permissions
+      if (member.operationalRole) {
+        const operationalPermissions = ROLE_PERMISSIONS[member.operationalRole as Role];
+        if (operationalPermissions?.includes(permission)) {
+          return true;
+        }
+      }
     }
   }
 
   return false;
 }
+
 
 /**
  * Check if a user has any of the specified permissions for a resource.

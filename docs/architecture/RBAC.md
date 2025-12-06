@@ -500,6 +500,12 @@ Check if a user has a specific permission for a resource.
 
 **Returns:** `true` if user has the permission
 
+**Implementation Details:**
+- For team resources, this function checks **both** the `user_roles` table and the `team_members` table
+- This ensures team roles stored in `team_members` (e.g., from team creation) are correctly recognized
+- The function checks both management roles (`TEAM_OWNER`, `TEAM_ADMIN`) and operational roles (`TEAM_EDITOR`, `TEAM_MEMBER`, `TEAM_VIEWER`)
+
+
 ---
 
 #### `hasAnyPermission(userId, permissions, resourceId, resourceType?): Promise<boolean>`
