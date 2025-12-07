@@ -99,11 +99,7 @@ export const MOCK_PROJECTS: Project[] = [
   },
 ]
 
-export const MOCK_USER: User = {
-  name: 'John Doe',
-  email: 'john.doe@example.com',
-  image: null,
-}
+
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -112,11 +108,14 @@ export const MOCK_USER: User = {
 /**
  * Get plan display name for UI
  */
-export function getPlanDisplayName(plan: Team['plan']): string {
-  const planNames: Record<Team['plan'], string> = {
+/**
+ * Get plan display name for UI
+ */
+export function getPlanDisplayName(plan: string): string {
+  const planNames: Record<string, string> = {
     free: 'Free',
     pro: 'Pro',
     enterprise: 'Enterprise',
   }
-  return planNames[plan]
+  return planNames[plan] || plan || 'Free'
 }

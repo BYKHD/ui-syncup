@@ -32,13 +32,6 @@ export default function VerifyEmailScreen({ defaultEmail = "" }: VerifyEmailScre
   const [email, setEmail] = useState(emailFromParams);
   const { resend, countdown, canResend, isLoading, isSuccess } = useResendVerification();
 
-  // Update email when params change
-  useEffect(() => {
-    if (emailFromParams) {
-      setEmail(emailFromParams);
-    }
-  }, [emailFromParams]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email.trim() && canResend) {

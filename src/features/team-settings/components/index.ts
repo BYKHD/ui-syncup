@@ -4,14 +4,14 @@
  */
 
 // Core settings components
-export { SettingsCard } from "./settings-card";
+export { default as TeamSettingsGeneral } from "./team-settings-general";
 export { SettingsSection } from "./settings-section";
 export { SettingsNavigation } from "./settings-navigation";
 
 // Team components
 export { TeamInformationForm } from "./team-information-form";
 export type { TeamInformationFormProps } from "./team-information-form";
-export { TeamDeletionDialog } from "./team-deletion-dialog";
+export { TeamDangerZone } from "./team-danger-zone";
 
 // Permission & access components
 export { PermissionGuard } from "./permission-guard";

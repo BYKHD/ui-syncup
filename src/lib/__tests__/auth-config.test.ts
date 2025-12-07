@@ -21,7 +21,7 @@ describe("Auth Configuration", () => {
     process.env.GOOGLE_REDIRECT_URI = "http://localhost:3000/api/auth/callback/google"
     process.env.BETTER_AUTH_SECRET = "test-secret-key-with-32-characters-minimum"
     process.env.BETTER_AUTH_URL = "http://localhost:3000"
-    
+
     // Reset module graph to reload env/auth-config with fresh values
     vi.resetModules()
   })

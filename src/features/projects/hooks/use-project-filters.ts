@@ -1,4 +1,6 @@
-import { useState, useMemo } from 'react'
+'use client'
+
+import { useMemo, useState } from 'react'
 import type { ProjectSummary } from '@/features/projects/types'
 
 export interface ProjectFilters {
@@ -62,7 +64,7 @@ export function useProjectFilters(projects: ProjectSummary[]) {
           compareValue = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()
           break
         case 'progress':
-          compareValue = a.progressPercent - b.progressPercent
+          compareValue = a.stats.progressPercent - b.stats.progressPercent
           break
         default:
           compareValue = 0

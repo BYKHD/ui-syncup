@@ -48,60 +48,37 @@ export interface UseLeaveProjectResult {
 export function useLeaveProject(options?: UseLeaveProjectOptions): UseLeaveProjectResult {
   const queryClient = useQueryClient()
 
-  // TODO: Uncomment when backend is ready
-  // const mutation = useMutation({
-  //   mutationFn: leaveProject,
-  //   onSuccess: (data, projectId) => {
-  //     // Remove project from cache
-  //     queryClient.removeQueries({ queryKey: projectKeys.detail(projectId) })
-  //     queryClient.removeQueries({ queryKey: projectKeys.members(projectId) })
-  //
-  //     // Invalidate lists to refetch
-  //     queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
-  //
-  //     // Show success toast
-  //     toast.success('You have left the project')
-  //
-  //     // Call custom success handler
-  //     options?.onSuccess?.(data)
-  //   },
-  //   onError: (error: Error) => {
-  //     // Show error toast
-  //     toast.error(error.message || 'Failed to leave project')
-  //
-  //     // Call custom error handler
-  //     options?.onError?.(error)
-  //   },
-  // })
-  //
-  // return {
-  //   mutate: mutation.mutate,
-  //   mutateAsync: mutation.mutateAsync,
-  //   isPending: mutation.isPending,
-  //   isError: mutation.isError,
-  //   error: mutation.error,
-  //   reset: mutation.reset,
-  // }
+  const mutation = useMutation({
+    mutationFn: leaveProject,
+    onSuccess: (data, projectId) => {
+      // Remove project from cache
+      queryClient.removeQueries({ queryKey: projectKeys.detail(projectId) })
+      queryClient.removeQueries({ queryKey: projectKeys.members(projectId) })
 
-  // Mock implementation for now
-  return {
-    mutate: async (projectId: string) => {
-      try {
-        const result = await leaveProject(projectId)
-        queryClient.removeQueries({ queryKey: projectKeys.detail(projectId) })
-        queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
-        toast.success('You have left the project')
-        options?.onSuccess?.(result)
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error('Failed to leave project')
-        toast.error(err.message)
-        options?.onError?.(err)
-      }
+      // Invalidate lists to refetch
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
+
+      // Show success toast
+      toast.success('You have left the project')
+
+      // Call custom success handler
+      options?.onSuccess?.(data)
     },
-    mutateAsync: leaveProject,
-    isPending: false,
-    isError: false,
-    error: null,
-    reset: () => {},
+    onError: (error: Error) => {
+      // Show error toast
+      toast.error(error.message || 'Failed to leave project')
+
+      // Call custom error handler
+      options?.onError?.(error)
+    },
+  })
+
+  return {
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    reset: mutation.reset,
   }
 }

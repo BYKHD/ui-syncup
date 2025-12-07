@@ -33,36 +33,28 @@ export async function removeMember(
   }
 
   // TODO: Replace with actual API call
-  // const response = await fetch(`/api/projects/${projectId}/members/${memberId}`, {
-  //   method: 'DELETE',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   credentials: 'include', // Include httpOnly cookies
-  // })
-  //
-  // if (!response.ok) {
-  //   if (response.status === 404) {
-  //     throw new Error('Project or member not found')
-  //   }
-  //   if (response.status === 403) {
-  //     throw new Error('You do not have permission to remove members')
-  //   }
-  //   if (response.status === 400) {
-  //     const error = await response.json()
-  //     throw new Error(error.message || 'Cannot remove member')
-  //   }
-  //   throw new Error(`Failed to remove member: ${response.statusText}`)
-  // }
-  //
-  // const data = await response.json()
-  // return RemoveMemberResponseSchema.parse(data)
-
-  // Mock implementation for now
-  await new Promise((resolve) => setTimeout(resolve, 600))
-
-  return RemoveMemberResponseSchema.parse({
-    success: true,
-    message: 'Member removed successfully',
+  const response = await fetch(`/api/projects/${projectId}/members/${memberId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include httpOnly cookies
   })
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Project or member not found')
+    }
+    if (response.status === 403) {
+      throw new Error('You do not have permission to remove members')
+    }
+    if (response.status === 400) {
+      const error = await response.json()
+      throw new Error(error.message || 'Cannot remove member')
+    }
+    throw new Error(`Failed to remove member: ${response.statusText}`)
+  }
+
+  const data = await response.json()
+  return RemoveMemberResponseSchema.parse(data)
 }

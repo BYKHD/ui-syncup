@@ -1,6 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { usePathname, useRouter } from "next/navigation"
+
+import { useTeams } from "@/features/teams"
 
 import { AppShellHeaderContext } from "@/components/layout/app-shell-header-store"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
@@ -60,6 +63,8 @@ function SidebarLayout({
   )
 }
 
+
+
 export function AppShell({
   variant = "sidebar",
   sidebar,
@@ -72,7 +77,20 @@ export function AppShell({
   children: React.ReactNode
   className?: string
 }) {
-  if (variant === "blank") return <>{children}</>
+  const pathname = usePathname()
+  const router = useRouter()
+  const { data: teamsData, isLoading } = useTeams()
+  
+  const isOnboarding = pathname?.startsWith("/onboarding")
+  const effectiveVariant = isOnboarding ? "blank" : variant
+
+  React.useEffect(() => {
+    if (!isLoading && teamsData?.teams && teamsData.teams.length === 0 && !isOnboarding) {
+      router.push("/onboarding")
+    }
+  }, [isLoading, teamsData, isOnboarding, router])
+
+  if (effectiveVariant === "blank") return <>{children}</>
 
   return (
     <SidebarLayout sidebar={sidebar} header={header}>

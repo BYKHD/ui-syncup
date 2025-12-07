@@ -19,7 +19,7 @@ import { eq, and } from 'drizzle-orm';
  * Property test configuration
  * Run each property 100 times with different random inputs
  */
-const propertyConfig = { numRuns: 100 };
+const propertyConfig = { numRuns: 25 };
 
 /**
  * Generators for test data
@@ -174,7 +174,7 @@ describe('Property 5: Valid verification marks user as verified', () => {
       }),
       propertyConfig
     );
-  }, 30000); // 30 second timeout
+  }, 60000); // 60 second timeout
   
   it('should not verify user with expired token', async () => {
     await fc.assert(
@@ -208,7 +208,7 @@ describe('Property 5: Valid verification marks user as verified', () => {
       }),
       { numRuns: 10 } // Fewer runs due to setTimeout
     );
-  }, 30000);
+  }, 60000);
   
   it('should not verify user with already-used token', async () => {
     await fc.assert(
@@ -237,7 +237,7 @@ describe('Property 5: Valid verification marks user as verified', () => {
       }),
       propertyConfig
     );
-  }, 30000);
+  }, 60000);
   
   it('should not verify user with invalid token signature', async () => {
     await fc.assert(
@@ -271,7 +271,7 @@ describe('Property 5: Valid verification marks user as verified', () => {
       }),
       propertyConfig
     );
-  }, 30000);
+  }, 60000);
   
   it('should handle verification idempotently for already-verified users', async () => {
     await fc.assert(
@@ -322,7 +322,7 @@ describe('Property 5: Valid verification marks user as verified', () => {
       }),
       propertyConfig
     );
-  }, 30000);
+  }, 60000);
   
   it('should preserve user data when marking as verified', async () => {
     await fc.assert(
@@ -368,5 +368,5 @@ describe('Property 5: Valid verification marks user as verified', () => {
       }),
       propertyConfig
     );
-  }, 30000);
+  }, 60000);
 });

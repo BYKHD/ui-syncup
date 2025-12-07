@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
-import type { Team, TeamGeneralFormData } from "../types";
-import { simulateApiDelay } from "../utils";
+import type { Team } from "@/features/teams/api";
+import { useUpdateTeam } from "@/features/teams";
+import type { TeamGeneralFormData } from "../types";
 
 type UseTeamSettingsOptions = {
   initialTeam: Team;
@@ -14,9 +16,10 @@ type UseTeamSettingsOptions = {
 export function useTeamSettings(options: UseTeamSettingsOptions) {
   const { initialTeam, onSuccess } = options;
 
-  const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [currentTeam, setCurrentTeam] = useState<Team>(initialTeam);
+
+  const { mutate: updateTeam, isPending: isLoading } = useUpdateTeam();
 
   const form = useForm<TeamGeneralFormData>({
     defaultValues: {
@@ -42,29 +45,38 @@ export function useTeamSettings(options: UseTeamSettingsOptions) {
   };
 
   const handleCancel = () => {
-    form.reset();
+    form.reset({
+      name: currentTeam.name,
+      image: null,
+    });
     setImagePreview(null);
   };
 
-  const handleSubmit = form.handleSubmit(async (data: TeamGeneralFormData) => {
-    setIsLoading(true);
-
-    // Simulate API call with realistic delay
-    await simulateApiDelay();
-
-    // Update mock team data
-    const updatedTeam: Team = {
-      ...currentTeam,
-      name: data.name,
-      image: imagePreview || currentTeam.image,
-    };
-
-    setCurrentTeam(updatedTeam);
-    setIsLoading(false);
-    setImagePreview(null);
-    form.reset({ name: data.name, image: null });
-
-    onSuccess?.(updatedTeam);
+  const handleSubmit = form.handleSubmit((data: TeamGeneralFormData) => {
+    updateTeam(
+      {
+        teamId: currentTeam.id,
+        input: {
+          name: data.name,
+          // TODO: Handle image upload properly. For now we only update name.
+          // If imagePreview is set, we might want to upload it first.
+          // image: imagePreview, 
+        },
+      },
+      {
+        onSuccess: (response) => {
+          const updatedTeam = response.team;
+          setCurrentTeam(updatedTeam);
+          form.reset({ name: updatedTeam.name, image: null });
+          setImagePreview(null);
+          toast.success("Team settings updated successfully");
+          onSuccess?.(updatedTeam);
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to update team settings");
+        },
+      }
+    );
   });
 
   return {

@@ -28,20 +28,43 @@
 - **React Hook Form** - Form state management
 - **@hookform/resolvers** - Zod integration for forms
 
-## Database (Planned)
+## Database
 
-- **PostgreSQL** - Primary database (see `docker-compose.yml`)
-- **Drizzle ORM** - Type-safe database queries (see `docs/DRIZZLE_ZOD_POSTGRESQL_INSTRUCTION.md`)
+- **PostgreSQL 15** - Primary database via Supabase
+- **Drizzle ORM** - Type-safe database queries and migrations
+- **Supabase CLI** - Local development environment (replaces docker-compose)
+- **Supabase** - PostgreSQL hosting, Auth, Storage, and additional services
 
-## Auth
+## Storage
 
-- **better-auth** - Authentication library
+- **Cloudflare R2** - S3-compatible object storage for file uploads
+- **AWS SDK** - S3 client for R2 integration
+
+## Auth & Security
+
+- **better-auth** - Authentication library with session management
+- **@node-rs/argon2** - Password hashing
+- **ioredis** - Redis client for rate limiting and session storage
+
+## Email
+
+- **Resend** - Transactional email service
+- **React Email** - Email template components
 
 ## Testing
 
-- **Vitest** - Unit and integration tests
-- **@testing-library/react** - Component testing
-- **Playwright** - E2E tests
+- **Vitest** - Unit and integration tests (with jsdom/happy-dom)
+- **@testing-library/react** - Component testing utilities
+- **Playwright** - E2E browser tests
+- **fast-check** - Property-based testing
+- **pg-mem** - In-memory PostgreSQL for testing
+
+### Testing Rules
+
+- **ALWAYS** use `bun run test` (or `vitest`) for unit tests
+- **NEVER** use `bun test` (Bun's native runner) - it ignores test config and can corrupt your local database
+- Tests use in-memory database by default (safe)
+- E2E tests (`bun run test:ui`) use local database
 
 ## Dev Tools
 
@@ -62,10 +85,24 @@ bun typecheck          # Run TypeScript compiler checks
 bun lint               # Run ESLint
 bun format             # Format code with Prettier
 
-# Testing
-bun test               # Run unit tests (Vitest)
-bun test:watch         # Run tests in watch mode
-bun test:ui            # Run E2E tests (Playwright)
+# Testing (⚠️ Use 'bun run test', NOT 'bun test')
+bun run test           # Run unit tests (Vitest) - SAFE
+bun run test:watch     # Run tests in watch mode
+bun run test:ui        # Run E2E tests (Playwright)
+
+# Database
+bun run db:generate    # Generate Drizzle migrations
+bun run db:migrate     # Run migrations
+bun run db:studio      # Open Drizzle Studio
+bun run db:seed        # Seed database with test data
+
+# Supabase (Local Development - replaces docker-compose)
+bun run supabase:start # Start local Supabase stack (Postgres, Studio, Auth, Storage)
+bun run supabase:stop  # Stop local Supabase
+bun run supabase:status # Check Supabase status and get connection details
+
+# Validation
+bun run validate-env   # Validate environment variables
 ```
 
 ## Path Aliases
@@ -81,10 +118,28 @@ bun test:ui            # Run E2E tests (Playwright)
 - **sonner** - Toast notifications
 - **uuid** - Unique ID generation
 
+## Environment Variables
+
+- Validated with Zod in `src/lib/env.ts` at build time
+- Local development: Copy `.env.example` to `.env.local`
+- Vercel deployment: Configure in Project Settings → Environment Variables
+- Run `bun run validate-env` to check configuration
+- See `docs/ENVIRONMENT_CONFIG.md` for detailed setup
+
+## Local Development
+
+- **Supabase CLI** is used for local development (not docker-compose)
+- Run `bun run supabase:start` to spin up local Postgres, Auth, Storage, Studio, and more
+- Supabase Studio available at http://127.0.0.1:54323 for database management
+- Local database runs on port 54322 (not 5432)
+- See `docs/SUPABASE_LOCAL_SETUP.md` for detailed setup instructions
+
 ## Architecture Notes
 
 - Server components by default; use `"use client"` only when needed
 - API routes in `src/app/api/*` for backend endpoints
 - Mock data in `src/mocks/*` for development/testing
 - Feature-first organization in `src/features/*`
-- Prefer `lib/logger` and `lib/performance` when you add instrumentation or observability hooks so new pages stay consistent with the shared plumbing rather than introducing ad-hoc console/log statements.
+- Prefer `lib/logger` and `lib/performance` when you add instrumentation or observability hooks so new pages stay consistent with the shared plumbing rather than introducing ad-hoc console/log statements
+- httpOnly cookies for session/token storage (never localStorage)
+- All network boundaries validated with Zod schemas

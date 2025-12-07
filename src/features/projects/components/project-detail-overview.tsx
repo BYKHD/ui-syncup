@@ -11,15 +11,19 @@ import {
   RiCalendarLine,
 } from "@remixicon/react";
 
+interface ProjectStats {
+  memberCount: number
+  totalTickets: number
+  completedTickets: number
+  progressPercent: number
+}
+
 interface ProjectOverviewProps {
   project: {
     id: string
     name: string
     description: string | null
-    progressPercent: number
-    tickets: number
-    ticketsDone: number
-    memberCount: number
+    stats: ProjectStats
     createdAt: string
     updatedAt: string
   }
@@ -54,9 +58,9 @@ export function ProjectOverview({
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Overall Completion</span>
-              <span className="font-medium">{project.progressPercent}%</span>
+              <span className="font-medium">{project.stats.progressPercent}%</span>
             </div>
-            <Progress value={project.progressPercent} className="h-2" />
+            <Progress value={project.stats.progressPercent} className="h-2" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -65,14 +69,14 @@ export function ProjectOverview({
                 <RiFileLine className="h-4 w-4" />
                 <span>Total Issues</span>
               </div>
-              <p className="text-2xl font-semibold">{project.tickets}</p>
+              <p className="text-2xl font-semibold">{project.stats.totalTickets}</p>
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <RiCheckDoubleLine className="h-4 w-4" />
                 <span>Completed</span>
               </div>
-              <p className="text-2xl font-semibold">{project.ticketsDone}</p>
+              <p className="text-2xl font-semibold">{project.stats.completedTickets}</p>
             </div>
           </div>
         </CardContent>
@@ -90,7 +94,7 @@ export function ProjectOverview({
                 <RiTeamLine className="h-4 w-4" />
                 <span>Team Members</span>
               </div>
-              <Badge variant="secondary">{project.memberCount}</Badge>
+              <Badge variant="secondary">{project.stats.memberCount}</Badge>
             </div>
 
             <div className="flex items-center justify-between">

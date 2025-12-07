@@ -26,29 +26,24 @@ export async function getProject(projectId: string): Promise<GetProjectResponse>
   }
 
   // TODO: Replace with actual API call
-  // const response = await fetch(`/api/projects/${projectId}`, {
-  //   method: 'GET',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   credentials: 'include', // Include httpOnly cookies
-  // })
-  //
-  // if (!response.ok) {
-  //   if (response.status === 404) {
-  //     throw new Error('Project not found')
-  //   }
-  //   if (response.status === 403) {
-  //     throw new Error('You do not have permission to view this project')
-  //   }
-  //   throw new Error(`Failed to fetch project: ${response.statusText}`)
-  // }
-  //
-  // const data = await response.json()
-  // return GetProjectResponseSchema.parse(data)
+  const response = await fetch(`/api/projects/${projectId}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include httpOnly cookies
+  })
 
-  // Mock implementation for now
-  await new Promise((resolve) => setTimeout(resolve, 600))
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Project not found')
+    }
+    if (response.status === 403) {
+      throw new Error('You do not have permission to view this project')
+    }
+    throw new Error(`Failed to fetch project: ${response.statusText}`)
+  }
 
-  throw new Error('Mock: Project not found - wire to real API')
+  const data = await response.json()
+  return GetProjectResponseSchema.parse(data)
 }

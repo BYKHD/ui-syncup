@@ -39,38 +39,54 @@ export function ProjectActions({
   renderLeaveButton,
 }: ProjectActionsProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {/* Add Issue Button */}
+    <div className="flex items-center gap-3">
+      {/* Primary Action */}
       {renderIssueDialog(
-        <Button size="sm" className="flex-shrink-0">
-          <RiAddLine className="h-4 w-4" />
+        <Button size="sm" className="h-8 shadow-sm">
+          <RiAddLine className="mr-1.5 h-3.5 w-3.5" />
           Add Issue
         </Button>
       )}
 
-      {/* Members Button */}
-      {canManageMembers && renderMemberDialog && renderMemberDialog(
-        <Button variant="outline" size="sm" className="flex-shrink-0">
-          <RiTeamLine className="h-4 w-4" />
-          <span className="hidden sm:inline">Members</span>
-        </Button>
-      )}
+      {/* Secondary Actions Group */}
+      <div className="flex items-center -space-x-px shadow-sm isolate">
+        {canManageMembers && renderMemberDialog && renderMemberDialog(
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-8 rounded-r-none focus:z-10"
+          >
+            <RiTeamLine className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+            <span className="hidden sm:inline">Members</span>
+          </Button>
+        )}
 
-      {/* Settings Button */}
-      {canEditSettings && renderSettingsDialog && renderSettingsDialog(
-        <Button variant="outline" size="sm" className="flex-shrink-0">
-          <RiSettingsLine className="h-4 w-4" />
-          <span className="hidden sm:inline">Settings</span>
-        </Button>
-      )}
+        {canEditSettings && renderSettingsDialog && renderSettingsDialog(
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className={`h-8 focus:z-10 ${
+              canManageMembers ? 'rounded-l-none' : ''
+            } ${canLeaveProject ? 'rounded-r-none' : ''}`}
+          >
+            <RiSettingsLine className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+            <span className="hidden sm:inline">Settings</span>
+          </Button>
+        )}
 
-      {/* Leave Button */}
-      {canLeaveProject && renderLeaveButton && renderLeaveButton(
-        <Button variant="outline" size="sm" className="flex-shrink-0">
-          <RiLogoutBoxLine className="h-4 w-4" />
-          <span className="hidden sm:inline">Leave</span>
-        </Button>
-      )}
+        {canLeaveProject && renderLeaveButton && renderLeaveButton(
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className={`h-8 focus:z-10 ${
+              canManageMembers || canEditSettings ? 'rounded-l-none' : ''
+            } hover:bg-destructive/5 hover:text-destructive hover:border-destructive/30`}
+          >
+            <RiLogoutBoxLine className="mr-1.5 h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Leave</span>
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

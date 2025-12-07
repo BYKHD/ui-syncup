@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { RiBox2Line } from '@remixicon/react'
 
 import {
@@ -18,14 +19,16 @@ import {
   ProjectCard,
   ProjectCreateDialog,
   ProjectFiltersComponent,
+  type ProjectPreview
 } from '@/features/projects/components'
 import { useTeam } from '@/hooks/use-team'
 
 export default function ProjectsListScreen() {
+  const router = useRouter()
   const { currentTeam, isLoading: isTeamLoading } = useTeam()
   const teamId = currentTeam?.id
 
-  const { data: allProjects, isLoading } = useProjects({ teamId })
+  const { data: allProjects, isLoading, refetch } = useProjects({ teamId })
   const projectsLoading = isTeamLoading || !teamId || isLoading
 
   const {
@@ -34,19 +37,18 @@ export default function ProjectsListScreen() {
     filteredProjects,
     totalCount,
     filteredCount,
-  } = useProjectFilters(allProjects || [])
+  } = useProjectFilters(allProjects?.projects || [])
 
   const hasProjects = totalCount > 0
   const hasFilteredProjects = filteredCount > 0
 
-  const handleProjectAdded = () => {
-    // TODO: wire: refresh data after creation
-    console.log('Project added')
+  const handleProjectAdded = (project: ProjectPreview) => {
+    refetch()
+    router.push(`/${project.slug}`)
   }
 
   const handleProjectUpdate = () => {
-    // TODO: wire: refresh data after update
-    console.log('Project updated')
+    refetch()
   }
 
   return (
@@ -111,7 +113,7 @@ export default function ProjectsListScreen() {
   )
 }
 
-function EmptyState({ onProjectAdded }: { onProjectAdded: () => void }) {
+function EmptyState({ onProjectAdded }: { onProjectAdded: (project: ProjectPreview) => void }) {
   return (
     <Empty className="border border-dashed py-16">
       <EmptyMedia variant="icon">

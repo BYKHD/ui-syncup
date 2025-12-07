@@ -25,12 +25,22 @@ vi.stubEnv("RESEND_API_KEY", "re_test_key")
 vi.stubEnv("RESEND_FROM_EMAIL", "test@example.com")
 
 // In-memory Postgres for tests (avoids needing a real DB)
-const testDb = createTestDb()
+const testDb = await createTestDb()
 
-vi.mock("@/lib/db", () => ({
-  db: testDb.db,
-  closeDatabase: testDb.closeDatabase,
-}))
+// Note: Removed global vi.mock("@/lib/env") to allow tests to set their own env values
+// Tests can use the vi.stubEnv() calls above, or override with their own values
+
+vi.mock("@/lib/db", () => {
+  return {
+    db: testDb.db,
+    dbClient: {
+      end: vi.fn(),
+    },
+    connectionString: "postgresql://postgres:password@localhost:5432/ui_syncup_dev",
+    connectionOptions: {},
+    closeDatabase: testDb.closeDatabase,
+  }
+})
 
 beforeEach(async () => {
   await testDb.resetDatabase()

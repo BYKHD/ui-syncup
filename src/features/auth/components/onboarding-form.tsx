@@ -32,6 +32,7 @@ type OnboardingFormProps = {
   onCreateTeam: (event: React.FormEvent<HTMLFormElement>) => void;
   onAcceptInvitation: () => void;
   onSwitchMode: (mode: OnboardingMode) => void;
+  hasExistingTeams?: boolean;
 };
 
 export function OnboardingForm({
@@ -48,6 +49,7 @@ export function OnboardingForm({
   onCreateTeam,
   onAcceptInvitation,
   onSwitchMode,
+  hasExistingTeams = false,
 }: OnboardingFormProps) {
   const {
     register,
@@ -62,9 +64,10 @@ export function OnboardingForm({
             "Preview how invitation flows will feel once wired to the API.",
         }
       : {
-          title: "Create your team",
-          description:
-            "Name the workspace that will house feedback streams and reviews.",
+          title: hasExistingTeams ? "Create another team" : "Create your team",
+          description: hasExistingTeams
+            ? "Add a new workspace to organize additional projects and collaborate with different teams."
+            : "Name the workspace that will house feedback streams and reviews.",
         };
 
   const footerCopy =

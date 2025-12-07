@@ -10,16 +10,20 @@ import { ProjectOverview } from "../components/project-detail-overview";
 import type { ProjectRole } from "../types";
 import type { IssuePriority, IssueType } from "@/features/issues/types";
 
+interface ProjectStats {
+  memberCount: number;
+  totalTickets: number;
+  completedTickets: number;
+  progressPercent: number;
+}
+
 interface ProjectDetailScreenProps {
   project: {
     id: string;
     name: string;
     description: string | null;
     visibility: "private" | "public";
-    progressPercent: number;
-    tickets: number;
-    ticketsDone: number;
-    memberCount: number;
+    stats: ProjectStats;
     createdAt: string;
     updatedAt: string;
   };
@@ -305,8 +309,8 @@ export default function ProjectDetailScreen({
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
-      {/* Project Header */}
+    <div className="min-h-screen bg-background">
+      {/* Project Header - Full Width */}
       <ProjectDetailHeader
         project={project}
         userRole={userRole}
@@ -411,7 +415,7 @@ export default function ProjectDetailScreen({
         )}
       />
 
-      <div className="space-y-8">
+      <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8 space-y-8">
         {/* Project Issues */}
         <ProjectIssues projectId={project.id} />
       </div>

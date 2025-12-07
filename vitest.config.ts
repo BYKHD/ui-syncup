@@ -11,6 +11,8 @@ export default defineConfig(({ mode }) => ({
     include: [
       "src/**/__tests__/**/*.{test,spec}.{ts,tsx}",
       "src/**/*.{test,spec}.{ts,tsx}",
+      "scripts/**/__tests__/**/*.{test,spec}.{ts,tsx}",
+      "scripts/**/*.{test,spec}.{ts,tsx}",
     ],
     exclude: [
       "node_modules/**",
@@ -37,6 +39,10 @@ export default defineConfig(({ mode }) => ({
       "@types": path.resolve(__dirname, "src/types"),
       "@/config": path.resolve(__dirname, "src/config"),
       "@services": path.resolve(__dirname, "src/services"),
+      "@hookform/resolvers/zod": path.resolve(
+        __dirname,
+        "node_modules/@hookform/resolvers/zod/dist/zod.js",
+      ),
     },
   },
 }))

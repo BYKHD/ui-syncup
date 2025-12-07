@@ -49,10 +49,10 @@ export type TeamRole = (typeof TEAM_ROLES)[keyof typeof TEAM_ROLES];
 // ============================================================================
 
 export const PROJECT_ROLES = {
-  PROJECT_OWNER: "PROJECT_OWNER",
-  PROJECT_EDITOR: "PROJECT_EDITOR",
-  PROJECT_DEVELOPER: "PROJECT_DEVELOPER",
-  PROJECT_VIEWER: "PROJECT_VIEWER",
+  PROJECT_OWNER: "owner",
+  PROJECT_EDITOR: "editor",
+  PROJECT_DEVELOPER: "developer",
+  PROJECT_VIEWER: "viewer",
 } as const;
 
 export type ProjectRole = (typeof PROJECT_ROLES)[keyof typeof PROJECT_ROLES];

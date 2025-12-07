@@ -45,55 +45,33 @@ export interface UseCreateProjectResult {
 export function useCreateProject(options?: UseCreateProjectOptions): UseCreateProjectResult {
   const queryClient = useQueryClient()
 
-  // TODO: Uncomment when backend is ready
-  // const mutation = useMutation({
-  //   mutationFn: createProject,
-  //   onSuccess: (data) => {
-  //     // Invalidate project lists to refetch
-  //     queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
-  //
-  //     // Show success toast
-  //     toast.success('Project created successfully')
-  //
-  //     // Call custom success handler
-  //     options?.onSuccess?.(data)
-  //   },
-  //   onError: (error: Error) => {
-  //     // Show error toast
-  //     toast.error(error.message || 'Failed to create project')
-  //
-  //     // Call custom error handler
-  //     options?.onError?.(error)
-  //   },
-  // })
-  //
-  // return {
-  //   mutate: mutation.mutate,
-  //   mutateAsync: mutation.mutateAsync,
-  //   isPending: mutation.isPending,
-  //   isError: mutation.isError,
-  //   error: mutation.error,
-  //   reset: mutation.reset,
-  // }
+  const mutation = useMutation({
+    mutationFn: createProject,
+    onSuccess: (data) => {
+      // Invalidate project lists to refetch
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
 
-  // Mock implementation for now
-  return {
-    mutate: async (data: CreateProjectBody) => {
-      try {
-        const result = await createProject(data)
-        queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
-        toast.success('Project created successfully')
-        options?.onSuccess?.(result)
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error('Failed to create project')
-        toast.error(err.message)
-        options?.onError?.(err)
-      }
+      // Show success toast
+      toast.success('Project created successfully')
+
+      // Call custom success handler
+      options?.onSuccess?.(data)
     },
-    mutateAsync: createProject,
-    isPending: false,
-    isError: false,
-    error: null,
-    reset: () => {},
+    onError: (error: Error) => {
+      // Show error toast
+      toast.error(error.message || 'Failed to create project')
+
+      // Call custom error handler
+      options?.onError?.(error)
+    },
+  })
+
+  return {
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    reset: mutation.reset,
   }
 }

@@ -91,15 +91,15 @@ export async function assignRole(
   const { userId, role, resourceType, resourceId } = assignment;
 
   // Validate role exists
-  if (!(role in ALL_ROLES)) {
+  if (!Object.values(ALL_ROLES).includes(role)) {
     throw new Error(`Invalid role: ${role}`);
   }
 
   // Validate resource type matches role type
-  if (resourceType === "team" && !(role in TEAM_ROLES)) {
+  if (resourceType === "team" && !Object.values(TEAM_ROLES).includes(role as TeamRole)) {
     throw new Error(`Role ${role} is not a team role`);
   }
-  if (resourceType === "project" && !(role in PROJECT_ROLES)) {
+  if (resourceType === "project" && !Object.values(PROJECT_ROLES).includes(role as ProjectRole)) {
     throw new Error(`Role ${role} is not a project role`);
   }
 
@@ -169,7 +169,7 @@ export async function assignRoles(
 
   // Validate all roles
   for (const assignment of assignments) {
-    if (!(assignment.role in ALL_ROLES)) {
+    if (!Object.values(ALL_ROLES).includes(assignment.role)) {
       throw new Error(`Invalid role: ${assignment.role}`);
     }
   }
@@ -526,38 +526,97 @@ export async function hasRole(
 export async function hasPermission(check: PermissionCheck): Promise<boolean> {
   const { userId, permission, resourceId, resourceType } = check;
 
-  // Get all user roles for the resource
-  const roles = resourceType
-    ? await db
-        .select()
-        .from(userRoles)
-        .where(
-          and(
-            eq(userRoles.userId, userId),
-            eq(userRoles.resourceType, resourceType),
-            eq(userRoles.resourceId, resourceId)
-          )
-        )
-    : await db
-        .select()
-        .from(userRoles)
-        .where(
-          and(
-            eq(userRoles.userId, userId),
-            eq(userRoles.resourceId, resourceId)
-          )
-        );
+  // ============================================================================
+  // CONSOLIDATED PERMISSION CHECK
+  // Query the single source of truth table based on resource type:
+  // - team resources → team_members table
+  // - project resources → project_members table
+  // ============================================================================
 
-  // Check if any role has the permission
+  if (resourceType === "project") {
+    // Query project_members for project permissions
+    const { projectMembers } = await import("@/server/db/schema/project-members");
+    
+    const projectMember = await db
+      .select()
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, resourceId),
+          eq(projectMembers.userId, userId)
+        )
+      )
+      .limit(1);
+
+    if (projectMember.length > 0) {
+      const member = projectMember[0];
+      const rolePermissions = ROLE_PERMISSIONS[member.role as Role];
+      if (rolePermissions?.includes(permission)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  if (resourceType === "team") {
+    // Query team_members for team permissions (single source of truth)
+    const { teamMembers } = await import("@/server/db/schema/team-members");
+    
+    const teamMember = await db
+      .select()
+      .from(teamMembers)
+      .where(
+        and(
+          eq(teamMembers.teamId, resourceId),
+          eq(teamMembers.userId, userId)
+        )
+      )
+      .limit(1);
+
+    if (teamMember.length > 0) {
+      const member = teamMember[0];
+      
+      // Check management role permissions (TEAM_OWNER, TEAM_ADMIN)
+      if (member.managementRole) {
+        const managementPermissions = ROLE_PERMISSIONS[member.managementRole as Role];
+        if (managementPermissions?.includes(permission)) {
+          return true;
+        }
+      }
+      
+      // Check operational role permissions (TEAM_EDITOR, TEAM_MEMBER, TEAM_VIEWER)
+      if (member.operationalRole) {
+        const operationalPermissions = ROLE_PERMISSIONS[member.operationalRole as Role];
+        if (operationalPermissions?.includes(permission)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // Fallback: query user_roles for unknown resource types (backwards compatibility)
+  const roles = await db
+    .select()
+    .from(userRoles)
+    .where(
+      and(
+        eq(userRoles.userId, userId),
+        eq(userRoles.resourceId, resourceId)
+      )
+    );
+
   for (const userRole of roles) {
     const rolePermissions = ROLE_PERMISSIONS[userRole.role as Role];
-    if (rolePermissions.includes(permission)) {
+    if (rolePermissions?.includes(permission)) {
       return true;
     }
   }
 
   return false;
 }
+
+
 
 /**
  * Check if a user has any of the specified permissions for a resource.
@@ -630,40 +689,100 @@ export async function getUserPermissions(
   resourceId: string,
   resourceType?: "team" | "project"
 ): Promise<Permission[]> {
-  // Get all user roles for the resource
-  const roles = resourceType
-    ? await db
-        .select()
-        .from(userRoles)
-        .where(
-          and(
-            eq(userRoles.userId, userId),
-            eq(userRoles.resourceType, resourceType),
-            eq(userRoles.resourceId, resourceId)
-          )
-        )
-    : await db
-        .select()
-        .from(userRoles)
-        .where(
-          and(
-            eq(userRoles.userId, userId),
-            eq(userRoles.resourceId, resourceId)
-          )
-        );
-
   // Collect all permissions from all roles (deduplicated)
   const permissionsSet = new Set<Permission>();
 
+  if (resourceType === "project") {
+    // Query project_members for project permissions
+    const { projectMembers } = await import("@/server/db/schema/project-members");
+    
+    const projectMember = await db
+      .select()
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, resourceId),
+          eq(projectMembers.userId, userId)
+        )
+      )
+      .limit(1);
+
+    if (projectMember.length > 0) {
+      const member = projectMember[0];
+      const rolePermissions = ROLE_PERMISSIONS[member.role as Role];
+      if (rolePermissions) {
+        for (const permission of rolePermissions) {
+          permissionsSet.add(permission);
+        }
+      }
+    }
+    return Array.from(permissionsSet);
+  }
+
+  if (resourceType === "team") {
+    // Query team_members for team permissions (single source of truth)
+    const { teamMembers } = await import("@/server/db/schema/team-members");
+    
+    const teamMember = await db
+      .select()
+      .from(teamMembers)
+      .where(
+        and(
+          eq(teamMembers.teamId, resourceId),
+          eq(teamMembers.userId, userId)
+        )
+      )
+      .limit(1);
+
+    if (teamMember.length > 0) {
+      const member = teamMember[0];
+      
+      // Add management role permissions
+      if (member.managementRole) {
+        const managementPermissions = ROLE_PERMISSIONS[member.managementRole as Role];
+        if (managementPermissions) {
+          for (const permission of managementPermissions) {
+            permissionsSet.add(permission);
+          }
+        }
+      }
+      
+      // Add operational role permissions
+      if (member.operationalRole) {
+        const operationalPermissions = ROLE_PERMISSIONS[member.operationalRole as Role];
+        if (operationalPermissions) {
+          for (const permission of operationalPermissions) {
+            permissionsSet.add(permission);
+          }
+        }
+      }
+    }
+    return Array.from(permissionsSet);
+  }
+
+  // Fallback: query user_roles for unknown resource types
+  const roles = await db
+    .select()
+    .from(userRoles)
+    .where(
+      and(
+        eq(userRoles.userId, userId),
+        eq(userRoles.resourceId, resourceId)
+      )
+    );
+
   for (const userRole of roles) {
     const rolePermissions = ROLE_PERMISSIONS[userRole.role as Role];
-    for (const permission of rolePermissions) {
-      permissionsSet.add(permission);
+    if (rolePermissions) {
+      for (const permission of rolePermissions) {
+        permissionsSet.add(permission);
+      }
     }
   }
 
   return Array.from(permissionsSet);
 }
+
 
 // ============================================================================
 // BILLABLE SEATS

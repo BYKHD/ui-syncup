@@ -39,29 +39,19 @@ export function useProjectMembers({
   projectId,
   enabled = true,
 }: UseProjectMembersParams): UseProjectMembersResult {
-  // TODO: Uncomment when backend is ready
-  // const query = useQuery({
-  //   queryKey: projectKeys.members(projectId),
-  //   queryFn: () => getProjectMembers(projectId),
-  //   enabled: enabled && !!projectId,
-  //   staleTime: 60 * 1000, // 1 minute
-  //   retry: 1,
-  // })
-  //
-  // return {
-  //   data: query.data,
-  //   isLoading: query.isLoading,
-  //   isError: query.isError,
-  //   error: query.error,
-  //   refetch: query.refetch,
-  // }
+  const query = useQuery({
+    queryKey: projectKeys.members(projectId),
+    queryFn: () => getProjectMembers(projectId),
+    enabled: enabled && !!projectId,
+    staleTime: 60 * 1000, // 1 minute
+    retry: 1,
+  })
 
-  // Mock implementation for now
   return {
-    data: undefined,
-    isLoading: false,
-    isError: false,
-    error: null,
-    refetch: () => {},
+    data: query.data,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
   }
 }

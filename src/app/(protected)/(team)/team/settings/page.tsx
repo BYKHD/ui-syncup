@@ -1,6 +1,10 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/shared/headers";
-import TeamSettingsGeneral from "@/features/team-settings/components/team-settings-genaral";
-import { MOCK_DEFAULT_TEAM, MOCK_DEFAULT_USER_ROLE } from "@/mocks";
+import TeamSettingsGeneral from "@/features/team-settings/components/team-settings-general";
+import { getSession } from "@/server/auth/session";
+import { getTeam } from "@/server/teams/team-service";
+import type { UserRole } from "@/features/team-settings/types";
 
 const TEAM_SETTINGS_BREADCRUMBS: BreadcrumbItem[] = [
   { label: "Team", href: "/team" },
@@ -8,20 +12,59 @@ const TEAM_SETTINGS_BREADCRUMBS: BreadcrumbItem[] = [
   { label: "General" },
 ];
 
-export default function TeamSettingsPage() {
-  // Server component - thin page that delegates to feature component
-  // In a real implementation, props would come from layout via server-side fetch
-  // Layout handles auth/tenant gating and passes team/userRole down
+export default async function TeamSettingsPage() {
+  const session = await getSession();
+  const cookieStore = await cookies();
+  const teamId = cookieStore.get("team_id")?.value;
+
+  if (!session) {
+    redirect("/sign-in");
+  }
+
+  if (!teamId) {
+    redirect("/onboarding");
+  }
+
+  // Fetch team data and member info (Requirement 8.4)
+  const team = await getTeam(teamId, session.id);
+
+  if (!team) {
+    // Team not found or user is not a member
+    redirect("/team");
+  }
+
+  // Check if user has permission to access settings (TEAM_OWNER or TEAM_ADMIN)
+  const hasSettingsAccess = 
+    team.myManagementRole === "TEAM_OWNER" || 
+    team.myManagementRole === "TEAM_ADMIN";
+
+  if (!hasSettingsAccess) {
+    // Requirement 8.4: Redirect users without proper permissions
+    redirect("/team");
+  }
+
+  // Map management role to UserRole type
+  const userRole: UserRole = 
+    team.myManagementRole === "TEAM_OWNER" ? "owner" : "admin";
+
+  // Serialize team data for client component (convert Dates to strings)
+  const serializedTeam = {
+    ...team,
+    createdAt: team.createdAt.toISOString(),
+    updatedAt: team.updatedAt.toISOString(),
+    deletedAt: team.deletedAt?.toISOString() ?? null,
+  };
 
   return (
     <>
       <AppHeaderConfigurator
-        pageName="General"
+        pageName="General Settings"
         breadcrumbs={TEAM_SETTINGS_BREADCRUMBS}
       />
-      <TeamSettingsGeneral
-        initialTeam={MOCK_DEFAULT_TEAM}
-        userRole={MOCK_DEFAULT_USER_ROLE}
+      <TeamSettingsGeneral 
+        teamId={teamId}
+        userRole={userRole}
+        initialData={{ team: serializedTeam }}
       />
     </>
   );

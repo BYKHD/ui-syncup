@@ -48,60 +48,37 @@ export interface UseDeleteProjectResult {
 export function useDeleteProject(options?: UseDeleteProjectOptions): UseDeleteProjectResult {
   const queryClient = useQueryClient()
 
-  // TODO: Uncomment when backend is ready
-  // const mutation = useMutation({
-  //   mutationFn: deleteProject,
-  //   onSuccess: (data, projectId) => {
-  //     // Remove from cache
-  //     queryClient.removeQueries({ queryKey: projectKeys.detail(projectId) })
-  //     queryClient.removeQueries({ queryKey: projectKeys.members(projectId) })
-  //
-  //     // Invalidate lists to refetch
-  //     queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
-  //
-  //     // Show success toast
-  //     toast.success('Project deleted successfully')
-  //
-  //     // Call custom success handler
-  //     options?.onSuccess?.(data)
-  //   },
-  //   onError: (error: Error) => {
-  //     // Show error toast
-  //     toast.error(error.message || 'Failed to delete project')
-  //
-  //     // Call custom error handler
-  //     options?.onError?.(error)
-  //   },
-  // })
-  //
-  // return {
-  //   mutate: mutation.mutate,
-  //   mutateAsync: mutation.mutateAsync,
-  //   isPending: mutation.isPending,
-  //   isError: mutation.isError,
-  //   error: mutation.error,
-  //   reset: mutation.reset,
-  // }
+  const mutation = useMutation({
+    mutationFn: deleteProject,
+    onSuccess: (data, projectId) => {
+      // Remove from cache
+      queryClient.removeQueries({ queryKey: projectKeys.detail(projectId) })
+      queryClient.removeQueries({ queryKey: projectKeys.members(projectId) })
 
-  // Mock implementation for now
-  return {
-    mutate: async (projectId: string) => {
-      try {
-        const result = await deleteProject(projectId)
-        queryClient.removeQueries({ queryKey: projectKeys.detail(projectId) })
-        queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
-        toast.success('Project deleted successfully')
-        options?.onSuccess?.(result)
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error('Failed to delete project')
-        toast.error(err.message)
-        options?.onError?.(err)
-      }
+      // Invalidate lists to refetch
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
+
+      // Show success toast
+      toast.success('Project deleted successfully')
+
+      // Call custom success handler
+      options?.onSuccess?.(data)
     },
-    mutateAsync: deleteProject,
-    isPending: false,
-    isError: false,
-    error: null,
-    reset: () => {},
+    onError: (error: Error) => {
+      // Show error toast
+      toast.error(error.message || 'Failed to delete project')
+
+      // Call custom error handler
+      options?.onError?.(error)
+    },
+  })
+
+  return {
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    reset: mutation.reset,
   }
 }

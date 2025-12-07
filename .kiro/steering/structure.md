@@ -68,7 +68,26 @@ src/
 │
 ├── server/                       # Server-only logic (auth, DB, RBAC)
 │   ├── auth/                     # Session, tokens, RBAC
-│   └── db/                       # Database client & schema
+│   │   ├── cookies.ts            # httpOnly cookie management
+│   │   ├── password.ts           # Argon2 password hashing
+│   │   ├── rate-limiter.ts       # Redis-based rate limiting
+│   │   ├── rbac.ts               # Role-based access control
+│   │   ├── session.ts            # Session management
+│   │   └── tokens.ts             # JWT token handling
+│   ├── db/                       # Database client & schema
+│   │   ├── schema/               # Drizzle schema definitions
+│   │   └── index.ts              # Database client
+│   ├── email/                    # Email service
+│   │   ├── client.ts             # Resend client
+│   │   ├── queue.ts              # Email queue management
+│   │   ├── templates/            # React Email templates
+│   │   └── worker.ts             # Background email processor
+│   └── teams/                    # Team management services
+│       ├── team-service.ts       # Core team operations
+│       ├── member-service.ts     # Member management
+│       ├── invitation-service.ts # Invitation handling
+│       ├── billable-seats.ts     # Billing calculations
+│       └── plan-limits.ts        # Plan enforcement
 │
 ├── mocks/                        # Mock data & fixtures
 │   ├── issue.fixtures.ts
@@ -94,6 +113,7 @@ src/
 docs/                             # Architecture documentation
 tests/                            # Test files
 drizzle/                          # Database migrations
+supabase/                         # Supabase configuration and seed data
 public/                           # Static assets
 ```
 
@@ -207,6 +227,35 @@ export type { Issue, IssueStatus, IssuePermissions } from './types'
 - Tie each fixture set to the feature that consumes it (e.g., `features/issues` imports from `src/mocks/issue.fixtures`) so you instinctively revise the fixture whenever the feature’s Zod DTOs or API responses change.
 - When a DTO schema in `features/<feature>/api/types.ts` is updated, add a checklist item to refresh the matching fixture file and scenario exports to keep UI mockups accurate.
 - Consider a lightweight lint/story checkpoint (e.g., a `vitest` smoke test or Storybook story that renders the fixtures) so stale mock data is caught before it drifts from real API surfaces.
+
+## Testing Structure
+
+- Unit/integration tests: Co-located with source files in `__tests__/` folders or as `*.test.ts(x)` files
+- E2E tests: `tests/e2e/*.spec.ts`
+- Test fixtures: `tests/e2e/helpers/test-fixtures.ts`
+- Property-based tests: Use `*.property.test.ts` naming convention
+- Mock data: `src/mocks/*.fixtures.ts`
+
+Example test locations:
+```
+src/
+├── lib/
+│   ├── __tests__/
+│   │   ├── auth-config.test.ts
+│   │   └── logger.property.test.ts
+│   └── auth-config.ts
+├── server/
+│   └── teams/
+│       ├── __tests__/
+│       │   ├── team-service.test.ts
+│       │   └── team-context.property.test.ts
+│       └── team-service.ts
+└── features/
+    └── issues/
+        └── components/
+            ├── issue-list.tsx
+            └── issue-list.test.tsx
+```
 
 ## Documentation
 

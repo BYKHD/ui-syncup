@@ -4,7 +4,7 @@ export { ProjectFiltersComponent } from './project-list-filters'
 export { default as ProjectIssues } from './project-issues'
 
 // Dialog components
-export { ProjectCreateDialog } from './project-create-dialog'
+export { ProjectCreateDialog, type ProjectPreview } from './project-create-dialog'
 export { ProjectSettingsDialog } from './project-settings-dialog'
 export { ProjectInvitationDialog } from './project-invitation-dialog'
 
