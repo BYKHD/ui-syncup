@@ -27,7 +27,7 @@ import {
   TYPE_OPTIONS,
   type PriorityOption,
   type TypeOption,
-} from '@/config/issue-options'
+} from '@/features/issues/config'
 
 import type { IssueFilters } from '@/features/issues/utils'
 

@@ -6,7 +6,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip'
-import { DEFAULT_PRIORITY_ICON, PRIORITY_OPTIONS } from '@/config/issue-options'
+import { DEFAULT_PRIORITY_ICON, PRIORITY_OPTIONS } from '@/features/issues/config'
 import type { IssuePriority } from '@/features/issues/types'
 import { cn } from '@/lib/utils'
 

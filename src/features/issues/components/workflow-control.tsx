@@ -78,7 +78,7 @@ import type {
   WorkflowControlProps,
 } from '@/features/issues/types';
 import { STATUS_TRANSITIONS } from '@/features/issues/types';
-import { DEFAULT_STATUS_ICON, STATUS_OPTIONS } from '@/config/issue-options';
+import { DEFAULT_STATUS_ICON, STATUS_OPTIONS } from '@/features/issues/config';
 import { RiCheckLine, RiLoader4Line } from '@remixicon/react';
 import { issueFeedback } from '@/lib/feedback';
 

@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import type { IssuePriority } from '@/features/issues/types'
-import { DEFAULT_PRIORITY_ICON, PRIORITY_OPTIONS } from '@/config/issue-options'
+import { DEFAULT_PRIORITY_ICON, PRIORITY_OPTIONS } from '@/features/issues/config'
 import { RiCheckLine } from '@remixicon/react'
 
 interface PrioritySelectorProps {

@@ -17,7 +17,7 @@ import { InlineEditableUserSelect } from './inline-editable-user-select';
 // import { WorkflowControl } from './workflow-control';
 
 // Config
-import { TYPE_OPTIONS, PRIORITY_OPTIONS } from '@/config/issue-options';
+import { TYPE_OPTIONS, PRIORITY_OPTIONS } from '@/features/issues/config';
 
 // Types
 import type { IssueDetailData, IssuePermissions } from '@/features/issues/types';

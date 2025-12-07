@@ -14,7 +14,7 @@ import {
   RiAccessibilityLine,
   RiEqualLine,
 } from '@remixicon/react'
-import type { IssueStatusValue } from '@/config/workflow'
+import type { IssueStatusValue } from './workflow'
 
 type IconComponent = typeof RiAlarmWarningLine
 

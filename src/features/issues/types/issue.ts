@@ -1,5 +1,5 @@
-import { ISSUE_PRIORITY_VALUES, ISSUE_TYPE_VALUES } from '@/config/issue-options'
-import { ISSUE_STATUS_VALUES, ISSUE_WORKFLOW } from '@/config/workflow'
+import { ISSUE_PRIORITY_VALUES, ISSUE_TYPE_VALUES } from '@/features/issues/config'
+import { ISSUE_STATUS_VALUES, ISSUE_WORKFLOW } from '@/features/issues/config'
 import type {
   AnnotationComment as BaseAnnotationComment,
   AttachmentAnnotation as BaseAttachmentAnnotation,

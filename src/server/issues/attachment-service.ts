@@ -10,7 +10,7 @@ import { issueAttachments } from "@/server/db/schema/issue-attachments";
 import { users } from "@/server/db/schema/users";
 import { eq, sum } from "drizzle-orm";
 import { logger } from "@/lib/logger";
-import { ATTACHMENT_LIMITS } from "@/config/issue-options";
+import { ATTACHMENT_LIMITS } from "@/features/issues/config";
 import { logAttachmentActivity } from "./activity-service";
 import type {
   IssueAttachment,

@@ -13,8 +13,8 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { STATUS_OPTIONS } from '@/config/issue-options';
-import { ISSUE_WORKFLOW } from '@/config/workflow';
+import { STATUS_OPTIONS } from '@/features/issues/config';
+import { ISSUE_WORKFLOW } from '@/features/issues/config';
 import type { IssueStatus } from '@/features/issues/types';
 import { STATUS_TRANSITIONS } from '@/features/issues/types';
 import { cn } from '@/lib/utils';
