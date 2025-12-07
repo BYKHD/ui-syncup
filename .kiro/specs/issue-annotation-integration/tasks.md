@@ -45,23 +45,23 @@
     - Support all activity types (created, status_changed, etc.)
     - _Prerequisite for annotation integration_
 
-- [ ] 2. Create Issues API routes
-  - [ ] 2.1 Create GET/POST /api/projects/[projectId]/issues
+- [x] 2. Create Issues API routes
+  - [x] 2.1 Create GET/POST /api/projects/[projectId]/issues
     - List issues with filtering and pagination
     - Create new issue with validation
     - RBAC: PROJECT_VIEWER+ for GET, PROJECT_EDITOR+ for POST
     - _Prerequisite for annotation integration_
-  - [ ] 2.2 Create GET/PATCH/DELETE /api/issues/[issueId]
+  - [x] 2.2 Create GET/PATCH/DELETE /api/issues/[issueId]
     - Get issue details with attachments
     - Update issue fields
     - Delete issue with cascade
     - RBAC: PROJECT_VIEWER+ for GET, PROJECT_DEVELOPER+ for PATCH, PROJECT_EDITOR+ for DELETE
     - _Prerequisite for annotation integration_
-  - [ ] 2.3 Create GET /api/issues/[issueId]/activities
+  - [x] 2.3 Create GET /api/issues/[issueId]/activities
     - Get paginated activities
     - RBAC: PROJECT_VIEWER+
     - _Prerequisite for annotation integration_
-  - [ ] 2.4 Create POST/DELETE /api/issues/[issueId]/attachments
+  - [x] 2.4 Create POST/DELETE /api/issues/[issueId]/attachments
     - Upload attachment with presigned URL
     - Delete attachment
     - RBAC: PROJECT_EDITOR+
