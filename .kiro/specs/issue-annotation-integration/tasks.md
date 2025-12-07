@@ -163,11 +163,11 @@
   - Test that created annotations can be fetched with identical data
   - **Validates: Requirements 1.4, 4.5**
 
-- [ ]* 7.6 Write property test for XSS sanitization (Property 21)
+- [ ] 7.6 Write property test for XSS sanitization (Property 21)
   - Test that XSS payloads are sanitized from comments
   - **Validates: Requirements 10.3**
 
-- [ ]* 7.7 Write property test for annotation count limit (Property 28)
+- [ ] 7.7 Write property test for annotation count limit (Property 28)
   - Test that 51st annotation is rejected
   - **Validates: Requirements 13.5**
 
@@ -236,7 +236,7 @@
   - Test that edited comments preserve createdAt and update updatedAt
   - **Validates: Requirements 11.2, 11.4**
 
-- [ ]* 11.5 Write property test for comment delete authorization (Property 23)
+- [ ] 11.5 Write property test for comment delete authorization (Property 23)
   - Test that only comment authors can delete their comments
   - **Validates: Requirements 11.3**
 
@@ -293,7 +293,7 @@
     - Display unread indicators
     - _Requirements: 2.3, 2.4, 3.5, 8.2, 8.3_
 
-- [ ]* 15.4 Write property test for role-based permission enforcement (Property 16)
+- [ ] 15.4 Write property test for role-based permission enforcement (Property 16)
   - Test that UI reflects correct permissions for each role
   - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5**
 
