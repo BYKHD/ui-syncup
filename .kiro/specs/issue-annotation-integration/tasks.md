@@ -26,20 +26,20 @@
     - Export from schema index
     - _Prerequisite for annotation integration_
 
-- [ ] 1. Create Issues server services
-  - [ ] 1.1 Create issue service in src/server/issues/issue-service.ts
+- [x] 1. Create Issues server services
+  - [x] 1.1 Create issue service in src/server/issues/issue-service.ts
     - Implement getIssueById, getIssueByKey functions
     - Implement createIssue with auto-incrementing issue_number
     - Implement updateIssue with field-level updates
     - Implement deleteIssue with cascade
     - _Prerequisite for annotation integration_
-  - [ ] 1.2 Create attachment service in src/server/issues/attachment-service.ts
+  - [x] 1.2 Create attachment service in src/server/issues/attachment-service.ts
     - Implement getAttachmentsByIssue function
     - Implement createAttachment with R2 upload
     - Implement deleteAttachment with R2 cleanup
     - Enforce 10MB per file, 50MB total per issue limits
     - _Prerequisite for annotation integration_
-  - [ ] 1.3 Create activity service in src/server/issues/activity-service.ts
+  - [x] 1.3 Create activity service in src/server/issues/activity-service.ts
     - Implement logActivity function
     - Implement getActivitiesByIssue with pagination
     - Support all activity types (created, status_changed, etc.)

@@ -231,3 +231,20 @@ export const ISSUE_TYPE_METADATA: Record<
     keywords: ['performance', 'slow', 'feature', 'request', 'suggestion', 'improvement'],
   },
 }
+
+// ============================================================================
+// ATTACHMENT LIMITS - SINGLE SOURCE OF TRUTH
+// ============================================================================
+
+/**
+ * Attachment size limits for issues
+ * Used by both server validation and client-side file pickers
+ */
+export const ATTACHMENT_LIMITS = {
+  /** Maximum file size per attachment: 10MB */
+  MAX_FILE_SIZE: 10 * 1024 * 1024,
+  /** Maximum total attachment size per issue: 50MB */
+  MAX_TOTAL_SIZE_PER_ISSUE: 50 * 1024 * 1024,
+  /** Maximum number of attachments per issue (for future use) */
+  MAX_ATTACHMENTS_PER_ISSUE: 20,
+} as const;
