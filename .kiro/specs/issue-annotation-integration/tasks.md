@@ -4,22 +4,22 @@
 
 > **Note:** The Issues feature currently has ready-to-wire UI with mock data. This phase creates the backend infrastructure required before annotation integration.
 
-- [ ] 0. Create Issues database schema
-  - [ ] 0.1 Create Drizzle migration for issues table
+- [x] 0. Create Issues database schema
+  - [x] 0.1 Create Drizzle migration for issues table
     - Add `issues` table with columns: id, project_id, issue_key, issue_number, title, description, type, priority, status, assignee_id, reporter_id, cover_image_url, page, figma_link, jira_link, created_at, updated_at
     - Add unique constraints on (project_id, issue_number) and (project_id, issue_key)
     - Add indexes on project_id, status, assignee_id
     - _Prerequisite for annotation integration_
-  - [ ] 0.2 Create Drizzle migration for issue_attachments table
+  - [x] 0.2 Create Drizzle migration for issue_attachments table
     - Add `issue_attachments` table with columns: id, issue_id, file_name, file_size, file_type, url, thumbnail_url, width, height, review_variant, annotations (JSONB), uploaded_by_id, created_at
     - Add file size constraint (max 10MB)
     - Add index on issue_id
     - _Prerequisite for annotation integration_
-  - [ ] 0.3 Create Drizzle migration for issue_activities table
+  - [x] 0.3 Create Drizzle migration for issue_activities table
     - Add `issue_activities` table with columns: id, issue_id, actor_id, type, changes (JSONB), comment, created_at
     - Add indexes on issue_id and created_at
     - _Prerequisite for annotation integration_
-  - [ ] 0.4 Create Drizzle schema definitions in src/server/db/schema
+  - [x] 0.4 Create Drizzle schema definitions in src/server/db/schema
     - Define issues schema in `src/server/db/schema/issues.ts`
     - Define issueAttachments schema in `src/server/db/schema/issue-attachments.ts`
     - Define issueActivities schema in `src/server/db/schema/issue-activities.ts`
