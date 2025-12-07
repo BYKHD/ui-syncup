@@ -9,3 +9,6 @@ export * from "./project-members";
 export * from "./teams";
 export * from "./team-members";
 export * from "./team-invitations";
+export * from "./issues";
+export * from "./issue-attachments";
+export * from "./issue-activities";
