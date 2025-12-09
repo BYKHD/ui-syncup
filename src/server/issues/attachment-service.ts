@@ -258,7 +258,7 @@ function formatBytes(bytes: number): string {
  * Generate R2 storage path for an attachment
  *
  * Path format: {issueId}/attachments/{uuid}-{filename}
- * Note: The bucket name (issues) is separate, this is the key within the bucket
+ * Note: The bucket is ui-syncup-attachments
  *
  * @param issueId - Issue UUID
  * @param attachmentId - Attachment UUID

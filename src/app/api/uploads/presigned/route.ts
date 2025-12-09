@@ -19,10 +19,9 @@ export async function POST(request: NextRequest) {
 
     // 3. Generate key and URL
     // Structure: {issueId}/attachments/{uuid}-{filename}
-    // Note: The bucket name (issues) is already in STORAGE_PUBLIC_URL
     const key = `${issueId}/attachments/${uuidv4()}-${fileName}`;
-    const uploadUrl = await generateUploadUrl(key, contentType);
-    const publicUrl = getPublicUrl(key);
+    const uploadUrl = await generateUploadUrl('attachments', key, contentType);
+    const publicUrl = getPublicUrl('attachments', key);
 
     return NextResponse.json({ uploadUrl, publicUrl, key });
   } catch (error) {

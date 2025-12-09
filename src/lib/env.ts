@@ -68,10 +68,7 @@ const envSchema = z.object({
     .describe("Cloudflare R2 public URL for assets (production only)"),
 
   // Storage (Unified S3-compatible - MinIO local / R2 production)
-  NEXT_PUBLIC_STORAGE_BUCKET: z
-    .string()
-    .optional()
-    .describe("Storage bucket name"),
+  // Shared connection settings
   STORAGE_ENDPOINT: z
     .string()
     .optional()
@@ -88,10 +85,24 @@ const envSchema = z.object({
     .string()
     .optional()
     .describe("Storage secret access key"),
-  STORAGE_PUBLIC_URL: z
+  // Attachments bucket (issue attachments - requires auth)
+  STORAGE_ATTACHMENTS_BUCKET: z
     .string()
     .optional()
-    .describe("Public URL for storage assets"),
+    .describe("Attachments bucket name"),
+  STORAGE_ATTACHMENTS_PUBLIC_URL: z
+    .string()
+    .optional()
+    .describe("Public URL for attachments bucket"),
+  // Media bucket (avatars, team logos - public read)
+  STORAGE_MEDIA_BUCKET: z
+    .string()
+    .optional()
+    .describe("Media bucket name"),
+  STORAGE_MEDIA_PUBLIC_URL: z
+    .string()
+    .optional()
+    .describe("Public URL for media bucket"),
 
   // Authentication (Google OAuth)
   GOOGLE_CLIENT_ID: z

@@ -10,21 +10,49 @@ vi.mock("@aws-sdk/s3-request-presigner", () => ({
   getSignedUrl: vi.fn().mockResolvedValue("https://signed-url.example.com"),
 }));
 
-import { getPublicUrl, generateUploadUrl } from "../storage"
+import { getPublicUrl, generateUploadUrl, getBucketName } from "../storage"
 
 describe("Storage Utilities", () => {
   describe("getPublicUrl", () => {
-    it("should generate correct public URL", () => {
-      const url = getPublicUrl("test-key.jpg");
-      // Expect default URL since process.env is not mocked effectively for the module scope here easily
+    it("should generate correct URL for attachments bucket", () => {
+      const url = getPublicUrl('attachments', "test-key.jpg");
+      expect(url).toContain("ui-syncup-attachments");
       expect(url).toContain("test-key.jpg");
+    });
+
+    it("should generate correct URL for media bucket", () => {
+      const url = getPublicUrl('media', "avatar.png");
+      expect(url).toContain("ui-syncup-media");
+      expect(url).toContain("avatar.png");
+    });
+
+    it("should handle keys with leading slash", () => {
+      const url = getPublicUrl('attachments', "/test-key.jpg");
+      expect(url).not.toContain("//test-key");
     });
   });
 
   describe("generateUploadUrl", () => {
-    it("should return a signed url", async () => {
-        const url = await generateUploadUrl("test/key", "image/png");
-        expect(url).toBe("https://signed-url.example.com");
+    it("should return a signed url for attachments bucket", async () => {
+      const url = await generateUploadUrl('attachments', "test/key", "image/png");
+      expect(url).toBe("https://signed-url.example.com");
+    });
+
+    it("should return a signed url for media bucket", async () => {
+      const url = await generateUploadUrl('media', "avatars/user1.jpg", "image/jpeg");
+      expect(url).toBe("https://signed-url.example.com");
+    });
+  });
+
+  describe("getBucketName", () => {
+    it("should return correct bucket name for attachments", () => {
+      const name = getBucketName('attachments');
+      expect(name).toBe("ui-syncup-attachments");
+    });
+
+    it("should return correct bucket name for media", () => {
+      const name = getBucketName('media');
+      expect(name).toBe("ui-syncup-media");
     });
   });
 })
