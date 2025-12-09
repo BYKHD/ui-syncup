@@ -252,7 +252,8 @@ describe('Migration Runner - Property-Based Tests', () => {
           if (invalidUrl === '' || invalidUrl.trim() === '') {
             expect(result.error).toMatch(/not set|empty/i);
           } else if (!invalidUrl.includes('://')) {
-            expect(result.error).toMatch(/invalid.*url.*format/i);
+            // Some strings without :// are valid URLs (e.g. "scheme:path"), so they might fail on protocol instead of format
+            expect(result.error).toMatch(/invalid.*(url.*format|protocol)/i);
           } else if (!invalidUrl.startsWith('postgres')) {
             expect(result.error).toMatch(/invalid.*protocol|protocol/i);
           }

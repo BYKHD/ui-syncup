@@ -63,8 +63,10 @@ const envSchema = z.object({
     .describe("Cloudflare R2 bucket name (production only)"),
   R2_PUBLIC_URL: z
     .string()
-    .url()
     .optional()
+    .refine((val) => !val || val.startsWith("http"), {
+       message: "Must be a valid URL if provided"
+    })
     .describe("Cloudflare R2 public URL for assets (production only)"),
 
   // Storage (Unified S3-compatible - MinIO local / R2 production)
