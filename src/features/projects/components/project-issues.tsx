@@ -1,10 +1,10 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { RiAddLine } from '@remixicon/react'
-import { IssuesList, IssuesListFilter, useIssueFilters } from '@/features/issues'
-import { MOCK_ISSUES } from '@/mocks/issue.fixtures'
+import { IssuesList, IssuesListFilter, useIssueFilters, useProjectIssues } from '@/features/issues'
 
 interface ProjectIssuesProps {
   projectId: string
@@ -15,13 +15,12 @@ interface ProjectIssuesProps {
 export default function ProjectIssues({
   projectId,
   onCreateIssue,
-  isLoading = false,
+  isLoading: initialLoading = false,
 }: ProjectIssuesProps) {
-  // TODO: wire GET /api/projects/:projectId/issues
-  // Filter issues for this project only
-  const projectIssues = MOCK_ISSUES.filter(
-    (issue) => issue.projectId === projectId
-  )
+  const router = useRouter()
+  const { data, isLoading: isLoadingIssues } = useProjectIssues({ projectId })
+  const projectIssues = data?.issues ?? []
+  const isLoading = initialLoading || isLoadingIssues
 
   const {
     filters,
@@ -32,6 +31,11 @@ export default function ProjectIssues({
   } = useIssueFilters(projectIssues)
 
   const hasIssues = totalCount > 0
+
+  // Navigate to issue details page when clicking on an issue row
+  const handleIssueClick = (issueKey: string) => {
+    router.push(`/issue/${issueKey}`)
+  }
 
   return (
     <Card>
@@ -60,7 +64,11 @@ export default function ProjectIssues({
               totalCount={totalCount}
               filteredCount={filteredCount}
             />
-            <IssuesList issues={filteredIssues} isLoading={isLoading} />
+            <IssuesList 
+              issues={filteredIssues} 
+              isLoading={isLoading} 
+              onIssueClick={handleIssueClick}
+            />
           </>
         ) : (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
@@ -82,3 +90,4 @@ export default function ProjectIssues({
     </Card>
   )
 }
+

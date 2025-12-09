@@ -5,7 +5,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import type { Issue } from '@/mocks/issue.fixtures';
+import type { IssueSummary } from '@/features/issues/types';
 import { filterAndSortIssues, DEFAULT_FILTERS, type IssueFilters } from '../utils';
 
 // ============================================================================
@@ -15,7 +15,7 @@ import { filterAndSortIssues, DEFAULT_FILTERS, type IssueFilters } from '../util
 export interface UseIssueFiltersResult {
   filters: IssueFilters;
   setFilters: React.Dispatch<React.SetStateAction<IssueFilters>>;
-  filteredIssues: Issue[];
+  filteredIssues: IssueSummary[];
   totalCount: number;
   filteredCount: number;
 }
@@ -32,7 +32,7 @@ export interface UseIssueFiltersResult {
  * setFilters(prev => ({ ...prev, status: 'open' }));
  * ```
  */
-export function useIssueFilters(issues: Issue[]): UseIssueFiltersResult {
+export function useIssueFilters(issues: IssueSummary[]): UseIssueFiltersResult {
   const [filters, setFilters] = useState<IssueFilters>(DEFAULT_FILTERS);
 
   const filteredIssues = useMemo(

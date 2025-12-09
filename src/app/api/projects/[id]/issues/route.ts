@@ -1,10 +1,10 @@
 /**
  * Project Issues API Routes
  *
- * GET /api/projects/[projectId]/issues - List issues with filters and pagination
- * POST /api/projects/[projectId]/issues - Create a new issue
+ * GET /api/projects/[id]/issues - List issues with filters and pagination
+ * POST /api/projects/[id]/issues - Create a new issue
  *
- * @module api/projects/[projectId]/issues
+ * @module api/projects/[id]/issues
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -50,7 +50,7 @@ const CreateIssueBodySchema = z.object({
 });
 
 /**
- * GET /api/projects/[projectId]/issues
+ * GET /api/projects/[id]/issues
  *
  * List issues for a project with filters and pagination.
  *
@@ -77,10 +77,10 @@ const CreateIssueBodySchema = z.object({
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ projectId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const { projectId } = await params;
+  const { id: projectId } = await params;
 
   try {
     // Authenticate user
@@ -213,7 +213,7 @@ export async function GET(
 }
 
 /**
- * POST /api/projects/[projectId]/issues
+ * POST /api/projects/[id]/issues
  *
  * Create a new issue in a project.
  * Requires ISSUE_CREATE permission (PROJECT_EDITOR+).
@@ -244,10 +244,10 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ projectId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const { projectId } = await params;
+  const { id: projectId } = await params;
 
   try {
     // Authenticate user

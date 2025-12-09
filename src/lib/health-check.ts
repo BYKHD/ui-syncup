@@ -8,7 +8,7 @@
  */
 
 import { db } from './db'
-import { createStorageClient } from './storage'
+import { storageClient } from './storage'
 import { authConfig } from './auth-config'
 import { env } from './env'
 import { HeadBucketCommand } from '@aws-sdk/client-s3'
@@ -77,15 +77,13 @@ export async function checkStorage(): Promise<ServiceHealthResult> {
   const startTime = Date.now()
   
   try {
-    const storage = createStorageClient()
-    
     // Check if bucket is accessible using HeadBucket
     const command = new HeadBucketCommand({
       Bucket: env.R2_BUCKET_NAME,
     })
     
     // Access the internal S3 client to send the command
-    await (storage as any).client.send(command)
+    await storageClient.send(command)
     
     const responseTime = Date.now() - startTime
     

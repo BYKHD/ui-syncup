@@ -43,27 +43,55 @@ const envSchema = z.object({
     .min(1)
     .describe("Supabase service role key (server-side only)"),
 
-  // Storage (Cloudflare R2)
+  // Storage (Cloudflare R2 - Production)
+  // These are optional in development when using local MinIO via STORAGE_* variables
   R2_ACCOUNT_ID: z
     .string()
-    .min(1)
-    .describe("Cloudflare R2 account ID"),
+    .optional()
+    .describe("Cloudflare R2 account ID (production only)"),
   R2_ACCESS_KEY_ID: z
     .string()
-    .min(1)
-    .describe("Cloudflare R2 access key ID"),
+    .optional()
+    .describe("Cloudflare R2 access key ID (production only)"),
   R2_SECRET_ACCESS_KEY: z
     .string()
-    .min(1)
-    .describe("Cloudflare R2 secret access key"),
+    .optional()
+    .describe("Cloudflare R2 secret access key (production only)"),
   R2_BUCKET_NAME: z
     .string()
-    .min(1)
-    .describe("Cloudflare R2 bucket name"),
+    .optional()
+    .describe("Cloudflare R2 bucket name (production only)"),
   R2_PUBLIC_URL: z
     .string()
     .url()
-    .describe("Cloudflare R2 public URL for assets"),
+    .optional()
+    .describe("Cloudflare R2 public URL for assets (production only)"),
+
+  // Storage (Unified S3-compatible - MinIO local / R2 production)
+  NEXT_PUBLIC_STORAGE_BUCKET: z
+    .string()
+    .optional()
+    .describe("Storage bucket name"),
+  STORAGE_ENDPOINT: z
+    .string()
+    .optional()
+    .describe("S3-compatible storage endpoint URL"),
+  STORAGE_REGION: z
+    .string()
+    .optional()
+    .describe("Storage region"),
+  STORAGE_ACCESS_KEY_ID: z
+    .string()
+    .optional()
+    .describe("Storage access key ID"),
+  STORAGE_SECRET_ACCESS_KEY: z
+    .string()
+    .optional()
+    .describe("Storage secret access key"),
+  STORAGE_PUBLIC_URL: z
+    .string()
+    .optional()
+    .describe("Public URL for storage assets"),
 
   // Authentication (Google OAuth)
   GOOGLE_CLIENT_ID: z

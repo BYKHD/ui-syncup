@@ -67,17 +67,17 @@
     - RBAC: PROJECT_EDITOR+
     - _Prerequisite for annotation integration_
 
-- [ ] 3. Wire Issues UI to real API
-  - [ ] 3.1 Update useIssueDetails hook to use real API
+- [x] 3. Wire Issues UI to real API
+  - [x] 3.1 Update useIssueDetails hook to use real API
     - Replace mock getIssueDetails with real endpoint
     - _Prerequisite for annotation integration_
-  - [ ] 3.2 Update useIssueActivities hook to use real API
+  - [x] 3.2 Update useIssueActivities hook to use real API
     - Replace mock getIssueActivities with real endpoint
     - _Prerequisite for annotation integration_
-  - [ ] 3.3 Update useIssueUpdate hook to use real API
+  - [x] 3.3 Update useIssueUpdate hook to use real API
     - Replace mock updateIssue with real endpoint
     - _Prerequisite for annotation integration_
-  - [ ] 3.4 Update useIssueDelete hook to use real API
+  - [x] 3.4 Update useIssueDelete hook to use real API
     - Replace mock deleteIssue with real endpoint
     - _Prerequisite for annotation integration_
 

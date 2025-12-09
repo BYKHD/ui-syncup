@@ -3,7 +3,7 @@
  * Pure utility functions for filtering and sorting issues (no React)
  */
 
-import type { Issue } from '@/mocks/issue.fixtures';
+import type { IssueSummary } from '@/features/issues/types';
 import type { IssuePriority, IssueStatus, IssueType } from '@/features/issues/types';
 
 // ============================================================================
@@ -46,7 +46,7 @@ const PRIORITY_ORDER: Record<IssuePriority, number> = {
 /**
  * Filter issues by search term
  */
-export function filterBySearch(issues: Issue[], search: string): Issue[] {
+export function filterBySearch(issues: IssueSummary[], search: string): IssueSummary[] {
   if (!search) return issues;
 
   const searchLower = search.toLowerCase();
@@ -61,7 +61,7 @@ export function filterBySearch(issues: Issue[], search: string): Issue[] {
 /**
  * Filter issues by status
  */
-export function filterByStatus(issues: Issue[], status: IssueFilters['status']): Issue[] {
+export function filterByStatus(issues: IssueSummary[], status: IssueFilters['status']): IssueSummary[] {
   if (status === 'all') return issues;
   return issues.filter((issue) => issue.status === status);
 }
@@ -69,7 +69,7 @@ export function filterByStatus(issues: Issue[], status: IssueFilters['status']):
 /**
  * Filter issues by type
  */
-export function filterByType(issues: Issue[], type: IssueFilters['type']): Issue[] {
+export function filterByType(issues: IssueSummary[], type: IssueFilters['type']): IssueSummary[] {
   if (type === 'all') return issues;
   return issues.filter((issue) => issue.type === type);
 }
@@ -77,7 +77,7 @@ export function filterByType(issues: Issue[], type: IssueFilters['type']): Issue
 /**
  * Filter issues by priority
  */
-export function filterByPriority(issues: Issue[], priority: IssueFilters['priority']): Issue[] {
+export function filterByPriority(issues: IssueSummary[], priority: IssueFilters['priority']): IssueSummary[] {
   if (priority === 'all') return issues;
   return issues.filter((issue) => issue.priority === priority);
 }
@@ -86,10 +86,10 @@ export function filterByPriority(issues: Issue[], priority: IssueFilters['priori
  * Sort issues by field and order
  */
 export function sortIssues(
-  issues: Issue[],
+  issues: IssueSummary[],
   sortBy: IssueFilters['sortBy'],
   sortOrder: IssueFilters['sortOrder']
-): Issue[] {
+): IssueSummary[] {
   const sorted = [...issues];
 
   sorted.sort((a, b) => {
@@ -125,7 +125,7 @@ export function sortIssues(
  * Apply all filters to an issue list
  * Pure function - no side effects
  */
-export function filterAndSortIssues(issues: Issue[], filters: IssueFilters): Issue[] {
+export function filterAndSortIssues(issues: IssueSummary[], filters: IssueFilters): IssueSummary[] {
   let result = issues;
 
   // Apply filters

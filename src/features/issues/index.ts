@@ -25,12 +25,15 @@ export {
   useIssueUpdate,
   useIssueDelete,
   useIssueFilters,
+  useProjectIssues,
+  useCreateIssue,
 } from './hooks';
 export type { IssueFilters } from './utils';
 
 // Types
 export type {
   IssueDetailData,
+  IssueSummary,
   IssueAttachment,
   IssuePermissions,
   ActivityEntry,
@@ -40,7 +43,7 @@ export type {
   IssueStatus,
 } from './types';
 
-// Re-export Issue type from mocks for convenience
+// Re-export Issue type from mocks for convenience (deprecated)
 export type { Issue } from '@/mocks/issue.fixtures';
 
 // API (for advanced use cases)
@@ -49,4 +52,7 @@ export {
   getIssueActivities,
   updateIssue,
   deleteIssue,
+  getProjectIssues,
+  createIssue,
+  uploadAttachment,
 } from './api';

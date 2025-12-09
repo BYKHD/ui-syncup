@@ -8,6 +8,7 @@
 export {
   getIssueById,
   getIssueByKey,
+  getIssueByKeyOnly,
   getIssuesByProject,
   createIssue,
   updateIssue,

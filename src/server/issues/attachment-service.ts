@@ -257,7 +257,8 @@ function formatBytes(bytes: number): string {
 /**
  * Generate R2 storage path for an attachment
  *
- * Path format: issues/{issueId}/attachments/{uuid}-{filename}
+ * Path format: {issueId}/attachments/{uuid}-{filename}
+ * Note: The bucket name (issues) is separate, this is the key within the bucket
  *
  * @param issueId - Issue UUID
  * @param attachmentId - Attachment UUID
@@ -275,7 +276,7 @@ export function generateR2Path(
     .replace(/[^a-zA-Z0-9._-]/g, "_")
     .slice(0, 100);
 
-  return `issues/${issueId}/attachments/${attachmentId}-${sanitizedName}`;
+  return `${issueId}/attachments/${attachmentId}-${sanitizedName}`;
 }
 
 /**

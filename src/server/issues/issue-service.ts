@@ -115,6 +115,29 @@ export async function getIssueByKey(
 }
 
 /**
+ * Get an issue by its key only (e.g., "PRJ-123") without projectId
+ *
+ * Useful for direct issue key lookups where projectId is not available,
+ * such as from URL routes like /issue/[issueKey].
+ *
+ * @param issueKey - Issue key string (e.g., "PRJ-123")
+ * @returns Issue with details or null if not found
+ */
+export async function getIssueByKeyOnly(
+  issueKey: string
+): Promise<IssueWithDetails | null> {
+  const issue = await db.query.issues.findFirst({
+    where: eq(issues.issueKey, issueKey),
+  });
+
+  if (!issue) {
+    return null;
+  }
+
+  return getIssueById(issue.id);
+}
+
+/**
  * List issues with filtering and pagination
  *
  * @param params - List parameters including filters and pagination
