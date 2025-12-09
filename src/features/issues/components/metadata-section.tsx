@@ -17,7 +17,7 @@ import { InlineEditableUserSelect } from './inline-editable-user-select';
 // import { WorkflowControl } from './workflow-control';
 
 // Config
-import { TYPE_OPTIONS, PRIORITY_OPTIONS } from '@/config/issue-options';
+import { TYPE_OPTIONS, PRIORITY_OPTIONS } from '@/features/issues/config';
 
 // Types
 import type { IssueDetailData, IssuePermissions } from '@/features/issues/types';
@@ -27,6 +27,9 @@ interface MetadataSectionProps {
   onUpdate: (field: string, value: any) => Promise<void>;
   isLoading?: boolean;
   permissions?: IssuePermissions;
+  // Team members for assignee selection
+  // TODO: Wire to real team members API when available
+  teamMembers?: { id: string; name: string; email: string; image: string | null }[];
   // Editing state props for keyboard shortcuts
   isEditingTitle?: boolean;
   isEditingDescription?: boolean;
@@ -34,24 +37,17 @@ interface MetadataSectionProps {
   onEditingDescriptionChange?: (editing: boolean) => void;
 }
 
-// TODO: Replace with actual team members hook/API call
-const MOCK_TEAM_MEMBERS = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', image: null },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', image: null },
-  { id: '3', name: 'Bob Johnson', email: 'bob@example.com', image: null },
-];
-
-// TODO: wire useIssuePermissions hook when implemented
-const useMockPermissions = (issue: IssueDetailData) => {
-  return {
-    permissions: {
-      canEdit: true,
-      canEditField: (field: string) => true,
-      canChangeStatus: true,
-      canDelete: true,
-    }
-  };
+// Default permissions when none provided (read-write by default)
+const DEFAULT_PERMISSIONS = {
+  canEdit: true,
+  canEditField: (_field: string) => true,
+  canChangeStatus: true,
+  canDelete: true,
 };
+
+// Default empty team members
+// TODO: Remove fallback when team members API is wired
+const DEFAULT_TEAM_MEMBERS: { id: string; name: string; email: string; image: string | null }[] = [];
 
 // Simple date formatter until date-fns is added
 function formatTimestamp(date: Date | string): string {
@@ -147,16 +143,17 @@ export function MetadataSection({
   onEditingTitleChange,
   onEditingDescriptionChange,
   permissions,
+  teamMembers = DEFAULT_TEAM_MEMBERS,
 }: MetadataSectionProps) {
-  const mockPermissions = useMockPermissions(issue).permissions;
+  // Use provided permissions or default to read-write
   const resolvedPermissions = permissions
     ? {
         canEdit: permissions.canEdit,
-        canEditField: () => permissions.canEdit,
+        canEditField: (_field: string) => permissions.canEdit,
         canChangeStatus: permissions.canChangeStatus ?? false,
         canDelete: permissions.canDelete ?? false,
       }
-    : mockPermissions;
+    : DEFAULT_PERMISSIONS;
 
   const isReadOnly = !resolvedPermissions.canEdit;
   if (isLoading) {
@@ -264,7 +261,7 @@ export function MetadataSection({
       <MetadataField label="Assignee">
         <InlineEditableUserSelect
           value={issue.assignee?.id || 'unassigned'}
-          users={MOCK_TEAM_MEMBERS}
+          users={teamMembers}
           onSave={(userId) => onUpdate('assigneeId', userId)}
           canEdit={resolvedPermissions.canEditField('assigneeId')}
           placeholder="Select assignee"

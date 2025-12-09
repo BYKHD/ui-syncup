@@ -6,6 +6,7 @@
 // Re-export issue domain types from the feature module
 export type {
   IssueDetailData,
+  IssueSummary,
   IssueAttachment,
   AttachmentAnnotation,
   AttachmentReviewVariant,

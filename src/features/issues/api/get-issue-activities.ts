@@ -3,8 +3,8 @@
 // Fetches activity timeline for an issue with pagination
 // ============================================================================
 
-import type { ActivityTimelineResponse } from '@/features/issues/types';
-import { getPaginatedActivities } from '@/mocks/activity.fixtures';
+import { apiClient } from '@/lib/api-client';
+import type { ActivityTimelineResponse, ActivityEntry } from '@/features/issues/types';
 
 export interface GetIssueActivitiesParams {
   issueId: string;
@@ -13,21 +13,46 @@ export interface GetIssueActivitiesParams {
 }
 
 /**
- * Fetches paginated activity timeline for an issue
- *
- * MOCK IMPLEMENTATION: Returns mock data from fixtures
- * TODO: Replace with actual API call when backend is ready
+ * API response format from server
  */
-export async function getIssueActivities(
-  params: GetIssueActivitiesParams
-): Promise<ActivityTimelineResponse> {
-  const { issueId, cursor, limit = 10 } = params;
+interface ActivitiesApiResponse {
+  activities: ActivityEntry[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 200));
+/**
+ * Fetches paginated activity timeline for an issue
+ * Calls GET /api/issues/[issueId]/activities
+ * 
+ * Converts page-based pagination from API to cursor-based format for hooks
+ */
+export async function getIssueActivities({
+  issueId,
+  cursor,
+  limit = 10,
+}: GetIssueActivitiesParams): Promise<ActivityTimelineResponse> {
+  // Convert cursor to page number (cursor is page-based)
+  const page = cursor ? parseInt(cursor, 10) : 1;
 
-  // Get paginated mock activities
-  const result = getPaginatedActivities(issueId, limit, cursor);
+  const response = await apiClient<ActivitiesApiResponse>(
+    `/api/issues/${issueId}/activities`,
+    {
+      query: { page, limit },
+    }
+  );
 
-  return result;
+  // Transform to ActivityTimelineResponse format (cursor-based)
+  return {
+    activities: response.activities,
+    hasMore: response.pagination.page < response.pagination.totalPages,
+    nextCursor:
+      response.pagination.page < response.pagination.totalPages
+        ? String(response.pagination.page + 1)
+        : null,
+  };
 }

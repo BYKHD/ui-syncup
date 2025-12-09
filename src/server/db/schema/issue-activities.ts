@@ -9,6 +9,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { issues } from "./issues";
+import { projects } from "./projects";
+import { teams } from "./teams";
 import { users } from "./users";
 
 /**
@@ -36,11 +38,22 @@ export const issueActivityTypeEnum = pgEnum("issue_activity_type", [
  * - JSONB changes array for field-level change tracking
  * - Optional comment text for comment activities
  * - Timestamp for timeline ordering
+ *
+ * Multi-tenant design:
+ * - teamId and projectId are denormalized for direct filtering
+ * - Enables efficient team-scoped queries without JOINs through issues
  */
 export const issueActivities = pgTable(
   "issue_activities",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    // Tenant isolation: denormalized from issue for direct filtering
+    teamId: uuid("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
     issueId: uuid("issue_id")
       .notNull()
       .references(() => issues.id, { onDelete: "cascade" }),
@@ -64,6 +77,8 @@ export const issueActivities = pgTable(
       table.issueId,
       table.createdAt
     ),
+    // Team-level index for multi-tenant queries
+    teamIdIdx: index("issue_activities_team_id_idx").on(table.teamId),
   })
 );
 

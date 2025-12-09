@@ -26,58 +26,58 @@
     - Export from schema index
     - _Prerequisite for annotation integration_
 
-- [ ] 1. Create Issues server services
-  - [ ] 1.1 Create issue service in src/server/issues/issue-service.ts
+- [x] 1. Create Issues server services
+  - [x] 1.1 Create issue service in src/server/issues/issue-service.ts
     - Implement getIssueById, getIssueByKey functions
     - Implement createIssue with auto-incrementing issue_number
     - Implement updateIssue with field-level updates
     - Implement deleteIssue with cascade
     - _Prerequisite for annotation integration_
-  - [ ] 1.2 Create attachment service in src/server/issues/attachment-service.ts
+  - [x] 1.2 Create attachment service in src/server/issues/attachment-service.ts
     - Implement getAttachmentsByIssue function
     - Implement createAttachment with R2 upload
     - Implement deleteAttachment with R2 cleanup
     - Enforce 10MB per file, 50MB total per issue limits
     - _Prerequisite for annotation integration_
-  - [ ] 1.3 Create activity service in src/server/issues/activity-service.ts
+  - [x] 1.3 Create activity service in src/server/issues/activity-service.ts
     - Implement logActivity function
     - Implement getActivitiesByIssue with pagination
     - Support all activity types (created, status_changed, etc.)
     - _Prerequisite for annotation integration_
 
-- [ ] 2. Create Issues API routes
-  - [ ] 2.1 Create GET/POST /api/projects/[projectId]/issues
+- [x] 2. Create Issues API routes
+  - [x] 2.1 Create GET/POST /api/projects/[projectId]/issues
     - List issues with filtering and pagination
     - Create new issue with validation
     - RBAC: PROJECT_VIEWER+ for GET, PROJECT_EDITOR+ for POST
     - _Prerequisite for annotation integration_
-  - [ ] 2.2 Create GET/PATCH/DELETE /api/issues/[issueId]
+  - [x] 2.2 Create GET/PATCH/DELETE /api/issues/[issueId]
     - Get issue details with attachments
     - Update issue fields
     - Delete issue with cascade
     - RBAC: PROJECT_VIEWER+ for GET, PROJECT_DEVELOPER+ for PATCH, PROJECT_EDITOR+ for DELETE
     - _Prerequisite for annotation integration_
-  - [ ] 2.3 Create GET /api/issues/[issueId]/activities
+  - [x] 2.3 Create GET /api/issues/[issueId]/activities
     - Get paginated activities
     - RBAC: PROJECT_VIEWER+
     - _Prerequisite for annotation integration_
-  - [ ] 2.4 Create POST/DELETE /api/issues/[issueId]/attachments
+  - [x] 2.4 Create POST/DELETE /api/issues/[issueId]/attachments
     - Upload attachment with presigned URL
     - Delete attachment
     - RBAC: PROJECT_EDITOR+
     - _Prerequisite for annotation integration_
 
-- [ ] 3. Wire Issues UI to real API
-  - [ ] 3.1 Update useIssueDetails hook to use real API
+- [x] 3. Wire Issues UI to real API
+  - [x] 3.1 Update useIssueDetails hook to use real API
     - Replace mock getIssueDetails with real endpoint
     - _Prerequisite for annotation integration_
-  - [ ] 3.2 Update useIssueActivities hook to use real API
+  - [x] 3.2 Update useIssueActivities hook to use real API
     - Replace mock getIssueActivities with real endpoint
     - _Prerequisite for annotation integration_
-  - [ ] 3.3 Update useIssueUpdate hook to use real API
+  - [x] 3.3 Update useIssueUpdate hook to use real API
     - Replace mock updateIssue with real endpoint
     - _Prerequisite for annotation integration_
-  - [ ] 3.4 Update useIssueDelete hook to use real API
+  - [x] 3.4 Update useIssueDelete hook to use real API
     - Replace mock deleteIssue with real endpoint
     - _Prerequisite for annotation integration_
 

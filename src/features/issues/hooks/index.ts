@@ -6,8 +6,10 @@
 // Query hooks (data fetching)
 export * from './use-issue-details';
 export * from './use-issue-activities';
+export * from './use-project-issues';
 
 // Mutation hooks (data modification)
+export * from './use-create-issue';
 export * from './use-issue-update';
 export * from './use-issue-delete';
 

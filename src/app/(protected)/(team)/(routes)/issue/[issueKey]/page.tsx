@@ -5,7 +5,8 @@
 
 import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/shared/headers';
 import { IssueDetailsScreen } from '@/features/issues';
-import { getDetailedIssueByKey } from '@/mocks/issue.fixtures';
+import { getIssueByKeyOnly } from '@/server/issues';
+import { getSession } from '@/server/auth/session';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
@@ -20,7 +21,7 @@ interface IssuePageProps {
  */
 export async function generateMetadata({ params }: IssuePageProps): Promise<Metadata> {
   const { issueKey } = await params;
-  const issue = getDetailedIssueByKey(issueKey);
+  const issue = await getIssueByKeyOnly(issueKey);
 
   if (!issue) {
     return {
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: IssuePageProps): Promise<Meta
 
   return {
     title: `${issue.issueKey} - ${issue.title}`,
-    description: issue.description.substring(0, 160),
+    description: issue.description?.substring(0, 160) ?? '',
   };
 }
 
@@ -38,43 +39,43 @@ export async function generateMetadata({ params }: IssuePageProps): Promise<Meta
  * Issue Details Page
  *
  * Displays the full issue details view with attachments and activity timeline.
- * Uses the ready-to-wire IssueDetailsScreen component with mock data.
+ * Uses real API data via getIssueByKeyOnly server function.
  *
  * @param params - Route parameters containing the issue key (e.g., "MKT-101")
  */
 export default async function IssuePage({ params }: IssuePageProps) {
   const { issueKey } = await params;
 
-  // Look up issue by key to get the ID
-  // In production, this would be a server-side database query
-  const issue = getDetailedIssueByKey(issueKey);
+  // Look up issue by key from database
+  const issue = await getIssueByKeyOnly(issueKey);
 
   // Handle not found
   if (!issue) {
     notFound();
   }
 
-  const resolvedIssue = issue!;
+  // Get session for user ID
+  const session = await getSession();
+  const userId = session?.id;
+
   const issueBreadcrumbs: BreadcrumbItem[] = [
     { label: 'Issues', href: '/issue' },
-    { label: resolvedIssue.issueKey },
+    { label: issue.issueKey },
   ];
-
-  // Mock user ID - in production, get from session
-  const userId = 'user_1';
 
   return (
     <>
       <AppHeaderConfigurator
-        pageName={resolvedIssue.issueKey}
+        pageName={issue.issueKey}
         breadcrumbs={issueBreadcrumbs}
       />
       <div className="h-full flex flex-col">
         {/* Issue Details Screen */}
         <div className="flex-1 overflow-hidden">
-          <IssueDetailsScreen issueId={resolvedIssue.id} userId={userId} />
+          <IssueDetailsScreen issueId={issue.id} userId={userId} />
         </div>
       </div>
     </>
   );
 }
+

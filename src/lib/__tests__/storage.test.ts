@@ -1,94 +1,58 @@
-import { describe, it, expect, beforeEach, vi } from "vitest"
-
-// Mock env module before importing storage
-vi.mock("../env", () => ({
-  env: {
-    NODE_ENV: "test",
-    NEXT_PUBLIC_APP_URL: "http://localhost:3000",
-    NEXT_PUBLIC_API_URL: "http://localhost:3000/api",
-    DATABASE_URL: "postgresql://test:test@localhost:5432/test",
-    SUPABASE_URL: "https://test.supabase.co",
-    SUPABASE_ANON_KEY: "test-anon-key",
-    SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
-    R2_ACCOUNT_ID: "test-account-id",
-    R2_ACCESS_KEY_ID: "test-access-key",
-    R2_SECRET_ACCESS_KEY: "test-secret-key",
-    R2_BUCKET_NAME: "test-bucket",
-    R2_PUBLIC_URL: "https://test.r2.dev",
-    GOOGLE_CLIENT_ID: "test-client-id",
-    GOOGLE_CLIENT_SECRET: "test-client-secret",
-    GOOGLE_REDIRECT_URI: "http://localhost:3000/api/auth/callback/google",
-    BETTER_AUTH_SECRET: "test-secret-key-with-at-least-32-characters",
-    BETTER_AUTH_URL: "http://localhost:3000",
-  },
-  isProduction: () => false,
-  isDevelopment: () => false,
-  isTest: () => true,
-  isPreview: () => false,
-  getDeploymentInfo: () => ({
-    environment: "test",
-    branch: "test",
-    commitSha: "test",
-    commitMessage: "test",
-    deploymentUrl: "localhost:3000",
-    timestamp: new Date().toISOString(),
-  }),
-}))
+import { describe, it, expect, vi } from "vitest"
 
 // Mock AWS SDK
 vi.mock("@aws-sdk/client-s3", () => ({
-  S3Client: vi.fn().mockImplementation(() => ({
-    send: vi.fn(),
-  })),
+  S3Client: vi.fn(),
   PutObjectCommand: vi.fn(),
-  GetObjectCommand: vi.fn(),
-  DeleteObjectCommand: vi.fn(),
-  HeadObjectCommand: vi.fn(),
-  ListObjectsV2Command: vi.fn(),
-}))
+}));
 
 vi.mock("@aws-sdk/s3-request-presigner", () => ({
   getSignedUrl: vi.fn().mockResolvedValue("https://signed-url.example.com"),
-}))
+}));
 
-import { StorageClient, createStorageClient } from "../storage"
+import { getPublicUrl, generateUploadUrl, getBucketName } from "../storage"
 
-describe("StorageClient", () => {
-  let storage: StorageClient
-
-  beforeEach(() => {
-    storage = createStorageClient({
-      accountId: "test-account",
-      accessKeyId: "test-key",
-      secretAccessKey: "test-secret",
-      bucketName: "test-bucket",
-      publicUrl: "https://test.r2.dev",
-    })
-  })
-
+describe("Storage Utilities", () => {
   describe("getPublicUrl", () => {
-    it("should generate correct public URL", () => {
-      const url = storage.getPublicUrl("images/avatar.jpg")
-      expect(url).toBe("https://test.r2.dev/images/avatar.jpg")
-    })
+    it("should generate correct URL for attachments bucket", () => {
+      const url = getPublicUrl('attachments', "test-key.jpg");
+      expect(url).toContain("ui-syncup-attachments");
+      expect(url).toContain("test-key.jpg");
+    });
 
-    it("should handle keys without leading slash", () => {
-      const url = storage.getPublicUrl("avatar.jpg")
-      expect(url).toBe("https://test.r2.dev/avatar.jpg")
-    })
-  })
+    it("should generate correct URL for media bucket", () => {
+      const url = getPublicUrl('media', "avatar.png");
+      expect(url).toContain("ui-syncup-media");
+      expect(url).toContain("avatar.png");
+    });
 
-  describe("createStorageClient", () => {
-    it("should create a storage client instance", () => {
-      const client = createStorageClient()
-      expect(client).toBeInstanceOf(StorageClient)
-    })
+    it("should handle keys with leading slash", () => {
+      const url = getPublicUrl('attachments', "/test-key.jpg");
+      expect(url).not.toContain("//test-key");
+    });
+  });
 
-    it("should accept custom options", () => {
-      const client = createStorageClient({
-        bucketName: "custom-bucket",
-      })
-      expect(client).toBeInstanceOf(StorageClient)
-    })
-  })
+  describe("generateUploadUrl", () => {
+    it("should return a signed url for attachments bucket", async () => {
+      const url = await generateUploadUrl('attachments', "test/key", "image/png");
+      expect(url).toBe("https://signed-url.example.com");
+    });
+
+    it("should return a signed url for media bucket", async () => {
+      const url = await generateUploadUrl('media', "avatars/user1.jpg", "image/jpeg");
+      expect(url).toBe("https://signed-url.example.com");
+    });
+  });
+
+  describe("getBucketName", () => {
+    it("should return correct bucket name for attachments", () => {
+      const name = getBucketName('attachments');
+      expect(name).toBe("ui-syncup-attachments");
+    });
+
+    it("should return correct bucket name for media", () => {
+      const name = getBucketName('media');
+      expect(name).toBe("ui-syncup-media");
+    });
+  });
 })

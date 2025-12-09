@@ -1,5 +1,5 @@
-import { ISSUE_PRIORITY_VALUES, ISSUE_TYPE_VALUES } from '@/config/issue-options'
-import { ISSUE_STATUS_VALUES, ISSUE_WORKFLOW } from '@/config/workflow'
+import { ISSUE_PRIORITY_VALUES, ISSUE_TYPE_VALUES } from '@/features/issues/config'
+import { ISSUE_STATUS_VALUES, ISSUE_WORKFLOW } from '@/features/issues/config'
 import type {
   AnnotationComment as BaseAnnotationComment,
   AttachmentAnnotation as BaseAttachmentAnnotation,
@@ -12,6 +12,19 @@ import type {
 export type IssuePriority = (typeof ISSUE_PRIORITY_VALUES)[number]
 export type IssueType = (typeof ISSUE_TYPE_VALUES)[number]
 export type IssueStatus = (typeof ISSUE_STATUS_VALUES)[number]
+
+export interface IssueSummary {
+  id: string
+  issueKey: string
+  title: string
+  description?: string | null
+  type: IssueType
+  priority: IssuePriority
+  status: IssueStatus
+  projectId: string
+  createdAt: string
+  updatedAt: string
+}
 
 // ============================================================================
 // USER & ACTOR TYPES

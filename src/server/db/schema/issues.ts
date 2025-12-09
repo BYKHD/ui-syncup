@@ -10,6 +10,7 @@ import {
   integer,
 } from "drizzle-orm/pg-core";
 import { projects } from "./projects";
+import { teams } from "./teams";
 import { users } from "./users";
 
 /**
@@ -47,17 +48,25 @@ export const issueStatusEnum = pgEnum("issue_status", [
 /**
  * Issues table - stores UI/UX issues for tracking feedback
  * 
- * Each issue belongs to a project and has:
+ * Each issue belongs to a project (and transitively to a team) and has:
  * - A unique issue_key (e.g., "PRJ-123") within the project
  * - An auto-incrementing issue_number per project
  * - Type, priority, and status for categorization and workflow
  * - Optional assignee and required reporter
  * - Optional links to external tools (Figma, Jira)
+ * 
+ * Multi-tenant design:
+ * - teamId is denormalized from project for direct team-level filtering
+ * - Enables efficient RLS policies and team-scoped queries without JOINs
  */
 export const issues = pgTable(
   "issues",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    // Tenant isolation: teamId denormalized for direct filtering
+    teamId: uuid("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
@@ -78,12 +87,21 @@ export const issues = pgTable(
     page: varchar("page", { length: 255 }),
     figmaLink: text("figma_link"),
     jiraLink: text("jira_link"),
+    // Timestamps
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    // Audit fields
+    createdBy: uuid("created_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    updatedBy: uuid("updated_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
   },
   (table) => ({
     // Indexes for common queries
@@ -95,6 +113,9 @@ export const issues = pgTable(
       table.projectId,
       table.status
     ),
+    // Team-level indexes for multi-tenant queries
+    teamIdIdx: index("issues_team_id_idx").on(table.teamId),
+    teamProjectIdx: index("issues_team_project_idx").on(table.teamId, table.projectId),
     // Unique constraints
     projectIssueNumberUnique: uniqueIndex("issues_project_issue_number_unique").on(
       table.projectId,

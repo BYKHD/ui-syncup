@@ -1,6 +1,8 @@
 import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/shared/headers";
 import ProjectDetailScreen from "@/features/projects/screens/project-detail-screen";
-import { MOCK_PROJECTS_WITH_STATS } from "@/mocks";
+import { getProject } from "@/features/projects/api";
+import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 
 interface PageProps {
   params: Promise<{
@@ -8,46 +10,65 @@ interface PageProps {
   }>;
 }
 
-// Thin page component - server-first, minimal logic
+// Server component - fetches real project data
 export default async function ProjectDetailPage({ params }: PageProps) {
   const { projectSlug } = await params;
 
-  // TODO: wire GET /api/projects/:slug
-  // For now, using mock data to visualize UI
-  const mockProject = MOCK_PROJECTS_WITH_STATS.find(p => p.slug === projectSlug) || MOCK_PROJECTS_WITH_STATS[0];
+  try {
+    // Fetch project from API (supports both UUID and slug)
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore.getAll()
+      .map(c => `${c.name}=${c.value}`)
+      .join('; ');
+    
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL}/api/projects/${projectSlug}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': cookieHeader,
+        },
+        cache: 'no-store',
+      }
+    );
 
-  const project = {
-    id: mockProject.id,
-    name: mockProject.name,
-    description: mockProject.description,
-    visibility: mockProject.visibility,
-    stats: {
-      progressPercent: mockProject.stats.progressPercent,
-      totalTickets: mockProject.stats.totalTickets,
-      completedTickets: mockProject.stats.completedTickets,
-      memberCount: mockProject.stats.memberCount,
-    },
-    createdAt: mockProject.createdAt,
-    updatedAt: mockProject.updatedAt,
-  };
+    if (!response.ok) {
+      if (response.status === 404) {
+        notFound();
+      }
+      throw new Error(`Failed to fetch project: ${response.statusText}`);
+    }
 
-  const userRole = mockProject.userRole;
-  const projectBreadcrumbs: BreadcrumbItem[] = [
-    { label: "Projects", href: "/projects" },
-    { label: project.name },
-  ];
+    const { project } = await response.json();
 
-  return (
-    <>
-      <AppHeaderConfigurator
-        pageName={project.name}
-        breadcrumbs={projectBreadcrumbs}
-      />
-      <ProjectDetailScreen
-        project={project}
-        userRole={userRole}
-        isLoading={false}
-      />
-    </>
-  );
+    const projectBreadcrumbs: BreadcrumbItem[] = [
+      { label: "Projects", href: "/projects" },
+      { label: project.name },
+    ];
+
+    return (
+      <>
+        <AppHeaderConfigurator
+          pageName={project.name}
+          breadcrumbs={projectBreadcrumbs}
+        />
+        <ProjectDetailScreen
+          project={{
+            id: project.id,
+            name: project.name,
+            description: project.description,
+            visibility: project.visibility,
+            stats: project.stats,
+            createdAt: project.createdAt,
+            updatedAt: project.updatedAt,
+          }}
+          userRole={project.userRole}
+          isLoading={false}
+        />
+      </>
+    );
+  } catch (error) {
+    console.error("Failed to load project:", error);
+    notFound();
+  }
 }
