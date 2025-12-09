@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================================================
-// ISSUE DETAILS SCREEN (READY-TO-WIRE VERSION)
+// ISSUE DETAILS SCREEN
 // Thin presentational component that composes issue feature components
 // All logic is handled by hooks and API layer
 // ============================================================================
@@ -23,20 +23,27 @@ interface IssueDetailsScreenProps {
 }
 
 /**
- * Issue Details Screen - Ready-to-wire mockup version
+ * Issue Details Screen
  *
- * This component demonstrates the visual UI with mock data.
- * When implementing the real feature:
- * 1. Replace mock API calls in /api with real backend calls
- * 2. Implement real permission checks based on user roles
- * 3. Add real session management
- * 4. Replace useIssueDetails hook with real data fetching
+ * Displays full issue details with attachments and activity timeline.
+ * Wired to real API endpoints via React Query hooks.
+ *
+ * TODO (Next Phase - Annotations):
+ * - Wire annotation creation/editing in attachment views
+ * - Implement real-time annotation comments
+ * - See .kiro/specs/issue-annotation-integration/tasks.md
  */
+import { authClient } from '@/lib/auth-client';
+
 export default function IssueDetailsScreen({
   issueId,
-  userId = 'user_1',
+  userId: propUserId,
   permissions,
 }: IssueDetailsScreenProps) {
+  const { data: session } = authClient.useSession();
+  // Use provided userId, session userId, or empty string as fallback
+  const userId = propUserId || session?.user?.id || '';
+
   // Fetch issue details
   const {
     issue,
@@ -60,7 +67,7 @@ export default function IssueDetailsScreen({
 
   // Update hook
   const { mutateAsync: updateIssue, isPending: isUpdating } = useIssueUpdate({
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success('Issue updated successfully');
       refetchIssue(); // Revalidate issue data
       refetchActivities(); // Revalidate activities to show new activity
@@ -87,7 +94,8 @@ export default function IssueDetailsScreen({
   // Local state for UI interactions
   const [activityCursor, setActivityCursor] = useState<string | null>(null);
 
-  // Mock permissions (in real app, derive from user role and issue data)
+  // Default permissions - in production, derive from user role and project membership
+  // TODO: Wire useIssuePermissions hook when RBAC integration is complete
   const resolvedPermissions: IssuePermissions = permissions ?? {
     canEdit: true,
     canDelete: true,

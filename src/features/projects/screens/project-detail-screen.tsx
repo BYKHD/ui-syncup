@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { IssuesCreateDialog, type ImageData } from "@/features/issues/components/issues-create-dialog";
+import { useCreateIssue, uploadAttachment } from "@/features/issues";
 import { ProjectMemberManagerDialog } from "../components/project-member-manager-dialog";
 import { ProjectSettingsDialog } from "../components/project-settings-dialog";
 import { ProjectLeaveButton } from "../components/project-leave-button";
@@ -45,7 +48,9 @@ export default function ProjectDetailScreen({
   userRole,
   isLoading = false,
 }: ProjectDetailScreenProps) {
+  const router = useRouter();
   const canManageMembers = userRole === "owner" || userRole === "editor";
+  const { mutateAsync: createIssueMutation } = useCreateIssue();
   // Issue dialog state
   const [issueDialogOpen, setIssueDialogOpen] = useState(false);
   const [issueFormData, setIssueFormData] = useState({
@@ -113,11 +118,10 @@ export default function ProjectDetailScreen({
     if (!issueFormData.priority) {
       errors.priority = "Priority is required";
     }
-    if (!issueFormData.asIsImage) {
-      errors.asIsImage = "As-is image is required";
-    }
-    if (!issueFormData.toBeImage) {
-      errors.toBeImage = "To-be image is required";
+    if (!issueFormData.asIsImage && !issueFormData.toBeImage) {
+      // At least one image? Or specific requirement? Keeping original checks:
+      if (!issueFormData.asIsImage) errors.asIsImage = "As-is image is required";
+      if (!issueFormData.toBeImage) errors.toBeImage = "To-be image is required";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -125,20 +129,73 @@ export default function ProjectDetailScreen({
       return;
     }
 
-    setIsSubmittingIssue(true);
-    // TODO: wire POST /api/projects/:id/issues
-    // TODO: Upload images and annotations
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
-    setIsSubmittingIssue(false);
-    setIssueDialogOpen(false);
-    setIssueFormData({
-      title: "",
-      description: "",
-      type: null,
-      priority: null,
-      asIsImage: null,
-      toBeImage: null,
-    });
+    try {
+      setIsSubmittingIssue(true);
+      
+      // 1. Create issue
+      const { issue } = await createIssueMutation({
+        projectId: project.id,
+        title: issueFormData.title,
+        description: issueFormData.description,
+        type: issueFormData.type!,
+        priority: issueFormData.priority!,
+      });
+
+      // 2. Upload attachments (non-blocking - don't let upload failures block redirect)
+      const uploadPromises = [];
+
+      if (issueFormData.asIsImage) {
+        uploadPromises.push(
+          uploadAttachment({
+            issueId: issue.id,
+            file: issueFormData.asIsImage.file,
+            reviewVariant: 'as_is',
+            width: issueFormData.asIsImage.width,
+            height: issueFormData.asIsImage.height,
+          })
+        );
+      }
+
+      if (issueFormData.toBeImage) {
+        uploadPromises.push(
+          uploadAttachment({
+            issueId: issue.id,
+            file: issueFormData.toBeImage.file,
+            reviewVariant: 'to_be',
+            width: issueFormData.toBeImage.width,
+            height: issueFormData.toBeImage.height,
+          })
+        );
+      }
+
+      if (uploadPromises.length > 0) {
+        try {
+          await Promise.all(uploadPromises);
+        } catch (uploadError) {
+          console.error("Failed to upload attachments:", uploadError);
+          // Show warning but don't block - issue was created successfully
+          toast.warning("Issue created but attachments failed to upload. You can add them later.");
+        }
+      }
+
+      // 3. Redirect to issue details page (always happens even if uploads fail)
+      router.push(`/issue/${issue.issueKey}`);
+
+      setIsSubmittingIssue(false);
+      setIssueDialogOpen(false);
+      setIssueFormData({
+        title: "",
+        description: "",
+        type: null,
+        priority: null,
+        asIsImage: null,
+        toBeImage: null,
+      });
+    } catch (error) {
+      console.error("Failed to create issue:", error);
+      setIsSubmittingIssue(false);
+      // Hook handles toast error
+    }
   };
 
   const handleIssueCancel = () => {

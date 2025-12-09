@@ -92,6 +92,13 @@
       "when": 1764579851402,
       "tag": "0012_create_issue_activities",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1764579851403,
+      "tag": "0013_add_tenant_fields",
+      "breakpoints": true
     }
   ]
 }

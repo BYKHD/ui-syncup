@@ -11,10 +11,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import IssueStatusBadge from "./issues-status-badge";
 import PriorityBadge from "./issues-priority-badge";
-import type { Issue } from "@/mocks/issue.fixtures";
+import type { IssueSummary } from "@/features/issues/types";
 
 interface IssuesListProps {
-  issues: Issue[]
+  issues: IssueSummary[]
   isLoading?: boolean
   onIssueClick?: (issueKey: string) => void
 }

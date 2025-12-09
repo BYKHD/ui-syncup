@@ -1,7 +1,7 @@
 'use client'
 
-import { DEFAULT_STATUS_ICON, STATUS_OPTIONS } from '@/config/issue-options'
-import type { StatusOption } from '@/config/issue-options'
+import { DEFAULT_STATUS_ICON, STATUS_OPTIONS } from '@/features/issues/config'
+import type { StatusOption } from '@/features/issues/config'
 import type { IssueStatus } from '@/features/issues/types'
 import { cn } from '@/lib/utils'
 

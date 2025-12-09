@@ -134,20 +134,34 @@ export async function listProjects(
 }
 
 /**
- * Get a single project by ID with user context
+ * Check if a string is a valid UUID
+ */
+function isUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
+/**
+ * Get a single project by ID or slug with user context
  * 
- * @param projectId - Project ID
+ * @param idOrSlug - Project ID (UUID) or slug
  * @param userId - User ID for access control and role context
  * @returns Project with stats and user context
  * @throws Error if project not found or user doesn't have access
  */
 export async function getProject(
-  projectId: string,
+  idOrSlug: string,
   userId: string
 ): Promise<ProjectWithStats> {
-  // Fetch project
+  // Detect if input is UUID or slug
+  const isId = isUUID(idOrSlug);
+  
+  // Fetch project by ID or slug
   const project = await db.query.projects.findFirst({
-    where: and(eq(projects.id, projectId), isNull(projects.deletedAt)),
+    where: and(
+      isId ? eq(projects.id, idOrSlug) : eq(projects.slug, idOrSlug),
+      isNull(projects.deletedAt)
+    ),
   });
 
   if (!project) {
@@ -162,8 +176,8 @@ export async function getProject(
   }
 
   // Get stats and user context
-  const stats = await getProjectStats(projectId);
-  const userRole = await getUserProjectRole(userId, projectId);
+  const stats = await getProjectStats(project.id);
+  const userRole = await getUserProjectRole(userId, project.id);
   const canJoin = project.visibility === "public" && userRole === null;
 
   return {

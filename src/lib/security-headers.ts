@@ -40,7 +40,13 @@ export function getCSPDirectives(): CSPDirectives {
     'style-src': ["'self'", "'unsafe-inline'"],
     
     // Images: allow self, data URIs, HTTPS, and blob for dynamic content
-    'img-src': ["'self'", 'data:', 'https:', 'blob:'],
+    'img-src': [
+      "'self'",
+      'data:',
+      'https:',
+      'blob:',
+      ...(isDevelopment() ? ['http://localhost:*', 'http://127.0.0.1:*'] : []),
+    ],
     
     // Fonts: allow self and data URIs
     'font-src': ["'self'", 'data:'],
@@ -51,7 +57,8 @@ export function getCSPDirectives(): CSPDirectives {
       'https://*.supabase.co',
       'https://*.r2.cloudflarestorage.com',
       'https://accounts.google.com',
-      ...(isDevelopment() ? ['http://localhost:*', 'ws://localhost:*'] : []),
+      // Development: allow local connections for API and MinIO storage
+      ...(isDevelopment() ? ['http://localhost:*', 'ws://localhost:*', 'http://127.0.0.1:*'] : []),
     ],
     
     // Frame ancestors: prevent embedding
