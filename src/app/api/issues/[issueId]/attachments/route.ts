@@ -289,9 +289,11 @@ export async function POST(
       reviewVariant,
     } = validation.data;
 
-    // Create attachment
+    // Create attachment with denormalized tenant fields from issue
     const attachment = await createAttachment(
       {
+        teamId: issue.teamId,
+        projectId: issue.projectId,
         issueId,
         uploadedById: user.id,
         fileName,

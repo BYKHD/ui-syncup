@@ -12,6 +12,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { issues } from "./issues";
+import { projects } from "./projects";
+import { teams } from "./teams";
 import { users } from "./users";
 
 /**
@@ -34,11 +36,22 @@ export const attachmentReviewVariantEnum = pgEnum("attachment_review_variant", [
  * - Reference to the uploader
  *
  * File size is constrained to max 10MB per file.
+ *
+ * Multi-tenant design:
+ * - teamId and projectId are denormalized for direct filtering
+ * - Enables efficient team-scoped queries without JOINs through issues
  */
 export const issueAttachments = pgTable(
   "issue_attachments",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    // Tenant isolation: denormalized from issue for direct filtering
+    teamId: uuid("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
     issueId: uuid("issue_id")
       .notNull()
       .references(() => issues.id, { onDelete: "cascade" }),
@@ -61,6 +74,8 @@ export const issueAttachments = pgTable(
   (table) => ({
     // Index for efficient queries by issue
     issueIdIdx: index("issue_attachments_issue_id_idx").on(table.issueId),
+    // Team-level index for multi-tenant queries
+    teamIdIdx: index("issue_attachments_team_id_idx").on(table.teamId),
     // Check constraint for max 10MB file size
     fileSizeCheck: check(
       "issue_attachments_file_size_check",

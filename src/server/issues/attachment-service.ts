@@ -135,6 +135,8 @@ export async function createAttachment(
   actorId: string
 ): Promise<IssueAttachment> {
   const {
+    teamId,
+    projectId,
     issueId,
     uploadedById,
     fileName,
@@ -167,10 +169,12 @@ export async function createAttachment(
     );
   }
 
-  // Create attachment record
+  // Create attachment record with denormalized tenant fields
   const [attachment] = await db
     .insert(issueAttachments)
     .values({
+      teamId, // Denormalized for multi-tenant queries
+      projectId, // Denormalized for multi-tenant queries
       issueId,
       uploadedById,
       fileName,
@@ -184,8 +188,8 @@ export async function createAttachment(
     })
     .returning();
 
-  // Log activity
-  await logAttachmentActivity(issueId, actorId, "added", {
+  // Log activity with denormalized fields
+  await logAttachmentActivity(teamId, projectId, issueId, actorId, "added", {
     id: attachment.id,
     fileName,
   });
@@ -214,10 +218,10 @@ export async function deleteAttachment(
   attachmentId: string,
   actorId: string
 ): Promise<void> {
-  // Get attachment for logging before deletion
+  // Get attachment for logging before deletion (including tenant fields)
   const attachment = await db.query.issueAttachments.findFirst({
     where: eq(issueAttachments.id, attachmentId),
-    columns: { id: true, issueId: true, fileName: true, url: true },
+    columns: { id: true, teamId: true, projectId: true, issueId: true, fileName: true, url: true },
   });
 
   if (!attachment) {
@@ -227,11 +231,18 @@ export async function deleteAttachment(
   // Delete record
   await db.delete(issueAttachments).where(eq(issueAttachments.id, attachmentId));
 
-  // Log activity
-  await logAttachmentActivity(attachment.issueId, actorId, "removed", {
-    id: attachment.id,
-    fileName: attachment.fileName,
-  });
+  // Log activity with denormalized fields
+  await logAttachmentActivity(
+    attachment.teamId,
+    attachment.projectId,
+    attachment.issueId,
+    actorId,
+    "removed",
+    {
+      id: attachment.id,
+      fileName: attachment.fileName,
+    }
+  );
 
   logger.info("issue.attachment.deleted", {
     attachmentId,

@@ -130,6 +130,8 @@ export interface AttachmentWithUploader extends IssueAttachment {
  * Data for creating a new attachment
  */
 export interface CreateAttachmentData {
+  teamId: string; // Denormalized for multi-tenant queries
+  projectId: string; // Denormalized for multi-tenant queries
   issueId: string;
   uploadedById: string;
   fileName: string;
@@ -208,6 +210,8 @@ export interface ActivityListResult {
  * Data for logging an activity
  */
 export interface LogActivityData {
+  teamId: string; // Denormalized for multi-tenant queries
+  projectId: string; // Denormalized for multi-tenant queries
   issueId: string;
   actorId: string;
   type: ActivityType;

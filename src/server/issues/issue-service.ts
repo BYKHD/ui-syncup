@@ -261,10 +261,10 @@ export async function createIssue(data: CreateIssueData): Promise<Issue> {
     throw new Error("Issue title must be 255 characters or less");
   }
 
-  // Get project key for issue_key generation
+  // Get project key and teamId for issue creation
   const project = await db.query.projects.findFirst({
     where: eq(projects.id, projectId),
-    columns: { key: true },
+    columns: { key: true, teamId: true },
   });
 
   if (!project) {
@@ -282,10 +282,11 @@ export async function createIssue(data: CreateIssueData): Promise<Issue> {
     const nextNumber = (maxResult[0]?.maxNumber ?? 0) + 1;
     const issueKey = `${project.key}-${nextNumber}`;
 
-    // Insert issue
+    // Insert issue with denormalized teamId for multi-tenant queries
     const [newIssue] = await tx
       .insert(issues)
       .values({
+        teamId: project.teamId, // Denormalized for performance
         projectId,
         reporterId,
         issueKey,
@@ -300,15 +301,18 @@ export async function createIssue(data: CreateIssueData): Promise<Issue> {
         page: page ?? null,
         figmaLink: figmaLink ?? null,
         jiraLink: jiraLink ?? null,
+        createdBy: reporterId, // Audit field
       })
       .returning();
 
     return newIssue;
   });
 
-  // Log activity
+  // Log activity with denormalized fields for performance
   await logActivity({
     issueId: result.id,
+    teamId: project.teamId,
+    projectId,
     actorId: reporterId,
     type: "created",
   });
@@ -351,6 +355,7 @@ export async function updateIssue(
   // Build update object and track changes
   const updates: Partial<Issue> = {
     updatedAt: new Date(),
+    updatedBy: actorId, // Audit: track who updated
   };
   const changes: FieldChange[] = [];
 
@@ -428,6 +433,8 @@ export async function updateIssue(
 
     await logActivity({
       issueId,
+      teamId: currentIssue.teamId,
+      projectId: currentIssue.projectId,
       actorId,
       type: activityType,
       changes: [change],

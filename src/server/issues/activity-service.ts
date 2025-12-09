@@ -129,11 +129,13 @@ export async function getActivity(
  * @returns Created activity ID
  */
 export async function logActivity(data: LogActivityData): Promise<string> {
-  const { issueId, actorId, type, changes, comment } = data;
+  const { teamId, projectId, issueId, actorId, type, changes, comment } = data;
 
   const [activity] = await db
     .insert(issueActivities)
     .values({
+      teamId, // Denormalized for multi-tenant queries
+      projectId, // Denormalized for multi-tenant queries
       issueId,
       actorId,
       type,
@@ -157,17 +159,23 @@ export async function logActivity(data: LogActivityData): Promise<string> {
  *
  * Convenience wrapper for logging comment_added activities.
  *
+ * @param teamId - Team UUID (denormalized)
+ * @param projectId - Project UUID (denormalized)
  * @param issueId - Issue UUID
  * @param actorId - User adding the comment
  * @param comment - Comment text
  * @returns Created activity ID
  */
 export async function logCommentActivity(
+  teamId: string,
+  projectId: string,
   issueId: string,
   actorId: string,
   comment: string
 ): Promise<string> {
   return logActivity({
+    teamId,
+    projectId,
     issueId,
     actorId,
     type: "comment_added",
@@ -178,6 +186,8 @@ export async function logCommentActivity(
 /**
  * Log an attachment activity
  *
+ * @param teamId - Team UUID (denormalized)
+ * @param projectId - Project UUID (denormalized)
  * @param issueId - Issue UUID
  * @param actorId - User performing the action
  * @param action - "added" or "removed"
@@ -185,12 +195,16 @@ export async function logCommentActivity(
  * @returns Created activity ID
  */
 export async function logAttachmentActivity(
+  teamId: string,
+  projectId: string,
   issueId: string,
   actorId: string,
   action: "added" | "removed",
   attachmentInfo: { id: string; fileName: string }
 ): Promise<string> {
   return logActivity({
+    teamId,
+    projectId,
     issueId,
     actorId,
     type: action === "added" ? "attachment_added" : "attachment_removed",
