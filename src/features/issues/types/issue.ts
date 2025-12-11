@@ -118,12 +118,40 @@ export type ActivityType =
   | 'comment_added'
   | 'attachment_added'
   | 'attachment_removed'
+  // Annotation activity types (Task 6.4, Requirements 12.1-12.4)
+  | 'annotation_created'
+  | 'annotation_updated'
+  | 'annotation_commented'
+  | 'annotation_deleted'
+
 
 export interface ActivityChange {
   field: string
   oldValue?: string | null
   newValue?: string | null
 }
+
+/**
+ * Metadata for annotation-related activity events
+ * Requirements: 12.1, 12.2, 12.3, 12.4
+ */
+export interface AnnotationActivityMetadata {
+  annotationId: string
+  annotationType: 'pin' | 'box'
+  annotationLabel: string
+  attachmentId: string
+  /** For annotation_updated: details of position/dimension changes */
+  changes?: {
+    position?: { from: { x: number; y: number }; to: { x: number; y: number } }
+    dimensions?: {
+      from: { start: { x: number; y: number }; end: { x: number; y: number } }
+      to: { start: { x: number; y: number }; end: { x: number; y: number } }
+    }
+  }
+  /** For annotation_commented: preview of the comment text */
+  commentPreview?: string
+}
+
 
 export interface ActivityEntry {
   id: string

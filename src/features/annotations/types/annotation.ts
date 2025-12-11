@@ -97,3 +97,81 @@ export interface AnnotationSaveOperation {
   annotationId: string;
   attachmentId: string;
 }
+
+// ============================================================================
+// STORED JSONB TYPES (for database persistence)
+// These types match the JSONB structure stored in issue_attachments.annotations
+// Requirements: 13.2
+// ============================================================================
+
+/**
+ * Pin shape interface for clear type discrimination
+ */
+export interface PinShape {
+  type: 'pin';
+  position: AnnotationPosition;
+}
+
+/**
+ * Box shape interface for clear type discrimination
+ */
+export interface BoxShape {
+  type: 'box';
+  start: AnnotationPosition;
+  end: AnnotationPosition;
+}
+
+/**
+ * Stored annotation comment structure in JSONB
+ * Uses authorId instead of nested author object for denormalization
+ */
+export interface StoredAnnotationComment {
+  id: string;
+  authorId: string;
+  message: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Stored attachment annotation structure in JSONB
+ * Uses authorId instead of nested author object for denormalization
+ */
+export interface StoredAttachmentAnnotation {
+  id: string;
+  authorId: string;
+  x: number;
+  y: number;
+  shape: AnnotationShape;
+  label: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  comments: StoredAnnotationComment[];
+}
+
+// ============================================================================
+// ANNOTATION PERMISSIONS TYPES
+// Requirements: 8.1, 8.2, 8.3
+// ============================================================================
+
+/**
+ * Permission flags for annotation operations
+ * Derived from user's team/project role
+ */
+export interface AnnotationPermissions {
+  /** Can view annotations on attachments */
+  canView: boolean;
+  /** Can create new annotations */
+  canCreate: boolean;
+  /** Can edit own annotations (move, resize, update description) */
+  canEdit: boolean;
+  /** Can edit any annotation regardless of author (TEAM_EDITOR+) */
+  canEditAll: boolean;
+  /** Can delete own annotations */
+  canDelete: boolean;
+  /** Can delete any annotation regardless of author (TEAM_EDITOR+) */
+  canDeleteAll: boolean;
+  /** Can add comments to annotations */
+  canComment: boolean;
+}

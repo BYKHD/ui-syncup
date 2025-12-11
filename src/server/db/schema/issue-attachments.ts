@@ -76,10 +76,16 @@ export const issueAttachments = pgTable(
     issueIdIdx: index("issue_attachments_issue_id_idx").on(table.issueId),
     // Team-level index for multi-tenant queries
     teamIdIdx: index("issue_attachments_team_id_idx").on(table.teamId),
+    // Note: GIN index for annotations JSONB is created via SQL migration (0015_add_annotation_constraints.sql)
     // Check constraint for max 10MB file size
     fileSizeCheck: check(
       "issue_attachments_file_size_check",
       sql`${table.fileSize} > 0 AND ${table.fileSize} <= 10485760`
+    ),
+    // Check constraint for max 50 annotations per attachment (Requirements 13.5)
+    maxAnnotationsCheck: check(
+      "issue_attachments_max_annotations_check",
+      sql`jsonb_array_length(${table.annotations}) <= 50`
     ),
   })
 );
