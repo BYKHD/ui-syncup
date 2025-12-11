@@ -161,7 +161,11 @@ export type ActivityType =
   | "assignee_changed"
   | "comment_added"
   | "attachment_added"
-  | "attachment_removed";
+  | "attachment_removed"
+  | "annotation_created"
+  | "annotation_updated"
+  | "annotation_commented"
+  | "annotation_deleted";
 
 /**
  * Structure for field change tracking

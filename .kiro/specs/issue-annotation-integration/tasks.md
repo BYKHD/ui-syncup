@@ -101,30 +101,30 @@
 
 ## Phase 1: Annotation Database Extensions & Types
 
-- [ ] 5. Extend database schema for annotation features
-  - [ ] 5.1 Create Drizzle migration for annotation_read_status table
+- [x] 5. Extend database schema for annotation features
+  - [x] 5.1 Create Drizzle migration for annotation_read_status table
     - Add table with user_id, attachment_id, annotation_id, last_read_at columns
     - Add composite primary key and indexes
     - _Requirements: 3.5_
-  - [ ] 5.2 Add constraint for max 50 annotations per attachment
+  - [x] 5.2 Add constraint for max 50 annotations per attachment
     - Add CHECK constraint on issue_attachments.annotations JSONB array length
     - Add GIN index for efficient JSONB queries
     - _Requirements: 13.5_
 
-- [ ] 6. Create and update TypeScript types and Zod schemas
-  - [ ] 6.1 Create annotation API schemas in src/features/annotations/api/schemas.ts
+- [x] 6. Create and update TypeScript types and Zod schemas
+  - [x] 6.1 Create annotation API schemas in src/features/annotations/api/schemas.ts
     - Define PositionSchema, PinShapeSchema, BoxShapeSchema, AnnotationShapeSchema
     - Define CreateAnnotationSchema, UpdateAnnotationSchema
     - Define CreateCommentSchema, UpdateCommentSchema
     - _Requirements: 10.1, 10.2_
-  - [ ] 6.2 Update annotation types for JSONB structure
+  - [x] 6.2 Update annotation types for JSONB structure
     - Update AttachmentAnnotation type to include authorId instead of nested author
     - Add AnnotationComment type with authorId
     - _Requirements: 13.2_
-  - [ ] 6.3 Create AnnotationPermissions interface
+  - [x] 6.3 Create AnnotationPermissions interface
     - Define canView, canCreate, canEdit, canEditAll, canDelete, canDeleteAll, canComment
     - _Requirements: 8.1, 8.2, 8.3_
-  - [ ] 6.4 Extend ActivityType with annotation activity types
+  - [x] 6.4 Extend ActivityType with annotation activity types
     - Add annotation_created, annotation_updated, annotation_commented, annotation_deleted
     - Define AnnotationActivityMetadata interface
     - _Requirements: 12.1, 12.2, 12.3, 12.4_
@@ -136,25 +136,25 @@
 
 ## Phase 2: Annotation Server-Side Services
 
-- [ ] 7. Create annotation service layer
-  - [ ] 7.1 Create annotation service in src/server/annotations/annotation-service.ts
+- [x] 7. Create annotation service layer
+  - [x] 7.1 Create annotation service in src/server/annotations/annotation-service.ts
     - Implement getAnnotationsByAttachment function
     - Implement createAnnotation function with JSONB array append
     - Implement updateAnnotation function with JSONB path update
     - Implement deleteAnnotation function with JSONB array removal
     - Implement annotation count limit check (max 50)
     - _Requirements: 1.4, 2.1, 4.3, 4.5, 13.3, 13.5_
-  - [ ] 7.2 Create comment service functions in annotation-service.ts
+  - [x] 7.2 Create comment service functions in annotation-service.ts
     - Implement addComment function
     - Implement updateComment function (author-only check)
     - Implement deleteComment function (author-only check)
     - _Requirements: 3.2, 11.1, 11.2, 11.3, 11.4_
-  - [ ] 7.3 Create permission checking utilities
+  - [x] 7.3 Create permission checking utilities
     - Implement checkAnnotationPermission function
     - Implement checkCommentPermission function
     - Map team/project roles to annotation permissions
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
-  - [ ] 7.4 Create input sanitization utility
+  - [x] 7.4 Create input sanitization utility
     - Implement sanitizeComment function using DOMPurify
     - Strip all HTML tags from user input
     - _Requirements: 10.3_
@@ -163,22 +163,22 @@
   - Test that created annotations can be fetched with identical data
   - **Validates: Requirements 1.4, 4.5**
 
-- [ ] 7.6 Write property test for XSS sanitization (Property 21)
+- [x] 7.6 Write property test for XSS sanitization (Property 21)
   - Test that XSS payloads are sanitized from comments
   - **Validates: Requirements 10.3**
 
-- [ ] 7.7 Write property test for annotation count limit (Property 28)
+- [x] 7.7 Write property test for annotation count limit (Property 28)
   - Test that 51st annotation is rejected
   - **Validates: Requirements 13.5**
 
-- [ ] 8. Create activity logging for annotations
-  - [ ] 8.1 Extend activity service for annotation events
+- [x] 8. Create activity logging for annotations
+  - [x] 8.1 Extend activity service for annotation events
     - Implement logAnnotationCreated function
     - Implement logAnnotationUpdated function with change details
     - Implement logAnnotationCommented function with preview
     - Implement logAnnotationDeleted function
     - _Requirements: 7.1, 7.2, 7.3, 12.1, 12.2, 12.3, 12.4_
-  - [ ] 8.2 Add activity filtering by annotation types
+  - [x] 8.2 Add activity filtering by annotation types
     - Support filtering by annotation_created, annotation_updated, annotation_commented, annotation_deleted
     - _Requirements: 12.5_
 
@@ -186,7 +186,7 @@
   - Test that annotation operations create corresponding activity entries
   - **Validates: Requirements 3.3, 7.1, 7.2, 7.3, 7.4**
 
-- [ ] 9. Checkpoint - Ensure all tests pass
+- [x] 9. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 3: Annotation API Routes
