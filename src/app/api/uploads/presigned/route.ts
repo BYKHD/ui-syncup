@@ -18,8 +18,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Generate key and URL
-    // Structure: {issueId}/attachments/{uuid}-{filename}
-    const key = `${issueId}/attachments/${uuidv4()}-${fileName}`;
+    // Structure: {issueId}/attachments/{uuid}.{extension}
+    // Note: Only UUID + extension in key for security/privacy. Original filename is stored in DB.
+    const extension = fileName.includes('.') ? fileName.split('.').pop() : '';
+    const key = `${issueId}/attachments/${uuidv4()}${extension ? `.${extension}` : ''}`;
     const uploadUrl = await generateUploadUrl('attachments', key, contentType);
     const publicUrl = getPublicUrl('attachments', key);
 

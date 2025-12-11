@@ -74,7 +74,7 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Link href={`/${project.slug}`} className="block h-full">
+      <Link href={`/${project.key}`} className="block h-full">
         <Card className="h-full justify-between shadow-none hover:shadow-lg transition-shadow duration-200 cursor-pointer">
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">

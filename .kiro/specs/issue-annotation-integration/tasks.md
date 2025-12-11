@@ -96,7 +96,7 @@
   - Test that updated issues reflect changes correctly
   - **Validates: Data Integrity**
 
-- [ ] 4. Checkpoint - Issues Core Complete
+- [x] 4. Checkpoint - Issues Core Complete
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 1: Annotation Database Extensions & Types

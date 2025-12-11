@@ -68,7 +68,7 @@ export default function IssueDetailsScreen({
   // Update hook
   const { mutateAsync: updateIssue, isPending: isUpdating } = useIssueUpdate({
     onSuccess: () => {
-      toast.success('Issue updated successfully');
+      // Note: Success toast is handled by individual inline editable components
       refetchIssue(); // Revalidate issue data
       refetchActivities(); // Revalidate activities to show new activity
     },
@@ -79,12 +79,16 @@ export default function IssueDetailsScreen({
 
   // Delete hook
   const { mutateAsync: deleteIssue, isPending: isDeleting } = useIssueDelete({
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success('Issue deleted successfully');
-      // Redirect to issues list after short delay
+      // Redirect to project issues list
       setTimeout(() => {
-        window.location.href = '/issues';
-      }, 1000);
+        if (data.projectKey) {
+           window.location.href = `/${data.projectKey}`;
+        } else {
+           window.location.href = '/projects';
+        }
+      }, 500);
     },
     onError: (error) => {
       toast.error(`Delete failed: ${error.message}`);
