@@ -47,6 +47,7 @@ export const ProjectWithStatsSchema = ProjectSchema.extend({
 export const ProjectSummarySchema = z.object({
   id: z.string(),
   name: z.string(),
+  key: z.string(),
   slug: z.string(),
   description: z.string().nullable(),
   icon: z.string().nullable(),

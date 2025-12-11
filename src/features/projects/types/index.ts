@@ -45,6 +45,7 @@ export interface ProjectWithStats extends Project {
 export interface ProjectSummary {
   id: string
   name: string
+  key: string
   slug: string
   description: string | null
   icon: string | null
@@ -55,3 +56,4 @@ export interface ProjectSummary {
   canJoin: boolean
   updatedAt: string
 }
+

@@ -156,10 +156,14 @@ export async function getProject(
   // Detect if input is UUID or slug
   const isId = isUUID(idOrSlug);
   
-  // Fetch project by ID or slug
+  // Fetch project by ID, slug, or key
   const project = await db.query.projects.findFirst({
     where: and(
-      isId ? eq(projects.id, idOrSlug) : eq(projects.slug, idOrSlug),
+      or(
+        isId ? eq(projects.id, idOrSlug) : undefined,
+        eq(projects.slug, idOrSlug),
+        eq(projects.key, idOrSlug)
+      ),
       isNull(projects.deletedAt)
     ),
   });
