@@ -169,7 +169,7 @@ export async function getProject(
   }
 
   // Check access
-  const hasAccess = await canViewProject(userId, project);
+  const hasAccess = await canAccessProject(userId, project);
 
   if (!hasAccess) {
     throw new Error("Access denied");
@@ -367,13 +367,20 @@ export async function hardDeleteProject(projectId: string): Promise<void> {
 // ============================================================================
 
 /**
- * Check if a user can view a project
+ * Check if a user can access a project (view-level access)
+ * 
+ * Access rules:
+ * - Public projects: any team member can view
+ * - Private projects: must be a project member OR team owner/admin
+ * 
+ * This function is exported for reuse by API routes (e.g., issues API)
+ * to ensure consistent access control across the application.
  * 
  * @param userId - User ID
- * @param project - Project data to check
- * @returns True if user can view the project
+ * @param project - Project data containing id, teamId, and visibility
+ * @returns True if user can access the project
  */
-async function canViewProject(
+export async function canAccessProject(
   userId: string,
   project: { id: string; teamId: string; visibility: string }
 ): Promise<boolean> {

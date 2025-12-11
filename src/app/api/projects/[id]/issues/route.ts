@@ -12,6 +12,10 @@ import { getSession } from "@/server/auth/session";
 import { hasPermission } from "@/server/auth/rbac";
 import { PERMISSIONS } from "@/config/roles";
 import { getIssuesByProject, createIssue } from "@/server/issues/issue-service";
+import { canAccessProject } from "@/server/projects/project-service";
+import { db } from "@/lib/db";
+import { projects } from "@/server/db/schema/projects";
+import { eq } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import type {
@@ -98,13 +102,28 @@ export async function GET(
       );
     }
 
-    // Check ISSUE_VIEW permission
-    const canView = await hasPermission({
-      userId: user.id,
-      permission: PERMISSIONS.ISSUE_VIEW,
-      resourceId: projectId,
-      resourceType: "project",
+    // Get project to check visibility-aware access
+    // This ensures consistent access control with the project detail page:
+    // - Public projects: all team members can view issues
+    // - Private projects: only project members can view issues
+    const project = await db.query.projects.findFirst({
+      where: eq(projects.id, projectId),
+      columns: { id: true, teamId: true, visibility: true },
     });
+
+    if (!project) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "NOT_FOUND",
+            message: "Project not found",
+          },
+        },
+        { status: 404 }
+      );
+    }
+
+    const canView = await canAccessProject(user.id, project);
 
     if (!canView) {
       logger.warn("api.issues.list.forbidden", {
@@ -132,8 +151,8 @@ export async function GET(
       priority: searchParams.get("priority") || undefined,
       assigneeId: searchParams.get("assigneeId") || undefined,
       search: searchParams.get("search") || undefined,
-      page: searchParams.get("page"),
-      limit: searchParams.get("limit"),
+      page: searchParams.get("page") || undefined,
+      limit: searchParams.get("limit") || undefined,
     };
 
     const validation = ListIssuesQuerySchema.safeParse(queryParams);
