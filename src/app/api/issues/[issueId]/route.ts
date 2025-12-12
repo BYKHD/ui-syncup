@@ -463,6 +463,8 @@ export async function DELETE(
     // Delete issue (cascade deletes attachments and activities)
     await deleteIssue(issueId, user.id);
 
+    const projectKey = existingIssue.issueKey.substring(0, existingIssue.issueKey.lastIndexOf("-"));
+
     logger.info("api.issue.delete.success", {
       requestId,
       userId: user.id,
@@ -471,7 +473,14 @@ export async function DELETE(
       issueKey: existingIssue.issueKey,
     });
 
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json(
+      {
+        success: true,
+        projectKey,
+        message: "Issue deleted successfully",
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("DELETE issue error:", error);
     logger.error("api.issue.delete.error", {

@@ -13,6 +13,7 @@ export interface DeleteIssueParams extends IssueDeletePayload {
 export interface DeleteIssueResponse {
   success: boolean;
   message: string;
+  projectKey: string;
 }
 
 /**
@@ -22,10 +23,5 @@ export interface DeleteIssueResponse {
 export async function deleteIssue({
   issueId,
 }: DeleteIssueParams): Promise<DeleteIssueResponse> {
-  await apiClient<void>(`/api/issues/${issueId}`, { method: 'DELETE' });
-
-  return {
-    success: true,
-    message: `Issue ${issueId} deleted successfully`,
-  };
+  return apiClient<DeleteIssueResponse>(`/api/issues/${issueId}`, { method: 'DELETE' });
 }

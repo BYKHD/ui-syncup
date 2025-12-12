@@ -67,8 +67,8 @@ export function useIssueUpdate(options?: UseIssueUpdateOptions): UseIssueUpdateR
       queryClient.invalidateQueries({ queryKey: issueKeys.detail(variables.issueId) });
       queryClient.invalidateQueries({ queryKey: issueKeys.activities(variables.issueId) });
 
-      // Show success toast
-      toast.success('Issue updated successfully');
+      // Note: Success toast is handled by individual inline editable components
+      // which provide field-specific messages with Undo functionality
 
       // Call custom success handler
       options?.onSuccess?.(data);

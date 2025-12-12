@@ -229,6 +229,7 @@ export const MOCK_PROJECTS_WITH_STATS: ProjectWithStats[] = [
 export const MOCK_PROJECT_SUMMARIES: ProjectSummary[] = MOCK_PROJECTS_WITH_STATS.map(
   (project) => ({
     id: project.id,
+    key: project.key,
     name: project.name,
     slug: project.slug,
     description: project.description,

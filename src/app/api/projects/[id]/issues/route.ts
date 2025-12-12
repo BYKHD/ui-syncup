@@ -12,6 +12,10 @@ import { getSession } from "@/server/auth/session";
 import { hasPermission } from "@/server/auth/rbac";
 import { PERMISSIONS } from "@/config/roles";
 import { getIssuesByProject, createIssue } from "@/server/issues/issue-service";
+import { canAccessProject } from "@/server/projects/project-service";
+import { db } from "@/lib/db";
+import { projects } from "@/server/db/schema/projects";
+import { eq, or } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import type {
@@ -98,13 +102,35 @@ export async function GET(
       );
     }
 
-    // Check ISSUE_VIEW permission
-    const canView = await hasPermission({
-      userId: user.id,
-      permission: PERMISSIONS.ISSUE_VIEW,
-      resourceId: projectId,
-      resourceType: "project",
+    // Get project to check visibility-aware access
+    // This ensures consistent access control with the project detail page:
+    // - Public projects: all team members can view issues
+    // - Private projects: only project members can view issues
+    // Get project to check visibility-aware access
+    // Look up by ID, slug, or key to support all route patterns
+    const idOrSlug = projectId;
+    const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idOrSlug);
+
+    const project = await db.query.projects.findFirst({
+      where: isId 
+        ? eq(projects.id, idOrSlug)
+        : or(eq(projects.slug, idOrSlug), eq(projects.key, idOrSlug)),
+      columns: { id: true, teamId: true, visibility: true },
     });
+
+    if (!project) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "NOT_FOUND",
+            message: "Project not found",
+          },
+        },
+        { status: 404 }
+      );
+    }
+
+    const canView = await canAccessProject(user.id, project);
 
     if (!canView) {
       logger.warn("api.issues.list.forbidden", {
@@ -132,8 +158,8 @@ export async function GET(
       priority: searchParams.get("priority") || undefined,
       assigneeId: searchParams.get("assigneeId") || undefined,
       search: searchParams.get("search") || undefined,
-      page: searchParams.get("page"),
-      limit: searchParams.get("limit"),
+      page: searchParams.get("page") || undefined,
+      limit: searchParams.get("limit") || undefined,
     };
 
     const validation = ListIssuesQuerySchema.safeParse(queryParams);
@@ -156,7 +182,7 @@ export async function GET(
 
     // List issues with filters and pagination
     const result = await getIssuesByProject({
-      projectId,
+      projectId: project.id,
       status: status as IssueStatus | undefined,
       type: type as IssueType | undefined,
       priority: priority as IssuePriority | undefined,
@@ -247,7 +273,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const { id: projectId } = await params;
+  const { id: projectIdOrKey } = await params;
+  let resolvedProjectId = projectIdOrKey;
 
   try {
     // Authenticate user
@@ -263,6 +290,29 @@ export async function POST(
         },
         { status: 401 }
       );
+    }
+
+    // Resolve project ID if key/slug is passed
+    const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectIdOrKey);
+    
+    if (!isId) {
+       const project = await db.query.projects.findFirst({
+        where: or(eq(projects.slug, projectIdOrKey), eq(projects.key, projectIdOrKey)),
+        columns: { id: true },
+      });
+
+      if (!project) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "NOT_FOUND",
+              message: "Project not found",
+            },
+          },
+          { status: 404 }
+        );
+      }
+      resolvedProjectId = project.id;
     }
 
     // Parse and validate request body
@@ -286,7 +336,7 @@ export async function POST(
     const canCreate = await hasPermission({
       userId: user.id,
       permission: PERMISSIONS.ISSUE_CREATE,
-      resourceId: projectId,
+      resourceId: resolvedProjectId,
       resourceType: "project",
     });
 
@@ -294,7 +344,7 @@ export async function POST(
       logger.warn("api.issues.create.forbidden", {
         requestId,
         userId: user.id,
-        projectId,
+        projectId: resolvedProjectId,
       });
 
       return NextResponse.json(
@@ -323,7 +373,7 @@ export async function POST(
 
     // Create issue
     const issue = await createIssue({
-      projectId,
+      projectId: resolvedProjectId,
       reporterId: user.id,
       title,
       description,
@@ -340,7 +390,7 @@ export async function POST(
     logger.info("api.issues.create.success", {
       requestId,
       userId: user.id,
-      projectId,
+      projectId: resolvedProjectId,
       issueId: issue.id,
       issueKey: issue.issueKey,
     });
@@ -357,7 +407,7 @@ export async function POST(
     console.error("POST issues error:", error);
     logger.error("api.issues.create.error", {
       requestId,
-      projectId,
+      projectId: resolvedProjectId,
       error: error instanceof Error ? error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
     });

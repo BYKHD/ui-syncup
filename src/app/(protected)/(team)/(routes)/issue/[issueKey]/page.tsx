@@ -6,6 +6,7 @@
 import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/shared/headers';
 import { IssueDetailsScreen } from '@/features/issues';
 import { getIssueByKeyOnly } from '@/server/issues';
+import { getProject } from '@/server/projects/project-service';
 import { getSession } from '@/server/auth/session';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -58,8 +59,17 @@ export default async function IssuePage({ params }: IssuePageProps) {
   const session = await getSession();
   const userId = session?.id;
 
+  if (!userId) {
+    // Should typically be handled by middleware, but safe guard here
+    return notFound();
+  }
+
+  // Get project for breadcrumbs
+  const project = await getProject(issue.projectId, userId);
+
   const issueBreadcrumbs: BreadcrumbItem[] = [
-    { label: 'Issues', href: '/issue' },
+    { label: 'Projects', href: '/projects' },
+    { label: project.name, href: `/${project.slug}` },
     { label: issue.issueKey },
   ];
 

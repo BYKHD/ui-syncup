@@ -27,6 +27,10 @@ export const issueActivityTypeEnum = pgEnum("issue_activity_type", [
   "comment_added",
   "attachment_added",
   "attachment_removed",
+  "annotation_created",
+  "annotation_updated",
+  "annotation_commented",
+  "annotation_deleted",
 ]);
 
 /**

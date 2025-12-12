@@ -217,3 +217,206 @@ export async function logAttachmentActivity(
     ],
   });
 }
+
+// ============================================================================
+// ANNOTATION ACTIVITY LOGGING
+// ============================================================================
+
+/**
+ * Log annotation created activity
+ *
+ * @param teamId - Team UUID (denormalized)
+ * @param projectId - Project UUID (denormalized)
+ * @param issueId - Issue UUID
+ * @param actorId - User creating the annotation
+ * @param annotationInfo - Annotation metadata
+ * @returns Created activity ID
+ */
+export async function logAnnotationCreated(
+  teamId: string,
+  projectId: string,
+  issueId: string,
+  actorId: string,
+  annotationInfo: {
+    annotationId: string;
+    attachmentId: string;
+    annotationType: "pin" | "box";
+    label: string;
+  }
+): Promise<string> {
+  return logActivity({
+    teamId,
+    projectId,
+    issueId,
+    actorId,
+    type: "annotation_created",
+    changes: [
+      {
+        field: "annotation",
+        from: null,
+        to: annotationInfo,
+      },
+    ],
+  });
+}
+
+/**
+ * Log annotation updated activity
+ *
+ * @param teamId - Team UUID (denormalized)
+ * @param projectId - Project UUID (denormalized)
+ * @param issueId - Issue UUID
+ * @param actorId - User updating the annotation
+ * @param annotationInfo - Annotation metadata with changes
+ * @returns Created activity ID
+ */
+export async function logAnnotationUpdated(
+  teamId: string,
+  projectId: string,
+  issueId: string,
+  actorId: string,
+  annotationInfo: {
+    annotationId: string;
+    attachmentId: string;
+    changes: {
+      position?: boolean;
+      dimensions?: boolean;
+      description?: boolean;
+    };
+  }
+): Promise<string> {
+  // Build change description
+  const changedFields: string[] = [];
+  if (annotationInfo.changes.position) changedFields.push("position");
+  if (annotationInfo.changes.dimensions) changedFields.push("dimensions");
+  if (annotationInfo.changes.description) changedFields.push("description");
+
+  return logActivity({
+    teamId,
+    projectId,
+    issueId,
+    actorId,
+    type: "annotation_updated",
+    changes: [
+      {
+        field: "annotation",
+        from: { annotationId: annotationInfo.annotationId },
+        to: {
+          annotationId: annotationInfo.annotationId,
+          attachmentId: annotationInfo.attachmentId,
+          changedFields,
+        },
+      },
+    ],
+  });
+}
+
+/**
+ * Log annotation commented activity
+ *
+ * @param teamId - Team UUID (denormalized)
+ * @param projectId - Project UUID (denormalized)
+ * @param issueId - Issue UUID
+ * @param actorId - User adding the comment
+ * @param commentInfo - Comment metadata with preview
+ * @returns Created activity ID
+ */
+export async function logAnnotationCommented(
+  teamId: string,
+  projectId: string,
+  issueId: string,
+  actorId: string,
+  commentInfo: {
+    annotationId: string;
+    attachmentId: string;
+    commentId: string;
+    commentPreview: string;
+  }
+): Promise<string> {
+  // Truncate comment preview to 100 characters
+  const preview = commentInfo.commentPreview.length > 100
+    ? commentInfo.commentPreview.substring(0, 97) + "..."
+    : commentInfo.commentPreview;
+
+  return logActivity({
+    teamId,
+    projectId,
+    issueId,
+    actorId,
+    type: "annotation_commented",
+    changes: [
+      {
+        field: "annotation_comment",
+        from: null,
+        to: {
+          annotationId: commentInfo.annotationId,
+          attachmentId: commentInfo.attachmentId,
+          commentId: commentInfo.commentId,
+          preview,
+        },
+      },
+    ],
+    comment: preview,
+  });
+}
+
+/**
+ * Log annotation deleted activity
+ *
+ * @param teamId - Team UUID (denormalized)
+ * @param projectId - Project UUID (denormalized)
+ * @param issueId - Issue UUID
+ * @param actorId - User deleting the annotation
+ * @param annotationInfo - Annotation metadata
+ * @returns Created activity ID
+ */
+export async function logAnnotationDeleted(
+  teamId: string,
+  projectId: string,
+  issueId: string,
+  actorId: string,
+  annotationInfo: {
+    annotationId: string;
+    attachmentId: string;
+    label: string;
+  }
+): Promise<string> {
+  return logActivity({
+    teamId,
+    projectId,
+    issueId,
+    actorId,
+    type: "annotation_deleted",
+    changes: [
+      {
+        field: "annotation",
+        from: annotationInfo,
+        to: null,
+      },
+    ],
+  });
+}
+
+// ============================================================================
+// ANNOTATION ACTIVITY TYPES
+// ============================================================================
+
+/**
+ * All annotation-related activity types for filtering
+ */
+export const ANNOTATION_ACTIVITY_TYPES = [
+  "annotation_created",
+  "annotation_updated",
+  "annotation_commented",
+  "annotation_deleted",
+] as const;
+
+export type AnnotationActivityType = typeof ANNOTATION_ACTIVITY_TYPES[number];
+
+/**
+ * Check if an activity type is annotation-related
+ */
+export function isAnnotationActivityType(type: string): type is AnnotationActivityType {
+  return ANNOTATION_ACTIVITY_TYPES.includes(type as AnnotationActivityType);
+}
+

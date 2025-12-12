@@ -12,3 +12,4 @@ export * from "./team-invitations";
 export * from "./issues";
 export * from "./issue-attachments";
 export * from "./issue-activities";
+export * from "./annotation-read-status";
