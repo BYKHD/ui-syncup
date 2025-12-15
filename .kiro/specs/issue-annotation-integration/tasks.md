@@ -250,19 +250,19 @@
 
 ## Phase 4: Client-Side Integration Hooks
 
-- [ ] 14. Create annotation integration hooks
-  - [ ] 14.1 Create useAnnotationIntegration hook
+- [x] 14. Create annotation integration hooks
+  - [x] 14.1 Create useAnnotationIntegration hook
     - Integrate with useAnnotationsWithHistory
     - Add API persistence layer
     - Handle optimistic updates with rollback
     - Manage tool state and edit mode
     - _Requirements: 1.4, 1.5, 4.5, 5.1_
-  - [ ] 14.2 Create useAnnotationComments hook
+  - [x] 14.2 Create useAnnotationComments hook
     - Fetch and cache comments
     - Handle add, update, delete mutations
     - Track unread status
     - _Requirements: 3.1, 3.2, 3.4, 3.5_
-  - [ ] 14.3 Create useAnnotationPermissions hook
+  - [x] 14.3 Create useAnnotationPermissions hook
     - Derive permissions from user role
     - Return AnnotationPermissions object
     - _Requirements: 8.1, 8.2, 8.3, 8.5_

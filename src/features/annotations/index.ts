@@ -58,3 +58,25 @@ export { useAnnotationSave } from './hooks/use-annotation-save';
 export type { UseAnnotationSaveOptions, UseAnnotationSaveReturn } from './hooks/use-annotation-save';
 export { useAnnotationEditState } from './hooks/use-annotation-edit-state';
 export type { AnnotationEditState, UseAnnotationEditStateReturn } from './hooks/use-annotation-edit-state';
+
+// Phase 4 Integration Hooks
+export {
+  useAnnotationIntegration,
+  annotationKeys,
+  type UseAnnotationIntegrationOptions,
+  type UseAnnotationIntegrationResult,
+} from './hooks/use-annotation-integration';
+
+export {
+  useAnnotationComments,
+  type UseAnnotationCommentsOptions,
+  type UseAnnotationCommentsResult,
+} from './hooks/use-annotation-comments';
+
+export {
+  useAnnotationPermissions,
+  useCanPerformAnnotationAction,
+  type UseAnnotationPermissionsOptions,
+  type UseAnnotationPermissionsResult,
+} from './hooks/use-annotation-permissions';
+
