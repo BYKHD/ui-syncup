@@ -191,42 +191,42 @@
 
 ## Phase 3: Annotation API Routes
 
-- [ ] 10. Create annotation API routes
-  - [ ] 10.1 Create POST /api/issues/[issueId]/attachments/[attachmentId]/annotations
+- [x] 10. Create annotation API routes
+  - [x] 10.1 Create POST /api/issues/[issueId]/attachments/[attachmentId]/annotations
     - Validate request body with CreateAnnotationSchema
     - Check user permissions
     - Create annotation via service
     - Log activity
     - Return created annotation with author info
     - _Requirements: 1.2, 1.3, 1.4, 7.1, 10.1, 10.2_
-  - [ ] 10.2 Create GET /api/issues/[issueId]/attachments/[attachmentId]/annotations
+  - [x] 10.2 Create GET /api/issues/[issueId]/attachments/[attachmentId]/annotations
     - Fetch all annotations for attachment
     - Include author information for each annotation
     - _Requirements: 2.1, 2.2_
-  - [ ] 10.3 Create PATCH /api/issues/[issueId]/attachments/[attachmentId]/annotations/[annotationId]
+  - [x] 10.3 Create PATCH /api/issues/[issueId]/attachments/[attachmentId]/annotations/[annotationId]
     - Validate request body with UpdateAnnotationSchema
     - Check user permissions (own vs all)
     - Update annotation via service
     - Log activity with changes
     - _Requirements: 4.1, 4.2, 4.5, 12.2_
-  - [ ] 10.4 Create DELETE /api/issues/[issueId]/attachments/[attachmentId]/annotations/[annotationId]
+  - [x] 10.4 Create DELETE /api/issues/[issueId]/attachments/[attachmentId]/annotations/[annotationId]
     - Check user permissions (own vs all)
     - Delete annotation and cascade comments
     - Log activity
     - _Requirements: 4.3, 4.4, 7.3, 12.3_
 
-- [ ] 11. Create comment API routes
-  - [ ] 11.1 Create POST /api/issues/.../annotations/[annotationId]/comments
+- [x] 11. Create comment API routes
+  - [x] 11.1 Create POST /api/issues/.../annotations/[annotationId]/comments
     - Validate request body with CreateCommentSchema
     - Sanitize comment text
     - Add comment to annotation
     - Log activity
     - _Requirements: 3.2, 10.3, 11.1, 11.5, 12.4_
-  - [ ] 11.2 Create PATCH /api/issues/.../annotations/[annotationId]/comments/[commentId]
+  - [x] 11.2 Create PATCH /api/issues/.../annotations/[annotationId]/comments/[commentId]
     - Validate author ownership
     - Update comment text
     - _Requirements: 11.2, 11.4_
-  - [ ] 11.3 Create DELETE /api/issues/.../annotations/[annotationId]/comments/[commentId]
+  - [x] 11.3 Create DELETE /api/issues/.../annotations/[annotationId]/comments/[commentId]
     - Validate author ownership
     - Remove comment from annotation
     - Log activity
@@ -236,16 +236,16 @@
   - Test that edited comments preserve createdAt and update updatedAt
   - **Validates: Requirements 11.2, 11.4**
 
-- [ ] 11.5 Write property test for comment delete authorization (Property 23)
+- [x] 11.5 Write property test for comment delete authorization (Property 23)
   - Test that only comment authors can delete their comments
   - **Validates: Requirements 11.3**
 
-- [ ] 12. Create read status API route
-  - [ ] 12.1 Create POST /api/issues/.../annotations/[annotationId]/read
+- [x] 12. Create read status API route
+  - [x] 12.1 Create POST /api/issues/.../annotations/[annotationId]/read
     - Update or insert read status for user
     - _Requirements: 3.5_
 
-- [ ] 13. Checkpoint - Ensure all tests pass
+- [x] 13. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 4: Client-Side Integration Hooks
