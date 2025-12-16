@@ -62,6 +62,7 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
   const [history, setHistory] = useState<AnnotationHistoryEntry[]>([]);
   const [redoStack, setRedoStack] = useState<AnnotationHistoryEntry[]>([]);
   const [handToolActive, setHandToolActive] = useState<boolean>(false);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState<boolean>(false);
 
   const tools = ANNOTATION_TOOL_IDS;
   const canUndo = history.length > 0;
@@ -81,42 +82,38 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
   }, []);
 
   const undo = useCallback(() => {
-    let entryToUndo: AnnotationHistoryEntry | null = null;
-
     setHistory((prev) => {
       if (!prev.length) return prev;
       const nextHistory = prev.slice(0, -1);
       const entry = prev[prev.length - 1];
-      entryToUndo = entry;
+      
+      // Move entry to redo stack
       setRedoStack((future) => [entry, ...future]);
+      
+      // Call onUndo with the entry
+      queueMicrotask(() => {
+        onUndo?.(entry);
+      });
+      
       return nextHistory;
     });
-
-    // Call onUndo after state update completes
-    if (entryToUndo) {
-      queueMicrotask(() => {
-        onUndo?.(entryToUndo!);
-      });
-    }
   }, [onUndo]);
 
   const redo = useCallback(() => {
-    let entryToRedo: AnnotationHistoryEntry | null = null;
-
     setRedoStack((prev) => {
       if (!prev.length) return prev;
       const [entry, ...rest] = prev;
-      entryToRedo = entry;
+      
+      // Move entry back to history
       setHistory((hist) => addToHistory(hist, entry));
+      
+      // Call onRedo with the entry
+      queueMicrotask(() => {
+        onRedo?.(entry);
+      });
+      
       return rest;
     });
-
-    // Call onRedo after state update completes
-    if (entryToRedo) {
-      queueMicrotask(() => {
-        onRedo?.(entryToRedo!);
-      });
-    }
   }, [onRedo]);
 
   const resetHistory = useCallback(() => {
@@ -163,6 +160,13 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
       if (isModKey && (key === 'y' || (event.shiftKey && key === 'z'))) {
         event.preventDefault();
         redo();
+        return;
+      }
+
+      // ? key: show keyboard shortcuts help modal
+      if (key === '?' || (event.shiftKey && key === '/')) {
+        event.preventDefault();
+        setShowShortcutsHelp((prev) => !prev);
         return;
       }
 
@@ -221,11 +225,13 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
     history,
     redoStack,
     handToolActive,
+    showShortcutsHelp,
     selectTool,
     toggleEditMode,
     undo,
     redo,
     pushHistory,
     resetHistory,
+    setShowShortcutsHelp,
   };
 }

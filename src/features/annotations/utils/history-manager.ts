@@ -3,18 +3,21 @@ import type {
   AnnotationSnapshot,
   AnnotationActionType,
   AnnotationShape,
+  AttachmentAnnotation,
 } from '../types';
 
 const HISTORY_LIMIT = 50;
 
 /**
  * Creates a history entry for annotation operations
+ * @param fullAnnotation - Complete annotation data for create/delete operations
  */
 export function createHistoryEntry(
   action: AnnotationActionType,
   annotationId: string,
   snapshot: AnnotationSnapshot,
   previousSnapshot?: AnnotationSnapshot,
+  fullAnnotation?: AttachmentAnnotation,
 ): AnnotationHistoryEntry {
   return {
     id: `${action}_${annotationId}_${Date.now()}`,
@@ -23,6 +26,7 @@ export function createHistoryEntry(
     annotationId,
     snapshot,
     previousSnapshot,
+    fullAnnotation,
   };
 }
 

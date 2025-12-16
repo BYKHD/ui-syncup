@@ -15,6 +15,7 @@ export interface AnnotationCommentInputProps {
   className?: string;
   defaultValue?: string; // Pre-fill input for editing mode
   title?: string; // Dynamic header text
+  maxLength?: number; // Character limit for input
 }
 
 export function AnnotationCommentInput({
@@ -26,6 +27,7 @@ export function AnnotationCommentInput({
   className,
   defaultValue = '',
   title = 'Add annotation comment',
+  maxLength = 500,
 }: AnnotationCommentInputProps) {
   const [message, setMessage] = useState(defaultValue);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -96,12 +98,21 @@ export function AnnotationCommentInput({
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             'disabled:cursor-not-allowed disabled:opacity-50',
           )}
+          maxLength={maxLength}
         />
 
-        {/* Hint text */}
-        <div className="text-xs text-muted-foreground">
-          Press <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono">Enter</kbd> to save or{' '}
-          <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono">Esc</kbd> to cancel
+        {/* Character count and hint text */}
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>
+            Press <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono">Enter</kbd> to save,{' '}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono">Shift+Enter</kbd> for newline
+          </span>
+          <span className={cn(
+            message.length > maxLength * 0.9 && 'text-orange-500',
+            message.length >= maxLength && 'text-red-500 font-medium',
+          )}>
+            {message.length}/{maxLength}
+          </span>
         </div>
 
         {/* Action Buttons */}

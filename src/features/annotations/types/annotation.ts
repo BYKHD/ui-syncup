@@ -77,6 +77,7 @@ export interface AnnotationHistoryEntry {
   annotationId: string;
   snapshot: AnnotationSnapshot;
   previousSnapshot?: AnnotationSnapshot; // For move/resize operations
+  fullAnnotation?: AttachmentAnnotation; // For create/delete operations - stores complete annotation for restoration
 }
 
 // ============================================================================

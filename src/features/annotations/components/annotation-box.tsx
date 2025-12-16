@@ -15,14 +15,17 @@ const BOX_DRAG_THRESHOLD_PX = 4;
 const getAnnotationBoxBorderClassName = ({
   isActive,
   interactive,
+  isSaving,
 }: {
   isActive: boolean;
   interactive: boolean;
+  isSaving: boolean;
 }) =>
   cn(
     'absolute inset-0  transition-colors',
     isActive ? 'border-annotation border-2' : 'border-annotation/50 border-2',
     interactive ? 'cursor-move' : 'cursor-pointer',
+    isSaving && 'animate-pulse ring-2 ring-blue-400 ring-opacity-75',
   );
 
 const getAnnotationBoxLabelClassName = (isActive: boolean,interactive: boolean) =>
@@ -55,9 +58,12 @@ export interface AnnotationBoxProps {
   isActive?: boolean;
   interactive?: boolean;
   handToolActive?: boolean; // Disable context menu when hand tool is active
+  isSaving?: boolean; // Show saving indicator when true
   onSelect?: (annotationId: string) => void;
   onMove?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
   onMoveComplete?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
+  onDragStart?: (annotationId: string) => void;
+  onDragEnd?: (annotationId: string) => void;
   onEdit?: (annotationId: string) => void;
   onDelete?: (annotationId: string) => void;
 }
@@ -70,9 +76,12 @@ export function AnnotationBox({
   isActive = false,
   interactive = true,
   handToolActive = false,
+  isSaving = false,
   onSelect,
   onMove,
   onMoveComplete,
+  onDragStart,
+  onDragEnd,
   onEdit,
   onDelete,
 }: AnnotationBoxProps) {
@@ -166,6 +175,48 @@ export function AnnotationBox({
           const dy = currentY - dragState.grabPoint.y;
           newStart = { x: dragState.originalStart.x + dx, y: dragState.originalStart.y + dy };
           newEnd = { x: dragState.originalEnd.x + dx, y: dragState.originalEnd.y + dy };
+          
+          // When dragging the box (not resizing), constrain movement to keep box fully within bounds
+          // while preserving its size. Calculate box dimensions first.
+          const boxWidth = Math.abs(newEnd.x - newStart.x);
+          const boxHeight = Math.abs(newEnd.y - newStart.y);
+          const boxLeft = Math.min(newStart.x, newEnd.x);
+          const boxTop = Math.min(newStart.y, newEnd.y);
+          const boxRight = boxLeft + boxWidth;
+          const boxBottom = boxTop + boxHeight;
+          
+          // Constrain the box position to stay within bounds
+          let constrainedLeft = boxLeft;
+          let constrainedTop = boxTop;
+          
+          if (boxRight > 1) {
+            constrainedLeft = 1 - boxWidth;
+          } else if (boxLeft < 0) {
+            constrainedLeft = 0;
+          }
+          
+          if (boxBottom > 1) {
+            constrainedTop = 1 - boxHeight;
+          } else if (boxTop < 0) {
+            constrainedTop = 0;
+          }
+          
+          // Apply the constrained position while preserving original orientation
+          if (dragState.originalStart.x <= dragState.originalEnd.x) {
+            newStart.x = constrainedLeft;
+            newEnd.x = constrainedLeft + boxWidth;
+          } else {
+            newStart.x = constrainedLeft + boxWidth;
+            newEnd.x = constrainedLeft;
+          }
+          
+          if (dragState.originalStart.y <= dragState.originalEnd.y) {
+            newStart.y = constrainedTop;
+            newEnd.y = constrainedTop + boxHeight;
+          } else {
+            newStart.y = constrainedTop + boxHeight;
+            newEnd.y = constrainedTop;
+          }
           break;
         case 'top-left':
           newStart = { x: currentX, y: currentY };
@@ -183,12 +234,17 @@ export function AnnotationBox({
           break;
       }
 
-      // Clamp coordinates to 0-1 range to prevent API validation errors
-      const clamp = (val: number) => Math.min(Math.max(val, 0), 1);
-      return { 
-        start: { x: clamp(newStart.x), y: clamp(newStart.y) }, 
-        end: { x: clamp(newEnd.x), y: clamp(newEnd.y) } 
-      };
+      // For resize handles, clamp coordinates to 0-1 range to prevent API validation errors
+      if (handle !== 'box') {
+        const clamp = (val: number) => Math.min(Math.max(val, 0), 1);
+        return { 
+          start: { x: clamp(newStart.x), y: clamp(newStart.y) }, 
+          end: { x: clamp(newEnd.x), y: clamp(newEnd.y) } 
+        };
+      }
+      
+      // For box drag, coordinates are already constrained
+      return { start: newStart, end: newEnd };
     },
     [overlayRef],
   );
@@ -224,8 +280,11 @@ export function AnnotationBox({
 
       setActiveHandle(handle);
       event.currentTarget.setPointerCapture(event.pointerId);
+      
+      // Notify parent immediately that drag might start (prevents sync during potential drag)
+      onDragStart?.(annotation.id);
     },
-    [interactive, isMobile, longPressHandlers, overlayRef, annotation.start, annotation.end],
+    [interactive, isMobile, longPressHandlers, overlayRef, annotation.start, annotation.end, onDragStart, annotation.id],
   );
 
   const handlePointerMove = useCallback(
@@ -291,7 +350,7 @@ export function AnnotationBox({
 
       // Notify parent when drag completes (only if actually dragged)
       if (dragState?.hasMoved && lastPositionRef.current) {
-        onMove?.(annotation.id, lastPositionRef.current.start, lastPositionRef.current.end);
+        // Call onMoveComplete for final state update and history (onMove is for live updates during drag)
         onMoveComplete?.(annotation.id, lastPositionRef.current.start, lastPositionRef.current.end);
       }
 
@@ -299,8 +358,11 @@ export function AnnotationBox({
       setActiveHandle(null);
       dragStateRef.current = null;
       lastPositionRef.current = null;
+
+      // Always notify parent that drag ended (matches onDragStart in pointerDown)
+      onDragEnd?.(annotation.id);
     },
-    [interactive, onSelect, onMove, onMoveComplete, annotation.id, isMobile, longPressHandlers],
+    [interactive, onSelect, onMoveComplete, onDragEnd, annotation.id, isMobile, longPressHandlers],
   );
 
   // Context menu handler (desktop right-click)
@@ -354,7 +416,7 @@ export function AnnotationBox({
       >
         {/* Box Border */}
         <div
-          className={getAnnotationBoxBorderClassName({ isActive, interactive })}
+          className={getAnnotationBoxBorderClassName({ isActive, interactive, isSaving })}
           onPointerDown={(e) => handlePointerDown(e, 'box')}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}

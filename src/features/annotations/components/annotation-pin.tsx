@@ -15,14 +15,17 @@ const PIN_DRAG_THRESHOLD_PX = 4;
 const getAnnotationPinClassName = ({
   isActive,
   interactive,
+  isSaving,
 }: {
   isActive: boolean;
   interactive: boolean;
+  isSaving: boolean;
 }) =>
   cn(
     'group absolute flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-xs font-semibold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
     isActive ? 'border-annotation-bold bg-annotation-bold text-annotation-foreground' : 'border-2 border-white bg-annotation text-annotation-foreground',
     interactive ? 'cursor-move' : 'cursor-pointer',
+    isSaving && 'animate-pulse ring-2 ring-blue-400 ring-opacity-75',
   );
 
 export interface AnnotationPinProps<A extends AttachmentAnnotation = AttachmentAnnotation> {
@@ -31,9 +34,12 @@ export interface AnnotationPinProps<A extends AttachmentAnnotation = AttachmentA
   isActive?: boolean;
   interactive?: boolean;
   handToolActive?: boolean; // Disable context menu when hand tool is active
+  isSaving?: boolean; // Show saving indicator when true
   onSelect?: (annotationId: string) => void;
   onMove?: (annotationId: string, position: AnnotationPosition) => void;
   onMoveComplete?: (annotationId: string, position: AnnotationPosition) => void;
+  onDragStart?: (annotationId: string) => void;
+  onDragEnd?: (annotationId: string) => void;
   onEdit?: (annotationId: string) => void;
   onDelete?: (annotationId: string) => void;
 }
@@ -44,9 +50,12 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   isActive = false,
   interactive = true,
   handToolActive = false,
+  isSaving = false,
   onSelect,
   onMove,
   onMoveComplete,
+  onDragStart,
+  onDragEnd,
   onEdit,
   onDelete,
 }: AnnotationPinProps<A>) {
@@ -107,6 +116,9 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     event.currentTarget.setPointerCapture(event.pointerId);
     dragStartRef.current = { x: event.clientX, y: event.clientY };
     isDraggingRef.current = false;
+    
+    // Notify parent immediately that drag might start (prevents sync during potential drag)
+    onDragStart?.(annotation.id);
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
@@ -165,8 +177,7 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
 
     // Notify parent when drag completes (only if actually dragged)
     if (isDraggingRef.current && lastPositionRef.current) {
-      // Call onMove with final position (single update instead of many during drag)
-      onMove?.(annotation.id, lastPositionRef.current);
+      // Call onMoveComplete for final state update and history (onMove is for live updates during drag)
       onMoveComplete?.(annotation.id, lastPositionRef.current);
     }
 
@@ -175,6 +186,9 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     dragStartRef.current = null;
     isDraggingRef.current = false;
     lastPositionRef.current = null;
+
+    // Always notify parent that drag ended (matches onDragStart in pointerDown)
+    onDragEnd?.(annotation.id);
   };
 
   // Context menu handler (desktop right-click)
@@ -215,7 +229,7 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onContextMenu={handleContextMenu}
-        className={getAnnotationPinClassName({ isActive, interactive })}
+        className={getAnnotationPinClassName({ isActive, interactive, isSaving })}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}

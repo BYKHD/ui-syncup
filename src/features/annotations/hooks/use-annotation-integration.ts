@@ -15,7 +15,7 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import type { AnnotationShape, AttachmentAnnotation, AnnotationToolId } from '../types';
+import type { AnnotationShape, AttachmentAnnotation, AnnotationToolId, AnnotationHistoryEntry } from '../types';
 import { useAnnotationsWithHistory } from './use-annotations-with-history';
 import { useAnnotationTools } from './use-annotation-tools';
 import {
@@ -67,6 +67,7 @@ export interface UseAnnotationIntegrationResult {
   canUndo: boolean;
   canRedo: boolean;
   handToolActive: boolean;
+  showShortcutsHelp: boolean;
 
   // Actions
   createAnnotation: (shape: AnnotationShape, description?: string) => Promise<void>;
@@ -80,6 +81,10 @@ export interface UseAnnotationIntegrationResult {
   toggleEditMode: (next?: boolean) => void;
   undo: () => void;
   redo: () => void;
+  setShowShortcutsHelp: (show: boolean) => void;
+
+  // Drag state (prevents sync during drag)
+  setDragging: (isDragging: boolean) => void;
 
   // Refresh
   refetch: () => void;
@@ -150,6 +155,12 @@ export function useAnnotationIntegration(
   // Track current selected annotation for keyboard shortcuts
   const selectedAnnotationRef = useRef<string | null>(null);
 
+  // Track if any annotation is currently being dragged (prevents sync during potential drag)
+  const isDraggingRef = useRef(false);
+
+  // Track if there are pending local changes not yet saved (prevents sync overwriting unsaved work)
+  const hasPendingLocalChangesRef = useRef(false);
+
   // ============================================================================
   // QUERY - Fetch annotations
   // ============================================================================
@@ -171,6 +182,9 @@ export function useAnnotationIntegration(
   // LOCAL STATE - History-enabled annotation management
   // ============================================================================
 
+  // Ref to hold pushHistory callback - allows connecting hooks without circular dependency
+  const pushHistoryRef = useRef<((entry: AnnotationHistoryEntry) => void) | null>(null);
+
   const {
     annotations: localAnnotations,
     setAnnotations,
@@ -182,11 +196,13 @@ export function useAnnotationIntegration(
     applyRedo,
   } = useAnnotationsWithHistory({
     initialAnnotations: query.data ?? [],
-    onPushHistory: undefined, // History managed by useAnnotationTools
+    onPushHistory: (entry) => pushHistoryRef.current?.(entry),
   });
 
   // Sync local state when query data changes
   useMemo(() => {
+    // Skip sync during active drag or if there are pending local changes
+    if (isDraggingRef.current || hasPendingLocalChangesRef.current) return;
     if (query.data && !query.isFetching) {
       setAnnotations(query.data);
     }
@@ -196,16 +212,71 @@ export function useAnnotationIntegration(
   // TOOL STATE
   // ============================================================================
 
+  // Enhanced applyUndo that updates both local state AND React Query cache
+  const enhancedApplyUndo = useCallback((entry: AnnotationHistoryEntry) => {
+    // Apply to local state
+    applyUndo(entry);
+    
+    // Also update React Query cache to prevent overwrite from refetch
+    if (entry.previousSnapshot && (entry.action === 'move' || entry.action === 'resize')) {
+      queryClient.setQueryData<AttachmentAnnotation[]>(queryKey, (old) => {
+        if (!old) return old;
+        return old.map(ann => {
+          if (ann.id !== entry.annotationId) return ann;
+          const prevShape = entry.previousSnapshot!.shape;
+          const updatedAnn = { ...ann, shape: prevShape };
+          if (prevShape.type === 'pin') {
+            updatedAnn.x = prevShape.position.x;
+            updatedAnn.y = prevShape.position.y;
+          } else if (prevShape.type === 'box') {
+            updatedAnn.x = (prevShape.start.x + prevShape.end.x) / 2;
+            updatedAnn.y = (prevShape.start.y + prevShape.end.y) / 2;
+          }
+          return updatedAnn;
+        });
+      });
+    }
+  }, [applyUndo, queryClient, queryKey]);
+
+  // Enhanced applyRedo that updates both local state AND React Query cache
+  const enhancedApplyRedo = useCallback((entry: AnnotationHistoryEntry) => {
+    // Apply to local state
+    applyRedo(entry);
+    
+    // Also update React Query cache
+    if (entry.snapshot && (entry.action === 'move' || entry.action === 'resize')) {
+      queryClient.setQueryData<AttachmentAnnotation[]>(queryKey, (old) => {
+        if (!old) return old;
+        return old.map(ann => {
+          if (ann.id !== entry.annotationId) return ann;
+          const newShape = entry.snapshot!.shape;
+          const updatedAnn = { ...ann, shape: newShape };
+          if (newShape.type === 'pin') {
+            updatedAnn.x = newShape.position.x;
+            updatedAnn.y = newShape.position.y;
+          } else if (newShape.type === 'box') {
+            updatedAnn.x = (newShape.start.x + newShape.end.x) / 2;
+            updatedAnn.y = (newShape.start.y + newShape.end.y) / 2;
+          }
+          return updatedAnn;
+        });
+      });
+    }
+  }, [applyRedo, queryClient, queryKey]);
+
   const tools = useAnnotationTools({
     initialEditMode: false,
     enableKeyboardShortcuts: true,
     activeAnnotationId: selectedAnnotationRef.current,
-    onUndo: applyUndo,
-    onRedo: applyRedo,
+    onUndo: enhancedApplyUndo,
+    onRedo: enhancedApplyRedo,
     onDelete: (annotationId: string) => {
       void deleteMutation.mutateAsync(annotationId);
     },
   });
+
+  // Connect pushHistory to ref after tools is initialized
+  pushHistoryRef.current = tools.pushHistory;
 
   // ============================================================================
   // MUTATIONS - Create
@@ -280,11 +351,15 @@ export function useAnnotationIntegration(
       if (context?.previousAnnotations) {
         queryClient.setQueryData(queryKey, context.previousAnnotations);
         setAnnotations(context.previousAnnotations);
+        toast.error('Save failed - changes reverted');
+      } else {
+        toast.error('Failed to update annotation');
       }
-      toast.error('Failed to update annotation');
       onError?.(error);
     },
     onSettled: () => {
+      // Clear pending changes flag - save is complete
+      hasPendingLocalChangesRef.current = false;
       // Refetch to ensure consistency
       void queryClient.invalidateQueries({ queryKey });
     },
@@ -328,8 +403,10 @@ export function useAnnotationIntegration(
       if (context?.previousAnnotations) {
         queryClient.setQueryData(queryKey, context.previousAnnotations);
         setAnnotations(context.previousAnnotations);
+        toast.error('Delete failed - annotation restored');
+      } else {
+        toast.error('Failed to delete annotation');
       }
-      toast.error('Failed to delete annotation');
       onError?.(error);
     },
     onSettled: () => {
@@ -365,6 +442,9 @@ export function useAnnotationIntegration(
   // Handle pin annotation move with debounced API sync
   const handleAnnotationMove = useCallback(
     (annotationId: string, position: { x: number; y: number }) => {
+      // Mark that we have pending local changes (prevents sync overwriting our work)
+      hasPendingLocalChangesRef.current = true;
+
       // Update local state immediately
       localHandleMove(annotationId, position);
 
@@ -378,6 +458,9 @@ export function useAnnotationIntegration(
   // Handle box annotation move/resize with debounced API sync
   const handleBoxAnnotationMove = useCallback(
     (annotationId: string, start: { x: number; y: number }, end: { x: number; y: number }) => {
+      // Mark that we have pending local changes (prevents sync overwriting our work)
+      hasPendingLocalChangesRef.current = true;
+
       // Update local state immediately
       localHandleBoxMove(annotationId, start, end);
 
@@ -413,6 +496,7 @@ export function useAnnotationIntegration(
     canUndo: tools.canUndo,
     canRedo: tools.canRedo,
     handToolActive: tools.handToolActive,
+    showShortcutsHelp: tools.showShortcutsHelp,
 
     // Actions
     createAnnotation,
@@ -426,6 +510,10 @@ export function useAnnotationIntegration(
     toggleEditMode: tools.toggleEditMode,
     undo: tools.undo,
     redo: tools.redo,
+    setShowShortcutsHelp: tools.setShowShortcutsHelp,
+
+    // Drag state
+    setDragging: (isDragging: boolean) => { isDraggingRef.current = isDragging; },
 
     // Refresh
     refetch,

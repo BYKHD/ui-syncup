@@ -24,6 +24,7 @@ import { useAnnotationIntegration } from '../hooks/use-annotation-integration';
 import { useAnnotationPermissions } from '../hooks/use-annotation-permissions';
 import { useAnnotationDrafts, draftToAnnotation } from '../hooks/use-annotation-drafts';
 import { useAnnotationEditState } from '../hooks/use-annotation-edit-state';
+import { KeyboardShortcutsModal } from './keyboard-shortcuts-modal';
 
 // ============================================================================
 // TYPES
@@ -156,6 +157,7 @@ export function AnnotatedAttachmentView({
     canUndo,
     canRedo,
     handToolActive,
+    showShortcutsHelp,
     createAnnotation,
     handleAnnotationMove,
     handleBoxAnnotationMove,
@@ -164,6 +166,8 @@ export function AnnotatedAttachmentView({
     toggleEditMode,
     undo,
     redo,
+    setShowShortcutsHelp,
+    setDragging,
     refetch,
   } = useAnnotationIntegration({
     issueId,
@@ -362,8 +366,10 @@ export function AnnotatedAttachmentView({
             activeAnnotationId={activeAnnotationId}
             interactive={isAnnotationInteractive}
             onSelect={handleAnnotationSelect}
-            onMove={handleAnnotationMove}
-            onBoxMove={handleBoxAnnotationMove}
+            onMoveComplete={handleAnnotationMove}
+            onBoxMoveComplete={handleBoxAnnotationMove}
+            onDragStart={() => setDragging(true)}
+            onDragEnd={() => setDragging(false)}
             onEdit={handleAnnotationEdit}
             onDelete={handleAnnotationDelete}
           />
@@ -428,6 +434,12 @@ export function AnnotatedAttachmentView({
         pointerPanEnabled={pointerPanEnabled}
         scrollPanEnabled={true}
         saveStatus={saveStatus}
+      />
+
+      {/* Keyboard shortcuts help modal */}
+      <KeyboardShortcutsModal
+        open={showShortcutsHelp}
+        onOpenChange={setShowShortcutsHelp}
       />
     </div>
   );

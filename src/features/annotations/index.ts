@@ -24,6 +24,8 @@ export { AnnotatedAttachmentView } from './components/annotated-attachment-view'
 export type { AnnotatedAttachmentViewProps } from './components/annotated-attachment-view';
 export { AnnotationThreadPanel } from './components/annotation-thread-panel';
 export type { AnnotationThreadPanelProps } from './components/annotation-thread-panel';
+export { KeyboardShortcutsModal } from './components/keyboard-shortcuts-modal';
+export type { KeyboardShortcutsModalProps } from './components/keyboard-shortcuts-modal';
 
 // Types
 export type {
@@ -85,3 +87,16 @@ export {
   type UseAnnotationPermissionsResult,
 } from './hooks/use-annotation-permissions';
 
+// UX Enhancement Hooks
+export {
+  useAnnotationBatchSave,
+  type UseAnnotationBatchSaveOptions,
+  type UseAnnotationBatchSaveResult,
+  type BatchSaveItem,
+} from './hooks/use-annotation-batch-save';
+
+export {
+  useAutoSave,
+  type UseAutoSaveOptions,
+  type UseAutoSaveResult,
+} from './hooks/use-auto-save';
