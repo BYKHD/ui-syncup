@@ -161,6 +161,9 @@ export default function ResponsiveIssueLayout({
     }));
   }, [annotations]);
 
+  // Track active/selected annotation for thread panel integration
+  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
+
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   // Initialize panel state based on viewport width
@@ -369,6 +372,8 @@ export default function ResponsiveIssueLayout({
                        canComment: permissions.canComment,
                     }}
                     annotations={mappedAnnotations}
+                    activeAnnotationId={activeAnnotationId}
+                    onAnnotationSelect={setActiveAnnotationId}
                   />
                 </Suspense>
               </motion.div>
@@ -414,6 +419,8 @@ export default function ResponsiveIssueLayout({
                     isMobile={isMobile}
                     hideThreadPreview={true}
                     annotations={mappedAnnotations}
+                    activeAnnotationId={activeAnnotationId}
+                    onAnnotationSelect={setActiveAnnotationId}
                   />
                 </Suspense>
               </motion.div>
@@ -517,6 +524,8 @@ export default function ResponsiveIssueLayout({
               canComment: permissions.canComment,
             }}
             annotations={mappedAnnotations}
+            activeAnnotationId={activeAnnotationId}
+            onAnnotationSelect={setActiveAnnotationId}
           />
         </Suspense>
         
@@ -568,6 +577,8 @@ export default function ResponsiveIssueLayout({
               // Desktop auto-switch to annotations tab handled in IssueDetailsPanel useEffect
             }}
             annotations={mappedAnnotations}
+            activeAnnotationId={activeAnnotationId}
+            onAnnotationSelect={setActiveAnnotationId}
           />
         </Suspense>
       </motion.div>

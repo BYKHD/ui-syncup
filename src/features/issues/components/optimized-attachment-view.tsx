@@ -44,6 +44,10 @@ interface IssueAttachmentsViewProps {
   permissions?: Partial<AnnotationPermissions>;
   /** External annotations */
   annotations?: AttachmentAnnotation[];
+  /** Active annotation ID for thread panel sync */
+  activeAnnotationId?: string | null;
+  /** Callback when annotation selection changes */
+  onAnnotationSelect?: (annotationId: string | null) => void;
 }
 
 export default function IssueAttachmentsView({
@@ -58,6 +62,8 @@ export default function IssueAttachmentsView({
   onSelectAttachment: controlledSetSelectedId,
   permissions,
   annotations,
+  activeAnnotationId,
+  onAnnotationSelect,
 }: IssueAttachmentsViewProps) {
   const imageAttachments = useMemo(
     () => attachments.filter((att) => att.fileType.startsWith('image/')),
@@ -240,6 +246,8 @@ export default function IssueAttachmentsView({
                 interactive={true}
                 permissions={permissions}
                 annotations={permissions?.canView ? annotations : undefined}
+                activeAnnotationId={activeAnnotationId}
+                onAnnotationSelect={onAnnotationSelect}
               />
             </motion.div>
           ) : (

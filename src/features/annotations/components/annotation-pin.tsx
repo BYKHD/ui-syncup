@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 import type { PointerEvent, RefObject } from 'react';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import type { AttachmentAnnotation, AnnotationPosition } from '../types';
 import { cn } from '@/lib/utils';
 import { useLongPress } from '@/hooks/use-long-press';
@@ -54,6 +54,16 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
   const lastPositionRef = useRef<AnnotationPosition | null>(null);
+  
+  // Local drag offset for smooth visual updates (prevents re-renders during drag)
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+  
+  // Clear drag offset when parent state updates (prevents flicker on drop)
+  useEffect(() => {
+    if (dragOffset !== null) {
+      setDragOffset(null);
+    }
+  }, [annotation.x, annotation.y]);
 
   // Context menu state (desktop)
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
@@ -124,7 +134,7 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
 
     event.preventDefault();
     const overlay = overlayRef.current;
-    if (!overlay || !onMove) return;
+    if (!overlay) return;
     const rect = overlay.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width;
     const y = (event.clientY - rect.top) / rect.height;
@@ -134,7 +144,12 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
 
     // Store last position for drag completion callback
     lastPositionRef.current = position;
-    onMove(annotation.id, position);
+    
+    // Store offset as decimal for smooth visual update (avoids parent re-render)
+    setDragOffset({
+      x: clampedX - annotation.x,
+      y: clampedY - annotation.y,
+    });
   };
 
   const handlePointerUp = (event: PointerEvent<HTMLButtonElement>) => {
@@ -149,10 +164,14 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     }
 
     // Notify parent when drag completes (only if actually dragged)
-    if (isDraggingRef.current && lastPositionRef.current && onMoveComplete) {
-      onMoveComplete(annotation.id, lastPositionRef.current);
+    if (isDraggingRef.current && lastPositionRef.current) {
+      // Call onMove with final position (single update instead of many during drag)
+      onMove?.(annotation.id, lastPositionRef.current);
+      onMoveComplete?.(annotation.id, lastPositionRef.current);
     }
 
+    // Don't clear dragOffset here - let useEffect clear it when annotation.x/y updates
+    // This prevents flicker between drop and state update
     dragStartRef.current = null;
     isDraggingRef.current = false;
     lastPositionRef.current = null;
@@ -201,8 +220,8 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         style={{
-          left: `${annotation.x * 100}%`,
-          top: `${annotation.y * 100}%`,
+          left: dragOffset ? `${(annotation.x + dragOffset.x) * 100}%` : `${annotation.x * 100}%`,
+          top: dragOffset ? `${(annotation.y + dragOffset.y) * 100}%` : `${annotation.y * 100}%`,
         }}
         aria-label={`Annotation ${annotation.label}`}
         data-annotation-pin="true"

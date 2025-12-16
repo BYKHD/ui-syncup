@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 import type { PointerEvent, RefObject } from 'react';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { AnnotationPosition } from '../types';
 import { cn } from '@/lib/utils';
 import { useLongPress } from '@/hooks/use-long-press';
@@ -78,9 +78,33 @@ export function AnnotationBox({
 }: AnnotationBoxProps) {
   const isMobile = useIsMobile();
   const [activeHandle, setActiveHandle] = useState<DragHandle | null>(null);
-  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
-  const isDraggingRef = useRef(false);
+  
+  // Single consolidated drag state ref - stores everything needed for the drag operation
+  const dragStateRef = useRef<{
+    // Original annotation positions at drag start
+    originalStart: AnnotationPosition;
+    originalEnd: AnnotationPosition;
+    // Cursor position at drag start (normalized 0-1)
+    grabPoint: { x: number; y: number };
+    // Client position for threshold detection
+    clientStart: { x: number; y: number };
+    // Has drag surpassed threshold?
+    hasMoved: boolean;
+  } | null>(null);
+  
+  // Last calculated position for final onMove call
   const lastPositionRef = useRef<{ start: AnnotationPosition; end: AnnotationPosition } | null>(null);
+  
+  // Local visual offset for smooth rendering (supports both move and resize)
+  const [visualDelta, setVisualDelta] = useState<{ 
+    startDx: number; startDy: number; 
+    endDx: number; endDy: number 
+  } | null>(null);
+  
+  // Clear visual delta when annotation position updates from parent
+  useEffect(() => {
+    setVisualDelta(null);
+  }, [annotation.start.x, annotation.start.y, annotation.end.x, annotation.end.y]);
 
   // Context menu state (desktop)
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
@@ -89,10 +113,18 @@ export function AnnotationBox({
   // Action sheet state (mobile)
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
 
-  const x1 = Math.min(annotation.start.x, annotation.end.x);
-  const y1 = Math.min(annotation.start.y, annotation.end.y);
-  const x2 = Math.max(annotation.start.x, annotation.end.x);
-  const y2 = Math.max(annotation.start.y, annotation.end.y);
+  // Calculate effective positions with visual delta for smooth updates during drag
+  const effectiveStart = visualDelta 
+    ? { x: annotation.start.x + visualDelta.startDx, y: annotation.start.y + visualDelta.startDy }
+    : annotation.start;
+  const effectiveEnd = visualDelta 
+    ? { x: annotation.end.x + visualDelta.endDx, y: annotation.end.y + visualDelta.endDy }
+    : annotation.end;
+
+  const x1 = Math.min(effectiveStart.x, effectiveEnd.x);
+  const y1 = Math.min(effectiveStart.y, effectiveEnd.y);
+  const x2 = Math.max(effectiveStart.x, effectiveEnd.x);
+  const y2 = Math.max(effectiveStart.y, effectiveEnd.y);
 
   const width = Math.abs((x2 - x1) * 100);
   const height = Math.abs((y2 - y1) * 100);
@@ -117,45 +149,48 @@ export function AnnotationBox({
   const calculateNewPosition = useCallback(
     (event: PointerEvent, handle: DragHandle): { start: AnnotationPosition; end: AnnotationPosition } | null => {
       const overlay = overlayRef.current;
-      if (!overlay) return null;
+      const dragState = dragStateRef.current;
+      if (!overlay || !dragState) return null;
 
       const rect = overlay.getBoundingClientRect();
-      const clientX = (event.clientX - rect.left) / rect.width;
-      const clientY = (event.clientY - rect.top) / rect.height;
+      const currentX = (event.clientX - rect.left) / rect.width;
+      const currentY = (event.clientY - rect.top) / rect.height;
 
-      // Allow coordinates outside the image bounds (no clamping)
-      let newStart = { ...annotation.start };
-      let newEnd = { ...annotation.end };
+      let newStart = { ...dragState.originalStart };
+      let newEnd = { ...dragState.originalEnd };
 
       switch (handle) {
         case 'box':
-          // Move entire box
-          const dx = clientX - (x1 + width / 200);
-          const dy = clientY - (y1 + height / 200);
-          newStart = { x: annotation.start.x + dx, y: annotation.start.y + dy };
-          newEnd = { x: annotation.end.x + dx, y: annotation.end.y + dy };
+          // Move entire box - delta from grab point to current cursor
+          const dx = currentX - dragState.grabPoint.x;
+          const dy = currentY - dragState.grabPoint.y;
+          newStart = { x: dragState.originalStart.x + dx, y: dragState.originalStart.y + dy };
+          newEnd = { x: dragState.originalEnd.x + dx, y: dragState.originalEnd.y + dy };
           break;
         case 'top-left':
-          newStart = { x: clientX, y: clientY };
-          newEnd = annotation.end;
+          newStart = { x: currentX, y: currentY };
           break;
         case 'top-right':
-          newStart = { x: annotation.start.x, y: clientY };
-          newEnd = { x: clientX, y: annotation.end.y };
+          newStart = { x: dragState.originalStart.x, y: currentY };
+          newEnd = { x: currentX, y: dragState.originalEnd.y };
           break;
         case 'bottom-left':
-          newStart = { x: clientX, y: annotation.start.y };
-          newEnd = { x: annotation.end.x, y: clientY };
+          newStart = { x: currentX, y: dragState.originalStart.y };
+          newEnd = { x: dragState.originalEnd.x, y: currentY };
           break;
         case 'bottom-right':
-          newStart = annotation.start;
-          newEnd = { x: clientX, y: clientY };
+          newEnd = { x: currentX, y: currentY };
           break;
       }
 
-      return { start: newStart, end: newEnd };
+      // Clamp coordinates to 0-1 range to prevent API validation errors
+      const clamp = (val: number) => Math.min(Math.max(val, 0), 1);
+      return { 
+        start: { x: clamp(newStart.x), y: clamp(newStart.y) }, 
+        end: { x: clamp(newEnd.x), y: clamp(newEnd.y) } 
+      };
     },
-    [annotation, overlayRef, x1, y1, width, height],
+    [overlayRef],
   );
 
   const handlePointerDown = useCallback(
@@ -168,19 +203,29 @@ export function AnnotationBox({
         longPressHandlers.onPointerDown(event as any);
       }
 
-      // Always allow selection, even in non-interactive (view) mode
-      onSelect?.(annotation.id);
-
       // Only enable dragging/resizing in interactive (edit) mode
-      // Ignore right-clicks (button !== 0) to allow context menu
       if (!interactive || event.button !== 0) return;
 
+      // Initialize drag state with all needed info
+      const overlay = overlayRef.current;
+      if (overlay) {
+        const rect = overlay.getBoundingClientRect();
+        dragStateRef.current = {
+          originalStart: { ...annotation.start },
+          originalEnd: { ...annotation.end },
+          grabPoint: {
+            x: (event.clientX - rect.left) / rect.width,
+            y: (event.clientY - rect.top) / rect.height,
+          },
+          clientStart: { x: event.clientX, y: event.clientY },
+          hasMoved: false,
+        };
+      }
+
       setActiveHandle(handle);
-      dragStartRef.current = { x: event.clientX, y: event.clientY };
-      isDraggingRef.current = false;
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [interactive, onSelect, annotation.id, isMobile, longPressHandlers],
+    [interactive, isMobile, longPressHandlers, overlayRef, annotation.start, annotation.end],
   );
 
   const handlePointerMove = useCallback(
@@ -193,27 +238,36 @@ export function AnnotationBox({
       if (!interactive || !activeHandle) return;
       if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
 
+      const dragState = dragStateRef.current;
+      if (!dragState) return;
+
       event.preventDefault();
-      const startPoint = dragStartRef.current;
-      if (!startPoint) return;
-      const deltaX = event.clientX - startPoint.x;
-      const deltaY = event.clientY - startPoint.y;
-      const distanceSquared = deltaX * deltaX + deltaY * deltaY;
-      if (!isDraggingRef.current) {
+      
+      // Check threshold
+      if (!dragState.hasMoved) {
+        const deltaX = event.clientX - dragState.clientStart.x;
+        const deltaY = event.clientY - dragState.clientStart.y;
+        const distanceSquared = deltaX * deltaX + deltaY * deltaY;
         if (distanceSquared < BOX_DRAG_THRESHOLD_PX * BOX_DRAG_THRESHOLD_PX) {
           return;
         }
-        isDraggingRef.current = true;
+        dragState.hasMoved = true;
       }
 
       const newPosition = calculateNewPosition(event, activeHandle);
-      if (newPosition && onMove) {
-        // Store last position for drag completion callback
+      if (newPosition) {
         lastPositionRef.current = newPosition;
-        onMove(annotation.id, newPosition.start, newPosition.end);
+        
+        // Calculate visual delta for smooth rendering (works for both move and resize)
+        setVisualDelta({
+          startDx: newPosition.start.x - annotation.start.x,
+          startDy: newPosition.start.y - annotation.start.y,
+          endDx: newPosition.end.x - annotation.end.x,
+          endDy: newPosition.end.y - annotation.end.y,
+        });
       }
     },
-    [interactive, activeHandle, calculateNewPosition, onMove, annotation.id, isMobile, longPressHandlers],
+    [interactive, activeHandle, calculateNewPosition, annotation.start, annotation.end, isMobile, longPressHandlers],
   );
 
   const handlePointerUp = useCallback(
@@ -223,22 +277,30 @@ export function AnnotationBox({
         longPressHandlers.onPointerUp(event as any);
       }
 
+      const dragState = dragStateRef.current;
+      
+      // If no drag occurred, treat as a click and select
+      if (!dragState?.hasMoved) {
+        onSelect?.(annotation.id);
+      }
+
       if (!interactive) return;
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
         event.currentTarget.releasePointerCapture(event.pointerId);
       }
 
       // Notify parent when drag completes (only if actually dragged)
-      if (isDraggingRef.current && lastPositionRef.current && onMoveComplete) {
-        onMoveComplete(annotation.id, lastPositionRef.current.start, lastPositionRef.current.end);
+      if (dragState?.hasMoved && lastPositionRef.current) {
+        onMove?.(annotation.id, lastPositionRef.current.start, lastPositionRef.current.end);
+        onMoveComplete?.(annotation.id, lastPositionRef.current.start, lastPositionRef.current.end);
       }
 
+      // Clear state - visualDelta will be cleared by useEffect when annotation updates
       setActiveHandle(null);
-      dragStartRef.current = null;
-      isDraggingRef.current = false;
+      dragStateRef.current = null;
       lastPositionRef.current = null;
     },
-    [interactive, onMoveComplete, annotation.id, isMobile, longPressHandlers],
+    [interactive, onSelect, onMove, onMoveComplete, annotation.id, isMobile, longPressHandlers],
   );
 
   // Context menu handler (desktop right-click)
