@@ -5,7 +5,6 @@ import React, {
   useEffect,
   lazy,
   Suspense,
-  useMemo,
   useCallback,
   useRef,
 } from "react";
@@ -31,10 +30,8 @@ import type {
   IssuePermissions,
   ActivityEntry,
   IssueAttachment,
-  IssueUser,
 } from "@/features/issues/types";
-import type { AnnotationPosition, AnnotationThread, AttachmentAnnotation } from "@/features/annotations";
-import { mapAttachmentsToAnnotationThreads, AnnotationThreadPreview } from "@/features/annotations";
+import { useAnnotationIntegration } from "@/features/annotations";
 
 // Motion configuration constants
 const motionPresets = {
@@ -48,8 +45,6 @@ const motionPresets = {
 const performanceProps = {
   layoutId: undefined as string | undefined,
 };
-
-type IssueAnnotationThread = AnnotationThread<IssueUser>;
 
 // Lazy load heavy components for better performance
 const IssueAttachmentView = lazy(() => import("./optimized-attachment-view"));
@@ -106,15 +101,66 @@ export default function ResponsiveIssueLayout({
   onToggleShortcutsHelp,
   shortcuts = [],
 }: ResponsiveIssueLayoutProps) {
-  const annotationSeed = useMemo<IssueAnnotationThread[]>(
-    () => mapAttachmentsToAnnotationThreads<IssueUser>(attachments),
-    [attachments]
-  );
   const isMobile = useIsMobile();
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1024
   );
   const [activeTab, setActiveTab] = useState("attachments");
+  
+  // Lifted state for selected attachment
+  // Default to first image attachment if available
+  const imageAttachments = React.useMemo(
+    () => attachments.filter((att) => att.fileType.startsWith('image/')),
+    [attachments]
+  );
+  
+  const [selectedAttachmentId, setSelectedAttachmentId] = useState<string>(() => {
+    const asIs = imageAttachments.find(att => att.reviewVariant === 'as_is');
+    return asIs?.id || imageAttachments[0]?.id || '';
+  });
+
+  // Ensure selected ID is valid when attachments change
+  useEffect(() => {
+    if (!imageAttachments.length) return;
+    const isValid = imageAttachments.some(a => a.id === selectedAttachmentId);
+    if (!isValid) {
+      const asIs = imageAttachments.find(att => att.reviewVariant === 'as_is');
+      setSelectedAttachmentId(asIs?.id || imageAttachments[0]?.id || '');
+    }
+  }, [imageAttachments, selectedAttachmentId]);
+
+  // Fetch annotations for the selected attachment
+  // This powers the side panel
+  const { 
+    annotations, 
+    activeTool, // We might want to pass tool state down too if needed
+    // ... potentially other properties for coordination
+  } = useAnnotationIntegration({
+    issueId,
+    attachmentId: selectedAttachmentId,
+    enabled: !!selectedAttachmentId && permissions.canComment, // using canComment as proxy for view/edit access
+  });
+
+  // Map annotations to align AnnotationAuthor (with avatarUrl) to IssueUser (with image)
+  const mappedAnnotations = React.useMemo(() => {
+    return annotations.map((annot) => ({
+      ...annot,
+      author: {
+        ...annot.author,
+        image: annot.author.avatarUrl || null,
+        email: annot.author.email || "",
+      },
+      comments: annot.comments?.map((c) => ({
+        ...c,
+        author: {
+          ...c.author,
+          image: c.author.avatarUrl || null,
+          email: c.author.email || "",
+        },
+      })),
+    }));
+  }, [annotations]);
+
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   // Initialize panel state based on viewport width
@@ -124,13 +170,6 @@ export default function ResponsiveIssueLayout({
     // Auto-collapse on initial load if viewport is 768-991px
     return width < 992;
   });
-  const [annotationThreads, setAnnotationThreads] =
-    useState<IssueAnnotationThread[]>(annotationSeed);
-  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(
-    null
-  );
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [prevThreadId, setPrevThreadId] = useState<string | null>(null);
   const dragControls = useDragControls();
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -178,28 +217,6 @@ export default function ResponsiveIssueLayout({
     }
   }, [isMobile]); // Remove activeTab from dependencies to avoid cascading renders
 
-  useEffect(() => {
-    setAnnotationThreads(annotationSeed);
-    setActiveAnnotationId((prev) =>
-      prev && annotationSeed.some((annotation) => annotation.id === prev)
-        ? prev
-        : null
-    );
-  }, [annotationSeed]);
-
-  // Auto-open sheet when annotation is selected (mobile only)
-  useEffect(() => {
-    if (!isMobile) return;
-
-    if (activeAnnotationId && !isSheetOpen) {
-      setIsSheetOpen(true);
-      setPrevThreadId(activeAnnotationId);
-    } else if (activeAnnotationId && isSheetOpen && activeAnnotationId !== prevThreadId) {
-      // Thread changed while sheet is open - trigger swap animation
-      setPrevThreadId(activeAnnotationId);
-    }
-  }, [activeAnnotationId, isSheetOpen, prevThreadId, isMobile]);
-
   // Handle swipe gestures for mobile tab switching
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!isMobile) return;
@@ -229,112 +246,6 @@ export default function ResponsiveIssueLayout({
     setTouchStartX(null);
     setTouchStartY(null);
   };
-
-  const handleAnnotationSelect = useCallback((annotationId: string | null) => {
-    setActiveAnnotationId(annotationId);
-
-    if (!annotationId) {
-      return;
-    }
-
-    // Desktop: expand panel if collapsed and switch to annotations tab
-    if (!isMobile && isPanelCollapsed) {
-      setIsPanelCollapsed(false);
-    }
-  }, [isMobile, isPanelCollapsed]);
-
-  const handleSheetClose = useCallback(() => {
-    setIsSheetOpen(false);
-    setActiveAnnotationId(null);
-  }, []);
-
-  const handleDragEnd = useCallback(
-    (event: any, info: PanInfo) => {
-      const threshold = 100;
-      if (info.offset.y > threshold) {
-        handleSheetClose();
-      }
-    },
-    [handleSheetClose]
-  );
-
-  const handleAnnotationMove = useCallback(
-    (annotationId: string, coords: { x: number; y: number }) => {
-      setAnnotationThreads((prev) =>
-        prev.map((annotation) =>
-          annotation.id === annotationId
-            ? {
-                ...annotation,
-                x: coords.x,
-                y: coords.y,
-                shape: { type: 'pin', position: { x: coords.x, y: coords.y } },
-              }
-            : annotation
-        )
-      );
-    },
-    []
-  );
-
-  const handleBoxAnnotationMove = useCallback(
-    (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => {
-      setAnnotationThreads((prev) =>
-        prev.map((annotation) =>
-          annotation.id === annotationId
-            ? {
-                ...annotation,
-                shape: { type: "box", start, end },
-                x: (start.x + end.x) / 2,
-                y: (start.y + end.y) / 2,
-              }
-            : annotation
-        )
-      );
-    },
-    []
-  );
-
-  const handleAnnotationEdit = useCallback(
-    (annotationId: string) => {
-      // Edit UI is handled in optimized-attachment-view
-      // This callback is for future tracking/analytics if needed
-      console.log('Edit annotation initiated:', annotationId);
-    },
-    []
-  );
-
-  const handleAnnotationUpdate = useCallback(
-    (annotationId: string, updates: Partial<AttachmentAnnotation>) => {
-      setAnnotationThreads((prev) =>
-        prev.map((annotation) =>
-          annotation.id === annotationId
-            ? ({ ...annotation, ...updates } as IssueAnnotationThread)
-            : annotation
-        )
-      );
-    },
-    []
-  );
-
-  const handleAnnotationDelete = useCallback(
-    (annotationId: string) => {
-      setAnnotationThreads((prev) => {
-        const filtered = prev.filter((a) => a.id !== annotationId);
-        // Re-sequence labels
-        const resequenced = filtered.map((annotation, index) => ({
-          ...annotation,
-          label: String(index + 1),
-        }));
-        return resequenced;
-      });
-
-      // Clear active annotation if it was deleted
-      if (activeAnnotationId === annotationId) {
-        setActiveAnnotationId(null);
-      }
-    },
-    [activeAnnotationId]
-  );
 
   const handleBackToIssues = () => {
     window.location.href = "/issues";
@@ -446,14 +357,18 @@ export default function ResponsiveIssueLayout({
                     isLoading={isLoading}
                     error={attachmentError}
                     onRetry={onRetryAttachments}
-                    annotationThreads={annotationThreads}
-                    activeAnnotationId={activeAnnotationId}
-                    onAnnotationSelect={handleAnnotationSelect}
-                    onAnnotationMove={handleAnnotationMove}
-                    onBoxAnnotationMove={handleBoxAnnotationMove}
-                    onAnnotationEdit={handleAnnotationEdit}
-                    onAnnotationUpdate={handleAnnotationUpdate}
-                    onAnnotationDelete={handleAnnotationDelete}
+                    projectId={issueData.projectId}
+                    teamId={issueData.teamId}
+                    selectedAttachmentId={selectedAttachmentId}
+                    onSelectAttachment={setSelectedAttachmentId}
+                    permissions={{
+                       canView: true,
+                       canCreate: permissions.canComment,
+                       canEdit: permissions.canComment,
+                       canDelete: permissions.canComment,
+                       canComment: permissions.canComment,
+                    }}
+                    annotations={mappedAnnotations}
                   />
                 </Suspense>
               </motion.div>
@@ -496,61 +411,15 @@ export default function ResponsiveIssueLayout({
                     onEditingTitleChange={onEditingTitleChange}
                     onEditingDescriptionChange={onEditingDescriptionChange}
                     onToggleShortcutsHelp={onToggleShortcutsHelp}
-                    annotations={annotationThreads}
-                    activeAnnotationId={activeAnnotationId}
-                    onAnnotationSelect={handleAnnotationSelect}
                     isMobile={isMobile}
                     hideThreadPreview={true}
+                    annotations={mappedAnnotations}
                   />
                 </Suspense>
               </motion.div>
             )}
           </AnimatePresence>
         </Tabs>
-
-        {/* Mobile Thread Preview Sheet - Overlays at viewport level */}
-        <AnimatePresence mode="wait">
-          {isSheetOpen && activeAnnotationId && (() => {
-            const selectedThread = annotationThreads.find((a) => a.id === activeAnnotationId);
-            return selectedThread ? (
-              <>
-                {/* Backdrop */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="fixed inset-0 bg-black/40 z-40"
-                  onClick={handleSheetClose}
-                  aria-hidden="true"
-                />
-
-                {/* Sheet Container */}
-                <motion.div
-                  key={selectedThread.id}
-                  ref={sheetRef}
-                  initial={{ y: '100%' }}
-                  animate={{ y: 0 }}
-                  exit={{ y: '100%' }}
-                  transition={{
-                    type: 'spring',
-                    damping: 30,
-                    stiffness: 300,
-                  }}
-                  drag="y"
-                  dragControls={dragControls}
-                  dragConstraints={{ top: 0, bottom: 0 }}
-                  dragElastic={{ top: 0, bottom: 0.2 }}
-                  onDragEnd={handleDragEnd}
-                  className="fixed inset-x-0 bottom-0 z-50 flex flex-col bg-background shadow-lg rounded-t-2xl border-t h-[85vh] max-h-[85vh]"
-                  style={{ touchAction: 'none' }}
-                >
-                  <AnnotationThreadPreview thread={selectedThread} onClose={handleSheetClose} />
-                </motion.div>
-              </>
-            ) : null;
-          })()}
-        </AnimatePresence>
 
         {/* Keyboard shortcuts help */}
         <Dialog open={showShortcutsHelp} onOpenChange={onToggleShortcutsHelp}>
@@ -636,14 +505,18 @@ export default function ResponsiveIssueLayout({
             isLoading={isLoading}
             error={attachmentError}
             onRetry={onRetryAttachments}
-            annotationThreads={annotationThreads}
-            activeAnnotationId={activeAnnotationId}
-            onAnnotationSelect={handleAnnotationSelect}
-            onAnnotationMove={handleAnnotationMove}
-            onBoxAnnotationMove={handleBoxAnnotationMove}
-            onAnnotationEdit={handleAnnotationEdit}
-            onAnnotationUpdate={handleAnnotationUpdate}
-            onAnnotationDelete={handleAnnotationDelete}
+            projectId={issueData.projectId}
+            teamId={issueData.teamId}
+            selectedAttachmentId={selectedAttachmentId}
+            onSelectAttachment={setSelectedAttachmentId}
+            permissions={{
+              canView: true,
+              canCreate: permissions.canComment,
+              canEdit: permissions.canComment,
+              canDelete: permissions.canComment,
+              canComment: permissions.canComment,
+            }}
+            annotations={mappedAnnotations}
           />
         </Suspense>
         
@@ -688,15 +561,13 @@ export default function ResponsiveIssueLayout({
             onEditingTitleChange={onEditingTitleChange}
             onEditingDescriptionChange={onEditingDescriptionChange}
             onToggleShortcutsHelp={onToggleShortcutsHelp}
-            annotations={annotationThreads}
-            activeAnnotationId={activeAnnotationId}
-            onAnnotationSelect={handleAnnotationSelect}
             isPanelCollapsed={isPanelCollapsed}
             onPanelToggle={() => setIsPanelCollapsed(!isPanelCollapsed)}
             isMobile={isMobile}
             onPanelTabChange={() => {
               // Desktop auto-switch to annotations tab handled in IssueDetailsPanel useEffect
             }}
+            annotations={mappedAnnotations}
           />
         </Suspense>
       </motion.div>

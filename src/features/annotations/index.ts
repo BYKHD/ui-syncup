@@ -20,6 +20,10 @@ export type { AnnotationThreadPreviewProps } from './components/annotation-threa
 export { AnnotationToolbar } from './components/annotation-toolbar';
 export type { AnnotationToolbarProps } from './components/annotation-toolbar';
 export { AnnotationDrawer } from './components/annotation-drawer';
+export { AnnotatedAttachmentView } from './components/annotated-attachment-view';
+export type { AnnotatedAttachmentViewProps } from './components/annotated-attachment-view';
+export { AnnotationThreadPanel } from './components/annotation-thread-panel';
+export type { AnnotationThreadPanelProps } from './components/annotation-thread-panel';
 
 // Types
 export type {
@@ -35,6 +39,7 @@ export type {
   AnnotationDraft,
   AnnotationActionType,
   AnnotationSnapshot,
+  AnnotationPermissions,
 } from './types';
 export { ANNOTATION_TOOL_IDS } from './types';
 

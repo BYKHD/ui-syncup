@@ -157,7 +157,7 @@ export async function createAnnotation(
   const [updated] = await db
     .update(issueAttachments)
     .set({
-      annotations: sql`${issueAttachments.annotations} || ${JSON.stringify(newAnnotation)}::jsonb`,
+      annotations: sql`COALESCE(${issueAttachments.annotations}, '[]'::jsonb) || ${JSON.stringify(newAnnotation)}::jsonb`,
     })
     .where(eq(issueAttachments.id, attachmentId))
     .returning({ id: issueAttachments.id });

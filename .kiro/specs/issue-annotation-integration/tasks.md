@@ -277,33 +277,33 @@
 
 ## Phase 5: UI Component Integration
 
-- [ ] 15. Create AnnotatedAttachmentView component
-  - [ ] 15.1 Create AnnotatedAttachmentView wrapper component
+- [x] 15. Create AnnotatedAttachmentView component
+  - [x] 15.1 Create AnnotatedAttachmentView wrapper component
     - Combine CenteredCanvasView with annotation capabilities
     - Wire useAnnotationIntegration hook
     - Pass permissions to child components
     - _Requirements: 1.1, 2.2_
-  - [ ] 15.2 Integrate AnnotationToolbar with permissions
+  - [x] 15.2 Integrate AnnotationToolbar with permissions
     - Show/hide tools based on permissions
     - Disable toolbar for TEAM_VIEWER role
     - _Requirements: 8.1, 8.5_
-  - [ ] 15.3 Integrate AnnotationLayer with selection and permissions
+  - [x] 15.3 Integrate AnnotationLayer with selection and permissions
     - Handle annotation selection
     - Show edit controls based on permissions
     - Display unread indicators
     - _Requirements: 2.3, 2.4, 3.5, 8.2, 8.3_
 
-- [ ] 15.4 Write property test for role-based permission enforcement (Property 16)
+- [x] 15.4 Write property test for role-based permission enforcement (Property 16)
   - Test that UI reflects correct permissions for each role
   - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5**
 
-- [ ] 16. Create AnnotationThreadPanel component
-  - [ ] 16.1 Create AnnotationThreadPanel component
+- [x] 16. Create AnnotationThreadPanel component
+  - [x] 16.1 Create AnnotationThreadPanel component
     - Display comments in chronological order
     - Show author information and timestamps
     - Handle comment submission
     - _Requirements: 3.1, 3.4_
-  - [ ] 16.2 Add mobile-optimized layout
+  - [x] 16.2 Add mobile-optimized layout
     - Use drawer/sheet on mobile breakpoints
     - _Requirements: 9.4_
 
@@ -311,12 +311,12 @@
   - Test that comments are displayed in ascending order by createdAt
   - **Validates: Requirements 3.4**
 
-- [ ] 17. Integrate with Issue Details Screen
-  - [ ] 17.1 Update IssueDetailsScreen to use AnnotatedAttachmentView
+- [x] 17. Integrate with Issue Details Screen
+  - [x] 17.1 Update IssueDetailsScreen to use AnnotatedAttachmentView
     - Replace current attachment view with annotated version
     - Pass issue and attachment data
     - _Requirements: 1.1_
-  - [ ] 17.2 Add annotation activities to activity timeline
+  - [x] 17.2 Add annotation activities to activity timeline
     - Display annotation activity entries with icons
     - Handle click to navigate to annotation
     - _Requirements: 7.4, 7.5_

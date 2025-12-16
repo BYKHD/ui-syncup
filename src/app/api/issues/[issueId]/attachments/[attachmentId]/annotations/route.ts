@@ -220,10 +220,15 @@ export async function GET(
     // Get annotations
     const result = await getAnnotationsByAttachment(attachmentId);
 
-    // Enrich with author information
+    // Enrich with author information and inject attachmentId
     const enrichedAnnotations = await enrichAnnotationsWithAuthors(
       result.annotations
     );
+
+    const baseAnnotations = enrichedAnnotations.map(annotation => ({
+      ...annotation,
+      attachmentId, // Explicitly inject attachmentId
+    }));
 
     logger.info("api.annotations.list.success", {
       requestId,
@@ -233,7 +238,7 @@ export async function GET(
     });
 
     return NextResponse.json(
-      { annotations: enrichedAnnotations },
+      { annotations: baseAnnotations },
       { status: 200 }
     );
   } catch (error) {
@@ -442,6 +447,7 @@ export async function POST(
 
     const enrichedAnnotation = {
       ...result.annotation,
+      attachmentId, // Explicitly inject attachmentId
       author: author || {
         id: user.id,
         name: "Unknown User",

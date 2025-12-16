@@ -28,10 +28,8 @@ interface IssueDetailsScreenProps {
  * Displays full issue details with attachments and activity timeline.
  * Wired to real API endpoints via React Query hooks.
  *
- * TODO (Next Phase - Annotations):
- * - Wire annotation creation/editing in attachment views
- * - Implement real-time annotation comments
- * - See .kiro/specs/issue-annotation-integration/tasks.md
+ * Annotations are integrated via AnnotatedAttachmentView (Task 15)
+ * and activity timeline includes annotation events (Task 17.2).
  */
 import { authClient } from '@/lib/auth-client';
 
