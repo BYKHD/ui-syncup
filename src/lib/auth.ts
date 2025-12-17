@@ -20,6 +20,21 @@ export const auth = betterAuth({
       clientId: authConfig.providers.google.clientId,
       clientSecret: authConfig.providers.google.clientSecret,
     },
+    // Microsoft OAuth - only included when configured
+    ...(authConfig.providers.microsoft.enabled && {
+      microsoft: {
+        clientId: authConfig.providers.microsoft.clientId,
+        clientSecret: authConfig.providers.microsoft.clientSecret,
+        tenantId: authConfig.providers.microsoft.tenantId,
+      },
+    }),
+    // Atlassian OAuth - only included when configured
+    ...(authConfig.providers.atlassian.enabled && {
+      atlassian: {
+        clientId: authConfig.providers.atlassian.clientId,
+        clientSecret: authConfig.providers.atlassian.clientSecret,
+      },
+    }),
   },
   secret: authConfig.session.secret,
   baseURL: authConfig.session.baseUrl,

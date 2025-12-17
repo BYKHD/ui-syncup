@@ -33,22 +33,22 @@
   - Ensure all providers use proper scopes (openid, email, profile)
   - _Requirements: 1.1, 2.1, 3.1, 7.4_
 
-- [ ] 3.1 Write unit tests for OAuth redirect URL construction
+- [x] 3.1 Write unit tests for OAuth redirect URL construction
   - Test redirect URL parameters (client_id, scope, etc.)
   - Test state parameter inclusion
 
-- [ ] 3.2 Write unit tests for minimum scopes
+- [x] 3.2 Write unit tests for minimum scopes
   - Verify required scopes are present for each provider
   - Verify strict scope enforcement
 
-- [ ] 4. Create provider configuration API endpoint
+- [x] 4. Create provider configuration API endpoint
   - Create GET /api/auth/providers endpoint
   - Return enabled status for each OAuth provider
   - Implement server-side provider availability check
   - Add proper error handling and validation
   - _Requirements: 5.3_
 
-- [ ] 4.1 Write unit tests for provider API endpoint
+- [x] 4.1 Write unit tests for provider API endpoint
   - Test enabled/disabled provider responses
   - Test error handling for invalid requests
   - _Requirements: 5.3_
