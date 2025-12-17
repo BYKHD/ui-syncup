@@ -24,8 +24,8 @@ import {
   TeamSwitcher,
   NavMain,
   NavProjects,
-  MOCK_PROJECTS,
 } from '@/components/shared/sidebar';
+import { useRecentProjects } from '@/features/projects/hooks';
 import type { NavItem } from '@/components/shared/sidebar';
 import { Separator } from '@/components/ui/separator';
 
@@ -47,6 +47,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const teamId = currentTeam?.id;
   
   const canManageTeam = useCanManageTeam(teamId);
+  const { recentProjects, isLoaded: isRecentProjectsLoaded } = useRecentProjects();
 
   const navItems = React.useMemo(() => {
     const items: NavItem[] = [
@@ -59,16 +60,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: 'Projects',
         url: '/projects',
         icon: RiBox2Line,
-      },
-      {
-        title: 'Team',
-        url: '/team',
-        icon: RiTeamLine,
-      },
-      {
-        title: 'Analytics',
-        url: '/analytics',
-        icon: RiBarChartBoxLine,
       },
     ];
 
@@ -132,7 +123,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <Separator/>
       <SidebarContent>
         <NavMain items={navItems} />
-        <NavProjects projects={MOCK_PROJECTS} />
+        <NavProjects projects={recentProjects} isLoading={!isRecentProjectsLoaded} />
       </SidebarContent>
       <SidebarFooter>
       </SidebarFooter>

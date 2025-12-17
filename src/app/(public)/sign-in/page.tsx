@@ -22,9 +22,9 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   if (sessionToken) {
     const session = await getSession();
     
-    // Redirect to dashboard if already authenticated
+    // Redirect to Projects if already authenticated
     if (session) {
-      redirect("/dashboard");
+      redirect("/Projects");
     }
   }
 

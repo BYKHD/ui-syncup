@@ -26,10 +26,10 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "$8",
+    price: "Stay Tuned",
     period: "/ editor / month",
     description: "For growing teams shipping fast",
-    popular: true,
+    popular: false,
     features: [
       { text: "Unlimited users", included: true },
       { text: "Unlimited projects", included: true },

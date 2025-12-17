@@ -18,3 +18,6 @@ export { useRemoveMember } from './use-remove-member'
 
 // Filter Hooks
 export { useProjectFilters, type ProjectFilters } from './use-project-filters'
+
+// UI Hooks
+export { useRecentProjects } from './use-recent-projects'

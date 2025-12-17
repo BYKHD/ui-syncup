@@ -14,6 +14,7 @@
  * @module server/auth/cookies
  */
 
+
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { env, isProduction } from '@/lib/env';
@@ -22,6 +23,7 @@ import { env, isProduction } from '@/lib/env';
  * Cookie configuration constants
  */
 const SESSION_COOKIE_NAME = 'session_token';
+const BETTER_AUTH_COOKIE_NAME = 'better-auth.session_token';
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
 
 /**
@@ -77,6 +79,7 @@ export function setSessionCookie(
  * Gets the session cookie value from the current request
  * 
  * This function reads the session cookie from the incoming request.
+ * It checks both the custom session cookie and the better-auth session cookie.
  * It should be called from server components or API routes.
  * 
  * @returns The session token string if present, null otherwise
@@ -92,9 +95,17 @@ export function setSessionCookie(
  */
 export async function getSessionCookie(): Promise<string | null> {
   const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
   
-  return sessionCookie?.value ?? null;
+  // First check for our custom session cookie
+  const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME);
+  if (sessionCookie?.value) {
+    return sessionCookie.value;
+  }
+  
+  // If not found, check for better-auth session cookie (used for OAuth)
+  // better-auth might verify prefixes, but we just need the token value for validation
+  const betterAuthCookie = cookieStore.get(BETTER_AUTH_COOKIE_NAME);
+  return betterAuthCookie?.value ?? null;
 }
 
 /**
@@ -102,7 +113,7 @@ export async function getSessionCookie(): Promise<string | null> {
  * 
  * This function removes the session cookie by setting it with an expired
  * date and empty value. This is used during sign-out to invalidate the
- * client-side session.
+ * client-side session. It clears bot custom and better-auth cookies.
  * 
  * @param response - The NextResponse object to clear the cookie from
  * @returns The modified NextResponse object (for chaining)
@@ -118,11 +129,21 @@ export async function getSessionCookie(): Promise<string | null> {
  * ```
  */
 export function clearSessionCookie(response: NextResponse): NextResponse {
+  // Clear custom session cookie
   response.cookies.set(SESSION_COOKIE_NAME, '', {
     httpOnly: true,
     secure: isProduction(),
     sameSite: 'lax',
     maxAge: 0,        // Expire immediately
+    path: '/',
+  });
+
+  // Clear better-auth session cookie
+  response.cookies.set(BETTER_AUTH_COOKIE_NAME, '', {
+    httpOnly: true,
+    secure: isProduction(),
+    sameSite: 'lax',
+    maxAge: 0,
     path: '/',
   });
   
@@ -134,6 +155,7 @@ export function clearSessionCookie(response: NextResponse): NextResponse {
  * Useful for testing and debugging
  * 
  * @returns The name of the session cookie
+ * 
  */
 export function getSessionCookieName(): string {
   return SESSION_COOKIE_NAME;
