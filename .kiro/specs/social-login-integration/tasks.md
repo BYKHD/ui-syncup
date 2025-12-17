@@ -53,7 +53,7 @@
   - Test error handling for invalid requests
   - _Requirements: 5.3_
 
-- [ ] 5. Implement social login buttons component
+- [x] 5. Implement social login buttons component
   - Create SocialLoginButtons component in features/auth/components
   - Add provider icons and styling for Google, Microsoft, Atlassian
   - Implement dynamic button visibility based on provider configuration
@@ -65,13 +65,13 @@
   - Test PKCE challenge generation
   - Test state generation and storage
 
-- [ ] 5.2 Write component tests for social login buttons
+- [x] 5.2 Write component tests for social login buttons
   - Test button rendering based on provider config
   - Test loading states during OAuth initiation
   - Test error message display
   - _Requirements: 5.3, 6.1, 6.2_
 
-- [ ] 6. Implement OAuth callback handling and user management
+- [x] 6. Implement OAuth callback handling and user management
   - Extend OAuth callback processing to handle Microsoft and Atlassian
   - Implement user creation from OAuth profile data
   - Add account linking logic for existing users with matching emails
@@ -79,19 +79,19 @@
   - Add proper error handling for OAuth failures
   - _Requirements: 1.2, 1.3, 1.4, 1.5, 2.2, 2.3, 2.4, 2.5, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 6.1 Write integration tests for OAuth profile processing
+- [x] 6.1 Write integration tests for OAuth profile processing
   - Test user creation from valid OAuth profile
   - Test user update from existing OAuth profile
 
-- [ ] 6.2 Write integration tests for new user email verification
+- [x] 6.2 Write integration tests for new user email verification
   - Verify email_verified is set to true for new OAuth users
   - Verify email verification status persists
 
-- [ ] 6.3 Write integration tests for account linking
+- [x] 6.3 Write integration tests for account linking
   - Test linking OAuth account to existing user with matching email
   - Test prevention of duplicate account linking
 
-- [ ] 6.4 Write unit tests for state validation
+- [x] 6.4 Write unit tests for state validation
   - Test state parameter verification
   - Test rejection of invalid or tampered state
 
