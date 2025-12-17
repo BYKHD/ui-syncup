@@ -368,8 +368,8 @@ export function AnnotatedAttachmentView({
             onSelect={handleAnnotationSelect}
             onMoveComplete={handleAnnotationMove}
             onBoxMoveComplete={handleBoxAnnotationMove}
-            onDragStart={() => setDragging(true)}
-            onDragEnd={() => setDragging(false)}
+            onDragStart={(annotationId) => setDragging(annotationId, true)}
+            onDragEnd={(annotationId) => setDragging(annotationId, false)}
             onEdit={handleAnnotationEdit}
             onDelete={handleAnnotationDelete}
           />

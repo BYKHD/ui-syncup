@@ -67,7 +67,7 @@ const effectiveY = dragOffset ? annotation.y + dragOffset.y : annotation.y;
 ```
 
 **Key Properties:**
-- Cleared after commit (pointer-up) and/or via `useEffect` when `annotation` base geometry updates from parent
+- Cleared after commit (pointer-up), typically via `useEffect` when `annotation` base geometry updates from parent
 - Never persisted or sent to server
 - Provides 60fps smooth drag regardless of React re-renders
 
@@ -156,7 +156,7 @@ graph TD
 ### Pin Annotation (`annotation-pin.tsx`)
 
 ```tsx
-// ✅ CURRENT IMPLEMENTATION - Already follows local-first pattern
+// Pattern: local visual delta + single commit on pointer-up
 
 // 1. Local visual delta for smooth drag
 const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
@@ -196,7 +196,7 @@ style={{
 ### Box Annotation (`annotation-box.tsx`)
 
 ```tsx
-// ✅ CURRENT IMPLEMENTATION - Already follows local-first pattern
+// Pattern: local visual delta for move/resize + single commit on pointer-up
 
 // 1. Visual delta for both move and resize
 const [visualDelta, setVisualDelta] = useState<{ 
@@ -220,49 +220,58 @@ const effectiveEnd = visualDelta
 ### Sync Guard Pattern (`use-annotation-integration.ts`)
 
 ```tsx
-// ✅ CURRENT IMPLEMENTATION - Prevents sync during drag
+// ✅ RECOMMENDED PATTERN - Prevents sync during drag and ignores stale ACKs
 
-// Track dragging and pending changes
-const isDraggingRef = useRef(false);
-const hasPendingLocalChangesRef = useRef(false);
+// Track interaction + pending saves per annotation
+const draggingIdsRef = useRef(new Set<string>());
+const clientRevisionByIdRef = useRef(new Map<string, number>());
+const pendingRevisionByIdRef = useRef(new Map<string, number>()); // id -> latest pending clientRevision
 
-// Block sync during active interaction
+const isSyncBlocked = () =>
+  draggingIdsRef.current.size > 0 || pendingRevisionByIdRef.current.size > 0;
+
+// Block sync during active interaction or pending saves
 useEffect(() => {
-  // Skip sync during active drag or if there are pending local changes
-  if (isDraggingRef.current || hasPendingLocalChangesRef.current) return;
-  if (query.data && !query.isFetching) {
-    setAnnotations(query.data);
-  }
+  if (isSyncBlocked()) return;
+  if (query.data && !query.isFetching) setAnnotations(query.data);
 }, [query.data, query.isFetching, setAnnotations]);
 
-// Mark pending on local commit (pointer-up), not on every pointer move
+// Commit a move on pointer-up (single local write + single save intent)
 const handleAnnotationMoveComplete = useCallback(
   (annotationId: string, position: { x: number; y: number }) => {
-    hasPendingLocalChangesRef.current = true;  // Block sync
     localHandleMove(annotationId, position);
-    debouncedUpdate(annotationId, newShape);
+    const nextClientRevision = (clientRevisionByIdRef.current.get(annotationId) ?? 0) + 1;
+    clientRevisionByIdRef.current.set(annotationId, nextClientRevision);
+    pendingRevisionByIdRef.current.set(annotationId, nextClientRevision);
+    debouncedUpdate(annotationId, newShape, nextClientRevision);
   },
   [...]
 );
 
-// Clear pending on mutation settled
-onSettled: () => {
-  hasPendingLocalChangesRef.current = false;  // Allow sync
-  void queryClient.invalidateQueries({ queryKey });
+// Clear pending only if this response matches the latest pending revision
+onSettled: (_data, _error, variables) => {
+  const pending = pendingRevisionByIdRef.current.get(variables.annotationId);
+  if (pending === variables.clientRevision) {
+    pendingRevisionByIdRef.current.delete(variables.annotationId);
+  }
+  if (!isSyncBlocked()) void queryClient.invalidateQueries({ queryKey });
 },
 
 // Expose drag state setter
-setDragging: (isDragging: boolean) => { isDraggingRef.current = isDragging; },
+setDragging: (annotationId: string, isDragging: boolean) => {
+  if (isDragging) draggingIdsRef.current.add(annotationId);
+  else draggingIdsRef.current.delete(annotationId);
+},
 ```
 
 ### Debounced Save Strategy
 
 ```tsx
-// ✅ CURRENT IMPLEMENTATION - 500ms debounce
+// Pattern: debounce commit-triggered saves (coalesce rapid edits)
 
 const debouncedUpdate = useDebouncedCallback(
-  (annotationId: string, shape: AnnotationShape) => {
-    void updateMutation.mutateAsync({ annotationId, shape });
+  (annotationId: string, shape: AnnotationShape, clientRevision: number) => {
+    void updateMutation.mutateAsync({ annotationId, shape, clientRevision });
   },
   500 // Debounce interval
 );
@@ -338,20 +347,110 @@ onMutate: async ({ annotationId, shape }) => {
   return { previousAnnotations };
 },
 
-onError: (error, _variables, context) => {
+onError: (error, variables, context) => {
   /**
    * Recommended UX for a local-first editor:
    * - For transient errors (network/5xx/timeouts): keep local state, mark "unsaved", and retry/backoff.
    * - Only rollback for hard errors where the change cannot be accepted (403/404/quota/validation),
    *   then exit edit mode or show an upgrade/permission callout.
    */
-  markAnnotationUnsaved(annotationId, { error });
+  markAnnotationUnsaved(variables.annotationId, { error });
+  if (isHardSaveError(error) && context?.previousAnnotations) {
+    queryClient.setQueryData(queryKey, context.previousAnnotations);
+  }
 },
 
-onSettled: () => {
-  hasPendingLocalChangesRef.current = false;
-  void queryClient.invalidateQueries({ queryKey });
+onSettled: (_data, _error, variables) => {
+  const pending = pendingRevisionByIdRef.current.get(variables.annotationId);
+  if (pending === variables.clientRevision) {
+    pendingRevisionByIdRef.current.delete(variables.annotationId);
+  }
+  if (pendingRevisionByIdRef.current.size === 0 && draggingIdsRef.current.size === 0) {
+    void queryClient.invalidateQueries({ queryKey });
+  }
 },
+```
+
+### Helper Functions
+
+```tsx
+// Determine if error is a hard (non-retryable) error
+const HARD_ERROR_CODES = [403, 404, 402, 422];
+
+function isHardSaveError(error: unknown): boolean {
+  if (error instanceof Error && 'status' in error) {
+    return HARD_ERROR_CODES.includes((error as any).status);
+  }
+  return false;
+}
+
+// Track unsaved annotations for UI indication
+const unsavedAnnotationsRef = useRef(new Map<string, { error?: Error; retryCount: number }>());
+
+function markAnnotationUnsaved(annotationId: string, opts?: { error?: Error }) {
+  const current = unsavedAnnotationsRef.current.get(annotationId);
+  unsavedAnnotationsRef.current.set(annotationId, {
+    error: opts?.error,
+    retryCount: (current?.retryCount ?? 0) + 1,
+  });
+  // Optionally trigger re-render or toast
+}
+
+function clearAnnotationUnsaved(annotationId: string) {
+  unsavedAnnotationsRef.current.delete(annotationId);
+}
+
+// Check if any annotations have unsaved changes
+function hasUnsavedChanges(): boolean {
+  return unsavedAnnotationsRef.current.size > 0;
+}
+```
+
+### Flush on Tab Close (Recommended)
+
+```tsx
+// Ensure pending saves are flushed when user leaves
+useEffect(() => {
+  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    if (pendingRevisionByIdRef.current.size > 0) {
+      // Flush any debounced saves immediately
+      debouncedUpdate.flush?.();
+      // Show browser warning
+      e.preventDefault();
+      e.returnValue = 'You have unsaved changes.';
+    }
+  };
+
+  window.addEventListener('beforeunload', handleBeforeUnload);
+  return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+}, []);
+```
+
+### Undo + Save Interaction
+
+When a user undoes while a save is pending, the system should:
+
+1. **Apply undo immediately** to local state (history is the source of truth for undo/redo)
+2. **Cancel or supersede the pending save** — the pending save's `clientRevision` will become stale
+3. **Queue a new save** for the undone position with a new `clientRevision`
+
+```tsx
+// In undo handler
+const handleUndo = useCallback((entry: AnnotationHistoryEntry) => {
+  // Apply undo to local state
+  applyUndo(entry);
+  
+  // The pending save (if any) will be ignored when it returns because
+  // clientRevision won't match the latest pendingRevisionByIdRef entry.
+  // Queue a new save for the undone position:
+  const restoredShape = entry.previousSnapshot?.shape;
+  if (restoredShape) {
+    const nextClientRevision = (clientRevisionByIdRef.current.get(entry.annotationId) ?? 0) + 1;
+    clientRevisionByIdRef.current.set(entry.annotationId, nextClientRevision);
+    pendingRevisionByIdRef.current.set(entry.annotationId, nextClientRevision);
+    debouncedUpdate(entry.annotationId, restoredShape, nextClientRevision);
+  }
+}, [applyUndo, debouncedUpdate]);
 ```
 
 ### Auth (RBAC) & Plan Limits (Product-Aligned)
@@ -373,14 +472,14 @@ UI SyncUp’s product model has role-gated creation/editing and plan-based limit
                            │ onPointerDown (drag start)
                            ▼
                     ┌─────────────┐
-                    │  DRAGGING   │ ◄── isDraggingRef = true
+                    │  DRAGGING   │ ◄── draggingIdsRef contains id
                     │             │     Visual delta active
                     └──────┬──────┘     React Query sync BLOCKED
                            │
                            │ onPointerUp (drag end)
                            ▼
                     ┌─────────────┐
-                    │   PENDING   │ ◄── hasPendingLocalChangesRef = true
+                    │   PENDING   │ ◄── pendingRevisionByIdRef has entry
                     │             │     Save scheduled for latest clientRevision
                     └──────┬──────┘     React Query sync BLOCKED
                            │
@@ -495,7 +594,7 @@ src/features/annotations/
 |--------------|----------------|
 | Visual delta in local state | `useState` in component, not parent |
 | Debounced API calls | 500ms debounce in `useDebouncedCallback` |
-| Sync guard during drag | `isDraggingRef` + `hasPendingLocalChangesRef` |
+| Sync guard during drag | `draggingIdsRef` + `pendingRevisionByIdRef` |
 | Optimistic updates | React Query `onMutate` |
 | Memoized callbacks | `useCallback` for all handlers |
 | History deduplication | `lastProcessedHistoryId` check |
@@ -515,8 +614,8 @@ src/features/annotations/
 ### DO ✅
 
 - Use visual delta (`dragOffset`, `visualDelta`) for active pointer interactions
-- Check `isDraggingRef` before syncing from React Query
-- Clear pending flag in `onSettled` (not `onSuccess`)
+- Check `isSyncBlocked()` (`draggingIdsRef` + `pendingRevisionByIdRef`) before syncing from React Query
+- Clear pending per annotation in `onSettled` only when `clientRevision` matches the latest pending revision
 - Let `useEffect` clear visual delta when parent position updates
 - Use `onMoveComplete` for final state commit (not `onMove` during drag)
 
