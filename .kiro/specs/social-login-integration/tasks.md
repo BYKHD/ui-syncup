@@ -1,28 +1,28 @@
 # Implementation Plan
 
-- [ ] 1. Extend environment configuration for Microsoft and Atlassian OAuth
+- [x] 1. Extend environment configuration for Microsoft and Atlassian OAuth
   - Add Microsoft OAuth environment variables (MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, MICROSOFT_TENANT_ID)
   - Add Atlassian OAuth environment variables (ATLASSIAN_CLIENT_ID, ATLASSIAN_CLIENT_SECRET)
   - Update environment validation schema in src/lib/env.ts
   - Update .env.example with new OAuth provider variables
   - _Requirements: 5.1, 5.2_
 
-- [ ] 1.1 Write unit tests for environment validation
+- [x] 1.1 Write unit tests for environment validation
   - Validate environment variable parsing
   - Validate error messages for missing variables
 
-- [ ] 2. Update auth configuration to support multiple OAuth providers
+- [x] 2. Update auth configuration to support multiple OAuth providers
   - Extend OAuthProvider interface in src/lib/auth-config.ts to include enabled flag
   - Add Microsoft and Atlassian provider configuration functions
   - Update AuthConfig interface to include all three providers
   - Implement provider enablement logic based on environment variables
   - _Requirements: 5.1, 5.3_
 
-- [ ] 2.1 Write unit tests for provider configuration
+- [x] 2.1 Write unit tests for provider configuration
   - Test provider visibility based on config flags
   - Test default configuration values
 
-- [ ] 2.2 Write unit tests for callback URI construction
+- [x] 2.2 Write unit tests for callback URI construction
   - Test URI construction with different providers
   - Test URI construction with various base URLs
 
