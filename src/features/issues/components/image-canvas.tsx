@@ -91,6 +91,37 @@ export function ImageCanvas({
 
   const displaySize = calculateDisplaySize();
 
+  // Calculate pan boundaries to keep content at least partially visible
+  const calculatePanBounds = useCallback(() => {
+    if (!containerRef.current || !imageLoaded || displaySize.width === 0) {
+      return null;
+    }
+
+    const container = containerRef.current.getBoundingClientRect();
+    const minVisible = Math.min(100, displaySize.width * 0.2, displaySize.height * 0.2);
+
+    return {
+      minX: -(displaySize.width - minVisible),
+      maxX: container.width - minVisible,
+      minY: -(displaySize.height - minVisible),
+      maxY: container.height - minVisible,
+    };
+  }, [displaySize, imageLoaded]);
+
+  // Clamp pan offset to stay within boundaries
+  const clampPan = useCallback(
+    (offset: { x: number; y: number }) => {
+      const bounds = calculatePanBounds();
+      if (!bounds) return offset;
+
+      return {
+        x: Math.max(bounds.minX, Math.min(bounds.maxX, offset.x)),
+        y: Math.max(bounds.minY, Math.min(bounds.maxY, offset.y)),
+      };
+    },
+    [calculatePanBounds]
+  );
+
   // Handle image load
   const handleImageLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
     const img = event.currentTarget;
@@ -106,14 +137,34 @@ export function ImageCanvas({
     setImageLoaded(false);
   };
 
-  // Mouse wheel zoom
+  // Mouse wheel zoom with zoom-to-cursor support
   const handleWheel = useCallback(
     (event: WheelEvent) => {
       if (event.ctrlKey || event.metaKey) {
         event.preventDefault();
-        const delta = event.deltaY > 0 ? 0.9 : 1.1;
-        const newZoom = Math.max(0.1, Math.min(5, zoomLevel * delta));
+        
+        // Get cursor position relative to container
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        
+        const cursorX = event.clientX - rect.left;
+        const cursorY = event.clientY - rect.top;
+        
+        // Calculate new zoom level
+        const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
+        const newZoom = Math.max(0.1, Math.min(5, zoomLevel * zoomFactor));
+        const scaleDiff = newZoom / zoomLevel;
+        
+        // Calculate the point on the image that's under the cursor
+        // and adjust pan to keep that point stationary
+        const imagePointX = cursorX - panOffset.x - rect.width / 2;
+        const imagePointY = cursorY - panOffset.y - rect.height / 2;
+        
+        const newPanX = panOffset.x - imagePointX * (scaleDiff - 1);
+        const newPanY = panOffset.y - imagePointY * (scaleDiff - 1);
+        
         onZoomChange(newZoom);
+        onPanChange(clampPan({ x: newPanX, y: newPanY }));
         return;
       }
 
@@ -125,12 +176,14 @@ export function ImageCanvas({
       const deltaModeFactor = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : 1;
       const deltaX = event.shiftKey ? event.deltaY : event.deltaX;
       const deltaY = event.shiftKey ? 0 : event.deltaY;
-      onPanChange({
-        x: panOffset.x - deltaX * deltaModeFactor,
-        y: panOffset.y - deltaY * deltaModeFactor,
-      });
+      onPanChange(
+        clampPan({
+          x: panOffset.x - deltaX * deltaModeFactor,
+          y: panOffset.y - deltaY * deltaModeFactor,
+        })
+      );
     },
-    [onZoomChange, panOffset.x, panOffset.y, scrollPanEnabled, zoomLevel],
+    [onZoomChange, onPanChange, panOffset.x, panOffset.y, scrollPanEnabled, zoomLevel, clampPan],
   );
 
   // Mouse drag pan
@@ -146,13 +199,13 @@ export function ImageCanvas({
   const handleMouseMove = useCallback((event: MouseEvent) => {
     if (!isDragging) return;
     
-    const newPanOffset = {
+    const newPanOffset = clampPan({
       x: event.clientX - dragStart.x,
       y: event.clientY - dragStart.y
-    };
+    });
     
     onPanChange(newPanOffset);
-  }, [isDragging, dragStart, onPanChange]);
+  }, [isDragging, dragStart, onPanChange, clampPan]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -173,14 +226,14 @@ export function ImageCanvas({
     if (!isDragging || event.touches.length !== 1) return;
     
     const touch = event.touches[0];
-    const newPanOffset = {
+    const newPanOffset = clampPan({
       x: touch.clientX - dragStart.x,
       y: touch.clientY - dragStart.y
-    };
+    });
     
     onPanChange(newPanOffset);
     event.preventDefault();
-  }, [isDragging, dragStart, onPanChange]);
+  }, [isDragging, dragStart, onPanChange, clampPan]);
 
   const handleTouchEnd = useCallback(() => {
     setIsDragging(false);

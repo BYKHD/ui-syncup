@@ -194,6 +194,7 @@ export interface IssueDetailData {
   priority: IssuePriority
   status: IssueStatus
   projectId: string
+  teamId: string
   projectKey?: string
   projectName?: string
   assignee?: IssueUser | null

@@ -11,7 +11,10 @@ import {
   ArrowRight,
   Loader2,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  MapPin,
+  Square,
+  Trash2
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -195,6 +198,15 @@ function ActivityEntryRenderer({ activity }: { activity: ActivityEntry }) {
       return <AttachmentAddedEntry activity={activity} />;
     case "attachment_removed":
       return <AttachmentRemovedEntry activity={activity} />;
+    // Annotation activity types (Task 17.2)
+    case "annotation_created":
+      return <AnnotationCreatedEntry activity={activity} />;
+    case "annotation_updated":
+      return <AnnotationUpdatedEntry activity={activity} />;
+    case "annotation_commented":
+      return <AnnotationCommentedEntry activity={activity} />;
+    case "annotation_deleted":
+      return <AnnotationDeletedEntry activity={activity} />;
     default:
       // Fallback for unknown activity types
       return <GenericEntry activity={activity} />;
@@ -541,6 +553,151 @@ function AttachmentRemovedEntry({ activity }: { activity: ActivityEntry }) {
 }
 
 // ============================================================================
+// ANNOTATION CREATED ENTRY
+// Requirements: 7.4, 7.5
+// ============================================================================
+
+function AnnotationCreatedEntry({ activity }: { activity: ActivityEntry }) {
+  // Extract metadata from changes
+  const labelChange = activity.changes?.find((c) => c.field === "label");
+  const typeChange = activity.changes?.find((c) => c.field === "annotationType");
+  const annotationType = typeChange?.newValue || "pin";
+  const label = labelChange?.newValue || "";
+
+  return (
+    <div className="flex gap-3">
+      <ActivityAvatar actor={activity.actor} />
+
+      <div className="flex-1 space-y-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium">{activity.actor.name}</span>
+          <span className="text-sm font-medium text-green-600 dark:text-green-400">added</span>
+          <span className="text-sm text-muted-foreground">
+            {annotationType === "box" ? "box" : "pin"} annotation
+          </span>
+          {label && (
+            <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-annotation text-annotation-foreground text-xs font-semibold">
+              {label}
+            </span>
+          )}
+        </div>
+
+        {activity.comment && (
+          <p className="text-sm text-muted-foreground italic">"{activity.comment}"</p>
+        )}
+
+        <ActivityTimestamp timestamp={activity.createdAt} />
+      </div>
+
+      <ActivityIcon icon={annotationType === "box" ? Square : MapPin} variant="annotation" />
+    </div>
+  );
+}
+
+// ============================================================================
+// ANNOTATION UPDATED ENTRY
+// Requirements: 7.4, 7.5
+// ============================================================================
+
+function AnnotationUpdatedEntry({ activity }: { activity: ActivityEntry }) {
+  const labelChange = activity.changes?.find((c) => c.field === "label");
+  const label = labelChange?.newValue || "";
+
+  return (
+    <div className="flex gap-3">
+      <ActivityAvatar actor={activity.actor} />
+
+      <div className="flex-1 space-y-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium">{activity.actor.name}</span>
+          <span className="text-sm text-muted-foreground">moved annotation</span>
+          {label && (
+            <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-annotation text-annotation-foreground text-xs font-semibold">
+              {label}
+            </span>
+          )}
+        </div>
+
+        <ActivityTimestamp timestamp={activity.createdAt} />
+      </div>
+
+      <ActivityIcon icon={MapPin} variant="annotation" />
+    </div>
+  );
+}
+
+// ============================================================================
+// ANNOTATION COMMENTED ENTRY
+// Requirements: 7.4, 7.5
+// ============================================================================
+
+function AnnotationCommentedEntry({ activity }: { activity: ActivityEntry }) {
+  const labelChange = activity.changes?.find((c) => c.field === "label");
+  const label = labelChange?.newValue || "";
+
+  return (
+    <div className="flex gap-3">
+      <ActivityAvatar actor={activity.actor} />
+
+      <div className="flex-1 space-y-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium">{activity.actor.name}</span>
+          <span className="text-sm text-muted-foreground">commented on annotation</span>
+          {label && (
+            <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-annotation text-annotation-foreground text-xs font-semibold">
+              {label}
+            </span>
+          )}
+        </div>
+
+        {activity.comment && (
+          <div className="bg-muted/50 rounded-lg p-3 mt-2">
+            <p className="text-sm whitespace-pre-wrap">{activity.comment}</p>
+          </div>
+        )}
+
+        <ActivityTimestamp timestamp={activity.createdAt} />
+      </div>
+
+      <ActivityIcon icon={MessageSquare} variant="annotation" />
+    </div>
+  );
+}
+
+// ============================================================================
+// ANNOTATION DELETED ENTRY
+// Requirements: 7.4, 7.5
+// ============================================================================
+
+function AnnotationDeletedEntry({ activity }: { activity: ActivityEntry }) {
+  const labelChange = activity.changes?.find((c) => c.field === "label");
+  const label = labelChange?.oldValue || "";
+
+  return (
+    <div className="flex gap-3">
+      <ActivityAvatar actor={activity.actor} />
+
+      <div className="flex-1 space-y-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium">{activity.actor.name}</span>
+          <span className="text-sm font-medium text-red-600 dark:text-red-400">deleted</span>
+          <span className="text-sm text-muted-foreground">annotation</span>
+          {label && (
+            <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-muted text-muted-foreground text-xs font-semibold line-through">
+              {label}
+            </span>
+          )}
+        </div>
+
+        <ActivityTimestamp timestamp={activity.createdAt} />
+      </div>
+
+      <ActivityIcon icon={Trash2} variant="annotation" />
+    </div>
+  );
+}
+
+// ============================================================================
 // GENERIC ENTRY (Fallback)
 // ============================================================================
 
@@ -594,7 +751,7 @@ function ActivityIcon({
   variant
 }: {
   icon: React.ElementType;
-  variant: "created" | "status" | "update" | "comment" | "attachment" | "priority";
+  variant: "created" | "status" | "update" | "comment" | "attachment" | "priority" | "annotation";
 }) {
   const colors = {
     created: "text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/30",
@@ -602,7 +759,8 @@ function ActivityIcon({
     priority: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30",
     update: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30",
     comment: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
-    attachment: "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30"
+    attachment: "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30",
+    annotation: "text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/30"
   };
 
   return (
