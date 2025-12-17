@@ -39,6 +39,10 @@ interface IssueDetailsPanelProps {
   // Keyboard shortcuts help
   onToggleShortcutsHelp?: () => void;
   annotations?: AnnotationThreadWithMeta[];
+  /** Current issue ID for comment API calls */
+  issueId?: string;
+  /** Currently selected attachment ID for comment API calls */
+  selectedAttachmentId?: string;
   activeAnnotationId?: string | null;
   onAnnotationSelect?: (annotationId: string | null) => void;
   isPanelCollapsed?: boolean;
@@ -66,6 +70,8 @@ export default function IssueDetailsPanel({
   onEditingDescriptionChange,
   onToggleShortcutsHelp,
   annotations = [],
+  issueId,
+  selectedAttachmentId,
   activeAnnotationId = null,
   onAnnotationSelect,
   isPanelCollapsed,
@@ -177,6 +183,8 @@ export default function IssueDetailsPanel({
           >
             <AnnotationAnnotationsPanel
               annotations={annotations}
+              issueId={issueId || issueData.id}
+              attachmentId={selectedAttachmentId || ''}
               activeAnnotationId={activeAnnotationId}
               onAnnotationSelect={onAnnotationSelect}
               isMobile={isMobile}

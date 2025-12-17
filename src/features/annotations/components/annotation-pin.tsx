@@ -64,13 +64,23 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   const isDraggingRef = useRef(false);
   const lastPositionRef = useRef<AnnotationPosition | null>(null);
   
+  // Track the effective base position for drag calculations
+  // This is annotation position + any uncommitted offset from previous drag
+  const effectiveBaseRef = useRef<{ x: number; y: number }>({ x: annotation.x, y: annotation.y });
+  
   // Local drag offset for smooth visual updates (prevents re-renders during drag)
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
   
-  // Clear drag offset when parent state updates (prevents flicker on drop)
+  // Update the effective base when props change (i.e., when save completes)
+  // BUT only if not currently dragging - otherwise we'd jump mid-drag
   useEffect(() => {
-    if (dragOffset !== null) {
-      setDragOffset(null);
+    if (!isDraggingRef.current) {
+      // When props update (save completed), sync effective base to new props
+      effectiveBaseRef.current = { x: annotation.x, y: annotation.y };
+      // Clear any lingering offset since props now reflect the committed position
+      if (dragOffset !== null) {
+        setDragOffset(null);
+      }
     }
   }, [annotation.x, annotation.y]);
 
@@ -117,6 +127,18 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     dragStartRef.current = { x: event.clientX, y: event.clientY };
     isDraggingRef.current = false;
     
+    // IMPORTANT: If there's an existing drag offset (from a previous drag that's still saving),
+    // "bake" it into the effective base position. This prevents snap-back when starting
+    // a new drag before the previous save completes and props have updated.
+    if (dragOffset !== null) {
+      effectiveBaseRef.current = {
+        x: annotation.x + dragOffset.x,
+        y: annotation.y + dragOffset.y,
+      };
+      // Clear the offset since we've incorporated it into the base
+      setDragOffset(null);
+    }
+    
     // Notify parent immediately that drag might start (prevents sync during potential drag)
     onDragStart?.(annotation.id);
   };
@@ -157,10 +179,12 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     // Store last position for drag completion callback
     lastPositionRef.current = position;
     
-    // Store offset as decimal for smooth visual update (avoids parent re-render)
+    // Calculate offset relative to EFFECTIVE BASE (not stale props)
+    // This ensures smooth drag even when props haven't updated from previous save
+    const base = effectiveBaseRef.current;
     setDragOffset({
-      x: clampedX - annotation.x,
-      y: clampedY - annotation.y,
+      x: clampedX - base.x,
+      y: clampedY - base.y,
     });
   };
 
@@ -234,8 +258,12 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         style={{
-          left: dragOffset ? `${(annotation.x + dragOffset.x) * 100}%` : `${annotation.x * 100}%`,
-          top: dragOffset ? `${(annotation.y + dragOffset.y) * 100}%` : `${annotation.y * 100}%`,
+          left: dragOffset 
+            ? `${(effectiveBaseRef.current.x + dragOffset.x) * 100}%` 
+            : `${annotation.x * 100}%`,
+          top: dragOffset 
+            ? `${(effectiveBaseRef.current.y + dragOffset.y) * 100}%` 
+            : `${annotation.y * 100}%`,
         }}
         aria-label={`Annotation ${annotation.label}`}
         data-annotation-pin="true"

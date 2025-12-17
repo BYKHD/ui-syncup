@@ -419,6 +419,8 @@ export default function ResponsiveIssueLayout({
                     isMobile={isMobile}
                     hideThreadPreview={true}
                     annotations={mappedAnnotations}
+                    issueId={issueId}
+                    selectedAttachmentId={selectedAttachmentId}
                     activeAnnotationId={activeAnnotationId}
                     onAnnotationSelect={setActiveAnnotationId}
                   />
@@ -577,6 +579,8 @@ export default function ResponsiveIssueLayout({
               // Desktop auto-switch to annotations tab handled in IssueDetailsPanel useEffect
             }}
             annotations={mappedAnnotations}
+            issueId={issueId}
+            selectedAttachmentId={selectedAttachmentId}
             activeAnnotationId={activeAnnotationId}
             onAnnotationSelect={setActiveAnnotationId}
           />

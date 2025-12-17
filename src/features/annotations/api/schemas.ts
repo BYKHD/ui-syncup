@@ -5,13 +5,14 @@ import { z } from 'zod';
 // ============================================================================
 
 /**
- * Position schema for normalized coordinates (0-1 range)
+ * Position schema for normalized coordinates
  * Used for responsive annotation positioning across different viewport sizes
+ * Note: Values can extend beyond 0-1 range to allow annotations outside canvas
  * Requirements: 10.1, 10.2
  */
 export const PositionSchema = z.object({
-  x: z.number().min(0).max(1),
-  y: z.number().min(0).max(1),
+  x: z.number(),
+  y: z.number(),
 });
 
 export type Position = z.infer<typeof PositionSchema>;
@@ -121,8 +122,8 @@ export type StoredAnnotationComment = z.infer<typeof StoredAnnotationCommentSche
 export const StoredAttachmentAnnotationSchema = z.object({
   id: z.string().uuid(),
   authorId: z.string().uuid(),
-  x: z.number().min(0).max(1),
-  y: z.number().min(0).max(1),
+  x: z.number(),
+  y: z.number(),
   shape: AnnotationShapeSchema,
   label: z.string(),
   description: z.string().optional(),

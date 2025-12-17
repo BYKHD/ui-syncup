@@ -321,19 +321,19 @@
     - Handle click to navigate to annotation
     - _Requirements: 7.4, 7.5_
 
-- [ ] 18. Checkpoint - Ensure all tests pass
+- [x] 18. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 6: Keyboard Shortcuts & History
 
-- [ ] 19. Implement keyboard shortcuts
-  - [ ] 19.1 Update useKeyboardShortcuts hook for annotation tools
+- [x] 19. Implement keyboard shortcuts
+  - [x] 19.1 Update useKeyboardShortcuts hook for annotation tools
     - Add 'E' for toggle edit mode
     - Add '1'/'C' for cursor tool
     - Add '2'/'P' for pin tool
     - Add '3'/'B' for box tool
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
-  - [ ] 19.2 Ensure toolbar reflects keyboard shortcut changes
+  - [x] 19.2 Ensure toolbar reflects keyboard shortcut changes
     - Sync active tool state with toolbar display
     - _Requirements: 6.5_
 
@@ -341,8 +341,8 @@
   - Test that toolbar reflects active tool after shortcut
   - **Validates: Requirements 6.5**
 
-- [ ] 20. Implement history empty state handling
-  - [ ] 20.1 Update AnnotationToolbar for empty history state
+- [x] 20. Implement history empty state handling
+  - [x] 20.1 Update AnnotationToolbar for empty history state
     - Disable undo button when history stack is empty
     - Disable redo button when redo stack is empty
     - _Requirements: 5.5_
@@ -381,26 +381,26 @@
 
 ## Phase 8: Error Handling & Edge Cases
 
-- [ ] 23. Implement error handling
-  - [ ] 23.1 Add client-side error handling
+- [x] 23. Implement error handling
+  - [x] 23.1 Add client-side error handling
     - Show toast on network failure
     - Enable retry for failed saves
     - Handle permission denied errors
     - _Requirements: 8.4, 10.5_
-  - [ ] 23.2 Add server-side error responses
+  - [x] 23.2 Add server-side error responses
     - Return proper HTTP status codes
     - Include descriptive error messages
     - _Requirements: 10.5_
 
-- [ ] 24. Handle attachment deletion cascade
-  - [ ] 24.1 Ensure annotations are deleted with attachment
+- [x] 24. Handle attachment deletion cascade
+  - [x] 24.1 Ensure annotations are deleted with attachment
     - Verify JSONB annotations are removed when attachment is deleted
     - No orphan data in annotation_read_status
     - _Requirements: 13.4_
 
-- [ ]* 24.2 Write property test for attachment deletion cascade (Property 27)
+- [x]* 24.2 Write property test for attachment deletion cascade (Property 27)
   - Test that deleting attachment removes all embedded annotations
   - **Validates: Requirements 13.4**
 
-- [ ] 25. Final Checkpoint - Ensure all tests pass
+- [x] 25. Final Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.

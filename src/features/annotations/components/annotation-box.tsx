@@ -104,15 +104,33 @@ export function AnnotationBox({
   // Last calculated position for final onMove call
   const lastPositionRef = useRef<{ start: AnnotationPosition; end: AnnotationPosition } | null>(null);
   
+  // Track the effective base position for drag calculations
+  // This is annotation position + any uncommitted delta from previous drag
+  const effectiveBaseRef = useRef<{ start: AnnotationPosition; end: AnnotationPosition }>({
+    start: { ...annotation.start },
+    end: { ...annotation.end },
+  });
+  
   // Local visual offset for smooth rendering (supports both move and resize)
   const [visualDelta, setVisualDelta] = useState<{ 
     startDx: number; startDy: number; 
     endDx: number; endDy: number 
   } | null>(null);
   
-  // Clear visual delta when annotation position updates from parent
+  // Update effective base when props change (i.e., when save completes)
+  // BUT only if not currently dragging - otherwise we'd jump mid-drag
   useEffect(() => {
-    setVisualDelta(null);
+    if (!dragStateRef.current) {
+      // When props update (save completed), sync effective base to new props
+      effectiveBaseRef.current = {
+        start: { ...annotation.start },
+        end: { ...annotation.end },
+      };
+      // Clear any lingering delta since props now reflect the committed position
+      if (visualDelta !== null) {
+        setVisualDelta(null);
+      }
+    }
   }, [annotation.start.x, annotation.start.y, annotation.end.x, annotation.end.y]);
 
   // Context menu state (desktop)
@@ -123,11 +141,13 @@ export function AnnotationBox({
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
 
   // Calculate effective positions with visual delta for smooth updates during drag
+  // Use effectiveBaseRef (not stale props) to prevent snap-back
+  const base = effectiveBaseRef.current;
   const effectiveStart = visualDelta 
-    ? { x: annotation.start.x + visualDelta.startDx, y: annotation.start.y + visualDelta.startDy }
+    ? { x: base.start.x + visualDelta.startDx, y: base.start.y + visualDelta.startDy }
     : annotation.start;
   const effectiveEnd = visualDelta 
-    ? { x: annotation.end.x + visualDelta.endDx, y: annotation.end.y + visualDelta.endDy }
+    ? { x: base.end.x + visualDelta.endDx, y: base.end.y + visualDelta.endDy }
     : annotation.end;
 
   const x1 = Math.min(effectiveStart.x, effectiveEnd.x);
@@ -175,48 +195,6 @@ export function AnnotationBox({
           const dy = currentY - dragState.grabPoint.y;
           newStart = { x: dragState.originalStart.x + dx, y: dragState.originalStart.y + dy };
           newEnd = { x: dragState.originalEnd.x + dx, y: dragState.originalEnd.y + dy };
-          
-          // When dragging the box (not resizing), constrain movement to keep box fully within bounds
-          // while preserving its size. Calculate box dimensions first.
-          const boxWidth = Math.abs(newEnd.x - newStart.x);
-          const boxHeight = Math.abs(newEnd.y - newStart.y);
-          const boxLeft = Math.min(newStart.x, newEnd.x);
-          const boxTop = Math.min(newStart.y, newEnd.y);
-          const boxRight = boxLeft + boxWidth;
-          const boxBottom = boxTop + boxHeight;
-          
-          // Constrain the box position to stay within bounds
-          let constrainedLeft = boxLeft;
-          let constrainedTop = boxTop;
-          
-          if (boxRight > 1) {
-            constrainedLeft = 1 - boxWidth;
-          } else if (boxLeft < 0) {
-            constrainedLeft = 0;
-          }
-          
-          if (boxBottom > 1) {
-            constrainedTop = 1 - boxHeight;
-          } else if (boxTop < 0) {
-            constrainedTop = 0;
-          }
-          
-          // Apply the constrained position while preserving original orientation
-          if (dragState.originalStart.x <= dragState.originalEnd.x) {
-            newStart.x = constrainedLeft;
-            newEnd.x = constrainedLeft + boxWidth;
-          } else {
-            newStart.x = constrainedLeft + boxWidth;
-            newEnd.x = constrainedLeft;
-          }
-          
-          if (dragState.originalStart.y <= dragState.originalEnd.y) {
-            newStart.y = constrainedTop;
-            newEnd.y = constrainedTop + boxHeight;
-          } else {
-            newStart.y = constrainedTop + boxHeight;
-            newEnd.y = constrainedTop;
-          }
           break;
         case 'top-left':
           newStart = { x: currentX, y: currentY };
@@ -234,16 +212,33 @@ export function AnnotationBox({
           break;
       }
 
-      // For resize handles, clamp coordinates to 0-1 range to prevent API validation errors
-      if (handle !== 'box') {
-        const clamp = (val: number) => Math.min(Math.max(val, 0), 1);
-        return { 
-          start: { x: clamp(newStart.x), y: clamp(newStart.y) }, 
-          end: { x: clamp(newEnd.x), y: clamp(newEnd.y) } 
-        };
+      // Center-must-be-inside constraint: corners can extend outside canvas,
+      // but the center point must stay within 0-1 range
+      const centerX = (newStart.x + newEnd.x) / 2;
+      const centerY = (newStart.y + newEnd.y) / 2;
+      
+      // Calculate how much to adjust if center is outside bounds
+      let adjustX = 0;
+      let adjustY = 0;
+      
+      if (centerX < 0) {
+        adjustX = -centerX;
+      } else if (centerX > 1) {
+        adjustX = 1 - centerX;
       }
       
-      // For box drag, coordinates are already constrained
+      if (centerY < 0) {
+        adjustY = -centerY;
+      } else if (centerY > 1) {
+        adjustY = 1 - centerY;
+      }
+      
+      // Apply adjustment if needed
+      if (adjustX !== 0 || adjustY !== 0) {
+        newStart = { x: newStart.x + adjustX, y: newStart.y + adjustY };
+        newEnd = { x: newEnd.x + adjustX, y: newEnd.y + adjustY };
+      }
+      
       return { start: newStart, end: newEnd };
     },
     [overlayRef],
@@ -262,13 +257,32 @@ export function AnnotationBox({
       // Only enable dragging/resizing in interactive (edit) mode
       if (!interactive || event.button !== 0) return;
 
-      // Initialize drag state with all needed info
+      // IMPORTANT: If there's an existing visual delta (from a previous drag that's still saving),
+      // "bake" it into the effective base. This prevents snap-back when starting a new drag
+      // before the previous save completes and props have updated.
+      if (visualDelta !== null) {
+        effectiveBaseRef.current = {
+          start: {
+            x: effectiveBaseRef.current.start.x + visualDelta.startDx,
+            y: effectiveBaseRef.current.start.y + visualDelta.startDy,
+          },
+          end: {
+            x: effectiveBaseRef.current.end.x + visualDelta.endDx,
+            y: effectiveBaseRef.current.end.y + visualDelta.endDy,
+          },
+        };
+        // Clear the delta since we've incorporated it into the base
+        setVisualDelta(null);
+      }
+
+      // Initialize drag state with all needed info - use EFFECTIVE BASE not stale props
       const overlay = overlayRef.current;
       if (overlay) {
         const rect = overlay.getBoundingClientRect();
+        const effectiveBase = effectiveBaseRef.current;
         dragStateRef.current = {
-          originalStart: { ...annotation.start },
-          originalEnd: { ...annotation.end },
+          originalStart: { ...effectiveBase.start },
+          originalEnd: { ...effectiveBase.end },
           grabPoint: {
             x: (event.clientX - rect.left) / rect.width,
             y: (event.clientY - rect.top) / rect.height,
@@ -284,7 +298,7 @@ export function AnnotationBox({
       // Notify parent immediately that drag might start (prevents sync during potential drag)
       onDragStart?.(annotation.id);
     },
-    [interactive, isMobile, longPressHandlers, overlayRef, annotation.start, annotation.end, onDragStart, annotation.id],
+    [interactive, isMobile, longPressHandlers, overlayRef, visualDelta, onDragStart, annotation.id],
   );
 
   const handlePointerMove = useCallback(

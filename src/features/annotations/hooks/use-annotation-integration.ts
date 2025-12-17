@@ -94,27 +94,87 @@ export interface UseAnnotationIntegrationResult {
 }
 
 // ============================================================================
-// DEBOUNCE HELPER
+// DEBOUNCE HELPER WITH FLUSH/CANCEL
 // ============================================================================
 
-function useDebouncedCallback<T extends (...args: Parameters<T>) => void>(
+interface DebouncedCallback<T extends (...args: any[]) => void> {
+  /** Call the debounced function */
+  (...args: Parameters<T>): void;
+  /** Immediately execute with the last pending args (if any) */
+  flush: () => void;
+  /** Cancel any pending execution */
+  cancel: () => void;
+  /** Check if there's a pending execution */
+  isPending: () => boolean;
+}
+
+function useDebouncedCallback<T extends (...args: any[]) => void>(
   callback: T,
   delay: number
-): T {
+): DebouncedCallback<T> {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const callbackRef = useRef(callback);
+  const pendingArgsRef = useRef<Parameters<T> | null>(null);
+  
+  // Keep callback ref updated
   callbackRef.current = callback;
 
-  return useCallback(
+  const cancel = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    pendingArgsRef.current = null;
+  }, []);
+
+  const flush = useCallback(() => {
+    if (timeoutRef.current && pendingArgsRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+      const args = pendingArgsRef.current;
+      pendingArgsRef.current = null;
+      callbackRef.current(...args);
+    }
+  }, []);
+
+  const isPending = useCallback(() => {
+    return timeoutRef.current !== null;
+  }, []);
+
+  const debouncedFn = useCallback(
     ((...args: Parameters<T>) => {
+      // Store args for potential flush
+      pendingArgsRef.current = args;
+      
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
       timeoutRef.current = setTimeout(() => {
+        timeoutRef.current = null;
+        pendingArgsRef.current = null;
         callbackRef.current(...args);
       }, delay);
-    }) as T,
+    }),
     [delay]
+  );
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Create stable result object with methods attached using Object.assign
+  // This creates a new function object rather than mutating the original
+  return useMemo(
+    () => Object.assign(
+      (...args: Parameters<T>) => debouncedFn(...args),
+      { flush, cancel, isPending }
+    ) as DebouncedCallback<T>,
+    [debouncedFn, flush, cancel, isPending]
   );
 }
 
@@ -159,24 +219,142 @@ export function useAnnotationIntegration(
   const selectedAnnotationRef = useRef<string | null>(null);
 
   // ============================================================================
-  // LOCAL-FIRST AUTOSAVE STATE (per-annotation tracking)
+  // LOCAL-FIRST AUTOSAVE STATE - Unified State Machine (Phase 1)
   // ============================================================================
 
-  // Track which annotations are currently being dragged (prevents sync during drag)
-  const draggingIdsRef = useRef(new Set<string>());
+  /**
+   * Unified annotation save state machine.
+   * Each annotation can be in one of these states:
+   * - 'idle': No local changes, synced with server
+   * - 'dragging': User is actively dragging
+   * - 'debouncing': Drag ended, waiting for debounce timer
+   * - 'saving': API call in flight
+   */
+  type AnnotationSaveState = 'idle' | 'dragging' | 'debouncing' | 'saving';
 
+  interface AnnotationStateEntry {
+    state: AnnotationSaveState;
+    clientRevision: number;
+    /** Timestamp when debounce grace period ends (only used in 'debouncing' state) */
+    graceEndTime?: number;
+  }
+
+  // Unified state tracking per annotation
+  const annotationStateRef = useRef(new Map<string, AnnotationStateEntry>());
+  
   // Track client revision per annotation (monotonically increasing on each commit)
   const clientRevisionByIdRef = useRef(new Map<string, number>());
 
   // Track pending saves per annotation (id -> latest pending clientRevision)
+  // Kept separate for revision matching in onSettled
   const pendingRevisionByIdRef = useRef(new Map<string, number>());
 
   // Track unsaved annotations for UI indication
   const unsavedAnnotationsRef = useRef(new Map<string, UnsavedAnnotationState>());
 
-  // Helper: Check if sync should be blocked
+  // Grace period duration after drag ends
+  const GRACE_PERIOD_MS = 600; // Slightly longer than debounce (500ms)
+
+  // ============================================================================
+  // STATE MACHINE HELPERS
+  // ============================================================================
+
+  /** Get annotation state (defaults to 'idle') */
+  const getAnnotationState = useCallback((annotationId: string): AnnotationSaveState => {
+    return annotationStateRef.current.get(annotationId)?.state ?? 'idle';
+  }, []);
+
+  /** Set annotation to dragging state */
+  const setStateDragging = useCallback((annotationId: string) => {
+    const current = annotationStateRef.current.get(annotationId);
+    annotationStateRef.current.set(annotationId, {
+      state: 'dragging',
+      clientRevision: current?.clientRevision ?? 0,
+    });
+  }, []);
+
+  /** Set annotation to debouncing state with grace period */
+  const setStateDebouncing = useCallback((annotationId: string) => {
+    const current = annotationStateRef.current.get(annotationId);
+    annotationStateRef.current.set(annotationId, {
+      state: 'debouncing',
+      clientRevision: current?.clientRevision ?? 0,
+      graceEndTime: Date.now() + GRACE_PERIOD_MS,
+    });
+  }, []);
+
+  /** Set annotation to saving state */
+  const setStateSaving = useCallback((annotationId: string, clientRevision: number) => {
+    annotationStateRef.current.set(annotationId, {
+      state: 'saving',
+      clientRevision,
+    });
+    pendingRevisionByIdRef.current.set(annotationId, clientRevision);
+  }, []);
+
+  /** Set annotation to idle state (clear all tracking) */
+  const setStateIdle = useCallback((annotationId: string) => {
+    annotationStateRef.current.delete(annotationId);
+    pendingRevisionByIdRef.current.delete(annotationId);
+  }, []);
+
+  // ============================================================================
+  // SYNC BLOCKING HELPERS (Pure functions - no mutations)
+  // ============================================================================
+
+  /** Check if sync should be blocked globally */
   const isSyncBlocked = useCallback(() => {
-    return draggingIdsRef.current.size > 0 || pendingRevisionByIdRef.current.size > 0;
+    const now = Date.now();
+    for (const [, entry] of annotationStateRef.current) {
+      if (entry.state === 'dragging') return true;
+      if (entry.state === 'saving') return true;
+      if (entry.state === 'debouncing') {
+        // Only block if still within grace period
+        if (entry.graceEndTime && now < entry.graceEndTime) return true;
+      }
+    }
+    // Also check pending revisions (for stale saves)
+    if (pendingRevisionByIdRef.current.size > 0) return true;
+    return false;
+  }, []);
+
+  /** Check if sync should be blocked for a specific annotation */
+  const isSyncBlockedForAnnotation = useCallback((annotationId: string) => {
+    const entry = annotationStateRef.current.get(annotationId);
+    if (!entry) return false;
+    
+    if (entry.state === 'dragging') return true;
+    if (entry.state === 'saving') return true;
+    if (entry.state === 'debouncing') {
+      // Only block if still within grace period
+      if (entry.graceEndTime && Date.now() < entry.graceEndTime) return true;
+    }
+    
+    // Also check pending revision
+    if (pendingRevisionByIdRef.current.has(annotationId)) return true;
+    
+    return false;
+  }, []);
+
+  // ============================================================================
+  // GRACE PERIOD CLEANUP (Phase 5 - Separate effect, no mutation in callbacks)
+  // ============================================================================
+
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      for (const [id, entry] of annotationStateRef.current) {
+        // Clean up expired debouncing states that haven't transitioned to saving
+        if (entry.state === 'debouncing' && entry.graceEndTime && now >= entry.graceEndTime) {
+          // If there's no pending save, the debounce was probably cancelled - go to idle
+          if (!pendingRevisionByIdRef.current.has(id)) {
+            annotationStateRef.current.delete(id);
+          }
+        }
+      }
+    }, 200); // Run every 200ms
+    
+    return () => clearInterval(cleanupInterval);
   }, []);
 
   // Helper: Hard error codes that should trigger rollback
@@ -232,8 +410,8 @@ export function useAnnotationIntegration(
   // Ref to hold pushHistory callback - allows connecting hooks without circular dependency
   const pushHistoryRef = useRef<((entry: AnnotationHistoryEntry) => void) | null>(null);
 
-  // Ref to hold debouncedUpdate callback - allows undo/redo to trigger saves
-  const debouncedUpdateRef = useRef<((annotationId: string, shape: AnnotationShape, clientRevision: number) => void) | null>(null);
+  // Ref to hold debouncedUpdate callback - allows undo/redo to trigger saves and flush on unload
+  const debouncedUpdateRef = useRef<DebouncedCallback<(annotationId: string, shape: AnnotationShape, clientRevision: number) => void> | null>(null);
 
   const {
     annotations: localAnnotations,
@@ -249,13 +427,48 @@ export function useAnnotationIntegration(
     onPushHistory: (entry) => pushHistoryRef.current?.(entry),
   });
 
+  // Create lookup map for O(1) server annotation access (Phase 4 optimization)
+  const serverAnnotationsMap = useMemo(() => {
+    if (!query.data) return new Map<string, AttachmentAnnotation>();
+    return new Map(query.data.map(ann => [ann.id, ann]));
+  }, [query.data]);
+
   // Sync local state when query data changes (blocked during drag or pending saves)
-  useMemo(() => {
-    if (isSyncBlocked()) return;
-    if (query.data && !query.isFetching) {
+  // Uses per-annotation filtering to allow unblocked annotations to sync
+  // NOTE: Using useEffect (not useMemo) for side effects - React 19 compatible
+  useEffect(() => {
+    if (!query.data || query.isFetching) return;
+    
+    // If nothing is blocked, sync everything
+    if (!isSyncBlocked()) {
       setAnnotations(query.data);
+      return;
     }
-  }, [query.data, query.isFetching, setAnnotations, isSyncBlocked]);
+    
+    // Otherwise, selectively sync only unblocked annotations
+    // This preserves local state for annotations being modified while
+    // still syncing updates for other annotations
+    const mergedAnnotations = localAnnotations.map((localAnn) => {
+      // If this annotation is blocked, keep local state
+      if (isSyncBlockedForAnnotation(localAnn.id)) {
+        return localAnn;
+      }
+      
+      // O(1) lookup using Map instead of O(n) find
+      const serverAnn = serverAnnotationsMap.get(localAnn.id);
+      return serverAnn ?? localAnn;
+    });
+    
+    // Only update if there are actual changes to unblocked annotations
+    const hasChanges = mergedAnnotations.some((merged, idx) => {
+      const local = localAnnotations[idx];
+      return merged.id !== local?.id || merged.x !== local?.x || merged.y !== local?.y;
+    });
+    
+    if (hasChanges) {
+      setAnnotations(mergedAnnotations);
+    }
+  }, [query.data, query.isFetching, setAnnotations, isSyncBlocked, isSyncBlockedForAnnotation, localAnnotations, serverAnnotationsMap]);
 
   // ============================================================================
   // BEFOREUNLOAD HANDLER - Flush pending saves on tab close
@@ -263,7 +476,13 @@ export function useAnnotationIntegration(
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (pendingRevisionByIdRef.current.size > 0) {
+      // Flush any pending debounced saves immediately
+      if (debouncedUpdateRef.current?.isPending()) {
+        debouncedUpdateRef.current.flush();
+      }
+      
+      // Show warning if there are still pending saves (after flush)
+      if (pendingRevisionByIdRef.current.size > 0 || annotationStateRef.current.size > 0) {
         e.preventDefault();
         e.returnValue = 'You have unsaved annotation changes.';
       }
@@ -281,8 +500,31 @@ export function useAnnotationIntegration(
     // Apply to local state
     applyUndo(entry);
     
-    // Also update React Query cache to prevent overwrite from refetch
-    if (entry.previousSnapshot && (entry.action === 'move' || entry.action === 'resize')) {
+    // Update React Query cache and sync to server based on action type
+    if (entry.action === 'create') {
+      // Undo create: remove from cache and delete from server
+      queryClient.setQueryData<AttachmentAnnotation[]>(queryKey, (old) => 
+        old?.filter(ann => ann.id !== entry.annotationId) ?? []
+      );
+      // Delete from server (fire and forget - no toast needed as this is undo)
+      void apiDeleteAnnotation(issueId, attachmentId, entry.annotationId).catch(() => {
+        // Silently ignore errors - annotation might already be gone
+      });
+    } else if (entry.action === 'delete' && entry.fullAnnotation) {
+      // Undo delete: add back to cache and re-create on server
+      queryClient.setQueryData<AttachmentAnnotation[]>(queryKey, (old) => 
+        [...(old || []), entry.fullAnnotation!]
+      );
+      // Re-create on server with stored data
+      if (entry.fullAnnotation.shape) {
+        void apiCreateAnnotation(issueId, attachmentId, {
+          shape: entry.fullAnnotation.shape,
+          description: entry.fullAnnotation.description,
+        }).catch((err) => {
+          console.error('Failed to restore annotation on undo delete:', err);
+        });
+      }
+    } else if (entry.previousSnapshot && (entry.action === 'move' || entry.action === 'resize')) {
       const prevShape = entry.previousSnapshot.shape;
       queryClient.setQueryData<AttachmentAnnotation[]>(queryKey, (old) => {
         if (!old) return old;
@@ -306,15 +548,38 @@ export function useAnnotationIntegration(
       pendingRevisionByIdRef.current.set(entry.annotationId, nextClientRevision);
       debouncedUpdateRef.current?.(entry.annotationId, prevShape, nextClientRevision);
     }
-  }, [applyUndo, queryClient, queryKey]);
+  }, [applyUndo, queryClient, queryKey, issueId, attachmentId]);
 
   // Enhanced applyRedo that updates both local state AND React Query cache AND saves to server
   const enhancedApplyRedo = useCallback((entry: AnnotationHistoryEntry) => {
     // Apply to local state
     applyRedo(entry);
     
-    // Also update React Query cache
-    if (entry.snapshot && (entry.action === 'move' || entry.action === 'resize')) {
+    // Update React Query cache and sync to server based on action type
+    if (entry.action === 'create' && entry.fullAnnotation) {
+      // Redo create: add back to cache and re-create on server
+      queryClient.setQueryData<AttachmentAnnotation[]>(queryKey, (old) => 
+        [...(old || []), entry.fullAnnotation!]
+      );
+      // Re-create on server
+      if (entry.fullAnnotation.shape) {
+        void apiCreateAnnotation(issueId, attachmentId, {
+          shape: entry.fullAnnotation.shape,
+          description: entry.fullAnnotation.description,
+        }).catch((err) => {
+          console.error('Failed to re-create annotation on redo:', err);
+        });
+      }
+    } else if (entry.action === 'delete') {
+      // Redo delete: remove from cache and delete from server
+      queryClient.setQueryData<AttachmentAnnotation[]>(queryKey, (old) => 
+        old?.filter(ann => ann.id !== entry.annotationId) ?? []
+      );
+      // Delete from server
+      void apiDeleteAnnotation(issueId, attachmentId, entry.annotationId).catch(() => {
+        // Silently ignore errors - annotation might already be gone
+      });
+    } else if (entry.snapshot && (entry.action === 'move' || entry.action === 'resize')) {
       const newShape = entry.snapshot.shape;
       queryClient.setQueryData<AttachmentAnnotation[]>(queryKey, (old) => {
         if (!old) return old;
@@ -338,7 +603,7 @@ export function useAnnotationIntegration(
       pendingRevisionByIdRef.current.set(entry.annotationId, nextClientRevision);
       debouncedUpdateRef.current?.(entry.annotationId, newShape, nextClientRevision);
     }
-  }, [applyRedo, queryClient, queryKey]);
+  }, [applyRedo, queryClient, queryKey, issueId, attachmentId]);
 
   const tools = useAnnotationTools({
     initialEditMode: false,
@@ -378,7 +643,7 @@ export function useAnnotationIntegration(
   });
 
   // ============================================================================
-  // MUTATIONS - Update
+  // MUTATIONS - Update (with auto-retry for transient errors)
   // ============================================================================
 
   const updateMutation = useMutation({
@@ -398,6 +663,17 @@ export function useAnnotationIntegration(
         description,
       });
       return transformToAttachmentAnnotation(response.annotation);
+    },
+    // Auto-retry configuration (Phase 6)
+    retry: (failureCount, error) => {
+      // Don't retry hard errors (permission, not found, validation, quota)
+      if (isHardSaveError(error)) return false;
+      // Retry up to 3 times for transient errors (network issues, 5xx)
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => {
+      // Exponential backoff: 1s, 2s, 4s (capped at 8s)
+      return Math.min(1000 * Math.pow(2, attemptIndex), 8000);
     },
     onMutate: async ({ annotationId, shape }) => {
       // Cancel outgoing refetches
@@ -429,13 +705,14 @@ export function useAnnotationIntegration(
       markAnnotationUnsaved(variables.annotationId, { error });
 
       // Only rollback for hard errors (403/404/402/422)
-      // For transient errors (network/5xx), keep local state and let user retry
+      // For transient errors (network/5xx), keep local state - retries are handled automatically
       if (isHardSaveError(error) && context?.previousAnnotations) {
         queryClient.setQueryData(queryKey, context.previousAnnotations);
         setAnnotations(context.previousAnnotations);
         toast.error('Save failed - changes reverted');
       } else {
-        toast.error('Failed to save annotation');
+        // This will only show after all retries exhausted
+        toast.error('Failed to save annotation - please check your connection');
       }
       onError?.(error);
     },
@@ -445,6 +722,8 @@ export function useAnnotationIntegration(
       if (pending === variables.clientRevision) {
         pendingRevisionByIdRef.current.delete(variables.annotationId);
         clearAnnotationUnsaved(variables.annotationId);
+        // Clear annotation state since save completed
+        setStateIdle(variables.annotationId);
       }
       // DON'T invalidate queries after position updates!
       // The optimistic update (onMutate) already set the correct position in the cache.
@@ -537,37 +816,43 @@ export function useAnnotationIntegration(
   // Handle pin annotation move with debounced API sync and clientRevision tracking
   const handleAnnotationMove = useCallback(
     (annotationId: string, position: { x: number; y: number }) => {
+      // Mark as having local changes and set debouncing state (prevents race condition)
+      setStateDebouncing(annotationId);
+      
       // Update local state immediately
       localHandleMove(annotationId, position);
 
-      // Increment client revision and mark as pending
+      // Increment client revision and mark as saving
       const nextClientRevision = (clientRevisionByIdRef.current.get(annotationId) ?? 0) + 1;
       clientRevisionByIdRef.current.set(annotationId, nextClientRevision);
-      pendingRevisionByIdRef.current.set(annotationId, nextClientRevision);
+      setStateSaving(annotationId, nextClientRevision);
 
       // Debounced API update with clientRevision
       const newShape: AnnotationShape = { type: 'pin', position };
       debouncedUpdate(annotationId, newShape, nextClientRevision);
     },
-    [localHandleMove, debouncedUpdate]
+    [localHandleMove, debouncedUpdate, setStateDebouncing, setStateSaving]
   );
 
   // Handle box annotation move/resize with debounced API sync and clientRevision tracking
   const handleBoxAnnotationMove = useCallback(
     (annotationId: string, start: { x: number; y: number }, end: { x: number; y: number }) => {
+      // Mark as having local changes and set debouncing state (prevents race condition)
+      setStateDebouncing(annotationId);
+      
       // Update local state immediately
       localHandleBoxMove(annotationId, start, end);
 
-      // Increment client revision and mark as pending
+      // Increment client revision and mark as saving
       const nextClientRevision = (clientRevisionByIdRef.current.get(annotationId) ?? 0) + 1;
       clientRevisionByIdRef.current.set(annotationId, nextClientRevision);
-      pendingRevisionByIdRef.current.set(annotationId, nextClientRevision);
+      setStateSaving(annotationId, nextClientRevision);
 
       // Debounced API update with clientRevision
       const newShape: AnnotationShape = { type: 'box', start, end };
       debouncedUpdate(annotationId, newShape, nextClientRevision);
     },
-    [localHandleBoxMove, debouncedUpdate]
+    [localHandleBoxMove, debouncedUpdate, setStateDebouncing, setStateSaving]
   );
 
   const refetch = useCallback(() => {
@@ -611,10 +896,15 @@ export function useAnnotationIntegration(
     redo: tools.redo,
     setShowShortcutsHelp: tools.setShowShortcutsHelp,
 
-    // Drag state - per-annotation tracking
+    // Drag state - per-annotation tracking via state machine
     setDragging: (annotationId: string, isDragging: boolean) => {
-      if (isDragging) draggingIdsRef.current.add(annotationId);
-      else draggingIdsRef.current.delete(annotationId);
+      if (isDragging) {
+        setStateDragging(annotationId);
+      } else {
+        // Transition to debouncing state with grace period
+        // This prevents sync from overwriting local state before save mutation starts
+        setStateDebouncing(annotationId);
+      }
     },
 
     // Unsaved changes tracking
