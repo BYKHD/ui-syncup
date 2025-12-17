@@ -14,6 +14,9 @@ export type {
   AnnotationSaveStatus,
   AnnotationSaveState,
   AnnotationSaveOperation,
+  // Local-first autosave types
+  UpdateAnnotationMutationVariables,
+  UnsavedAnnotationState,
   // Stored JSONB types (Task 6.2)
   PinShape,
   BoxShape,

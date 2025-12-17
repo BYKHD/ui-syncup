@@ -41,3 +41,31 @@ export {
   type CreateAnnotationParams,
   type CreateAnnotationResponse,
 } from './save-annotation';
+
+// Phase 4: Real API functions
+export {
+  getAnnotations,
+  createAnnotation as createAnnotationApi,
+  updateAnnotation,
+  deleteAnnotation,
+  transformToAttachmentAnnotation,
+  type AnnotationWithAuthor,
+  type GetAnnotationsResponse,
+  type CreateAnnotationRequest,
+  type CreateAnnotationResponse as CreateAnnotationApiResponse,
+  type UpdateAnnotationRequest,
+  type UpdateAnnotationResponse,
+} from './annotations-api';
+
+export {
+  addComment,
+  updateComment,
+  deleteComment,
+  markAsRead,
+  type CommentWithAuthor,
+  type AddCommentRequest,
+  type AddCommentResponse,
+  type UpdateCommentRequest,
+  type UpdateCommentResponse,
+  type MarkAsReadResponse,
+} from './comments-api';

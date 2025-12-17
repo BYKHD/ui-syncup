@@ -11,6 +11,10 @@ import { RiChatUnreadLine } from '@remixicon/react';
 
 export interface AnnotationAnnotationsPanelProps<A extends AnnotationThread = AnnotationThread> {
   annotations?: A[];
+  /** Issue ID for comment API calls */
+  issueId: string;
+  /** Attachment ID for comment API calls */
+  attachmentId: string;
   activeAnnotationId?: string | null;
   onAnnotationSelect?: (annotationId: string | null) => void;
   isMobile?: boolean;
@@ -19,6 +23,8 @@ export interface AnnotationAnnotationsPanelProps<A extends AnnotationThread = An
 
 export function AnnotationAnnotationsPanel<A extends AnnotationThread>({
   annotations = [],
+  issueId,
+  attachmentId,
   activeAnnotationId,
   onAnnotationSelect,
   isMobile = false,
@@ -191,7 +197,12 @@ export function AnnotationAnnotationsPanel<A extends AnnotationThread>({
                 )}
                 style={{ touchAction: 'none' }}
               >
-                <AnnotationThreadPreview thread={selectedThread} onClose={handleClose} />
+                <AnnotationThreadPreview 
+                  thread={selectedThread} 
+                  issueId={issueId}
+                  attachmentId={attachmentId}
+                  onClose={handleClose} 
+                />
               </motion.div>
             </>
           )}

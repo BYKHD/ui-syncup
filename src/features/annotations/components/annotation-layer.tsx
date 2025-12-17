@@ -11,11 +11,14 @@ export interface AnnotationLayerProps<A extends AttachmentAnnotation = Attachmen
   activeAnnotationId?: string | null;
   interactive?: boolean;
   handToolActive?: boolean;
+  savingAnnotationIds?: Set<string>; // IDs of annotations currently being saved
   onSelect?: (annotationId: string) => void;
   onMove?: (annotationId: string, position: AnnotationPosition) => void;
   onBoxMove?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
   onMoveComplete?: (annotationId: string, position: AnnotationPosition) => void;
   onBoxMoveComplete?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
+  onDragStart?: (annotationId: string) => void;
+  onDragEnd?: (annotationId: string) => void;
   onEdit?: (annotationId: string) => void;
   onDelete?: (annotationId: string) => void;
 }
@@ -31,11 +34,14 @@ export function AnnotationLayer<A extends AttachmentAnnotation>({
   activeAnnotationId = null,
   interactive = true,
   handToolActive = false,
+  savingAnnotationIds,
   onSelect,
   onMove,
   onBoxMove,
   onMoveComplete,
   onBoxMoveComplete,
+  onDragStart,
+  onDragEnd,
   onEdit,
   onDelete,
 }: AnnotationLayerProps<A>) {
@@ -69,9 +75,12 @@ export function AnnotationLayer<A extends AttachmentAnnotation>({
                   isActive={annotation.id === activeAnnotationId}
                   interactive={interactive}
                   handToolActive={handToolActive}
+                  isSaving={savingAnnotationIds?.has(annotation.id)}
                   onSelect={onSelect}
                   onMove={onBoxMove}
                   onMoveComplete={onBoxMoveComplete}
+                  onDragStart={onDragStart}
+                  onDragEnd={onDragEnd}
                   onEdit={onEdit}
                   onDelete={onDelete}
                 />
@@ -87,9 +96,12 @@ export function AnnotationLayer<A extends AttachmentAnnotation>({
                   isActive={annotation.id === activeAnnotationId}
                   interactive={interactive}
                   handToolActive={handToolActive}
+                  isSaving={savingAnnotationIds?.has(annotation.id)}
                   onSelect={onSelect}
                   onMove={onMove}
                   onMoveComplete={onMoveComplete}
+                  onDragStart={onDragStart}
+                  onDragEnd={onDragEnd}
                   onEdit={onEdit}
                   onDelete={onDelete}
                 />
@@ -109,9 +121,12 @@ export function AnnotationLayer<A extends AttachmentAnnotation>({
               isActive={annotation.id === activeAnnotationId}
               interactive={interactive}
               handToolActive={handToolActive}
+              isSaving={savingAnnotationIds?.has(annotation.id)}
               onSelect={onSelect}
               onMove={onMove}
               onMoveComplete={onMoveComplete}
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
               onEdit={onEdit}
               onDelete={onDelete}
             />

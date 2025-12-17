@@ -1,17 +1,23 @@
 'use client';
 
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, X } from 'lucide-react';
+import { Send, X, Loader2 } from 'lucide-react';
 import type { AnnotationThread, AnnotationComment, AnnotationAuthor } from '../types';
 import { formatDistanceToNow } from 'date-fns';
+import { useAnnotationComments } from '../hooks/use-annotation-comments';
+import { useSession } from '@/features/auth/hooks/use-session';
 
 export interface AnnotationThreadPreviewProps<T extends AnnotationAuthor = AnnotationAuthor> {
   thread: AnnotationThread<T>;
+  /** Issue ID for API calls */
+  issueId: string;
+  /** Attachment ID for API calls */
+  attachmentId: string;
   onClose: () => void;
-  onCommentSubmit?: (threadId: string, message: string) => void;
 }
 
 function getInitials(name: string): string {
@@ -52,9 +58,52 @@ function CommentCard<T extends AnnotationAuthor = AnnotationAuthor>({ comment }:
   );
 }
 
-export function AnnotationThreadPreview<T extends AnnotationAuthor = AnnotationAuthor>({ thread, onClose, onCommentSubmit }: AnnotationThreadPreviewProps<T>) {
+export function AnnotationThreadPreview<T extends AnnotationAuthor = AnnotationAuthor>({ 
+  thread, 
+  issueId,
+  attachmentId,
+  onClose, 
+}: AnnotationThreadPreviewProps<T>) {
   const comments = thread.comments || [];
   const hasComments = comments.length > 0;
+  const [newComment, setNewComment] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { user } = useSession();
+
+  const {
+    addComment,
+    isAddingComment,
+  } = useAnnotationComments({
+    issueId,
+    attachmentId,
+    annotationId: thread.id,
+    currentUser: user ? { id: user.id, name: user.name || 'You' } : undefined,
+  });
+
+  // Scroll to bottom when new comments are added
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
+  }, [comments.length]);
+
+  const handleSubmit = useCallback(async () => {
+    if (!newComment.trim() || isAddingComment) return;
+    
+    await addComment(newComment.trim());
+    setNewComment('');
+    textareaRef.current?.focus();
+  }, [newComment, isAddingComment, addComment]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      void handleSubmit();
+    }
+  }, [handleSubmit]);
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -97,13 +146,16 @@ export function AnnotationThreadPreview<T extends AnnotationAuthor = AnnotationA
       </div>
 
       {/* Comments List */}
-      <ScrollArea className="flex-1 overflow-auto">
+      <ScrollArea className="flex-1 overflow-auto" ref={scrollAreaRef}>
         <div className="p-4 space-y-3">
           {hasComments ? (
             comments.map((comment) => <CommentCard key={comment.id} comment={comment} />)
           ) : (
             <div className="text-center py-8">
               <p className="text-sm text-muted-foreground">No comments yet</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">
+                Be the first to comment on this annotation
+              </p>
             </div>
           )}
         </div>
@@ -112,13 +164,28 @@ export function AnnotationThreadPreview<T extends AnnotationAuthor = AnnotationA
       {/* Comment Input */}
       <div className="border-t p-4 space-y-3">
         <Textarea
-          placeholder="Reply to thread..."
+          ref={textareaRef}
+          placeholder="Add a comment..."
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          onKeyDown={handleKeyDown}
           className="min-h-[80px] resize-none"
-          disabled
+          disabled={isAddingComment}
         />
-        <div className="flex justify-end">
-          <Button size="sm" disabled>
-            <Send className="h-4 w-4 mr-2" />
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
+            {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'} + Enter to submit
+          </span>
+          <Button 
+            size="sm" 
+            onClick={handleSubmit}
+            disabled={isAddingComment || !newComment.trim()}
+          >
+            {isAddingComment ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4 mr-2" />
+            )}
             Post Comment
           </Button>
         </div>

@@ -191,42 +191,42 @@
 
 ## Phase 3: Annotation API Routes
 
-- [ ] 10. Create annotation API routes
-  - [ ] 10.1 Create POST /api/issues/[issueId]/attachments/[attachmentId]/annotations
+- [x] 10. Create annotation API routes
+  - [x] 10.1 Create POST /api/issues/[issueId]/attachments/[attachmentId]/annotations
     - Validate request body with CreateAnnotationSchema
     - Check user permissions
     - Create annotation via service
     - Log activity
     - Return created annotation with author info
     - _Requirements: 1.2, 1.3, 1.4, 7.1, 10.1, 10.2_
-  - [ ] 10.2 Create GET /api/issues/[issueId]/attachments/[attachmentId]/annotations
+  - [x] 10.2 Create GET /api/issues/[issueId]/attachments/[attachmentId]/annotations
     - Fetch all annotations for attachment
     - Include author information for each annotation
     - _Requirements: 2.1, 2.2_
-  - [ ] 10.3 Create PATCH /api/issues/[issueId]/attachments/[attachmentId]/annotations/[annotationId]
+  - [x] 10.3 Create PATCH /api/issues/[issueId]/attachments/[attachmentId]/annotations/[annotationId]
     - Validate request body with UpdateAnnotationSchema
     - Check user permissions (own vs all)
     - Update annotation via service
     - Log activity with changes
     - _Requirements: 4.1, 4.2, 4.5, 12.2_
-  - [ ] 10.4 Create DELETE /api/issues/[issueId]/attachments/[attachmentId]/annotations/[annotationId]
+  - [x] 10.4 Create DELETE /api/issues/[issueId]/attachments/[attachmentId]/annotations/[annotationId]
     - Check user permissions (own vs all)
     - Delete annotation and cascade comments
     - Log activity
     - _Requirements: 4.3, 4.4, 7.3, 12.3_
 
-- [ ] 11. Create comment API routes
-  - [ ] 11.1 Create POST /api/issues/.../annotations/[annotationId]/comments
+- [x] 11. Create comment API routes
+  - [x] 11.1 Create POST /api/issues/.../annotations/[annotationId]/comments
     - Validate request body with CreateCommentSchema
     - Sanitize comment text
     - Add comment to annotation
     - Log activity
     - _Requirements: 3.2, 10.3, 11.1, 11.5, 12.4_
-  - [ ] 11.2 Create PATCH /api/issues/.../annotations/[annotationId]/comments/[commentId]
+  - [x] 11.2 Create PATCH /api/issues/.../annotations/[annotationId]/comments/[commentId]
     - Validate author ownership
     - Update comment text
     - _Requirements: 11.2, 11.4_
-  - [ ] 11.3 Create DELETE /api/issues/.../annotations/[annotationId]/comments/[commentId]
+  - [x] 11.3 Create DELETE /api/issues/.../annotations/[annotationId]/comments/[commentId]
     - Validate author ownership
     - Remove comment from annotation
     - Log activity
@@ -236,33 +236,33 @@
   - Test that edited comments preserve createdAt and update updatedAt
   - **Validates: Requirements 11.2, 11.4**
 
-- [ ] 11.5 Write property test for comment delete authorization (Property 23)
+- [x] 11.5 Write property test for comment delete authorization (Property 23)
   - Test that only comment authors can delete their comments
   - **Validates: Requirements 11.3**
 
-- [ ] 12. Create read status API route
-  - [ ] 12.1 Create POST /api/issues/.../annotations/[annotationId]/read
+- [x] 12. Create read status API route
+  - [x] 12.1 Create POST /api/issues/.../annotations/[annotationId]/read
     - Update or insert read status for user
     - _Requirements: 3.5_
 
-- [ ] 13. Checkpoint - Ensure all tests pass
+- [x] 13. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 4: Client-Side Integration Hooks
 
-- [ ] 14. Create annotation integration hooks
-  - [ ] 14.1 Create useAnnotationIntegration hook
+- [x] 14. Create annotation integration hooks
+  - [x] 14.1 Create useAnnotationIntegration hook
     - Integrate with useAnnotationsWithHistory
     - Add API persistence layer
     - Handle optimistic updates with rollback
     - Manage tool state and edit mode
     - _Requirements: 1.4, 1.5, 4.5, 5.1_
-  - [ ] 14.2 Create useAnnotationComments hook
+  - [x] 14.2 Create useAnnotationComments hook
     - Fetch and cache comments
     - Handle add, update, delete mutations
     - Track unread status
     - _Requirements: 3.1, 3.2, 3.4, 3.5_
-  - [ ] 14.3 Create useAnnotationPermissions hook
+  - [x] 14.3 Create useAnnotationPermissions hook
     - Derive permissions from user role
     - Return AnnotationPermissions object
     - _Requirements: 8.1, 8.2, 8.3, 8.5_
@@ -277,33 +277,33 @@
 
 ## Phase 5: UI Component Integration
 
-- [ ] 15. Create AnnotatedAttachmentView component
-  - [ ] 15.1 Create AnnotatedAttachmentView wrapper component
+- [x] 15. Create AnnotatedAttachmentView component
+  - [x] 15.1 Create AnnotatedAttachmentView wrapper component
     - Combine CenteredCanvasView with annotation capabilities
     - Wire useAnnotationIntegration hook
     - Pass permissions to child components
     - _Requirements: 1.1, 2.2_
-  - [ ] 15.2 Integrate AnnotationToolbar with permissions
+  - [x] 15.2 Integrate AnnotationToolbar with permissions
     - Show/hide tools based on permissions
     - Disable toolbar for TEAM_VIEWER role
     - _Requirements: 8.1, 8.5_
-  - [ ] 15.3 Integrate AnnotationLayer with selection and permissions
+  - [x] 15.3 Integrate AnnotationLayer with selection and permissions
     - Handle annotation selection
     - Show edit controls based on permissions
     - Display unread indicators
     - _Requirements: 2.3, 2.4, 3.5, 8.2, 8.3_
 
-- [ ] 15.4 Write property test for role-based permission enforcement (Property 16)
+- [x] 15.4 Write property test for role-based permission enforcement (Property 16)
   - Test that UI reflects correct permissions for each role
   - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5**
 
-- [ ] 16. Create AnnotationThreadPanel component
-  - [ ] 16.1 Create AnnotationThreadPanel component
+- [x] 16. Create AnnotationThreadPanel component
+  - [x] 16.1 Create AnnotationThreadPanel component
     - Display comments in chronological order
     - Show author information and timestamps
     - Handle comment submission
     - _Requirements: 3.1, 3.4_
-  - [ ] 16.2 Add mobile-optimized layout
+  - [x] 16.2 Add mobile-optimized layout
     - Use drawer/sheet on mobile breakpoints
     - _Requirements: 9.4_
 
@@ -311,29 +311,29 @@
   - Test that comments are displayed in ascending order by createdAt
   - **Validates: Requirements 3.4**
 
-- [ ] 17. Integrate with Issue Details Screen
-  - [ ] 17.1 Update IssueDetailsScreen to use AnnotatedAttachmentView
+- [x] 17. Integrate with Issue Details Screen
+  - [x] 17.1 Update IssueDetailsScreen to use AnnotatedAttachmentView
     - Replace current attachment view with annotated version
     - Pass issue and attachment data
     - _Requirements: 1.1_
-  - [ ] 17.2 Add annotation activities to activity timeline
+  - [x] 17.2 Add annotation activities to activity timeline
     - Display annotation activity entries with icons
     - Handle click to navigate to annotation
     - _Requirements: 7.4, 7.5_
 
-- [ ] 18. Checkpoint - Ensure all tests pass
+- [x] 18. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Phase 6: Keyboard Shortcuts & History
 
-- [ ] 19. Implement keyboard shortcuts
-  - [ ] 19.1 Update useKeyboardShortcuts hook for annotation tools
+- [x] 19. Implement keyboard shortcuts
+  - [x] 19.1 Update useKeyboardShortcuts hook for annotation tools
     - Add 'E' for toggle edit mode
     - Add '1'/'C' for cursor tool
     - Add '2'/'P' for pin tool
     - Add '3'/'B' for box tool
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
-  - [ ] 19.2 Ensure toolbar reflects keyboard shortcut changes
+  - [x] 19.2 Ensure toolbar reflects keyboard shortcut changes
     - Sync active tool state with toolbar display
     - _Requirements: 6.5_
 
@@ -341,8 +341,8 @@
   - Test that toolbar reflects active tool after shortcut
   - **Validates: Requirements 6.5**
 
-- [ ] 20. Implement history empty state handling
-  - [ ] 20.1 Update AnnotationToolbar for empty history state
+- [x] 20. Implement history empty state handling
+  - [x] 20.1 Update AnnotationToolbar for empty history state
     - Disable undo button when history stack is empty
     - Disable redo button when redo stack is empty
     - _Requirements: 5.5_
@@ -381,26 +381,26 @@
 
 ## Phase 8: Error Handling & Edge Cases
 
-- [ ] 23. Implement error handling
-  - [ ] 23.1 Add client-side error handling
+- [x] 23. Implement error handling
+  - [x] 23.1 Add client-side error handling
     - Show toast on network failure
     - Enable retry for failed saves
     - Handle permission denied errors
     - _Requirements: 8.4, 10.5_
-  - [ ] 23.2 Add server-side error responses
+  - [x] 23.2 Add server-side error responses
     - Return proper HTTP status codes
     - Include descriptive error messages
     - _Requirements: 10.5_
 
-- [ ] 24. Handle attachment deletion cascade
-  - [ ] 24.1 Ensure annotations are deleted with attachment
+- [x] 24. Handle attachment deletion cascade
+  - [x] 24.1 Ensure annotations are deleted with attachment
     - Verify JSONB annotations are removed when attachment is deleted
     - No orphan data in annotation_read_status
     - _Requirements: 13.4_
 
-- [ ]* 24.2 Write property test for attachment deletion cascade (Property 27)
+- [x]* 24.2 Write property test for attachment deletion cascade (Property 27)
   - Test that deleting attachment removes all embedded annotations
   - **Validates: Requirements 13.4**
 
-- [ ] 25. Final Checkpoint - Ensure all tests pass
+- [x] 25. Final Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.

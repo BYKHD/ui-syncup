@@ -77,6 +77,7 @@ export interface AnnotationHistoryEntry {
   annotationId: string;
   snapshot: AnnotationSnapshot;
   previousSnapshot?: AnnotationSnapshot; // For move/resize operations
+  fullAnnotation?: AttachmentAnnotation; // For create/delete operations - stores complete annotation for restoration
 }
 
 // ============================================================================
@@ -96,6 +97,29 @@ export interface AnnotationSaveOperation {
   type: 'create' | 'update' | 'delete';
   annotationId: string;
   attachmentId: string;
+}
+
+// ============================================================================
+// LOCAL-FIRST AUTOSAVE TYPES
+// ============================================================================
+
+/**
+ * Mutation variables for annotation update with client revision tracking.
+ * clientRevision is used to detect and ignore stale ACKs from out-of-order responses.
+ */
+export interface UpdateAnnotationMutationVariables {
+  annotationId: string;
+  shape?: AnnotationShape;
+  description?: string;
+  clientRevision: number;
+}
+
+/**
+ * Tracks unsaved annotation state for UI indication
+ */
+export interface UnsavedAnnotationState {
+  error?: Error;
+  retryCount: number;
 }
 
 // ============================================================================

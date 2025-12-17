@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 import type { PointerEvent, RefObject } from 'react';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import type { AttachmentAnnotation, AnnotationPosition } from '../types';
 import { cn } from '@/lib/utils';
 import { useLongPress } from '@/hooks/use-long-press';
@@ -15,14 +15,17 @@ const PIN_DRAG_THRESHOLD_PX = 4;
 const getAnnotationPinClassName = ({
   isActive,
   interactive,
+  isSaving,
 }: {
   isActive: boolean;
   interactive: boolean;
+  isSaving: boolean;
 }) =>
   cn(
     'group absolute flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-xs font-semibold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
     isActive ? 'border-annotation-bold bg-annotation-bold text-annotation-foreground' : 'border-2 border-white bg-annotation text-annotation-foreground',
     interactive ? 'cursor-move' : 'cursor-pointer',
+    isSaving && 'animate-pulse ring-2 ring-blue-400 ring-opacity-75',
   );
 
 export interface AnnotationPinProps<A extends AttachmentAnnotation = AttachmentAnnotation> {
@@ -31,9 +34,12 @@ export interface AnnotationPinProps<A extends AttachmentAnnotation = AttachmentA
   isActive?: boolean;
   interactive?: boolean;
   handToolActive?: boolean; // Disable context menu when hand tool is active
+  isSaving?: boolean; // Show saving indicator when true
   onSelect?: (annotationId: string) => void;
   onMove?: (annotationId: string, position: AnnotationPosition) => void;
   onMoveComplete?: (annotationId: string, position: AnnotationPosition) => void;
+  onDragStart?: (annotationId: string) => void;
+  onDragEnd?: (annotationId: string) => void;
   onEdit?: (annotationId: string) => void;
   onDelete?: (annotationId: string) => void;
 }
@@ -44,9 +50,12 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   isActive = false,
   interactive = true,
   handToolActive = false,
+  isSaving = false,
   onSelect,
   onMove,
   onMoveComplete,
+  onDragStart,
+  onDragEnd,
   onEdit,
   onDelete,
 }: AnnotationPinProps<A>) {
@@ -54,6 +63,26 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
   const lastPositionRef = useRef<AnnotationPosition | null>(null);
+  
+  // Track the effective base position for drag calculations
+  // This is annotation position + any uncommitted offset from previous drag
+  const effectiveBaseRef = useRef<{ x: number; y: number }>({ x: annotation.x, y: annotation.y });
+  
+  // Local drag offset for smooth visual updates (prevents re-renders during drag)
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+  
+  // Update the effective base when props change (i.e., when save completes)
+  // BUT only if not currently dragging - otherwise we'd jump mid-drag
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      // When props update (save completed), sync effective base to new props
+      effectiveBaseRef.current = { x: annotation.x, y: annotation.y };
+      // Clear any lingering offset since props now reflect the committed position
+      if (dragOffset !== null) {
+        setDragOffset(null);
+      }
+    }
+  }, [annotation.x, annotation.y]);
 
   // Context menu state (desktop)
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
@@ -97,6 +126,21 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     event.currentTarget.setPointerCapture(event.pointerId);
     dragStartRef.current = { x: event.clientX, y: event.clientY };
     isDraggingRef.current = false;
+    
+    // IMPORTANT: If there's an existing drag offset (from a previous drag that's still saving),
+    // "bake" it into the effective base position. This prevents snap-back when starting
+    // a new drag before the previous save completes and props have updated.
+    if (dragOffset !== null) {
+      effectiveBaseRef.current = {
+        x: annotation.x + dragOffset.x,
+        y: annotation.y + dragOffset.y,
+      };
+      // Clear the offset since we've incorporated it into the base
+      setDragOffset(null);
+    }
+    
+    // Notify parent immediately that drag might start (prevents sync during potential drag)
+    onDragStart?.(annotation.id);
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
@@ -124,7 +168,7 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
 
     event.preventDefault();
     const overlay = overlayRef.current;
-    if (!overlay || !onMove) return;
+    if (!overlay) return;
     const rect = overlay.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width;
     const y = (event.clientY - rect.top) / rect.height;
@@ -134,7 +178,14 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
 
     // Store last position for drag completion callback
     lastPositionRef.current = position;
-    onMove(annotation.id, position);
+    
+    // Calculate offset relative to EFFECTIVE BASE (not stale props)
+    // This ensures smooth drag even when props haven't updated from previous save
+    const base = effectiveBaseRef.current;
+    setDragOffset({
+      x: clampedX - base.x,
+      y: clampedY - base.y,
+    });
   };
 
   const handlePointerUp = (event: PointerEvent<HTMLButtonElement>) => {
@@ -149,13 +200,19 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     }
 
     // Notify parent when drag completes (only if actually dragged)
-    if (isDraggingRef.current && lastPositionRef.current && onMoveComplete) {
-      onMoveComplete(annotation.id, lastPositionRef.current);
+    if (isDraggingRef.current && lastPositionRef.current) {
+      // Call onMoveComplete for final state update and history (onMove is for live updates during drag)
+      onMoveComplete?.(annotation.id, lastPositionRef.current);
     }
 
+    // Don't clear dragOffset here - let useEffect clear it when annotation.x/y updates
+    // This prevents flicker between drop and state update
     dragStartRef.current = null;
     isDraggingRef.current = false;
     lastPositionRef.current = null;
+
+    // Always notify parent that drag ended (matches onDragStart in pointerDown)
+    onDragEnd?.(annotation.id);
   };
 
   // Context menu handler (desktop right-click)
@@ -196,13 +253,17 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onContextMenu={handleContextMenu}
-        className={getAnnotationPinClassName({ isActive, interactive })}
+        className={getAnnotationPinClassName({ isActive, interactive, isSaving })}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         style={{
-          left: `${annotation.x * 100}%`,
-          top: `${annotation.y * 100}%`,
+          left: dragOffset 
+            ? `${(effectiveBaseRef.current.x + dragOffset.x) * 100}%` 
+            : `${annotation.x * 100}%`,
+          top: dragOffset 
+            ? `${(effectiveBaseRef.current.y + dragOffset.y) * 100}%` 
+            : `${annotation.y * 100}%`,
         }}
         aria-label={`Annotation ${annotation.label}`}
         data-annotation-pin="true"
