@@ -157,20 +157,20 @@
   - Test token encryption/decryption
   - _Requirements: 7.3, 7.5_
 
-- [ ] 10. Update sign-in and sign-up pages
+- [x] 10. Update sign-in and sign-up pages
   - Integrate SocialLoginButtons component into sign-in page
   - Update sign-up page to include social login options
   - Add proper spacing and styling for social login section
   - Ensure consistent user experience across auth pages
   - _Requirements: 1.1, 2.1, 3.1_
 
-- [ ] 10.1 Write integration tests for auth pages
+- [x] 10.1 Write integration tests for auth pages
   - Test social login button functionality on sign-in page
   - Test social login button functionality on sign-up page
   - Test page layout and styling
   - _Requirements: 1.1, 2.1, 3.1_
 
-- [ ] 11. Checkpoint - Ensure all tests pass
+- [x] 11. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 12. Add account management UI for linked accounts
