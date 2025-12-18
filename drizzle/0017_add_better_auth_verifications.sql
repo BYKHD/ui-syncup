@@ -1,7 +1,8 @@
 -- better-auth verification storage table
--- Note: id is TEXT because better-auth generates alphanumeric string IDs, not UUIDs
+-- Note: id is UUID because better-auth is configured with generateId: false
+-- letting PostgreSQL generate UUIDs via gen_random_uuid()
 CREATE TABLE IF NOT EXISTS "better_auth_verifications" (
-    "id" text PRIMARY KEY,
+    "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     "identifier" varchar(255) NOT NULL UNIQUE,
     "value" text NOT NULL,
     "expires_at" timestamptz NOT NULL,
@@ -11,4 +12,5 @@ CREATE TABLE IF NOT EXISTS "better_auth_verifications" (
 
 CREATE INDEX IF NOT EXISTS "better_auth_verifications_identifier_idx"
     ON "better_auth_verifications" ("identifier");
+
 
