@@ -540,6 +540,22 @@ async function runMigrations(): Promise<void> {
         // Update result counts (Requirements 8.5 - batch summary reporting)
         result.migrationsApplied = newlyAppliedCount;
         result.migrationsSkipped = alreadyAppliedCount;
+
+        // CRITICAL: Validation for silent failures (journal sync issues)
+        // If we expected to apply migrations but applied 0, something is wrong
+        if (pendingCount > 0 && newlyAppliedCount === 0) {
+          const errorMessage = `Detected ${pendingCount} pending migrations but 0 were applied. This usually means 'drizzle/meta/_journal.json' is out of sync with migration files.`;
+          console.error(`\n❌ CRITICAL ERROR: ${errorMessage}`);
+          console.error("   Troubleshooting:");
+          console.error("   1. Run 'drizzle-kit generate' locally to update the journal");
+          console.error("   2. Check if migration files were manually added/renamed without updating journal");
+          console.error("   3. Ensure '_journal.json' is committed and up to date");
+          
+          result.success = false;
+          result.errors.push(errorMessage);
+          logError(errorMessage);
+          process.exit(1);
+        }
         
         // Log per-migration details (Requirements 8.4)
         if (newlyAppliedCount > 0) {

@@ -11,12 +11,11 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
+import { Badge } from '@/components/ui/badge';
 import {
   RiHome3Line,
   RiBox2Line,
   RiListSettingsLine,
-  RiTeamLine,
-  RiBarChartBoxLine,
   RiDragDropFill,
   RiBugLine,
 } from '@remixicon/react';
@@ -24,8 +23,8 @@ import {
   TeamSwitcher,
   NavMain,
   NavProjects,
-  MOCK_PROJECTS,
 } from '@/components/shared/sidebar';
+import { useRecentProjects } from '@/features/projects/hooks';
 import type { NavItem } from '@/components/shared/sidebar';
 import { Separator } from '@/components/ui/separator';
 
@@ -47,6 +46,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const teamId = currentTeam?.id;
   
   const canManageTeam = useCanManageTeam(teamId);
+  const { recentProjects, isLoaded: isRecentProjectsLoaded } = useRecentProjects();
 
   const navItems = React.useMemo(() => {
     const items: NavItem[] = [
@@ -59,16 +59,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: 'Projects',
         url: '/projects',
         icon: RiBox2Line,
-      },
-      {
-        title: 'Team',
-        url: '/team',
-        icon: RiTeamLine,
-      },
-      {
-        title: 'Analytics',
-        url: '/analytics',
-        icon: RiBarChartBoxLine,
       },
     ];
 
@@ -120,7 +110,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <RiDragDropFill className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">SyncUP</span>
+                  <div className="flex items-center gap-2">
+                    <span className="truncate font-semibold">UI Syncup</span>
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px] h-4 leading-none font-mono">Alpha</Badge>
+                  </div>
                   <span className="truncate text-xs">Design Feedback Tracker</span>
                 </div>
               </a>
@@ -132,7 +125,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <Separator/>
       <SidebarContent>
         <NavMain items={navItems} />
-        <NavProjects projects={MOCK_PROJECTS} />
+        <NavProjects projects={recentProjects} isLoading={!isRecentProjectsLoaded} />
       </SidebarContent>
       <SidebarFooter>
       </SidebarFooter>

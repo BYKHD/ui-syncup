@@ -8,12 +8,15 @@ import type { SessionResponse } from "../api/types";
 type SignInScreenProps = {
   description?: string;
   invitedEmail?: string;
+  /** Initial OAuth error from URL redirect */
+  initialOAuthError?: string | null;
   onSuccess?: (data: SessionResponse) => void;
 };
 
 export default function SignInScreen({
   description = "Sign in to your account to continue",
   invitedEmail = "",
+  initialOAuthError,
   onSuccess,
 }: SignInScreenProps) {
   const {
@@ -26,6 +29,9 @@ export default function SignInScreen({
     handleSubmit,
     handleOAuthSignIn,
   } = useSignIn({ defaultEmail: invitedEmail, onSuccess });
+
+  // Use initial error from URL if no runtime error
+  const displayedOAuthError = oauthError || initialOAuthError || null;
 
   return (
     <AuthCard
@@ -46,7 +52,7 @@ export default function SignInScreen({
         onSubmit={handleSubmit}
         onOAuthSignIn={handleOAuthSignIn}
         oauthStatus={oauthStatus}
-        oauthError={oauthError}
+        oauthError={displayedOAuthError}
         description={description}
         invitedEmail={invitedEmail}
       />

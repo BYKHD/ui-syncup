@@ -1,4 +1,6 @@
 "use client"
+import * as React from 'react';
+import { getIconComponent } from '@/features/projects/config/icons';
 
 import { RiFolderLine } from "@remixicon/react"
 import {
@@ -33,21 +35,23 @@ export function NavProjects({
             </SidebarMenuItem>
           ))
         ) : projects.length ? (
-          projects.map((item) => (
+          projects.map((item) => {
+            const Icon = getIconComponent(item.icon || '');
+            return (
             <SidebarMenuItem key={item.id}>
               <SidebarMenuButton asChild>
                 <a href={item.url}>
-                  <RiFolderLine />
+                  <Icon />
                   <span>{item.name}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          ))
+          )})
         ) : (
           <SidebarMenuItem>
             <SidebarMenuButton disabled>
               <RiFolderLine />
-              <span>No projects yet</span>
+              <span>No recent projects</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         )}

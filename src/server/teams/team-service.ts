@@ -19,6 +19,23 @@ export async function createTeam(input: CreateTeamInput): Promise<Team> {
   const { name, description, image, creatorId } = input;
 
   try {
+    // Defensive check: Verify creator exists in users table
+    // This catches session/user mismatches that can occur with OAuth flows
+    const creatorUser = await db.query.users.findFirst({
+      where: eq(users.id, creatorId),
+    });
+
+    if (!creatorUser) {
+      logTeamEvent("team.create.failure", {
+        outcome: "failure",
+        userId: creatorId,
+        errorCode: "USER_NOT_FOUND",
+        errorMessage: `Creator user not found: ${creatorId}`,
+        metadata: { name },
+      });
+      throw new Error(`Creator user not found: ${creatorId}`);
+    }
+
     // Validate team name
     const validation = validateTeamName(name);
     if (!validation.valid) {

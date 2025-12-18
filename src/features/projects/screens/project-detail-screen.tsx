@@ -12,6 +12,9 @@ import { ProjectDetailHeader, ProjectIssues } from "../components";
 import { ProjectOverview } from "../components/project-detail-overview";
 import type { ProjectRole } from "../types";
 import type { IssuePriority, IssueType } from "@/features/issues/types";
+import { useRecentProjects } from "../hooks";
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 interface ProjectStats {
   memberCount: number;
@@ -29,6 +32,8 @@ interface ProjectDetailScreenProps {
     stats: ProjectStats;
     createdAt: string;
     updatedAt: string;
+    slug: string;
+    icon: string | null;
   };
   userRole: ProjectRole | null;
   isLoading?: boolean;
@@ -49,6 +54,20 @@ export default function ProjectDetailScreen({
   isLoading = false,
 }: ProjectDetailScreenProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const { addRecentProject } = useRecentProjects();
+  
+  useEffect(() => {
+    if (project) {
+      addRecentProject({
+        id: project.id,
+        name: project.name,
+        url: pathname,
+        icon: project.icon,
+      });
+    }
+  }, [project, addRecentProject, pathname]);
+
   const canManageMembers = userRole === "owner" || userRole === "editor";
   const { mutateAsync: createIssueMutation } = useCreateIssue();
   // Issue dialog state

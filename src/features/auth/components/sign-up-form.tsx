@@ -11,10 +11,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 import { useSignUp } from "../hooks/use-sign-up";
 import type { SuccessResponse } from "../api/types";
 import { PasswordStrengthIndicator } from "./password-strength-indicator";
+import { SocialLoginButtons } from "./social-login-buttons";
 
 type SignUpFormProps = {
   onSuccess?: (data: SuccessResponse) => void;
@@ -131,6 +133,21 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
           </Button>
         </form>
 
+        {/* Social login section */}
+        <div className="relative py-4">
+          <Separator />
+          <span className="absolute inset-0 flex items-center justify-center text-xs uppercase text-muted-foreground">
+            <span className="bg-background px-2">Or sign up with</span>
+          </span>
+        </div>
+
+        <SocialLoginButtons 
+          disabled={isLoading}
+          onError={(_error: string) => {
+            // Error is already handled by the component
+          }}
+        />
+
         <p className="text-center text-xs text-muted-foreground">
           By continuing you agree to the mock Terms of Service & Privacy Policy.
         </p>
@@ -138,3 +155,4 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
     </Card>
   );
 }
+
