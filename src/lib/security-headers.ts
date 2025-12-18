@@ -57,6 +57,10 @@ export function getCSPDirectives(): CSPDirectives {
       'https://*.supabase.co',
       'https://*.r2.cloudflarestorage.com',
       'https://accounts.google.com',
+      // Production domains
+      'https://ui-syncup.com',
+      'https://www.ui-syncup.com',
+      ...(env.NEXT_PUBLIC_APP_URL ? [env.NEXT_PUBLIC_APP_URL] : []),
       // Development: allow local connections for API and MinIO storage
       ...(isDevelopment() ? ['http://localhost:*', 'ws://localhost:*', 'http://127.0.0.1:*'] : []),
     ],
