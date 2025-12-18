@@ -2,9 +2,8 @@ import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/shared/
 import PreferencesScreen from '@/features/user-settings/screens/setting-preferences-screen'
 import { MOCK_USER_PREFERENCES } from '@/mocks/user-settings.fixtures'
 
-const SETTINGS_PREFERENCES_BREADCRUMBS: BreadcrumbItem[] = [
-  { label: 'Settings', href: '/settings' },
-  { label: 'Preferences' },
+const SETTINGS_BREADCRUMBS: BreadcrumbItem[] = [
+  { label: 'Settings' },
 ]
 
 export default function SettingsPage() {
@@ -15,8 +14,8 @@ export default function SettingsPage() {
   return (
     <>
       <AppHeaderConfigurator
-        pageName="Preferences"
-        breadcrumbs={SETTINGS_PREFERENCES_BREADCRUMBS}
+        pageName="Settings"
+        breadcrumbs={SETTINGS_BREADCRUMBS}
       />
       <PreferencesScreen initialPreferences={MOCK_USER_PREFERENCES} />
     </>

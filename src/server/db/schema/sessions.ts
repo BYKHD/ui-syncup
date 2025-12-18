@@ -10,6 +10,8 @@ export const sessions = pgTable("sessions", {
   token: varchar("token", { length: 255 }).notNull().unique(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   ipAddress: varchar("ip_address", { length: 45 }),
   userAgent: text("user_agent"),
 });
+

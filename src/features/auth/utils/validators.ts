@@ -104,7 +104,21 @@ export type VerifyEmailSchema = z.infer<typeof verifyEmailSchema>;
 
 // Onboarding validation schema
 export const onboardingSchema = z.object({
-  teamName: z.string().min(1, "Team name is required"),
+  teamName: z
+    .string()
+    .min(2, "Team name must be at least 2 characters")
+    .max(50, "Team name must be at most 50 characters")
+    .refine(
+      (name) => {
+        // Count alphanumeric characters across all languages (Unicode support)
+        // \p{L} matches any Unicode letter, \p{N} matches any Unicode number
+        const alphanumericCount = (name.match(/[\p{L}\p{N}]/gu) || []).length;
+        return alphanumericCount >= 2;
+      },
+      {
+        message: "Team name must contain at least 2 alphanumeric characters",
+      }
+    ),
 });
 
 export type OnboardingSchema = z.infer<typeof onboardingSchema>;

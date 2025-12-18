@@ -61,6 +61,8 @@ export default async function ProjectDetailPage({ params }: PageProps) {
             stats: project.stats,
             createdAt: project.createdAt,
             updatedAt: project.updatedAt,
+            icon: project.icon,
+            slug: project.slug,
           }}
           userRole={project.userRole}
           isLoading={false}

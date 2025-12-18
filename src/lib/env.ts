@@ -120,6 +120,30 @@ const envSchema = z.object({
     .url()
     .describe("Google OAuth redirect URI"),
 
+  // Authentication (Microsoft OAuth - optional, enables Microsoft sign-in when configured)
+  MICROSOFT_CLIENT_ID: z
+    .string()
+    .optional()
+    .describe("Microsoft OAuth client ID"),
+  MICROSOFT_CLIENT_SECRET: z
+    .string()
+    .optional()
+    .describe("Microsoft OAuth client secret"),
+  MICROSOFT_TENANT_ID: z
+    .string()
+    .optional()
+    .describe("Microsoft tenant ID (defaults to 'common' for multi-tenant)"),
+
+  // Authentication (Atlassian OAuth - optional, enables Atlassian sign-in when configured)
+  ATLASSIAN_CLIENT_ID: z
+    .string()
+    .optional()
+    .describe("Atlassian OAuth client ID"),
+  ATLASSIAN_CLIENT_SECRET: z
+    .string()
+    .optional()
+    .describe("Atlassian OAuth client secret"),
+
   // better-auth
   BETTER_AUTH_SECRET: z
     .string()

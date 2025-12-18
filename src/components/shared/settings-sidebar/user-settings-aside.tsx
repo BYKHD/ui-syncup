@@ -20,13 +20,20 @@ interface UserSettingsAsideProps {
 export function UserSettingsAside({ items, heading = 'Settings' }: UserSettingsAsideProps) {
   const pathname = usePathname()
 
+  const visibleItems = items.filter((item) => {
+    if (process.env.NODE_ENV === 'production') {
+      return !['Notifications', 'Integrations'].includes(item.label)
+    }
+    return true
+  })
+
   return (
     <aside className="w-full md:w-64 shrink-0">
       <div className="pb-2">
         <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">{heading}</h2>
       </div>
       <nav className="space-y-1">
-        {items.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
 

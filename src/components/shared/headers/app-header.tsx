@@ -94,7 +94,7 @@ export function AppHeader({
       </div>
       <div className="flex items-center gap-2">
         {actions}
-        <NotificationPanel />
+        {process.env.NODE_ENV !== 'production' && <NotificationPanel />}
         <Separator orientation="vertical" className="h-6" />
         <HeaderUserMenu />
       </div>

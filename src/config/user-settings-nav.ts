@@ -1,5 +1,5 @@
 import type { UserSettingsNavItem } from "@/components/shared/settings-sidebar";
-import { RiEqualizer3Fill, RiMoreLine, RiNotification2Line, RiPuzzle2Line } from "@remixicon/react";
+import { RiEqualizer3Fill, RiMoreLine, RiNotification2Line, RiPuzzle2Line, RiLinkM } from "@remixicon/react";
 
 /**
  * User Settings Navigation Configuration
@@ -26,6 +26,12 @@ export const USER_SETTINGS_NAV: UserSettingsNavItem[] = [
     href: "/settings/integrations",
     icon: RiPuzzle2Line,
     description: "Connect third-party services",
+  },
+  {
+    label: "Linked Accounts",
+    href: "/settings/linked-accounts",
+    icon: RiLinkM,
+    description: "Manage connected login accounts",
   },
   {
     label: "Other",

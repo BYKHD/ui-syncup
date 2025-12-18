@@ -13,9 +13,9 @@ export default async function SignUpPage() {
   if (sessionToken) {
     const session = await getSession();
     
-    // Redirect to dashboard if already authenticated
+    // Redirect to projects if already authenticated
     if (session) {
-      redirect("/dashboard");
+      redirect("/Projects");
     }
   }
 

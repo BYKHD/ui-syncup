@@ -70,6 +70,14 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Debug logging for OAuth user sessions
+    logger.info('api.teams.create.session', {
+      requestId,
+      userId: user.id,
+      userEmail: user.email,
+      userName: user.name,
+    });
+    
     // Parse and validate request body
     const body = await request.json();
     const validation = CreateTeamSchema.safeParse(body);
@@ -89,13 +97,25 @@ export async function POST(request: NextRequest) {
     
     const { name, description, image } = validation.data;
     
-    // Create team
-    const createdTeam = await createTeam({
-      name,
-      description,
-      image,
-      creatorId: user.id,
-    });
+    // Create team with detailed error handling
+    let createdTeam;
+    try {
+      createdTeam = await createTeam({
+        name,
+        description,
+        image,
+        creatorId: user.id,
+      });
+    } catch (createError) {
+      logger.error('api.teams.create.createTeam.failed', {
+        requestId,
+        userId: user.id,
+        teamName: name,
+        error: createError instanceof Error ? createError.message : 'Unknown error',
+        stack: createError instanceof Error ? createError.stack : undefined,
+      });
+      throw createError;
+    }
     
     // Fetch team with member info to return complete data
     const team = await getTeam(createdTeam.id, user.id);

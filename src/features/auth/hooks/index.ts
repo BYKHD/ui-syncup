@@ -7,3 +7,7 @@ export { useForgotPassword } from "./use-forgot-password";
 export { useResetPassword } from "./use-reset-password";
 export { useResendVerification } from "./use-resend-verification";
 export { useVerifyEmailToken } from "./use-verify-email-token";
+export { useLinkedAccounts, canUnlinkAccount, isProviderLinked, linkedAccountsQueryKey } from "./use-linked-accounts";
+export { useLinkAccount } from "./use-link-account";
+export { useUnlinkAccount, LastAuthMethodError } from "./use-unlink-account";
+

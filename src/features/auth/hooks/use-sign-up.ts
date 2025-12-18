@@ -6,32 +6,37 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { signUpSchema, type SignUpSchema } from "../utils/validators";
-import { apiClient, ApiError } from "@/lib/api-client";
 import { authClient } from "@/lib/auth-client";
-import { successResponseSchema, type SuccessResponse, type ErrorResponse } from "../api/types";
 
 type SubmissionStatus = "idle" | "submitting" | "success";
 
+// Response type for sign up
+interface SignUpResponse {
+  message: string;
+}
+
 type UseSignUpOptions = {
   defaultValues?: Partial<SignUpSchema>;
-  onSuccess?: (data: SuccessResponse) => void;
+  onSuccess?: (data: SignUpResponse) => void;
 };
 
 /**
- * Sign up API call
+ * Sign up using better-auth's email/password method
  */
-async function signUp(data: SignUpSchema): Promise<SuccessResponse> {
-  const response = await apiClient<SuccessResponse>("/api/auth/signup", {
-    method: "POST",
-    body: {
-      name: data.name,
-      email: data.email,
-      password: data.password,
-    },
+async function signUp(data: SignUpSchema): Promise<SignUpResponse> {
+  const result = await authClient.signUp.email({
+    name: data.name,
+    email: data.email,
+    password: data.password,
   });
-
-  // Validate response with Zod schema
-  return successResponseSchema.parse(response);
+  
+  if (result.error) {
+    throw result.error;
+  }
+  
+  return {
+    message: "Account created successfully! Please check your email to verify your account.",
+  };
 }
 
 /**
@@ -95,29 +100,24 @@ export function useSignUp(options: UseSignUpOptions = {}) {
       setIsLongLoading(false);
       setStatus("idle");
       
-      if (error instanceof ApiError) {
-        const errorPayload = error.payload as ErrorResponse | null;
+      // Handle better-auth errors
+      const betterAuthError = error as { status?: number; message?: string; code?: string } | null;
+      
+      if (betterAuthError && typeof betterAuthError === 'object') {
+        const status = betterAuthError.status;
+        const message = betterAuthError.message;
+        const code = betterAuthError.code;
         
         // Handle validation errors (400)
-        if (error.status === 400) {
-          const fieldError = errorPayload?.error;
-          if (fieldError?.field) {
-            // Set field-specific error
-            form.setError(fieldError.field as keyof SignUpSchema, {
-              type: "manual",
-              message: fieldError.message,
-            });
-          } else {
-            setMessage(fieldError?.message || "Invalid input. Please check your information.");
-          }
+        if (status === 400) {
+          setMessage(message || "Invalid input. Please check your information.");
           return;
         }
         
-        // Handle duplicate email errors (409)
-        if (error.status === 409) {
+        // Handle duplicate email errors (409 or USER_ALREADY_EXISTS code)
+        if (status === 409 || code === "USER_ALREADY_EXISTS") {
           setMessage(
-            errorPayload?.error?.message || 
-            "An account with this email already exists. Please sign in instead."
+            message || "An account with this email already exists. Please sign in instead."
           );
           // Also set field error on email field
           form.setError("email", {
@@ -128,23 +128,28 @@ export function useSignUp(options: UseSignUpOptions = {}) {
         }
         
         // Handle rate limit errors (429)
-        if (error.status === 429) {
+        if (status === 429) {
           setMessage(
-            errorPayload?.error?.message || 
-            "Too many registration attempts. Please try again later."
+            message || "Too many registration attempts. Please try again later."
           );
           return;
         }
         
-        // Handle other errors
-        setMessage(
-          errorPayload?.error?.message || 
-          "An unexpected error occurred. Please try again."
-        );
-      } else {
-        // Handle network or other errors
-        setMessage("Unable to connect. Please check your internet connection.");
+        // Handle other errors with message
+        if (message) {
+          setMessage(message);
+          return;
+        }
       }
+      
+      // Handle standard Error objects
+      if (error instanceof Error) {
+        setMessage(error.message || "Unable to connect. Please check your internet connection.");
+        return;
+      }
+      
+      // Handle network or other errors
+      setMessage("Unable to connect. Please check your internet connection.");
     },
   });
 

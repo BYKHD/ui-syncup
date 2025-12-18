@@ -7,40 +7,50 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 import { signInSchema, type SignInSchema } from "../utils/validators";
-import { apiClient, ApiError } from "@/lib/api-client";
 import { authClient } from "@/lib/auth-client";
-import { sessionResponseSchema, type SessionResponse, type ErrorResponse } from "../api/types";
 import { useInvalidateSession } from "./use-session";
 
 type SubmissionStatus = "idle" | "submitting" | "success";
 type OAuthStatus = "idle" | "loading" | "error";
 
+// Response type from better-auth signIn.email
+interface SignInResponse {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    emailVerified: boolean;
+  };
+}
+
 type UseSignInOptions = {
   defaultEmail?: string;
-  onSuccess?: (data: SessionResponse) => void;
+  onSuccess?: (data: SignInResponse) => void;
   redirectTo?: string;
 };
 
 /**
- * Sign in API call
+ * Sign in using better-auth's email/password method
  */
-async function signIn(credentials: SignInSchema): Promise<SessionResponse> {
-  const response = await apiClient<SessionResponse>("/api/auth/login", {
-    method: "POST",
-    body: credentials,
+async function signIn(credentials: SignInSchema): Promise<SignInResponse> {
+  const result = await authClient.signIn.email({
+    email: credentials.email,
+    password: credentials.password,
+    rememberMe: true,
   });
-
-  // Validate response with Zod schema
-  try {
-    return sessionResponseSchema.parse(response);
-  } catch (error) {
-    // Log validation errors in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('[Sign-in] Response validation failed:', error);
-      console.error('[Sign-in] Response data:', response);
-    }
-    throw error;
+  
+  if (result.error) {
+    throw result.error;
   }
+  
+  return {
+    user: {
+      id: result.data?.user?.id ?? '',
+      email: result.data?.user?.email ?? '',
+      name: result.data?.user?.name ?? '',
+      emailVerified: result.data?.user?.emailVerified ?? false,
+    },
+  };
 }
 
 /**
@@ -120,84 +130,66 @@ export function useSignIn(options: UseSignInOptions = {}) {
       setIsLongLoading(false);
       setStatus("idle");
       
-      if (error instanceof ApiError) {
-        const errorPayload = error.payload as ErrorResponse | null;
+      // Handle better-auth errors
+      // better-auth errors have: status, message, code properties
+      const betterAuthError = error as { status?: number; message?: string; code?: string } | null;
+      
+      if (betterAuthError && typeof betterAuthError === 'object') {
+        const status = betterAuthError.status;
+        const message = betterAuthError.message;
+        const code = betterAuthError.code;
         
         // Handle rate limit errors (429)
-        if (error.status === 429) {
-          const retryAfterHeader = errorPayload?.error?.details as number | undefined;
-          if (retryAfterHeader) {
-            setRetryAfter(retryAfterHeader);
-          }
+        if (status === 429) {
           setMessage(
-            errorPayload?.error?.message || 
-            "Too many sign-in attempts. Please try again later."
+            message || "Too many sign-in attempts. Please try again later."
           );
           return;
         }
         
         // Handle validation errors (400)
-        if (error.status === 400) {
-          const fieldError = errorPayload?.error;
-          if (fieldError?.field) {
-            // Set field-specific error
-            form.setError(fieldError.field as keyof SignInSchema, {
-              type: "manual",
-              message: fieldError.message,
-            });
-          } else {
-            setMessage(fieldError?.message || "Invalid input. Please check your credentials.");
-          }
+        if (status === 400) {
+          setMessage(message || "Invalid input. Please check your credentials.");
           return;
         }
         
         // Handle authentication errors (401)
-        if (error.status === 401) {
-          setMessage(
-            errorPayload?.error?.message || 
-            "Invalid email or password"
-          );
+        if (status === 401) {
+          setMessage(message || "Invalid email or password");
           return;
         }
         
         // Handle forbidden errors (403) - email not verified
-        if (error.status === 403) {
-          const code = errorPayload?.error?.code || null;
-          setErrorCode(code);
-
+        if (status === 403 || code === "EMAIL_NOT_VERIFIED") {
+          setErrorCode(code || "EMAIL_NOT_VERIFIED");
+          
           // Redirect to verify-email page if email is not verified
-          if (code === "EMAIL_NOT_VERIFIED") {
-            const email = form.getValues("email");
-            router.push(`/verify-email?email=${encodeURIComponent(email)}`);
-            return;
-          }
-
-          setMessage(
-            errorPayload?.error?.message ||
-            "Please verify your email address before signing in"
-          );
+          const email = form.getValues("email");
+          router.push(`/verify-email?email=${encodeURIComponent(email)}`);
           return;
         }
         
-        // Handle other errors
-        setMessage(
-          errorPayload?.error?.message || 
-          "An unexpected error occurred. Please try again."
-        );
-      } else if (error instanceof Error) {
+        // Handle other errors with message
+        if (message) {
+          setMessage(message);
+          return;
+        }
+      }
+      
+      // Handle standard Error objects
+      if (error instanceof Error) {
         // Check if it's an abort error (navigation during fetch)
         if (error.name === 'AbortError' || error.message.includes('aborted')) {
-          // Ignore abort errors - they happen during navigation
           console.log('[Sign-in] Request aborted during navigation (expected)');
           return;
         }
         
-        // Handle other network errors
-        setMessage("Unable to connect. Please check your internet connection.");
-      } else {
-        // Unknown error type
-        setMessage("An unexpected error occurred. Please try again.");
+        setMessage(error.message || "Unable to connect. Please check your internet connection.");
+        return;
       }
+      
+      // Unknown error type
+      setMessage("An unexpected error occurred. Please try again.");
     },
   });
 

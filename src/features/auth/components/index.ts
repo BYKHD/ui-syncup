@@ -8,3 +8,4 @@ export { OnboardingForm } from "./onboarding-form";
 export { OnboardingPlanSelector } from "./onboarding-plan-selector";
 export { PasswordStrengthIndicator } from "./password-strength-indicator";
 export { RoleGate } from "./role-gate";
+export { SocialLoginButtons } from "./social-login-buttons";
