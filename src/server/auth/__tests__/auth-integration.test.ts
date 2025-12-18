@@ -10,7 +10,7 @@
  * @module server/auth/__tests__/auth-integration
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth';
 import { users, sessions, verificationTokens, account } from '@/server/db/schema';
