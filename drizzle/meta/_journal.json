@@ -120,6 +120,20 @@
       "when": 1765539600000,
       "tag": "0016_add_annotation_activity_types",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1765539600001,
+      "tag": "0017_add_better_auth_verifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1765539600002,
+      "tag": "0018_add_sessions_updated_at",
+      "breakpoints": true
     }
   ]
 }
