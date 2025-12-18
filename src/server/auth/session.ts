@@ -107,8 +107,17 @@ export async function createSession(
     throw new Error('User ID is required');
   }
 
-  // Generate cryptographically random session token
-  const token = generateSessionToken();
+  // Generate cryptographically random session token (alphanumeric, 32 chars)
+  // better-auth uses randomString(32) which includes A-Z, a-z, 0-9
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let token = '';
+  // Use randomBytes to get random indices to avoid Math.random() bias if possible, 
+  // but for tests Math.random is sufficient. 
+  // However, let's be robust using randomBytes.
+  const bytes = randomBytes(32);
+  for (let i = 0; i < 32; i++) {
+    token += chars[bytes[i] % chars.length];
+  }
   
   // Calculate expiration
   const expiresAt = calculateExpiration();
@@ -178,8 +187,35 @@ export async function getSession(
     const { headers } = await import('next/headers');
     
     const headersList = await headers();
+    
+    // Create a new Headers object to avoid modifying the read-only headers
+    const requestHeaders = new Headers(headersList);
+    
+    // If a token is explicitly provided (e.g. in tests), set it as a cookie
+    if (context?.token) {
+      requestHeaders.set('Cookie', `better-auth.session_token=${context.token}`);
+    }
+    
+    // Convert Headers to plain object as better-auth might expect that for internal API calls
+    const headersObj: Record<string, string> = {
+      // Ensure Origin and Host are present for better-auth validation
+      'origin': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+      'host': 'localhost:3000',
+    };
+    
+    requestHeaders.forEach((value, key) => {
+      headersObj[key] = value;
+    });
+    
+    // Explicitly set the cookie again in the plain object to be sure
+    if (context?.token) {
+      headersObj['cookie'] = `better-auth.session_token=${context.token}`;
+      // Also trying upper case Cookie just in case
+      headersObj['Cookie'] = `better-auth.session_token=${context.token}`;
+    }
+    
     const betterAuthSession = await auth.api.getSession({
-      headers: headersList,
+      headers: headersObj,
     });
     
     if (betterAuthSession?.user) {

@@ -177,9 +177,9 @@ describe('Redirect URL Validation (Task 8.2)', () => {
   let sanitizeRedirectURL: (url: string | null | undefined, fallback?: string, allowedOrigins?: string[]) => string
 
   beforeEach(async () => {
-    const module = await import('../url-validator')
-    isValidRedirectURL = module.isValidRedirectURL
-    sanitizeRedirectURL = module.sanitizeRedirectURL
+    const validatorModule = await import('../url-validator')
+    isValidRedirectURL = validatorModule.isValidRedirectURL
+    sanitizeRedirectURL = validatorModule.sanitizeRedirectURL
   })
 
   describe('isValidRedirectURL', () => {

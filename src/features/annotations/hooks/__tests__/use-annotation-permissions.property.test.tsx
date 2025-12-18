@@ -113,7 +113,7 @@ const userRoleArb = fc.oneof(
     role: teamRoleArb,
     resourceType: fc.constant('team' as const),
     resourceId: fc.uuid(),
-    createdAt: fc.date().map((d) => d.toISOString()),
+    createdAt: fc.integer({ min: 1577836800000, max: 1924905600000 }).map((t) => new Date(t).toISOString()), // 2020-2031
   }),
   fc.record({
     id: fc.uuid(),
@@ -121,7 +121,7 @@ const userRoleArb = fc.oneof(
     role: projectRoleArb,
     resourceType: fc.constant('project' as const),
     resourceId: fc.uuid(),
-    createdAt: fc.date().map((d) => d.toISOString()),
+    createdAt: fc.integer({ min: 1577836800000, max: 1924905600000 }).map((t) => new Date(t).toISOString()),
   })
 );
 
@@ -131,8 +131,8 @@ const mockUserArb = fc.record({
   email: fc.emailAddress(),
   name: fc.string({ minLength: 1, maxLength: 50 }),
   emailVerified: fc.boolean(),
-  createdAt: fc.date().map((d) => d.toISOString()),
-  updatedAt: fc.date().map((d) => d.toISOString()),
+  createdAt: fc.integer({ min: 1577836800000, max: 1924905600000 }).map((t) => new Date(t).toISOString()),
+  updatedAt: fc.integer({ min: 1577836800000, max: 1924905600000 }).map((t) => new Date(t).toISOString()),
   roles: fc.array(userRoleArb, { minLength: 0, maxLength: 5 }),
 });
 
