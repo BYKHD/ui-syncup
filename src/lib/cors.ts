@@ -13,6 +13,13 @@ import { env } from './env';
 export function getAllowedOrigins(): string[] {
   const origins = [env.NEXT_PUBLIC_APP_URL];
 
+  // In production, allow both www and non-www variants
+  if (env.NODE_ENV === 'production') {
+    // Add both variants to handle www vs non-www requests
+    origins.push('https://ui-syncup.com');
+    origins.push('https://www.ui-syncup.com');
+  }
+
   // In preview/development, allow Vercel preview URLs
   if (env.VERCEL_ENV === 'preview' || env.NODE_ENV === 'development') {
     origins.push('https://*.vercel.app');
