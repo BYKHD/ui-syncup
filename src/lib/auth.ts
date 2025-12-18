@@ -57,6 +57,8 @@ export const auth = betterAuth({
       trustedProviders: ["google", "microsoft", "atlassian"],
       // Update user profile when linking additional accounts
       updateUserInfoOnLink: false,
+      // Prevent unlinking the last authentication method (Requirement 4.4)
+      allowUnlinkingAll: false,
     },
   },
   /**

@@ -55,3 +55,114 @@ export function validateEmailUrl(url: string, context: string): void {
     }
   }
 }
+
+/**
+ * List of allowed URL schemes for redirects
+ */
+const ALLOWED_SCHEMES = ["http:", "https:"] as const;
+
+/**
+ * Validates that a redirect URL is safe to use
+ *
+ * Checks:
+ * 1. URL is well-formed
+ * 2. Scheme is http or https (or relative path)
+ * 3. If absolute, origin matches allowed origins
+ * 4. No protocol-relative URLs (//evil.com)
+ *
+ * @param url - The URL to validate
+ * @param allowedOrigins - List of allowed origins (e.g., ["https://example.com"])
+ * @returns True if the URL is safe to redirect to
+ *
+ * @example
+ * ```ts
+ * isValidRedirectURL("/dashboard", ["https://app.example.com"]); // true
+ * isValidRedirectURL("https://evil.com", ["https://app.example.com"]); // false
+ * ```
+ */
+export function isValidRedirectURL(
+  url: string,
+  allowedOrigins: string[] = []
+): boolean {
+  if (!url || typeof url !== "string") {
+    return false;
+  }
+
+  const trimmedUrl = url.trim();
+
+  if (trimmedUrl.length === 0) {
+    return false;
+  }
+
+  // Block protocol-relative URLs (//evil.com)
+  if (trimmedUrl.startsWith("//")) {
+    return false;
+  }
+
+  // Block javascript: and data: URLs
+  const lowerUrl = trimmedUrl.toLowerCase();
+  if (
+    lowerUrl.startsWith("javascript:") ||
+    lowerUrl.startsWith("data:") ||
+    lowerUrl.startsWith("vbscript:")
+  ) {
+    return false;
+  }
+
+  // Allow relative paths (starting with / but not //)
+  if (trimmedUrl.startsWith("/") && !trimmedUrl.startsWith("//")) {
+    return true;
+  }
+
+  // For absolute URLs, validate against allowed origins
+  try {
+    const parsed = new URL(trimmedUrl);
+
+    if (!ALLOWED_SCHEMES.includes(parsed.protocol as typeof ALLOWED_SCHEMES[number])) {
+      return false;
+    }
+
+    if (allowedOrigins.length === 0) {
+      return false;
+    }
+
+    return allowedOrigins.some((origin) => {
+      try {
+        const allowedParsed = new URL(origin);
+        return (
+          parsed.protocol === allowedParsed.protocol &&
+          parsed.host === allowedParsed.host
+        );
+      } catch {
+        return false;
+      }
+    });
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Sanitizes a redirect URL to ensure safety
+ *
+ * @param url - The URL to sanitize
+ * @param fallback - Fallback URL if invalid (default: "/")
+ * @param allowedOrigins - List of allowed origins
+ * @returns A safe redirect URL
+ */
+export function sanitizeRedirectURL(
+  url: string | null | undefined,
+  fallback: string = "/",
+  allowedOrigins: string[] = []
+): string {
+  if (!url) {
+    return fallback;
+  }
+
+  if (isValidRedirectURL(url, allowedOrigins)) {
+    return url;
+  }
+
+  return fallback;
+}
+

@@ -169,3 +169,64 @@ describe('validateEmailUrl', () => {
     })
   })
 })
+
+// Task 8.2: Redirect URL Validation Tests
+describe('Redirect URL Validation (Task 8.2)', () => {
+  // Dynamic import to re-import the module for these tests
+  let isValidRedirectURL: (url: string, allowedOrigins?: string[]) => boolean
+  let sanitizeRedirectURL: (url: string | null | undefined, fallback?: string, allowedOrigins?: string[]) => string
+
+  beforeEach(async () => {
+    const module = await import('../url-validator')
+    isValidRedirectURL = module.isValidRedirectURL
+    sanitizeRedirectURL = module.sanitizeRedirectURL
+  })
+
+  describe('isValidRedirectURL', () => {
+    it('should allow simple relative paths', () => {
+      expect(isValidRedirectURL('/dashboard')).toBe(true)
+      expect(isValidRedirectURL('/projects')).toBe(true)
+      expect(isValidRedirectURL('/settings/security')).toBe(true)
+    })
+
+    it('should allow root path', () => {
+      expect(isValidRedirectURL('/')).toBe(true)
+    })
+
+    it('should block protocol-relative URLs', () => {
+      expect(isValidRedirectURL('//evil.com')).toBe(false)
+    })
+
+    it('should block javascript: URLs', () => {
+      expect(isValidRedirectURL('javascript:alert(1)')).toBe(false)
+    })
+
+    it('should block absolute URLs without allowed origins', () => {
+      expect(isValidRedirectURL('https://evil.com')).toBe(false)
+    })
+
+    it('should allow URLs matching allowed origins', () => {
+      const origins = ['https://app.example.com']
+      expect(isValidRedirectURL('https://app.example.com/dashboard', origins)).toBe(true)
+    })
+
+    it('should block empty strings', () => {
+      expect(isValidRedirectURL('')).toBe(false)
+    })
+  })
+
+  describe('sanitizeRedirectURL', () => {
+    it('should return valid URL unchanged', () => {
+      expect(sanitizeRedirectURL('/dashboard', '/')).toBe('/dashboard')
+    })
+
+    it('should return fallback for invalid URLs', () => {
+      expect(sanitizeRedirectURL('https://evil.com', '/')).toBe('/')
+    })
+
+    it('should return fallback for null', () => {
+      expect(sanitizeRedirectURL(null, '/default')).toBe('/default')
+    })
+  })
+})
+
