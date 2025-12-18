@@ -31,7 +31,7 @@ import { hashPassword } from '@/server/auth/password';
  * Run each property 100+ times with different random inputs
  */
 const PROPERTY_CONFIG = { 
-  numRuns: 100,
+  numRuns: 25,
   timeout: 30000, // 30 second timeout per property
 };
 

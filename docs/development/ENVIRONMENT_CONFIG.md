@@ -436,6 +436,29 @@ See `.env.example` for all required environment variables.
 | `BETTER_AUTH_SECRET` | string | ✅ Yes | Secret key for signing tokens and session cookies. Must be at least 32 characters. Keep this secure and never commit to version control. |
 | `BETTER_AUTH_URL` | string (URL) | ✅ Yes | Base URL for authentication callbacks. Must match your deployment URL (e.g., `http://localhost:3000` for local, `https://your-domain.com` for production). |
 
+#### Google OAuth
+
+| Variable | Type | Required | Description |
+|----------|------|----------|-------------|
+| `GOOGLE_CLIENT_ID` | string | ✅ Yes | Google OAuth client ID from Google Cloud Console. |
+| `GOOGLE_CLIENT_SECRET` | string | ✅ Yes | Google OAuth client secret. |
+| `GOOGLE_REDIRECT_URI` | string (URL) | ✅ Yes | Google OAuth redirect URI (e.g., `http://localhost:3000/api/auth/callback/google`). |
+
+#### Microsoft OAuth (Optional)
+
+| Variable | Type | Required | Description |
+|----------|------|----------|-------------|
+| `MICROSOFT_CLIENT_ID` | string | ⚠️ Optional | Microsoft OAuth client ID from Azure AD. When not set, Microsoft sign-in is disabled. |
+| `MICROSOFT_CLIENT_SECRET` | string | ⚠️ Optional | Microsoft OAuth client secret. |
+| `MICROSOFT_TENANT_ID` | string | ⚠️ Optional | Microsoft tenant ID. Defaults to `common` for multi-tenant support. Use a specific tenant ID for single-tenant apps. |
+
+#### Atlassian OAuth (Optional)
+
+| Variable | Type | Required | Description |
+|----------|------|----------|-------------|
+| `ATLASSIAN_CLIENT_ID` | string | ⚠️ Optional | Atlassian OAuth client ID from Atlassian Developer Console. When not set, Atlassian sign-in is disabled. |
+| `ATLASSIAN_CLIENT_SECRET` | string | ⚠️ Optional | Atlassian OAuth client secret. |
+
 **Generating BETTER_AUTH_SECRET:**
 
 ```bash

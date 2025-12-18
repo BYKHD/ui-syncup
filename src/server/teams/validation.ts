@@ -7,6 +7,7 @@ import {
 /**
  * Team name validation schema
  * Requirements 13.1: Team name must be 2-50 characters with at least 2 alphanumeric characters
+ * Supports Unicode characters for international names
  */
 export const teamNameSchema = z
   .string()
@@ -14,8 +15,9 @@ export const teamNameSchema = z
   .max(50, "Team name must be at most 50 characters")
   .refine(
     (name) => {
-      // Count alphanumeric characters
-      const alphanumericCount = (name.match(/[a-zA-Z0-9]/g) || []).length;
+      // Count alphanumeric characters across all languages (Unicode support)
+      // \p{L} matches any Unicode letter, \p{N} matches any Unicode number
+      const alphanumericCount = (name.match(/[\p{L}\p{N}]/gu) || []).length;
       return alphanumericCount >= 2;
     },
     {

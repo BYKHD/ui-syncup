@@ -2,6 +2,7 @@ import SignInScreen from "@/features/auth/screens/sign-in-screen";
 import { getSessionCookie } from "@/server/auth/cookies";
 import { getSession } from "@/server/auth/session";
 import { redirect } from "next/navigation";
+import { mapOAuthError } from "@/lib/oauth-errors";
 
 // Force dynamic rendering to prevent SSR issues with client components
 export const dynamic = 'force-dynamic';
@@ -22,9 +23,9 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   if (sessionToken) {
     const session = await getSession();
     
-    // Redirect to dashboard if already authenticated
+    // Redirect to Projects if already authenticated
     if (session) {
-      redirect("/dashboard");
+      redirect("/Projects");
     }
   }
 
@@ -33,9 +34,22 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   const invitedEmail =
     typeof resolvedSearchParams.email === "string" ? resolvedSearchParams.email : "";
 
+  // Parse OAuth error from URL (redirected back from failed OAuth flow)
+  const errorParam = typeof resolvedSearchParams.error === "string" 
+    ? resolvedSearchParams.error 
+    : null;
+  const oauthError = errorParam ? mapOAuthError(errorParam) : null;
+
   const description = invitationToken
     ? invitationCopy.invited
     : invitationCopy.default;
 
-  return <SignInScreen description={description} invitedEmail={invitedEmail} />;
+  return (
+    <SignInScreen 
+      description={description} 
+      invitedEmail={invitedEmail} 
+      initialOAuthError={oauthError}
+    />
+  );
 }
+

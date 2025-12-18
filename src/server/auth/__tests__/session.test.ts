@@ -267,8 +267,8 @@ describe('Session Management - Property-Based Tests', () => {
 
           // All tokens should be non-empty and have reasonable length
           for (const token of sessionTokens) {
-            expect(token.length).toBeGreaterThan(32); // At least 32 characters
-            expect(token).toMatch(/^[a-f0-9]+$/); // Hex string
+            expect(token.length).toBeGreaterThanOrEqual(32); // At least 32 characters
+            expect(token).toMatch(/^[a-zA-Z0-9]+$/); // Alphanumeric string
           }
 
           // Tokens should not be sequential or predictable

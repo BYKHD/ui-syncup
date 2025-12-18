@@ -66,3 +66,34 @@ export type ForgotPasswordResponse = SuccessResponse;
 export type ResetPasswordResponse = SuccessResponse;
 export type VerifyEmailResponse = SuccessResponse;
 export type MeResponse = SessionResponse;
+
+// OAuth Provider type
+export type OAuthProvider = "google" | "microsoft" | "atlassian";
+
+// Linked Account schema (for account management)
+export const linkedAccountSchema = z.object({
+  id: z.string(),
+  providerId: z.enum(["google", "microsoft", "atlassian", "credential"]),
+  accountId: z.string(),
+  createdAt: z.string().datetime().optional(),
+});
+
+export type LinkedAccount = z.infer<typeof linkedAccountSchema>;
+
+// List accounts response
+export const listAccountsResponseSchema = z.object({
+  accounts: z.array(linkedAccountSchema),
+});
+
+export type ListAccountsResponse = z.infer<typeof listAccountsResponseSchema>;
+
+// Unlink account error response
+export const unlinkAccountErrorSchema = z.object({
+  error: z.object({
+    code: z.string(),
+    message: z.string(),
+  }),
+});
+
+export type UnlinkAccountError = z.infer<typeof unlinkAccountErrorSchema>;
+

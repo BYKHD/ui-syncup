@@ -21,7 +21,7 @@ export const planOptions: PlanOption[] = [
   {
     id: 'pro',
     label: PLANS.pro.label,
-    price: '$8/editor/month',
+    price: 'Stay Tuned',
     description: 'For growing teams with advanced needs',
     features: [
       'Unlimited team members',
