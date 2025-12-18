@@ -36,7 +36,7 @@ export function SiteFooter() {
         <div>
           <h4 className="font-semibold mb-4">Legal</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><Link href="#" className="hover:text-foreground">Privacy</Link></li>
+            <li><Link href="/privacy-policy" className="hover:text-foreground">Privacy</Link></li>
             <li><Link href="#" className="hover:text-foreground">Terms</Link></li>
           </ul>
         </div>

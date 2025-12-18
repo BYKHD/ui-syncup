@@ -87,6 +87,7 @@ export async function GET(request: NextRequest) {
           email: sessionUser.email,
           name: sessionUser.name,
           emailVerified: sessionUser.emailVerified,
+          image: sessionUser.image,
           roles: roles.map(role => ({
             id: role.id,
             userId: role.userId,

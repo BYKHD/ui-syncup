@@ -15,7 +15,7 @@ export default async function SignUpPage() {
     
     // Redirect to projects if already authenticated
     if (session) {
-      redirect("/Projects");
+      redirect("/projects");
     }
   }
 
