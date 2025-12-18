@@ -11,12 +11,11 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
+import { Badge } from '@/components/ui/badge';
 import {
   RiHome3Line,
   RiBox2Line,
   RiListSettingsLine,
-  RiTeamLine,
-  RiBarChartBoxLine,
   RiDragDropFill,
   RiBugLine,
 } from '@remixicon/react';
@@ -111,7 +110,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <RiDragDropFill className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">SyncUP</span>
+                  <div className="flex items-center gap-2">
+                    <span className="truncate font-semibold">UI Syncup</span>
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px] h-4 leading-none font-mono">Alpha</Badge>
+                  </div>
                   <span className="truncate text-xs">Design Feedback Tracker</span>
                 </div>
               </a>

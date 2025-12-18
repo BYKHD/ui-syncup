@@ -163,12 +163,13 @@ export const auth = betterAuth({
   /**
    * Database configuration
    * 
-   * Generate UUIDs using Node's crypto.randomUUID() to match PostgreSQL's uuid type.
-   * This ensures all IDs are valid UUIDs compatible with our schema.
+   * Let PostgreSQL generate UUIDs natively via gen_random_uuid().
+   * Setting generateId to false tells better-auth not to generate IDs,
+   * letting the database default handle ID generation.
    */
   advanced: {
     database: {
-      generateId: () => crypto.randomUUID(),
+      generateId: false,
     },
   },
   /**
