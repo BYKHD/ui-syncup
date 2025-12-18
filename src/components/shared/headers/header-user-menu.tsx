@@ -97,7 +97,7 @@ export function HeaderUserMenu({
   const user = userProp ?? (authUser ? {
     name: authUser.name,
     email: authUser.email,
-    image: null, // Auth user doesn't have image yet
+    image: authUser.image ?? null,
   } : MOCK_USER);
 
   const currentTheme = (theme ?? 'system') as ThemeValue;

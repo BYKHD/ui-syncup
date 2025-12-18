@@ -35,6 +35,7 @@ export const auth = betterAuth({
       atlassian: {
         clientId: authConfig.providers.atlassian.clientId,
         clientSecret: authConfig.providers.atlassian.clientSecret,
+        scope: authConfig.providers.atlassian.scope,
       },
     }),
   },
@@ -187,6 +188,7 @@ export const auth = betterAuth({
             email: user.email,
             name: user.name,
             emailVerified: user.emailVerified,
+            image: user.image, // Added for debugging OAuth avatar images
           });
         },
       },
