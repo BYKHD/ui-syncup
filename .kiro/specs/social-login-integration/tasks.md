@@ -173,12 +173,12 @@
 - [x] 11. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Add account management UI for linked accounts
-  - Create linked accounts section in user settings
-  - Add UI to view currently linked OAuth providers
-  - Implement link/unlink account functionality
-  - Add confirmation dialogs for account unlinking
-  - Show appropriate warnings when trying to unlink last auth method
+- [x] 12. Add account management UI for linked accounts
+  - [x] Create linked accounts section in user settings
+  - [x] Add UI to view currently linked OAuth providers
+  - [x] Implement link/unlink account functionality
+  - [x] Add confirmation dialogs for account unlinking
+  - [x] Show appropriate warnings when trying to unlink last auth method
   - _Requirements: 4.1, 4.2, 4.4_
 
 - [ ] 12.1 Write integration tests for account management

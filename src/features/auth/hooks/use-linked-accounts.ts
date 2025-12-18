@@ -9,7 +9,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { authClient } from "@/lib/auth-client";
+import { apiClient } from "@/lib/api-client";
 import type { LinkedAccount } from "../api/types";
 
 /**
@@ -42,21 +42,16 @@ export function useLinkedAccounts() {
   return useQuery<LinkedAccount[], Error>({
     queryKey: linkedAccountsQueryKey,
     queryFn: async () => {
-      const response = await authClient.listAccounts();
-      
-      if (response.error) {
-        throw new Error(response.error.message || "Failed to fetch linked accounts");
-      }
+      const accounts = await apiClient<LinkedAccount[]>("/api/user/linked-accounts");
 
-      // Map the response to our LinkedAccount type
-      const accounts: LinkedAccount[] = (response.data || []).map((account) => ({
+      // Map the response to our LinkedAccount type (ensure date parsing if needed, 
+      // though apiClient usually handles JSON parsing so dates will be strings)
+      return accounts.map((account: any) => ({
         id: account.id,
         providerId: account.providerId as LinkedAccount["providerId"],
         accountId: account.accountId,
-        createdAt: account.createdAt?.toISOString(),
+        createdAt: account.createdAt,
       }));
-
-      return accounts;
     },
     // Cache for 5 minutes since linked accounts don't change often
     staleTime: 5 * 60 * 1000,

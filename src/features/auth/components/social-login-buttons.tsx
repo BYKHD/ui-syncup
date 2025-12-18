@@ -144,11 +144,34 @@ export function SocialLoginButtons({
     setError(null);
 
     try {
-      await authClient.signIn.social({
+      const response = await authClient.signIn.social({
         provider,
         callbackURL: redirectTo,
       });
-      // Redirect is handled by better-auth
+
+      if (response?.error) {
+        const message =
+          response.error.message || `Failed to sign in with ${provider}`;
+        setError(message);
+        onError?.(message);
+        setLoadingProvider(null);
+        return;
+      }
+
+      const redirectPayload = response?.data;
+
+      // In local/dev auth setups better-auth might return a URL without auto-redirecting.
+      if (
+        redirectPayload?.url &&
+        redirectPayload.redirect === false &&
+        typeof window !== "undefined"
+      ) {
+        window.location.href = redirectPayload.url;
+        return;
+      }
+
+      // If no redirect happened (e.g., mocked response), clear loading state.
+      setLoadingProvider(null);
     } catch (err) {
       const errorMessage =
         err instanceof Error

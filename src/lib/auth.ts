@@ -12,7 +12,7 @@ export const auth = betterAuth({
         user: schema.users,
         session: schema.sessions,
         account: schema.account,
-        verification: schema.verificationTokens,
+        verification: schema.betterAuthVerifications,
     },
   }),
   socialProviders: {
@@ -84,5 +84,5 @@ export const auth = betterAuth({
         }
     }
   },
-  // logger: { level: "debug" } // Commented out to avoid type error if property name mismatch, better to fix one thing at a time
 });
+
