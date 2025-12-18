@@ -18,6 +18,7 @@ export const userResponseSchema = z.object({
   email: z.string().email(),
   name: z.string(),
   emailVerified: z.boolean(),
+  image: z.string().nullable().optional(),
   roles: z.array(userRoleSchema).optional(),
 });
 

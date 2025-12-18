@@ -25,7 +25,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
     
     // Redirect to Projects if already authenticated
     if (session) {
-      redirect("/Projects");
+      redirect("/projects");
     }
   }
 

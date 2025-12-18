@@ -37,6 +37,7 @@ export interface SessionUser {
   email: string;
   emailVerified: boolean;
   name: string;
+  image?: string | null;
   sessionId: string;
 }
 
@@ -224,6 +225,7 @@ export async function getSession(
         email: betterAuthSession.user.email,
         emailVerified: betterAuthSession.user.emailVerified,
         name: betterAuthSession.user.name,
+        image: betterAuthSession.user.image ?? null,
         sessionId: betterAuthSession.session.id,
       };
     }
