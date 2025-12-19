@@ -25,10 +25,10 @@ export const SETTINGS_NAV: SettingsNavItem[] = [
     icon: 'notifications',
   },
   {
-    href: '/settings/integrations',
-    label: 'Integrations',
-    description: 'Connect third-party services',
-    icon: 'integrations',
+    href: '/settings/security',
+    label: 'Security',
+    description: 'Manage password and linked accounts',
+    icon: 'integrations', // Keeping integrations icon as it represents connections, or could switch to lock if available
   },
   {
     href: '/settings/other',

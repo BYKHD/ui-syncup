@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { LinkedAccounts } from "../linked-accounts";
+import { SecuritySettings } from "../security-settings";
 import * as authHooks from "@/features/auth/hooks";
 
 // Mock the auth hooks
@@ -10,7 +10,12 @@ vi.mock("@/features/auth/hooks", () => ({
   useUnlinkAccount: vi.fn(),
 }));
 
-describe("LinkedAccounts", () => {
+// Mock PasswordSection as it has its own tests (or will have)
+vi.mock("../password-section", () => ({
+  PasswordSection: () => <div data-testid="password-section">Password Section Mock</div>,
+}));
+
+describe("SecuritySettings", () => {
   const mockLinkAccount = vi.fn();
   const mockUnlinkAccount = vi.fn();
 
@@ -35,7 +40,7 @@ describe("LinkedAccounts", () => {
       error: null,
     });
 
-    const { container } = render(<LinkedAccounts />);
+    const { container } = render(<SecuritySettings hasPassword={false} />);
     // Check for skeleton loaders (divs with animate-pulse class)
     const skeletons = container.getElementsByClassName("animate-pulse");
     expect(skeletons.length).toBeGreaterThan(0);
@@ -48,7 +53,7 @@ describe("LinkedAccounts", () => {
       error: new Error("Failed to load"),
     });
 
-    render(<LinkedAccounts />);
+    render(<SecuritySettings hasPassword={false} />);
     expect(screen.getByText("Error")).toBeInTheDocument();
   });
 
@@ -61,7 +66,7 @@ describe("LinkedAccounts", () => {
       error: null,
     });
 
-    render(<LinkedAccounts />);
+    render(<SecuritySettings hasPassword={false} />);
 
     // Google should be connected
     const googleCard = screen.getByText("Google").closest("div[class*='flex items-center gap-4']")?.parentElement;
@@ -79,7 +84,7 @@ describe("LinkedAccounts", () => {
       error: null,
     });
 
-    render(<LinkedAccounts />);
+    render(<SecuritySettings hasPassword={false} />);
 
     const connectButtons = screen.getAllByText("Connect");
     fireEvent.click(connectButtons[0]); // Click first connect button (Google)
@@ -100,7 +105,7 @@ describe("LinkedAccounts", () => {
       error: null,
     });
 
-    render(<LinkedAccounts />);
+    render(<SecuritySettings hasPassword={false} />);
 
     const disconnectButton = screen.getAllByText("Disconnect")[0];
     fireEvent.click(disconnectButton);
