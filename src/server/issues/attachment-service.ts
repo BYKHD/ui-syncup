@@ -17,6 +17,75 @@ import type {
   AttachmentWithUploader,
   CreateAttachmentData,
 } from "./types";
+import type { StoredAttachmentAnnotation, StoredAnnotationComment } from "@/features/annotations/types";
+
+// ============================================================================
+// ANNOTATION TRANSFORMATION
+// ============================================================================
+
+/**
+ * Transform frontend annotations to stored database format.
+ * Converts author objects to authorId for JSONB storage.
+ * Replaces placeholder "current_user" with actual user ID.
+ * 
+ * @param annotations - Raw annotations from frontend
+ * @param actualUserId - The authenticated user's ID to replace placeholders
+ */
+function transformAnnotationsToStoredFormat(
+  annotations: unknown[] | undefined | null,
+  actualUserId: string
+): StoredAttachmentAnnotation[] | null {
+  if (!annotations || !Array.isArray(annotations) || annotations.length === 0) {
+    return null;
+  }
+
+  const now = new Date().toISOString();
+  const annotationsArray = annotations as Array<Record<string, unknown>>;
+
+  return annotationsArray.map((annotation, index) => {
+    // Extract authorId from either author.id or authorId field
+    let authorId = 
+      (annotation.author as { id?: string })?.id || 
+      (annotation.authorId as string) || 
+      actualUserId;
+
+    // Replace placeholder with actual user ID
+    if (authorId === 'current_user' || authorId === '') {
+      authorId = actualUserId;
+    }
+
+    // Transform comments if present
+    const comments: StoredAnnotationComment[] = Array.isArray(annotation.comments)
+      ? (annotation.comments as Record<string, unknown>[]).map((comment) => {
+          let commentAuthorId = (comment.author as { id?: string })?.id || (comment.authorId as string) || actualUserId;
+          // Replace placeholder with actual user ID
+          if (commentAuthorId === 'current_user' || commentAuthorId === '') {
+            commentAuthorId = actualUserId;
+          }
+          return {
+            id: (comment.id as string) || crypto.randomUUID(),
+            authorId: commentAuthorId,
+            message: (comment.message as string) || '',
+            createdAt: (comment.createdAt as string) || now,
+            updatedAt: (comment.updatedAt as string) || now,
+          };
+        })
+      : [];
+
+    return {
+      id: (annotation.id as string) || crypto.randomUUID(),
+      authorId,
+      x: (annotation.x as number) || 0,
+      y: (annotation.y as number) || 0,
+      shape: annotation.shape as StoredAttachmentAnnotation['shape'],
+      label: (annotation.label as string) || String(index + 1),
+      description: annotation.description as string | undefined,
+      createdAt: (annotation.createdAt as string) || now,
+      updatedAt: now,
+      comments,
+    };
+  });
+}
 
 // ============================================================================
 // CONSTANTS (re-exported from config for backward compatibility)
@@ -170,6 +239,9 @@ export async function createAttachment(
     );
   }
 
+  // Transform annotations from frontend format to stored format, replacing placeholder user IDs
+  const transformedAnnotations = transformAnnotationsToStoredFormat(annotations as unknown[], uploadedById);
+
   // Create attachment record with denormalized tenant fields
   const [attachment] = await db
     .insert(issueAttachments)
@@ -186,7 +258,7 @@ export async function createAttachment(
       width: width ?? null,
       height: height ?? null,
       reviewVariant: reviewVariant ?? "as_is",
-      annotations: annotations ?? sql`'[]'::jsonb`,
+      annotations: transformedAnnotations ?? sql`'[]'::jsonb`,
     })
     .returning();
 

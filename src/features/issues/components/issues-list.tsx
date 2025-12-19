@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import IssueStatusBadge from "./issues-status-badge";
 import PriorityBadge from "./issues-priority-badge";
 import type { IssueSummary } from "@/features/issues/types";
@@ -51,11 +52,28 @@ export default function IssuesList({
         </TableHeader>
         <TableBody>
           {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
-                Loading issues…
-              </TableCell>
-            </TableRow>
+            Array.from({ length: 5 }).map((_, index) => (
+              <TableRow key={index}>
+                <TableCell>
+                  <Skeleton className="h-5 w-5 rounded-full" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-16" />
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-4 w-48" />
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-5 w-20" />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Skeleton className="ml-auto h-4 w-24" />
+                </TableCell>
+              </TableRow>
+            ))
           ) : issues.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
