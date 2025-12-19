@@ -61,6 +61,8 @@ interface IssuesCreateDialogProps extends PropsWithChildren {
     asIsImage?: string;
     toBeImage?: string;
   };
+  asIsUploadProgress?: number;
+  toBeUploadProgress?: number;
   isSubmitting?: boolean;
   onTitleChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
@@ -87,6 +89,8 @@ export function IssuesCreateDialog({
   onSubmit,
   onCancel,
   children,
+  asIsUploadProgress = 0,
+  toBeUploadProgress = 0,
 }: IssuesCreateDialogProps) {
   const isMobile = useIsMobile();
   const [isLoadingAsIs, setIsLoadingAsIs] = useState(false);
@@ -257,8 +261,10 @@ export function IssuesCreateDialog({
                     <ImageUploadZone
                       variant="as-is"
                       onImageSelect={handleAsIsImageSelect}
-                      disabled={isLoadingAsIs}
+                      disabled={isLoadingAsIs || isSubmitting}
                       error={errors.asIsImage}
+                      progress={asIsUploadProgress}
+                      isUploading={isSubmitting && asIsUploadProgress > 0 && asIsUploadProgress < 100}
                     />
                   </div>
                 </div>
@@ -377,9 +383,11 @@ export function IssuesCreateDialog({
                           <ImageUploadZone
                             variant="to-be"
                             onImageSelect={handleToBeImageSelect}
-                            disabled={isLoadingToBe}
+                            disabled={isLoadingToBe || isSubmitting}
                             error={errors.toBeImage}
                             className="min-h-[120px]"
+                            progress={toBeUploadProgress}
+                            isUploading={isSubmitting && toBeUploadProgress > 0 && toBeUploadProgress < 100}
                           />
                         )}
                       </FieldContent>

@@ -171,6 +171,7 @@ export default function ProjectDetailScreen({
             reviewVariant: 'as_is',
             width: issueFormData.asIsImage.width,
             height: issueFormData.asIsImage.height,
+            annotations: issueFormData.asIsImage.annotations,
           })
         );
       }
@@ -192,8 +193,10 @@ export default function ProjectDetailScreen({
           await Promise.all(uploadPromises);
         } catch (uploadError) {
           console.error("Failed to upload attachments:", uploadError);
-          // Show warning but don't block - issue was created successfully
-          toast.warning("Issue created but attachments failed to upload. You can add them later.");
+          setIsSubmittingIssue(false);
+          // Don't close dialog, don't clear form data - preserve user's work
+          // Error toast will be shown by the upload failure
+          return; // Exit early, blocking issue creation
         }
       }
 

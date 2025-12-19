@@ -6,16 +6,19 @@
 // Uses AnnotatedAttachmentView for real API integration
 // ============================================================================
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, RefreshCw, FileText, Upload, PenLine, Columns2 } from 'lucide-react';
+import { AlertCircle, RefreshCw, FileText, Upload, PenLine, Columns2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { AnnotatedAttachmentView } from '@/features/annotations';
 import { ImageCanvas } from './image-canvas';
 import { ZoomControls } from './zoom-controls';
-import type { IssueAttachment, CanvasViewState } from '@/features/issues/types';
+import { UploadProgressOverlay } from './upload-progress-overlay';
+import { uploadAttachment } from '@/features/issues/api/upload-attachment';
+import type { IssueAttachment, CanvasViewState, AttachmentReviewVariant } from '@/features/issues/types';
 
 const VIEW_MODES = [
   { id: 'annotate', label: 'Annotate', icon: PenLine },
@@ -48,6 +51,8 @@ interface IssueAttachmentsViewProps {
   activeAnnotationId?: string | null;
   /** Callback when annotation selection changes */
   onAnnotationSelect?: (annotationId: string | null) => void;
+  /** Callback when upload completes successfully */
+  onUploadComplete?: (attachment: IssueAttachment) => void;
 }
 
 export default function IssueAttachmentsView({
@@ -64,6 +69,7 @@ export default function IssueAttachmentsView({
   annotations,
   activeAnnotationId,
   onAnnotationSelect,
+  onUploadComplete,
 }: IssueAttachmentsViewProps) {
   const imageAttachments = useMemo(
     () => attachments.filter((att) => att.fileType.startsWith('image/')),
@@ -98,6 +104,12 @@ export default function IssueAttachmentsView({
     fitMode: 'fit',
   });
 
+  // Upload state
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadVariant, setUploadVariant] = useState<AttachmentReviewVariant>('as_is');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Update selected attachment when attachments change
   useEffect(() => {
     if (!imageAttachments.length) return;
@@ -119,6 +131,69 @@ export default function IssueAttachmentsView({
   const handleCanvasStateChange = useCallback((updates: Partial<CanvasViewState>) => {
     setCanvasState((prev) => ({ ...prev, ...updates }));
   }, []);
+
+  // Trigger file input for upload
+  const triggerUpload = useCallback((variant: AttachmentReviewVariant) => {
+    setUploadVariant(variant);
+    fileInputRef.current?.click();
+  }, []);
+
+  // Handle file selection and upload
+  const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Reset input for repeated uploads of same file
+    event.target.value = '';
+
+    // Validate image type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Get image dimensions
+      const dimensions = await getImageDimensions(file);
+      
+      const attachment = await uploadAttachment({
+        issueId,
+        file,
+        reviewVariant: uploadVariant,
+        width: dimensions.width,
+        height: dimensions.height,
+        onProgress: (progress) => setUploadProgress(progress),
+      });
+
+      toast.success(`${uploadVariant === 'as_is' ? 'As-Is' : 'To-Be'} image uploaded`);
+      onUploadComplete?.(attachment);
+    } catch (err) {
+      console.error('Upload failed:', err);
+      toast.error('Failed to upload attachment');
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  }, [issueId, uploadVariant, onUploadComplete]);
+
+  // Helper to get image dimensions
+  const getImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        URL.revokeObjectURL(img.src);
+      };
+      img.onerror = () => {
+        resolve({ width: 0, height: 0 });
+        URL.revokeObjectURL(img.src);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
 
   // Error state
   if (error && onRetry) {
@@ -150,6 +225,13 @@ export default function IssueAttachmentsView({
   if (!isLoading && attachments.length === 0) {
     return (
       <div className="flex h-full items-center justify-center p-6 bg-muted/30">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
         <div className="space-y-4 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
             <FileText className="h-6 w-6 text-muted-foreground" />
@@ -160,10 +242,28 @@ export default function IssueAttachmentsView({
               This issue doesn't have any attachments yet. Add screenshots or files to provide more context.
             </p>
           </div>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Upload className="h-4 w-4" />
-            Upload Attachment
-          </Button>
+          <div className="flex gap-2 justify-center">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => triggerUpload('as_is')}
+              disabled={isUploading}
+            >
+              {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              Upload As-Is
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => triggerUpload('to_be')}
+              disabled={isUploading}
+            >
+              {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              Upload To-Be
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -202,6 +302,21 @@ export default function IssueAttachmentsView({
 
   return (
     <div className="relative flex h-full w-full flex-col bg-muted/30">
+      {/* Upload Progress Overlay */}
+      <UploadProgressOverlay 
+        isVisible={isUploading} 
+        progress={uploadProgress} 
+        className="z-50"
+      />
+      
+      {/* Hidden file input for uploads */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card/70 px-6 py-4 backdrop-blur">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Design QA</p>
@@ -264,6 +379,8 @@ export default function IssueAttachmentsView({
                 toBeAttachment={toBeAttachment}
                 canvasState={canvasState}
                 onCanvasStateChange={handleCanvasStateChange}
+                onUpload={triggerUpload}
+                isUploading={isUploading}
               />
             </motion.div>
           )}
@@ -278,6 +395,8 @@ interface CompareCanvasViewProps {
   toBeAttachment?: IssueAttachment;
   canvasState: CanvasViewState;
   onCanvasStateChange: (updates: Partial<CanvasViewState>) => void;
+  onUpload?: (variant: AttachmentReviewVariant) => void;
+  isUploading?: boolean;
 }
 
 function CompareCanvasView({
@@ -285,12 +404,54 @@ function CompareCanvasView({
   toBeAttachment,
   canvasState,
   onCanvasStateChange,
+  onUpload,
+  isUploading = false,
 }: CompareCanvasViewProps) {
+  // Show upload prompt when missing one or both images
   if (!asIsAttachment || !toBeAttachment) {
+    const missingAsIs = !asIsAttachment;
+    const missingToBe = !toBeAttachment;
+    
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-muted-foreground">
-        <p className="text-base font-medium">Add a to-be design to enable compare mode.</p>
-        <p className="text-sm">Upload the final mock to visualize deltas side-by-side.</p>
+      <div className="flex h-full flex-col items-center justify-center gap-4 text-center text-muted-foreground p-6">
+        <div className="space-y-2">
+          <p className="text-base font-medium">
+            {missingAsIs && missingToBe 
+              ? 'Add both As-Is and To-Be designs to enable compare mode.'
+              : missingToBe 
+                ? 'Add a To-Be design to enable compare mode.'
+                : 'Add an As-Is design to enable compare mode.'}
+          </p>
+          <p className="text-sm">Compare current implementation against the final mock side-by-side.</p>
+        </div>
+        {onUpload && (
+          <div className="flex gap-2">
+            {missingAsIs && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => onUpload('as_is')}
+                disabled={isUploading}
+              >
+                {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Upload As-Is
+              </Button>
+            )}
+            {missingToBe && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => onUpload('to_be')}
+                disabled={isUploading}
+              >
+                {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Upload To-Be
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     );
   }

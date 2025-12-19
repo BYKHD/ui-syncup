@@ -8,7 +8,7 @@
 import { db } from "@/lib/db";
 import { issueAttachments } from "@/server/db/schema/issue-attachments";
 import { users } from "@/server/db/schema/users";
-import { eq, sum } from "drizzle-orm";
+import { eq, sum, sql } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { ATTACHMENT_LIMITS } from "@/features/issues/config";
 import { logAttachmentActivity } from "./activity-service";
@@ -147,6 +147,7 @@ export async function createAttachment(
     width,
     height,
     reviewVariant,
+    annotations,
   } = data;
 
   // Validate file size (schema also enforces this)
@@ -185,6 +186,7 @@ export async function createAttachment(
       width: width ?? null,
       height: height ?? null,
       reviewVariant: reviewVariant ?? "as_is",
+      annotations: annotations ?? sql`'[]'::jsonb`,
     })
     .returning();
 
@@ -268,15 +270,19 @@ function formatBytes(bytes: number): string {
 /**
  * Generate R2 storage path for an attachment
  *
- * Path format: {issueId}/attachments/{uuid}-{filename}
+ * Path format: issues/{teamId}/{projectId}/{issueId}/{uuid}-{filename}
  * Note: The bucket is ui-syncup-attachments
  *
+ * @param teamId - Team UUID (for path hierarchy)
+ * @param projectId - Project UUID (for path hierarchy)
  * @param issueId - Issue UUID
  * @param attachmentId - Attachment UUID
  * @param fileName - Original file name
  * @returns R2 storage key
  */
 export function generateR2Path(
+  teamId: string,
+  projectId: string,
   issueId: string,
   attachmentId: string,
   fileName: string
@@ -287,7 +293,7 @@ export function generateR2Path(
     .replace(/[^a-zA-Z0-9._-]/g, "_")
     .slice(0, 100);
 
-  return `${issueId}/attachments/${attachmentId}-${sanitizedName}`;
+  return `issues/${teamId}/${projectId}/${issueId}/${attachmentId}-${sanitizedName}`;
 }
 
 /**
