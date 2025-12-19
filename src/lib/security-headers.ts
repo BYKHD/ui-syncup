@@ -63,6 +63,10 @@ export function getCSPDirectives(): CSPDirectives {
       ...(env.NEXT_PUBLIC_APP_URL ? [env.NEXT_PUBLIC_APP_URL] : []),
       // Development: allow local connections for API and MinIO storage
       ...(isDevelopment() ? ['http://localhost:*', 'ws://localhost:*', 'http://127.0.0.1:*'] : []),
+      // Storage endpoints
+      env.STORAGE_ENDPOINT || 'http://127.0.0.1:9000',
+      ...(env.STORAGE_ATTACHMENTS_PUBLIC_URL ? [env.STORAGE_ATTACHMENTS_PUBLIC_URL] : []),
+      ...(env.STORAGE_MEDIA_PUBLIC_URL ? [env.STORAGE_MEDIA_PUBLIC_URL] : []),
     ],
     
     // Frame ancestors: prevent embedding

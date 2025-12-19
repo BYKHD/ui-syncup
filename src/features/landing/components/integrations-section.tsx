@@ -3,31 +3,9 @@
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { motion } from "motion/react"
-import { Figma, Trello, ArrowRight, CheckCircle2, Clock, Zap } from "lucide-react"
+import { ArrowRight, CheckCircle2, Clock, Zap } from "lucide-react"
 import { SectionHeader } from "./section-header"
-
-const integrations = [
-  {
-    name: "Figma",
-    icon: Figma,
-    status: "Ready",
-    description: "Import designs, sync frames, and annotate mockups in real-time",
-    features: ["Live frame sync", "Auto-import designs", "Two-way comments"],
-    color: "text-purple-500",
-    bg: "bg-purple-500/10",
-    border: "border-purple-500/20"
-  },
-  {
-    name: "Jira",
-    icon: Trello, // Using Trello icon as Jira placeholder
-    status: "Coming Soon",
-    description: "Seamlessly sync issues between UI SyncUp and Jira projects",
-    features: ["Bi-directional sync", "Custom field mapping", "Status automation"],
-    color: "text-blue-500",
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/20"
-  },
-]
+import { INTEGRATION_LIST } from "@/config/integrations"
 
 export function IntegrationsSection() {
   return (
@@ -40,7 +18,7 @@ export function IntegrationsSection() {
       />
 
       <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-        {integrations.map((tool, index) => (
+        {INTEGRATION_LIST.map((tool, index) => (
           <motion.div
             key={tool.name}
             initial={{ opacity: 0, y: 20 }}

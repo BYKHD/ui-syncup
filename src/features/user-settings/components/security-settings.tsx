@@ -7,10 +7,11 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { RiGoogleFill, RiMicrosoftFill, RiTentFill, RiLinkM, RiLoader4Line } from "@remixicon/react";
+import { RiLinkM, RiLoader4Line } from "@remixicon/react";
 import type { OAuthProvider } from "@/features/auth/api/types";
 import { useState } from "react";
 import { PasswordSection } from "./password-section";
+import { OAUTH_PROVIDERS } from "@/config/integrations";
 
 import {
   AlertDialog,
@@ -23,22 +24,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-// Provider configuration for UI display
-const PROVIDER_CONFIG = {
-  google: {
-    name: "Google",
-    icon: RiGoogleFill,
-  },
-  microsoft: {
-    name: "Microsoft",
-    icon: RiMicrosoftFill,
-  },
-  atlassian: {
-    name: "Atlassian",
-    icon: RiTentFill,
-  },
-} as const;
 
 export interface SecuritySettingsProps {
   hasPassword: boolean;
@@ -116,14 +101,14 @@ export function SecuritySettings({ hasPassword }: SecuritySettingsProps) {
         ) : (
             <div className="grid gap-3">
               {providers.map((provider) => {
-                const config = PROVIDER_CONFIG[provider];
+                const config = OAUTH_PROVIDERS[provider];
                 const Icon = config.icon;
                 const linked = isLinked(provider);
                 const isLoading = isLinking || isUnlinking;
 
                 return (
                   <Card key={provider}>
-                    <CardContent className="flex items-center justify-between p-4">
+                    <CardContent className="flex items-center justify-between px-6">
                       <div className="flex items-center gap-4">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary">
                           <Icon className="h-5 w-5" />
