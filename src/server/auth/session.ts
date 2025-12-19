@@ -38,6 +38,7 @@ export interface SessionUser {
   emailVerified: boolean;
   name: string;
   image?: string | null;
+  hasPassword?: boolean;
   sessionId: string;
 }
 
@@ -227,6 +228,17 @@ export async function getSession(
         name: betterAuthSession.user.name,
         image: betterAuthSession.user.image ?? null,
         sessionId: betterAuthSession.session.id,
+        hasPassword: await (async () => {
+          try {
+             const dbUser = await db.query.users.findFirst({
+              where: (users, { eq }) => eq(users.id, betterAuthSession.user.id),
+              columns: { passwordHash: true },
+            });
+            return !!dbUser?.passwordHash;
+          } catch {
+            return false;
+          }
+        })(),
       };
     }
     
