@@ -33,6 +33,7 @@ export function getCSPDirectives(): CSPDirectives {
     // Scripts: allow self, unsafe-eval for dev tools, unsafe-inline for Next.js
     'script-src': [
       "'self'",
+      'https://va.vercel-scripts.com',
       ...(isDevelopment() ? ["'unsafe-eval'", "'unsafe-inline'"] : ["'unsafe-inline'"]),
     ],
     
@@ -57,6 +58,8 @@ export function getCSPDirectives(): CSPDirectives {
       'https://*.supabase.co',
       'https://*.r2.cloudflarestorage.com',
       'https://accounts.google.com',
+      'https://va.vercel-scripts.com',
+      'https://vitals.vercel-insights.com',
       // Production domains
       'https://ui-syncup.com',
       'https://www.ui-syncup.com',

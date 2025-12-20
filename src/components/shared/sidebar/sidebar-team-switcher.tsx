@@ -114,7 +114,7 @@ export function TeamSwitcher() {
                 <TeamAvatar
                   team={currentTeam}
                   size="sm"
-                  className={isCollapsed ? "p-2" : "p-2"}
+                  className={isCollapsed ? "" : ""}
                 />
                 {!isCollapsed && (
                   <>
@@ -144,7 +144,7 @@ export function TeamSwitcher() {
                     currentTeam.id === team.id ? "bg-sidebar-accent/30" : ""
                   }`}
                 >
-                  <TeamAvatar team={team} size="sm" />
+                  <TeamAvatar team={team} size="md" />
                   <div className="flex flex-1 flex-col truncate">
                     <span className="truncate font-medium">{team.name}</span>
                     <span className="truncate text-[11px] text-muted-foreground">

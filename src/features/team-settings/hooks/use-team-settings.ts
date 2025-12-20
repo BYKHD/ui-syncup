@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import type { Team } from "@/features/teams/api";
 import { useUpdateTeam } from "@/features/teams";
 import type { TeamGeneralFormData } from "../types";
+import { useMediaUpload } from "@/hooks/use-media-upload";
 
 type UseTeamSettingsOptions = {
   initialTeam: Team;
@@ -21,6 +22,10 @@ export function useTeamSettings(options: UseTeamSettingsOptions) {
 
   const { mutate: updateTeam, isPending: isLoading } = useUpdateTeam();
 
+
+  const { upload, deleteImage, isUploading: isUploadingImage } = useMediaUpload();
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+
   const form = useForm<TeamGeneralFormData>({
     defaultValues: {
       name: currentTeam.name,
@@ -28,20 +33,40 @@ export function useTeamSettings(options: UseTeamSettingsOptions) {
     },
   });
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  const handleImageChange = async (file: File) => {
+    // 1. Show local preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // 2. Upload to storage
+    const publicUrl = await upload({
+      file,
+      type: 'team',
+      entityId: currentTeam.id,
+    });
+
+    if (publicUrl) {
+      setUploadedImageUrl(publicUrl);
+      
+      // Create a FileList-like object for compatibility if needed, 
+      // or just set it if the type allows. assuming we stick to FileList for now:
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      form.setValue("image", dt.files, { shouldDirty: true }); 
+    } else {
+      // Revert preview on failure
+      setImagePreview(currentTeam.image);
+      toast.error("Failed to upload image. Please try again.");
     }
   };
 
   const handleRemoveImage = () => {
     setImagePreview(null);
-    form.setValue("image", null);
+    setUploadedImageUrl(null);
+    form.setValue("image", null, { shouldDirty: true });
   };
 
   const handleCancel = () => {
@@ -50,25 +75,54 @@ export function useTeamSettings(options: UseTeamSettingsOptions) {
       image: null,
     });
     setImagePreview(null);
+    setUploadedImageUrl(null);
   };
 
   const handleSubmit = form.handleSubmit((data: TeamGeneralFormData) => {
+    const input: any = { // UpdateTeamInput
+      name: data.name,
+    };
+
+    // Only include image if it was changed
+    if (uploadedImageUrl) {
+      input.image = uploadedImageUrl;
+    } else if (imagePreview === null && currentTeam.image) {
+      input.image = null; // Explicitly remove image
+    }
+
     updateTeam(
       {
         teamId: currentTeam.id,
-        input: {
-          name: data.name,
-          // TODO: Handle image upload properly. For now we only update name.
-          // If imagePreview is set, we might want to upload it first.
-          // image: imagePreview, 
-        },
+        input,
       },
       {
-        onSuccess: (response) => {
+        onSuccess: async (response) => {
           const updatedTeam = response.team;
+          
+          // Image Deletion Logic
+          const oldImage = currentTeam.image;
+          const newImage = updatedTeam.image;
+
+          // If there was an old image, and it's different from the new one, delete the old one
+          // We check if it is part of our storage (contains 'teams/')
+          if (oldImage && oldImage !== newImage && oldImage.includes('teams/')) {
+            try {
+              const url = new URL(oldImage);
+              const pathParts = url.pathname.split('/');
+              const teamIndex = pathParts.indexOf('teams');
+              if (teamIndex !== -1) {
+                const key = pathParts.slice(teamIndex).join('/');
+                await deleteImage(key, 'team', updatedTeam.id);
+              }
+            } catch (e) {
+              console.error("Failed to parse old image URL for deletion", e);
+            }
+          }
+
           setCurrentTeam(updatedTeam);
           form.reset({ name: updatedTeam.name, image: null });
           setImagePreview(null);
+          setUploadedImageUrl(null);
           toast.success("Team settings updated successfully");
           onSuccess?.(updatedTeam);
         },
@@ -83,10 +137,12 @@ export function useTeamSettings(options: UseTeamSettingsOptions) {
     form,
     currentTeam,
     imagePreview,
-    isLoading,
+    isLoading: isLoading || isUploadingImage,
+    isUploading: isUploadingImage,
     handleImageChange,
     handleRemoveImage,
     handleCancel,
     handleSubmit,
   };
 }
+

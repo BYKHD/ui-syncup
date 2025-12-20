@@ -78,6 +78,7 @@ function TeamSettingsContent({
     form,
     imagePreview,
     isLoading: isSaving,
+    isUploading: isUploading,
     handleImageChange,
     handleRemoveImage,
     handleCancel,
@@ -100,6 +101,7 @@ function TeamSettingsContent({
           currentTeam={team}
           imagePreview={imagePreview}
           isLoading={isSaving}
+          isUploading={isUploading}
           onImageChange={handleImageChange}
           onRemoveImage={handleRemoveImage}
           onCancel={handleCancel}

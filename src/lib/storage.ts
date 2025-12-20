@@ -6,7 +6,7 @@
  * - ui-syncup-media: Avatars, team logos (public read access)
  */
 
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // ============================================================================
@@ -105,6 +105,25 @@ export async function generateUploadUrl(
   });
   
   return getSignedUrl(client, command, { expiresIn: 3600 });
+}
+
+/**
+ * Delete a file from storage
+ * 
+ * @param bucket - Target bucket ('attachments' or 'media')
+ * @param key - Object key (path within bucket)
+ */
+export async function deleteFile(
+  bucket: StorageBucket,
+  key: string
+): Promise<void> {
+  const client = getClient(bucket);
+  const command = new DeleteObjectCommand({
+    Bucket: BUCKET_CONFIG[bucket].name,
+    Key: key,
+  });
+
+  await client.send(command);
 }
 
 /**

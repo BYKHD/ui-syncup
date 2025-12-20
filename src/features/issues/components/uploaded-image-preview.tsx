@@ -27,6 +27,8 @@ interface ImageMetadata {
   height: number;
 }
 
+import { UploadProgressOverlay } from "./upload-progress-overlay";
+
 interface UploadedImagePreviewProps {
   variant: "as-is" | "to-be";
   image: ImageMetadata;
@@ -36,6 +38,8 @@ interface UploadedImagePreviewProps {
   activeAnnotationId?: string | null;
   onAnnotationSelect?: (annotationId: string | null) => void;
   className?: string;
+  progress?: number;
+  isUploading?: boolean;
 }
 
 export function UploadedImagePreview({
@@ -47,6 +51,8 @@ export function UploadedImagePreview({
   activeAnnotationId,
   onAnnotationSelect,
   className,
+  progress = 0,
+  isUploading = false,
 }: UploadedImagePreviewProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -349,18 +355,24 @@ export function UploadedImagePreview({
           onClick={onRemove}
           className="shrink-0"
           aria-label={`Remove ${variant} image`}
+          disabled={isUploading}
         >
           <RiCloseLine className="size-4" />
         </Button>
       </div>
 
-      {/* Image Preview with Annotation (as-is) or Simple Preview (to-be) */}
-      <div
-        className={cn(
-          "relative bg-muted/30 overflow-hidden flex-1 min-h-0",
-          isAsIs ? "" : "rounded-lg border min-h-[150px] sm:min-h-[200px]"
-        )}
-      >
+      <div className="relative flex-1 min-h-0 bg-muted/30">
+        <UploadProgressOverlay 
+          isVisible={isUploading} 
+          progress={progress} 
+          className="z-50"
+        />
+        <div
+          className={cn(
+            "relative w-full h-full overflow-hidden",
+            isAsIs ? "" : "rounded-lg border min-h-[150px] sm:min-h-[200px]"
+          )}
+        >
         {isAsIs ? (
           <>
             {/* Zoom Controls - Top Right */}
@@ -480,6 +492,7 @@ export function UploadedImagePreview({
             )}
           </div>
         )}
+      </div>
       </div>
 
       {/* Edit Annotation Popover */}
