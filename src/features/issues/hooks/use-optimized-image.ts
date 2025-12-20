@@ -172,7 +172,8 @@ export function useOptimizedImage({
   // Set up immediate loading for priority images
   useEffect(() => {
     if (priority || !lazy) {
-      setCurrentSrc(generateOptimizedSrc(src, width, quality));
+      const newSrc = generateOptimizedSrc(src, width, quality);
+      setCurrentSrc((prev) => (prev !== newSrc ? newSrc : prev));
     }
   }, [priority, lazy, src, width, quality]);
 

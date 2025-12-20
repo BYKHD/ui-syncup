@@ -28,6 +28,21 @@ export function AvatarUpload({
   const [cropImage, setCropImage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const handleFile = (file: File) => {
+    // Basic validation
+    if (!file.type.startsWith("image/")) {
+       // Ideally show toast error here
+       return;
+    }
+    
+    // Create URL for cropper
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Handle Drag Events
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -59,20 +74,7 @@ export function AvatarUpload({
     }
   };
 
-  const handleFile = (file: File) => {
-    // Basic validation
-    if (!file.type.startsWith("image/")) {
-       // Ideally show toast error here
-       return;
-    }
-    
-    // Create URL for cropper
-    const reader = new FileReader();
-    reader.onload = () => {
-      setCropImage(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
+
 
   const handleCropComplete = (croppedBlob: Blob) => {
     // Convert blob back to file
