@@ -19,10 +19,22 @@ export type StorageBucket = 'attachments' | 'media';
 // CONFIGURATION
 // ============================================================================
 
-const ENDPOINT = process.env.STORAGE_ENDPOINT || 'http://127.0.0.1:9000';
-const REGION = process.env.STORAGE_REGION || 'us-east-1';
-const ACCESS_KEY = process.env.STORAGE_ACCESS_KEY_ID || 'minioadmin';
-const SECRET_KEY = process.env.STORAGE_SECRET_ACCESS_KEY || 'minioadmin';
+const getClientConfig = (type: StorageBucket) => {
+  const prefix = type === 'attachments' ? 'STORAGE_ATTACHMENTS' : 'STORAGE_MEDIA';
+  
+  // Helper to check specific prefix first, then global fallback
+  const getVar = (specificSuffix: string, globalVar: string, fallback: string) => {
+    return process.env[`${prefix}${specificSuffix}`] || process.env[globalVar] || fallback;
+  };
+
+  return {
+    endpoint: getVar('_ENDPOINT', 'STORAGE_ENDPOINT', 'http://127.0.0.1:9000'),
+    region: getVar('_REGION', 'STORAGE_REGION', 'us-east-1'),
+    // Support both ACCESS_KEY (docs) and ACCESS_KEY_ID (standard)
+    accessKeyId: process.env[`${prefix}_ACCESS_KEY`] || process.env[`${prefix}_ACCESS_KEY_ID`] || process.env.STORAGE_ACCESS_KEY_ID || 'minioadmin',
+    secretAccessKey: process.env[`${prefix}_SECRET_KEY`] || process.env[`${prefix}_SECRET_ACCESS_KEY`] || process.env.STORAGE_SECRET_ACCESS_KEY || 'minioadmin',
+  };
+};
 
 /**
  * Bucket configuration with names and public URLs
@@ -39,18 +51,34 @@ const BUCKET_CONFIG = {
 } as const;
 
 // ============================================================================
-// S3 CLIENT
+// S3 CLIENTS
 // ============================================================================
 
-export const storageClient = new S3Client({
-  region: REGION,
-  endpoint: ENDPOINT,
-  credentials: {
-    accessKeyId: ACCESS_KEY,
-    secretAccessKey: SECRET_KEY,
-  },
-  forcePathStyle: true, // Required for MinIO and Supabase local storage
-});
+function createClient(type: StorageBucket) {
+  const config = getClientConfig(type);
+  return new S3Client({
+    region: config.region,
+    endpoint: config.endpoint,
+    credentials: {
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+    },
+    forcePathStyle: true, // Required for MinIO and Supabase local storage
+  });
+}
+
+const attachmentsClient = createClient('attachments');
+const mediaClient = createClient('media');
+
+/**
+ * Get the appropriate S3 client for the bucket type
+ */
+function getClient(bucket: StorageBucket): S3Client {
+  return bucket === 'attachments' ? attachmentsClient : mediaClient;
+}
+
+// Export default client (attachments) for backward compatibility
+export const storageClient = attachmentsClient;
 
 // ============================================================================
 // PUBLIC API
@@ -69,13 +97,14 @@ export async function generateUploadUrl(
   key: string,
   contentType: string
 ): Promise<string> {
+  const client = getClient(bucket);
   const command = new PutObjectCommand({
     Bucket: BUCKET_CONFIG[bucket].name,
     Key: key,
     ContentType: contentType,
   });
   
-  return getSignedUrl(storageClient, command, { expiresIn: 3600 });
+  return getSignedUrl(client, command, { expiresIn: 3600 });
 }
 
 /**
