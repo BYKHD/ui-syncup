@@ -82,6 +82,8 @@ export default function ProjectDetailScreen({
   });
   const [issueErrors, setIssueErrors] = useState<Record<string, string>>({});
   const [isSubmittingIssue, setIsSubmittingIssue] = useState(false);
+  const [asIsUploadProgress, setAsIsUploadProgress] = useState(0);
+  const [toBeUploadProgress, setToBeUploadProgress] = useState(0);
 
   // Settings dialog state
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
@@ -172,6 +174,7 @@ export default function ProjectDetailScreen({
             width: issueFormData.asIsImage.width,
             height: issueFormData.asIsImage.height,
             annotations: issueFormData.asIsImage.annotations,
+            onProgress: (progress) => setAsIsUploadProgress(progress),
           })
         );
       }
@@ -184,6 +187,7 @@ export default function ProjectDetailScreen({
             reviewVariant: 'to_be',
             width: issueFormData.toBeImage.width,
             height: issueFormData.toBeImage.height,
+            onProgress: (progress) => setToBeUploadProgress(progress),
           })
         );
       }
@@ -194,6 +198,8 @@ export default function ProjectDetailScreen({
         } catch (uploadError) {
           console.error("Failed to upload attachments:", uploadError);
           setIsSubmittingIssue(false);
+          setAsIsUploadProgress(0);
+          setToBeUploadProgress(0);
           // Don't close dialog, don't clear form data - preserve user's work
           // Error toast will be shown by the upload failure
           return; // Exit early, blocking issue creation
@@ -204,6 +210,8 @@ export default function ProjectDetailScreen({
       router.push(`/issue/${issue.issueKey}`);
 
       setIsSubmittingIssue(false);
+      setAsIsUploadProgress(0);
+      setToBeUploadProgress(0);
       setIssueDialogOpen(false);
       setIssueFormData({
         title: "",
@@ -426,6 +434,8 @@ export default function ProjectDetailScreen({
             }}
             onSubmit={handleIssueSubmit}
             onCancel={handleIssueCancel}
+            asIsUploadProgress={asIsUploadProgress}
+            toBeUploadProgress={toBeUploadProgress}
           >
             {trigger}
           </IssuesCreateDialog>
