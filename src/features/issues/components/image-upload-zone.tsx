@@ -4,12 +4,16 @@ import { useCallback, useRef, useState, useEffect } from "react";
 import { RiImageAddLine } from "@remixicon/react";
 import { cn } from "@/lib/utils";
 
+import { UploadProgressOverlay } from "./upload-progress-overlay";
+
 interface ImageUploadZoneProps {
   variant: "as-is" | "to-be";
   onImageSelect: (file: File) => void;
   disabled?: boolean;
   error?: string;
   className?: string;
+  progress?: number;
+  isUploading?: boolean;
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -21,6 +25,8 @@ export function ImageUploadZone({
   disabled = false,
   error,
   className,
+  progress = 0,
+  isUploading = false,
 }: ImageUploadZoneProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -238,6 +244,12 @@ export function ImageUploadZone({
             💡 You can also paste (Ctrl/Cmd+V) from clipboard
           </p>
         </div>
+        
+        <UploadProgressOverlay 
+          isVisible={isUploading} 
+          progress={progress} 
+          className="rounded-lg"
+        />
       </div>
 
       {error && (

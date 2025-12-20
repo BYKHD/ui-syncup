@@ -172,3 +172,36 @@ curl http://localhost:9000/minio/health/live
 - `image/png`
 - `image/webp`
 - `image/gif`
+
+## Cloudflare R2 CORS Configuration
+
+To allow browser-side uploads (presigned URLs) and access from your application, you must configure CORS on your R2 buckets.
+
+Go to **R2 Dashboard** -> **Settings** -> **CORS Policy** and add:
+
+```json
+[
+  {
+    "AllowedOrigins": [
+      "http://localhost:3000",
+      "https://ui-syncup.com",
+      "https://*.ui-syncup.com"
+    ],
+    "AllowedMethods": [
+      "GET",
+      "PUT",
+      "HEAD",
+      "POST"
+    ],
+    "AllowedHeaders": [
+      "*"
+    ],
+    "ExposeHeaders": [
+      "ETag"
+    ],
+    "MaxAgeSeconds": 3000
+  }
+]
+```
+
+> **Note**: Replace `https://ui-syncup.com` with your actual production domain. `AllowedHeaders` must include `Content-Type` or `*` to allow the upload.

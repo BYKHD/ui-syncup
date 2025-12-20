@@ -67,6 +67,7 @@ interface ResponsiveIssueLayoutProps {
   activityError?: Error | null;
   onRetryActivity?: () => void;
   onRetryAttachments?: () => void;
+  onAttachmentUpload?: () => void;
   // Keyboard shortcuts and accessibility props
   isEditingTitle?: boolean;
   isEditingDescription?: boolean;
@@ -93,6 +94,7 @@ export default function ResponsiveIssueLayout({
   activityError,
   onRetryActivity,
   onRetryAttachments,
+  onAttachmentUpload,
   isEditingTitle,
   isEditingDescription,
   onEditingTitleChange,
@@ -374,6 +376,7 @@ export default function ResponsiveIssueLayout({
                     annotations={mappedAnnotations}
                     activeAnnotationId={activeAnnotationId}
                     onAnnotationSelect={setActiveAnnotationId}
+                    onUploadComplete={onAttachmentUpload}
                   />
                 </Suspense>
               </motion.div>
@@ -528,6 +531,7 @@ export default function ResponsiveIssueLayout({
             annotations={mappedAnnotations}
             activeAnnotationId={activeAnnotationId}
             onAnnotationSelect={setActiveAnnotationId}
+            onUploadComplete={onAttachmentUpload}
           />
         </Suspense>
         

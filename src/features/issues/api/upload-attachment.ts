@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api-client';
 import type { AttachmentReviewVariant, IssueAttachment } from '../types';
+import type { AttachmentAnnotation } from '@/features/annotations';
 
 export interface UploadAttachmentParams {
   issueId: string;
@@ -7,6 +8,8 @@ export interface UploadAttachmentParams {
   reviewVariant?: AttachmentReviewVariant;
   width?: number;
   height?: number;
+  annotations?: AttachmentAnnotation[];
+  onProgress?: (progress: number) => void;
 }
 
 interface PresignedResponse {
@@ -20,7 +23,7 @@ interface CreateAttachmentResponse {
 }
 
 export async function uploadAttachment(params: UploadAttachmentParams): Promise<IssueAttachment> {
-  const { issueId, file, reviewVariant = 'as_is', width, height } = params;
+  const { issueId, file, reviewVariant = 'as_is', width, height, annotations, onProgress } = params;
 
   // 1. Get presigned URL from server
   const { uploadUrl, publicUrl } = await apiClient<PresignedResponse>('/api/uploads/presigned', {
@@ -32,13 +35,31 @@ export async function uploadAttachment(params: UploadAttachmentParams): Promise<
     }
   });
 
-  // 2. Upload file directly to S3/R2
-  await fetch(uploadUrl, {
-    method: 'PUT',
-    body: file,
-    headers: { 
-      'Content-Type': file.type 
+  // 2. Upload file directly to S3/R2 using XHR for progress tracking
+  await new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', uploadUrl);
+    xhr.setRequestHeader('Content-Type', file.type);
+
+    if (onProgress) {
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = (event.loaded / event.total) * 100;
+          onProgress(percentComplete);
+        }
+      };
     }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        reject(new Error(`Upload failed with status ${xhr.status}`));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Upload failed due to network error'));
+    xhr.send(file);
   });
 
   // 3. Create attachment record in database
@@ -51,7 +72,8 @@ export async function uploadAttachment(params: UploadAttachmentParams): Promise<
       url: publicUrl,
       width,
       height,
-      reviewVariant
+      reviewVariant,
+      annotations
     }
   });
 
