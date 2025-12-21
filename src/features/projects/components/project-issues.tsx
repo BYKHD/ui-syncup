@@ -56,7 +56,7 @@ export default function ProjectIssues({
         )}
       </CardHeader>
       <CardContent className="space-y-4">
-        {hasIssues ? (
+        {hasIssues || isLoading ? (
           <>
             <IssuesListFilter
               filters={filters}

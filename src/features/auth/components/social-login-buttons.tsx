@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { RiGoogleFill, RiMicrosoftFill, RiTentFill, RiLoader4Line } from "@remixicon/react";
+import { RiLoader4Line } from "@remixicon/react";
 import { authClient } from "@/lib/auth-client";
+import { OAUTH_PROVIDER_LIST, type OAuthProviderId } from "@/config/integrations";
 
 /**
  * Provider configuration type matching API response
@@ -20,45 +21,6 @@ interface ProvidersResponse {
     atlassian: ProviderStatus;
   };
 }
-
-/**
- * Supported OAuth providers
- */
-type OAuthProvider = "google" | "microsoft" | "atlassian";
-
-/**
- * Provider metadata for rendering buttons
- */
-interface ProviderConfig {
-  id: OAuthProvider;
-  name: string;
-  icon: React.ComponentType<{ className?: string }>;
-  ariaLabel: string;
-}
-
-/**
- * Provider configurations with icons and labels
- */
-const PROVIDER_CONFIGS: ProviderConfig[] = [
-  {
-    id: "google",
-    name: "Google",
-    icon: RiGoogleFill,
-    ariaLabel: "Sign in with Google",
-  },
-  {
-    id: "microsoft",
-    name: "Microsoft",
-    icon: RiMicrosoftFill,
-    ariaLabel: "Sign in with Microsoft",
-  },
-  {
-    id: "atlassian",
-    name: "Atlassian",
-    icon: RiTentFill,
-    ariaLabel: "Sign in with Atlassian",
-  },
-];
 
 export interface SocialLoginButtonsProps {
   /**
@@ -107,7 +69,7 @@ export function SocialLoginButtons({
 }: SocialLoginButtonsProps) {
   const [providers, setProviders] = useState<ProvidersResponse["providers"] | null>(null);
   const [isLoadingProviders, setIsLoadingProviders] = useState(true);
-  const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(null);
+  const [loadingProvider, setLoadingProvider] = useState<OAuthProviderId | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch enabled providers on mount
@@ -139,7 +101,7 @@ export function SocialLoginButtons({
   /**
    * Handle OAuth sign-in for a specific provider
    */
-  const handleSignIn = async (provider: OAuthProvider) => {
+  const handleSignIn = async (provider: OAuthProviderId) => {
     setLoadingProvider(provider);
     setError(null);
 
@@ -184,7 +146,7 @@ export function SocialLoginButtons({
   };
 
   // Get enabled providers
-  const enabledProviders = PROVIDER_CONFIGS.filter(
+  const enabledProviders = OAUTH_PROVIDER_LIST.filter(
     (config) => providers?.[config.id]?.enabled
   );
 

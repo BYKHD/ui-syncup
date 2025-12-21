@@ -61,6 +61,8 @@ interface IssuesCreateDialogProps extends PropsWithChildren {
     asIsImage?: string;
     toBeImage?: string;
   };
+  asIsUploadProgress?: number;
+  toBeUploadProgress?: number;
   isSubmitting?: boolean;
   onTitleChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
@@ -87,6 +89,8 @@ export function IssuesCreateDialog({
   onSubmit,
   onCancel,
   children,
+  asIsUploadProgress = 0,
+  toBeUploadProgress = 0,
 }: IssuesCreateDialogProps) {
   const isMobile = useIsMobile();
   const [isLoadingAsIs, setIsLoadingAsIs] = useState(false);
@@ -250,6 +254,8 @@ export function IssuesCreateDialog({
                   activeAnnotationId={activeAnnotationId}
                   onAnnotationSelect={handleAnnotationSelect}
                   className="select-none"
+                  progress={asIsUploadProgress}
+                  isUploading={isSubmitting && asIsUploadProgress < 100}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full p-6">
@@ -257,7 +263,7 @@ export function IssuesCreateDialog({
                     <ImageUploadZone
                       variant="as-is"
                       onImageSelect={handleAsIsImageSelect}
-                      disabled={isLoadingAsIs}
+                      disabled={isLoadingAsIs || isSubmitting}
                       error={errors.asIsImage}
                     />
                   </div>
@@ -372,14 +378,18 @@ export function IssuesCreateDialog({
                           <CompactImagePreview
                             image={formData.toBeImage}
                             onRemove={handleToBeImageRemove}
+                            progress={toBeUploadProgress}
+                            isUploading={isSubmitting && toBeUploadProgress < 100}
                           />
                         ) : (
                           <ImageUploadZone
                             variant="to-be"
                             onImageSelect={handleToBeImageSelect}
-                            disabled={isLoadingToBe}
+                            disabled={isLoadingToBe || isSubmitting}
                             error={errors.toBeImage}
                             className="min-h-[120px]"
+                            progress={toBeUploadProgress}
+                            isUploading={isSubmitting && toBeUploadProgress > 0 && toBeUploadProgress < 100}
                           />
                         )}
                       </FieldContent>
@@ -478,12 +488,16 @@ export function IssuesCreateDialog({
  * Compact Image Preview Component
  * Simplified preview for to-be image without annotation capabilities
  */
+import { UploadProgressOverlay } from "./upload-progress-overlay";
+
 interface CompactImagePreviewProps {
   image: ImageData;
   onRemove: () => void;
+  progress?: number;
+  isUploading?: boolean;
 }
 
-function CompactImagePreview({ image, onRemove }: CompactImagePreviewProps) {
+function CompactImagePreview({ image, onRemove, progress = 0, isUploading = false }: CompactImagePreviewProps) {
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
@@ -492,6 +506,11 @@ function CompactImagePreview({ image, onRemove }: CompactImagePreviewProps) {
 
   return (
     <div className="relative group rounded-lg border border-border bg-card overflow-hidden">
+      <UploadProgressOverlay 
+        isVisible={isUploading} 
+        progress={progress} 
+        className="z-50"
+      />
       {/* Image Preview */}
       <div className="relative aspect-video bg-muted/50">
         <img
@@ -508,6 +527,7 @@ function CompactImagePreview({ image, onRemove }: CompactImagePreviewProps) {
           className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={onRemove}
           aria-label="Remove image"
+          disabled={isUploading}
         >
           <X className="h-4 w-4" />
         </Button>

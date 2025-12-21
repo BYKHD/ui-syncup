@@ -32,6 +32,7 @@ const CreateAttachmentBodySchema = z.object({
   width: z.number().int().positive().optional().nullable(),
   height: z.number().int().positive().optional().nullable(),
   reviewVariant: z.enum(["as_is", "to_be", "reference"]).default("as_is"),
+  annotations: z.array(z.any()).optional(),
 });
 
 /**
@@ -287,6 +288,7 @@ export async function POST(
       width,
       height,
       reviewVariant,
+      annotations,
     } = validation.data;
 
     // Create attachment with denormalized tenant fields from issue
@@ -304,6 +306,7 @@ export async function POST(
         width,
         height,
         reviewVariant: reviewVariant as AttachmentReviewVariant,
+        annotations,
       },
       user.id
     );

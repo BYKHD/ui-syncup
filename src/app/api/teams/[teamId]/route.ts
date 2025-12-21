@@ -226,8 +226,16 @@ export async function PATCH(
       description: validation.data.description === null ? undefined : validation.data.description,
       image: validation.data.image === null ? undefined : validation.data.image,
     };
-    const team = await updateTeam(teamId, updateData, user.id);
+    await updateTeam(teamId, updateData, user.id);
     
+    // Fetch full team details to satisfy the response schema (which requires member info)
+    const updatedTeam = await getTeam(teamId, user.id);
+
+    if (!updatedTeam) {
+       // Should not happen as we just updated it, but handle locally
+       throw new Error('Failed to retrieve updated team');
+    }
+
     logger.info('api.teams.update.success', {
       requestId,
       userId: user.id,
@@ -235,7 +243,7 @@ export async function PATCH(
     });
     
     return NextResponse.json(
-      { team },
+      { team: updatedTeam },
       { status: 200 }
     );
     

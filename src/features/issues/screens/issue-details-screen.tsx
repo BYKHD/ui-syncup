@@ -140,6 +140,10 @@ export default function IssueDetailsScreen({
     refetchActivities();
   }, [refetchActivities]);
 
+  const handleUploadComplete = useCallback(() => {
+    refetchIssue();
+  }, [refetchIssue]);
+
   // Error states
   if (issueError) {
     return (
@@ -195,6 +199,7 @@ export default function IssueDetailsScreen({
         isLoading={isUpdating || isDeleting}
         activityError={activityError}
         onRetryActivity={handleRetryActivities}
+        onAttachmentUpload={handleUploadComplete}
       />
     </div>
   );

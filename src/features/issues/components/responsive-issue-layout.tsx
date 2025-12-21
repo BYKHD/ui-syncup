@@ -67,6 +67,7 @@ interface ResponsiveIssueLayoutProps {
   activityError?: Error | null;
   onRetryActivity?: () => void;
   onRetryAttachments?: () => void;
+  onAttachmentUpload?: () => void;
   // Keyboard shortcuts and accessibility props
   isEditingTitle?: boolean;
   isEditingDescription?: boolean;
@@ -93,6 +94,7 @@ export default function ResponsiveIssueLayout({
   activityError,
   onRetryActivity,
   onRetryAttachments,
+  onAttachmentUpload,
   isEditingTitle,
   isEditingDescription,
   onEditingTitleChange,
@@ -176,49 +178,43 @@ export default function ResponsiveIssueLayout({
   const dragControls = useDragControls();
   const sheetRef = useRef<HTMLDivElement>(null);
 
-  // Track previous width to detect threshold crossings
-  const prevWidthRef = useRef<number>(
-    typeof window !== "undefined" ? window.innerWidth : 1024
-  );
 
-  // Track window width for responsive behavior
+
+  // Track window width and handle responsive behavior
+  // This combines width tracking and auto-collapse logic to avoid cascading renders
   useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    if (typeof window !== "undefined") {
-      window.addEventListener("resize", handleResize);
-      return () => window.removeEventListener("resize", handleResize);
-    }
-  }, []);
+    if (typeof window === "undefined") return;
 
-  // Auto-collapse/expand panel based on viewport width threshold crossings
-  useEffect(() => {
-    if (isMobile) return;
+    // Track local prevWidth inside the closure of the effect for threshold detection
+    let prevWidth = window.innerWidth;
+    
+    // Initial sync
+    setWindowWidth(prevWidth);
 
-    const prevWidth = prevWidthRef.current;
-    const currentWidth = windowWidth;
+    const handleResize = () => {
+      const currentWidth = window.innerWidth;
+      setWindowWidth(currentWidth);
 
-    // Early return if width hasn't changed
-    if (prevWidth === currentWidth) return;
+      if (!isMobile) {
+        const wasAboveThreshold = prevWidth >= 992;
+        const isAboveThreshold = currentWidth >= 992;
 
-    const wasAboveThreshold = prevWidth >= 992;
-    const isAboveThreshold = currentWidth >= 992;
+        if (wasAboveThreshold !== isAboveThreshold) {
+          setIsPanelCollapsed(!isAboveThreshold);
+        }
+      }
+      prevWidth = currentWidth;
+    };
 
-    // Only act when threshold is crossed
-    if (wasAboveThreshold !== isAboveThreshold) {
-      setIsPanelCollapsed(!isAboveThreshold);
-      prevWidthRef.current = currentWidth;
-    } else {
-      // Still update ref for accurate tracking
-      prevWidthRef.current = currentWidth;
-    }
-  }, [windowWidth, isMobile]);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isMobile]);
 
-  // Reset to attachments tab when switching to mobile
-  useEffect(() => {
-    if (isMobile && activeTab !== "attachments" && activeTab !== "details") {
-      setActiveTab("attachments");
-    }
-  }, [isMobile]); // Remove activeTab from dependencies to avoid cascading renders
+  // Reset to attachments tab when switching to mobile (render-time adjustment)
+  // This avoids cascading renders validation pattern from React docs
+  if (isMobile && activeTab !== "attachments" && activeTab !== "details") {
+    setActiveTab("attachments");
+  }
 
   // Handle swipe gestures for mobile tab switching
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -374,6 +370,7 @@ export default function ResponsiveIssueLayout({
                     annotations={mappedAnnotations}
                     activeAnnotationId={activeAnnotationId}
                     onAnnotationSelect={setActiveAnnotationId}
+                    onUploadComplete={onAttachmentUpload}
                   />
                 </Suspense>
               </motion.div>
@@ -528,6 +525,7 @@ export default function ResponsiveIssueLayout({
             annotations={mappedAnnotations}
             activeAnnotationId={activeAnnotationId}
             onAnnotationSelect={setActiveAnnotationId}
+            onUploadComplete={onAttachmentUpload}
           />
         </Suspense>
         

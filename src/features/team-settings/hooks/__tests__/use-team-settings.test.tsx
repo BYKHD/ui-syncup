@@ -71,7 +71,7 @@ describe("useTeamSettings", () => {
     window.FileReader = vi.fn(() => mockFileReader) as any;
 
     act(() => {
-      result.current.handleImageChange(event);
+      result.current.handleImageChange(file);
     });
 
     expect(mockFileReader.readAsDataURL).toHaveBeenCalledWith(file);

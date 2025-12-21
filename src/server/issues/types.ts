@@ -142,6 +142,7 @@ export interface CreateAttachmentData {
   width?: number | null;
   height?: number | null;
   reviewVariant?: AttachmentReviewVariant;
+  annotations?: unknown; // JSONB data
 }
 
 // ============================================================================

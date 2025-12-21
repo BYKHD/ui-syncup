@@ -33,6 +33,7 @@ export function getCSPDirectives(): CSPDirectives {
     // Scripts: allow self, unsafe-eval for dev tools, unsafe-inline for Next.js
     'script-src': [
       "'self'",
+      'https://va.vercel-scripts.com',
       ...(isDevelopment() ? ["'unsafe-eval'", "'unsafe-inline'"] : ["'unsafe-inline'"]),
     ],
     
@@ -57,12 +58,18 @@ export function getCSPDirectives(): CSPDirectives {
       'https://*.supabase.co',
       'https://*.r2.cloudflarestorage.com',
       'https://accounts.google.com',
+      'https://va.vercel-scripts.com',
+      'https://vitals.vercel-insights.com',
       // Production domains
       'https://ui-syncup.com',
       'https://www.ui-syncup.com',
       ...(env.NEXT_PUBLIC_APP_URL ? [env.NEXT_PUBLIC_APP_URL] : []),
       // Development: allow local connections for API and MinIO storage
       ...(isDevelopment() ? ['http://localhost:*', 'ws://localhost:*', 'http://127.0.0.1:*'] : []),
+      // Storage endpoints
+      env.STORAGE_ENDPOINT || 'http://127.0.0.1:9000',
+      ...(env.STORAGE_ATTACHMENTS_PUBLIC_URL ? [env.STORAGE_ATTACHMENTS_PUBLIC_URL] : []),
+      ...(env.STORAGE_MEDIA_PUBLIC_URL ? [env.STORAGE_MEDIA_PUBLIC_URL] : []),
     ],
     
     // Frame ancestors: prevent embedding

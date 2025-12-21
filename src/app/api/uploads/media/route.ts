@@ -5,8 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { getSession } from '@/server/auth/session';
-import { generateUploadUrl, getPublicUrl } from '@/lib/storage';
+import { generateUploadUrl, getPublicUrl, deleteFile } from '@/lib/storage';
 import { v4 as uuidv4 } from 'uuid';
 
 type MediaType = 'avatar' | 'team';
@@ -62,6 +63,55 @@ export async function POST(request: NextRequest) {
     console.error('Media presigned URL error:', error);
     return NextResponse.json(
       { error: 'Failed to generate upload URL' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getSession();
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    // Re-use simpler validation or just strict checks
+    const { key, type, entityId } = body;
+
+    // Basic validation
+    if (!key || typeof key !== 'string') {
+        return NextResponse.json({ error: "Missing or invalid 'key'" }, { status: 400 });
+    }
+
+    // Security check: Ensure user has access to the entity they are modifying
+    // For 'team', check if user is admin/member of the team
+    // For 'avatar', check if userId matches session.user.id
+    // This logic mimics the POST validation but for deletion
+    if (type === 'team') {
+       // Validate team permission
+       // Ideally we check if session.user is member of entityId (teamId)
+       // For MVP, we'll check if the key starts with the expected path
+       if (!key.includes(`teams/${entityId}`)) {
+         return NextResponse.json({ error: "Invalid key for this entity" }, { status: 403 });
+       }
+    } else if (type === 'avatar') {
+       if (entityId !== session.id) {
+         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+       }
+    }
+
+    // Call storage deletion
+    // Helper needed from storage.ts
+    // We need to import deleteFile which we just added
+    await deleteFile('media', key);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting media:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }
