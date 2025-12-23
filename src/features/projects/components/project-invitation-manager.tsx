@@ -31,13 +31,15 @@ interface ProjectInvitation {
 
 interface ProjectInvitationManagerProps {
   projectId: string
+  teamId: string
   projectName: string
   canManageInvitations: boolean
   children?: React.ReactNode
 }
 
 export function ProjectInvitationManager({ 
-  projectId, 
+  projectId,
+  teamId, 
   projectName,
   canManageInvitations,
   children 
@@ -283,6 +285,7 @@ export function ProjectInvitationManager({
         open={showInviteDialog}
         onOpenChange={setShowInviteDialog}
         projectId={projectId}
+        teamId={teamId}
         projectName={projectName}
         onInvitationSent={handleInvitationSent}
       />

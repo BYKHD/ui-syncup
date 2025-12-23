@@ -7,6 +7,7 @@ export * from "./email-jobs";
 export * from "./account";
 export * from "./projects";
 export * from "./project-members";
+export * from "./project-invitations";
 export * from "./teams";
 export * from "./team-members";
 export * from "./team-invitations";

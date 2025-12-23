@@ -134,6 +134,13 @@
       "when": 1765539600002,
       "tag": "0018_add_sessions_updated_at",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1766491226041,
+      "tag": "0019_add_project_invitations",
+      "breakpoints": true
     }
   ]
 }
