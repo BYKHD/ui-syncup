@@ -1,5 +1,5 @@
 import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/shared/headers";
-import ProjectDetailScreen from "@/features/projects/screens/project-detail-screen";
+import { ProjectDetailScreenWrapper } from "@/features/projects/screens/project-detail-screen-wrapper";
 import { getProject } from "@/features/projects/api";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
@@ -52,9 +52,10 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           pageName={project.name}
           breadcrumbs={projectBreadcrumbs}
         />
-        <ProjectDetailScreen
+        <ProjectDetailScreenWrapper
           project={{
             id: project.id,
+            teamId: project.teamId,
             name: project.name,
             description: project.description,
             visibility: project.visibility,

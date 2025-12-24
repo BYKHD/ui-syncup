@@ -94,7 +94,7 @@ export function AnnotationAnnotationsPanel<A extends AnnotationThread>({
   }
 
   return (
-    <div className="relative flex h-full flex-col">
+    <div className="relative flex h-full w-full flex-col">
       {/* Full-width Annotation List */}
       <div className="flex h-full flex-col">
         <div className="border-b p-4">

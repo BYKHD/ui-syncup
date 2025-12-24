@@ -8,7 +8,8 @@
 import { db } from "@/lib/db";
 import { projects } from "@/server/db/schema/projects";
 import { projectMembers } from "@/server/db/schema/project-members";
-import { eq, and, isNull, or, like, sql, count } from "drizzle-orm";
+import { issues } from "@/server/db/schema/issues";
+import { eq, and, isNull, or, like, sql, count, inArray } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { generateUniqueSlug, validateProjectKey, validateProjectName } from "./utils";
 import { autoPromoteToEditor, getManagementRole } from "@/server/auth/rbac";
@@ -413,8 +414,8 @@ export async function canAccessProject(
 /**
  * Get project statistics
  * 
- * TODO: Update this when issues table is implemented
- * Currently returns placeholder values
+ * Queries the issues table to get real project statistics.
+ * Completed tickets are defined as issues with 'resolved' or 'archived' status.
  * 
  * @param projectId - Project ID
  * @returns Project statistics
@@ -428,12 +429,42 @@ async function getProjectStats(projectId: string): Promise<ProjectStats> {
 
   const memberCount = memberCountResult[0]?.count ?? 0;
 
-  // TODO: Query issues table when it exists
-  // For now, return placeholder values
+  // Get total tickets count (excluding deleted issues)
+  const totalTicketsResult = await db
+    .select({ count: count() })
+    .from(issues)
+    .where(
+      and(
+        eq(issues.projectId, projectId),
+        isNull(issues.deletedAt)
+      )
+    );
+
+  const totalTickets = totalTicketsResult[0]?.count ?? 0;
+
+  // Get completed tickets count (resolved or archived, excluding deleted)
+  const completedTicketsResult = await db
+    .select({ count: count() })
+    .from(issues)
+    .where(
+      and(
+        eq(issues.projectId, projectId),
+        isNull(issues.deletedAt),
+        inArray(issues.status, ['resolved', 'archived'])
+      )
+    );
+
+  const completedTickets = completedTicketsResult[0]?.count ?? 0;
+
+  // Calculate progress percentage (0 if no tickets)
+  const progressPercent = totalTickets > 0
+    ? Math.round((completedTickets / totalTickets) * 100)
+    : 0;
+
   return {
-    totalTickets: 0,
-    completedTickets: 0,
-    progressPercent: 0,
+    totalTickets,
+    completedTickets,
+    progressPercent,
     memberCount,
   };
 }

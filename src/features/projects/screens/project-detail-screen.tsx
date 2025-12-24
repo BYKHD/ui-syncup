@@ -1,20 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { usePathname } from "next/navigation";
 import { IssuesCreateDialog, type ImageData } from "@/features/issues/components/issues-create-dialog";
 import { useCreateIssue, uploadAttachment } from "@/features/issues";
 import { ProjectMemberManagerDialog } from "../components/project-member-manager-dialog";
+import { ProjectInvitationDialog } from "../components/project-invitation-dialog";
 import { ProjectSettingsDialog } from "../components/project-settings-dialog";
 import { ProjectLeaveButton } from "../components/project-leave-button";
 import { ProjectDetailHeader, ProjectIssues } from "../components";
-import { ProjectOverview } from "../components/project-detail-overview";
 import type { ProjectRole } from "../types";
 import type { IssuePriority, IssueType } from "@/features/issues/types";
-import { useRecentProjects } from "../hooks";
-import { useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useRecentProjects, useProjectMembers, useUpdateMemberRole, useRemoveMember, useProjectInvitations, useRevokeInvitation, useResendInvitation } from "../hooks";
 
 interface ProjectStats {
   memberCount: number;
@@ -26,6 +24,7 @@ interface ProjectStats {
 interface ProjectDetailScreenProps {
   project: {
     id: string;
+    teamId: string;
     name: string;
     description: string | null;
     visibility: "private" | "public";
@@ -107,10 +106,62 @@ export default function ProjectDetailScreen({
 
   // Member dialog state
   const [memberDialogOpen, setMemberDialogOpen] = useState(false);
-  const [members, setMembers] = useState<any[]>([]); // TODO: type from mocks
-  const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
-  const [isMembersLoading, setIsMembersLoading] = useState(false);
-  const [membersError, setMembersError] = useState<string | null>(null);
+  const [invitationDialogOpen, setInvitationDialogOpen] = useState(false);
+  
+  // Real data hooks for members
+  const { 
+    data: membersData, 
+    isLoading: isMembersLoading, 
+    error: membersQueryError,
+    refetch: refetchMembers 
+  } = useProjectMembers({ projectId: project.id, enabled: memberDialogOpen });
+  
+  const { mutateAsync: updateRoleMutation } = useUpdateMemberRole();
+  const { mutateAsync: removeMemberMutation } = useRemoveMember();
+  
+  // Real data hooks for invitations
+  const { 
+    pendingInvitations: invitationsData,
+    refetch: refetchInvitations 
+  } = useProjectInvitations({ projectId: project.id, enabled: memberDialogOpen });
+  
+  const { mutateAsync: revokeInvitationMutation } = useRevokeInvitation();
+  const { mutateAsync: resendInvitationMutation } = useResendInvitation();
+  
+  // Transform API members to dialog format
+  const members = useMemo(() => {
+    if (!membersData?.members) return [];
+    return membersData.members.map((m) => ({
+      id: m.userId, // Use userId as id for member operations
+      userId: m.userId,
+      role: m.role as 'owner' | 'editor' | 'member' | 'viewer',
+      invitedBy: null,
+      joinedAt: new Date(m.joinedAt),
+      user: {
+        id: m.userId,
+        name: m.userName,
+        email: m.userEmail,
+        image: m.userAvatar,
+      },
+    }));
+  }, [membersData]);
+  
+  const membersError = membersQueryError?.message || null;
+  
+  // Transform API invitations to dialog format
+  const pendingInvitations = useMemo(() => {
+    if (!invitationsData) return [];
+    return invitationsData.map((inv) => ({
+      id: inv.id,
+      invitedUserId: inv.invitedUserId || '',
+      role: inv.role as 'editor' | 'member' | 'viewer',
+      status: inv.status,
+      createdAt: new Date(inv.createdAt),
+      expiresAt: new Date(inv.expiresAt),
+      invitedUser: inv.invitedUser,
+      invitedByUser: inv.invitedByUser,
+    }));
+  }, [invitationsData]);
 
   // Helper to clear specific field error
   const clearFieldError = (field: string) => {
@@ -324,60 +375,71 @@ export default function ProjectDetailScreen({
   };
 
   // Member dialog handlers
-  const handleMemberDialogOpen = (open: boolean) => {
+  const handleMemberDialogOpen = useCallback((open: boolean) => {
     setMemberDialogOpen(open);
-    if (open && members.length === 0) {
-      // Load mock data on first open
-      setIsMembersLoading(true);
-      // TODO: wire GET /api/projects/:id/members
-      setTimeout(() => {
-        // Using mock data for now
-        const {
-          MOCK_PROJECT_MEMBERS,
-          MOCK_PROJECT_INVITATIONS,
-        } = require("@/mocks");
-        setMembers(
-          MOCK_PROJECT_MEMBERS.filter((m: any) => m.projectId === project.id)
-        );
-        setPendingInvitations(
-          MOCK_PROJECT_INVITATIONS.filter(
-            (i: any) => i.projectId === project.id && i.status === "pending"
-          )
-        );
-        setIsMembersLoading(false);
-      }, 500);
+    if (open) {
+      refetchMembers();
+      refetchInvitations();
     }
-  };
+  }, [refetchMembers, refetchInvitations]);
 
-  const handleRoleChange = async (memberId: string, newRole: string) => {
-    // TODO: wire PATCH /api/projects/:id/members/:memberId
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setMembers((prev) =>
-      prev.map((m) => (m.id === memberId ? { ...m, role: newRole } : m))
-    );
-  };
+  const handleRoleChange = useCallback(async (memberId: string, newRole: string) => {
+    try {
+      await updateRoleMutation({
+        projectId: project.id,
+        memberId,
+        data: { role: newRole as 'owner' | 'editor' | 'member' | 'viewer' },
+      });
+    } catch (error) {
+      // Error toast is handled by the hook
+      console.error('Failed to update role:', error);
+    }
+  }, [project.id, updateRoleMutation]);
 
-  const handleRemoveMember = async (memberId: string) => {
-    // TODO: wire DELETE /api/projects/:id/members/:memberId
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setMembers((prev) => prev.filter((m) => m.id !== memberId));
-  };
+  const handleRemoveMember = useCallback(async (memberId: string) => {
+    try {
+      await removeMemberMutation({
+        projectId: project.id,
+        memberId,
+      });
+    } catch (error) {
+      // Error toast is handled by the hook
+      console.error('Failed to remove member:', error);
+    }
+  }, [project.id, removeMemberMutation]);
 
-  const handleRevokeInvitation = async (invitationId: string) => {
-    // TODO: wire DELETE /api/projects/:id/invitations/:invitationId
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setPendingInvitations((prev) => prev.filter((i) => i.id !== invitationId));
-  };
+  const handleRevokeInvitation = useCallback(async (invitationId: string) => {
+    try {
+      await revokeInvitationMutation({
+        projectId: project.id,
+        invitationId,
+      });
+    } catch (error) {
+      // Error toast is handled by the hook
+      console.error('Failed to revoke invitation:', error);
+    }
+  }, [project.id, revokeInvitationMutation]);
 
-  const handleResendInvitation = async (invitationId: string) => {
-    // TODO: wire POST /api/projects/:id/invitations/:invitationId/resend
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  };
+  const handleResendInvitation = useCallback(async (invitationId: string) => {
+    try {
+      await resendInvitationMutation({
+        projectId: project.id,
+        invitationId,
+      });
+    } catch (error) {
+      // Error toast is handled by the hook
+      console.error('Failed to resend invitation:', error);
+    }
+  }, [project.id, resendInvitationMutation]);
 
-  const handleInviteMember = () => {
-    // TODO: open invitation dialog
-    console.log("Open invitation dialog");
-  };
+  const handleInviteMember = useCallback(() => {
+    setInvitationDialogOpen(true);
+  }, []);
+
+  const handleInvitationSent = useCallback(() => {
+    refetchMembers();
+    refetchInvitations();
+  }, [refetchMembers, refetchInvitations]);
 
   if (isLoading) {
     return (
@@ -508,6 +570,16 @@ export default function ProjectDetailScreen({
         {/* Project Issues */}
         <ProjectIssues projectId={project.id} />
       </div>
+
+      {/* Project Invitation Dialog */}
+      <ProjectInvitationDialog
+        open={invitationDialogOpen}
+        onOpenChange={setInvitationDialogOpen}
+        projectId={project.id}
+        teamId={project.teamId}
+        projectName={project.name}
+        onInvitationSent={handleInvitationSent}
+      />
     </div>
   );
 }

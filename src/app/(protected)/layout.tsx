@@ -1,4 +1,4 @@
-import { AppShell } from "@/components/layout/app-shell";
+import { AppShellWrapper } from "@/components/layout/app-shell-wrapper";
 import { getSession } from "@/server/auth/session";
 import { redirect } from "next/navigation";
 
@@ -24,5 +24,5 @@ export default async function ProtectedLayout({
   }
 
   // Pass session data to client components via AppShell
-  return <AppShell variant="sidebar">{children}</AppShell>;
+  return <AppShellWrapper variant="sidebar">{children}</AppShellWrapper>;
 }

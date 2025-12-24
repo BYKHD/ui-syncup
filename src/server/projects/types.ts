@@ -112,3 +112,52 @@ export interface ProjectMember {
   role: ProjectRole;
   joinedAt: Date;
 }
+
+/**
+ * Project invitation status
+ */
+export type InvitationStatus = "pending" | "accepted" | "declined" | "expired";
+
+/**
+ * Project invitation with user details
+ */
+export interface ProjectInvitation {
+  id: string;
+  projectId: string;
+  email: string;
+  role: Exclude<ProjectRole, "PROJECT_OWNER">;
+  status: InvitationStatus;
+  invitedBy: string;
+  expiresAt: Date;
+  createdAt: Date;
+  usedAt: Date | null;
+  cancelledAt: Date | null;
+}
+
+/**
+ * Project invitation with enriched user information
+ */
+export interface ProjectInvitationWithUsers extends ProjectInvitation {
+  invitedUser: {
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+  } | null;
+  invitedByUser: {
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+  };
+}
+
+/**
+ * Data for creating a project invitation
+ */
+export interface CreateProjectInvitationData {
+  projectId: string;
+  email: string;
+  role: Exclude<ProjectRole, "PROJECT_OWNER">;
+  invitedBy: string;
+}
