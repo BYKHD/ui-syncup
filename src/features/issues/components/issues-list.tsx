@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useRef } from "react";
 import {
   Table,
   TableBody,
@@ -12,11 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import IssueStatusBadge from "./issues-status-badge";
 import PriorityBadge from "./issues-priority-badge";
+import { preloadIssueDetailComponents } from "./preload";
 import type { IssueSummary } from "@/features/issues/types";
 
 interface IssuesListProps {
   issues: IssueSummary[]
-  isLoading?: boolean
   onIssueClick?: (issueKey: string) => void
 }
 
@@ -25,16 +26,35 @@ function formatDate(dateString: string) {
   return date.toLocaleDateString();
 }
 
+/**
+ * IssuesList - Pure presentational component for rendering issues table
+ * 
+ * NOTE: Loading state is intentionally NOT handled here.
+ * The parent component (ProjectIssues) manages loading via React Query
+ * to prevent duplicate skeleton layers with route-level loading.tsx
+ * 
+ * Preloads issue detail components on hover for faster navigation.
+ */
 export default function IssuesList({
   issues,
-  isLoading = false,
   onIssueClick,
 }: IssuesListProps) {
+  // Track if we've already preloaded to avoid redundant calls
+  const hasPreloaded = useRef(false);
+
   const handleIssueClick = (issueKey: string) => {
     if (onIssueClick) {
       onIssueClick(issueKey);
     }
   };
+
+  // Preload issue detail components on first hover
+  const handleRowHover = useCallback(() => {
+    if (!hasPreloaded.current) {
+      hasPreloaded.current = true;
+      preloadIssueDetailComponents();
+    }
+  }, []);
 
   return (
     <div className="flex flex-col overflow-hidden rounded-md border">
@@ -51,30 +71,7 @@ export default function IssuesList({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {isLoading ? (
-            Array.from({ length: 5 }).map((_, index) => (
-              <TableRow key={index}>
-                <TableCell>
-                  <Skeleton className="h-5 w-5 rounded-full" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-16" />
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-5 w-16" />
-                    <Skeleton className="h-4 w-48" />
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-5 w-20" />
-                </TableCell>
-                <TableCell className="text-right">
-                  <Skeleton className="ml-auto h-4 w-24" />
-                </TableCell>
-              </TableRow>
-            ))
-          ) : issues.length === 0 ? (
+          {issues.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
                 No issues recorded yet. Create one to get started.
@@ -86,6 +83,8 @@ export default function IssuesList({
                 key={issue.id}
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleIssueClick(issue.issueKey)}
+                onMouseEnter={handleRowHover}
+                onFocus={handleRowHover}
               >
                 <TableCell>
                   <PriorityBadge priority={issue.priority} />

@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { ProjectRole } from "../types";
+import type { IssueSummary } from "@/features/issues/types";
 
 interface ProjectStats {
   memberCount: number;
@@ -25,6 +26,8 @@ interface ProjectDetailScreenWrapperProps {
   };
   userRole: ProjectRole | null;
   isLoading?: boolean;
+  /** Server-prefetched issues for instant display */
+  initialIssues?: IssueSummary[];
 }
 
 const ProjectDetailScreen = dynamic(
@@ -35,7 +38,10 @@ const ProjectDetailScreen = dynamic(
 /**
  * Client wrapper for ProjectDetailScreen that uses dynamic import with ssr: false.
  * This prevents Radix UI hydration mismatches by only rendering on the client.
+ * 
+ * Supports initialIssues for server-side prefetching to eliminate loading states.
  */
 export function ProjectDetailScreenWrapper(props: ProjectDetailScreenWrapperProps) {
   return <ProjectDetailScreen {...props} />;
 }
+

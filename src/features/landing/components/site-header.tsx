@@ -27,6 +27,9 @@ export function SiteHeader() {
           <span>UI SyncUp</span>
         </div>
         <nav className="flex items-center gap-4">
+          <Link href="/changelog" className="text-sm font-medium hover:underline underline-offset-4">
+            Changelog
+          </Link>
           {isLoading ? (
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           ) : isAuthenticated && user ? (

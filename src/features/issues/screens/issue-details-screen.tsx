@@ -50,7 +50,8 @@ export default function IssueDetailsScreen({
     refetch: refetchIssue,
   } = useIssueDetails({ issueId });
 
-  // Fetch activities
+  // Fetch activities in PARALLEL (not waiting for issue)
+  // This eliminates the waterfall pattern where activities only loaded after issue
   const {
     activities,
     hasMore: hasMoreActivities,
@@ -60,7 +61,7 @@ export default function IssueDetailsScreen({
   } = useIssueActivities({
     issueId,
     limit: 10,
-    enabled: !!issue, // Only fetch activities after issue is loaded
+    enabled: !!issueId, // Start immediately with issueId, don't wait for issue
   });
 
   // Update hook
