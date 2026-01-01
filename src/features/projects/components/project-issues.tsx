@@ -3,24 +3,26 @@
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { RiAddLine } from '@remixicon/react'
 import { IssuesList, IssuesListFilter, useIssueFilters, useProjectIssues } from '@/features/issues'
 
 interface ProjectIssuesProps {
   projectId: string
   onCreateIssue?: () => void
-  isLoading?: boolean
 }
 
+/**
+ * ProjectIssues - Manages loading state at this level to prevent
+ * duplicate skeletons from route loading.tsx + child component
+ */
 export default function ProjectIssues({
   projectId,
   onCreateIssue,
-  isLoading: initialLoading = false,
 }: ProjectIssuesProps) {
   const router = useRouter()
-  const { data, isLoading: isLoadingIssues } = useProjectIssues({ projectId })
+  const { data, isLoading } = useProjectIssues({ projectId })
   const projectIssues = data?.issues ?? []
-  const isLoading = initialLoading || isLoadingIssues
 
   const {
     filters,
@@ -56,7 +58,29 @@ export default function ProjectIssues({
         )}
       </CardHeader>
       <CardContent className="space-y-4">
-        {hasIssues || isLoading ? (
+        {isLoading ? (
+          // Single unified skeleton at this level
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-9 w-48" />
+              <Skeleton className="h-9 w-32" />
+            </div>
+            <div className="rounded-md border">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="flex items-center gap-4 p-4 border-b last:border-b-0">
+                  <Skeleton className="h-5 w-5 rounded-full" />
+                  <Skeleton className="h-4 w-16" />
+                  <div className="flex items-center gap-2 flex-1">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-4 w-48" />
+                  </div>
+                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : hasIssues ? (
           <>
             <IssuesListFilter
               filters={filters}
@@ -66,7 +90,6 @@ export default function ProjectIssues({
             />
             <IssuesList 
               issues={filteredIssues} 
-              isLoading={isLoading} 
               onIssueClick={handleIssueClick}
             />
           </>
@@ -90,4 +113,3 @@ export default function ProjectIssues({
     </Card>
   )
 }
-
