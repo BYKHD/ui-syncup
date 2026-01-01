@@ -11,7 +11,7 @@ import { ProjectSettingsDialog } from "../components/project-settings-dialog";
 import { ProjectLeaveButton } from "../components/project-leave-button";
 import { ProjectDetailHeader, ProjectIssues } from "../components";
 import type { ProjectRole } from "../types";
-import type { IssuePriority, IssueType } from "@/features/issues/types";
+import type { IssuePriority, IssueType, IssueSummary } from "@/features/issues/types";
 import { useRecentProjects, useProjectMembers, useUpdateMemberRole, useRemoveMember, useProjectInvitations, useRevokeInvitation, useResendInvitation } from "../hooks";
 
 interface ProjectStats {
@@ -36,6 +36,8 @@ interface ProjectDetailScreenProps {
   };
   userRole: ProjectRole | null;
   isLoading?: boolean;
+  /** Server-prefetched issues for instant display */
+  initialIssues?: IssueSummary[];
 }
 
 type IssuePriorityValue = IssuePriority | null;
@@ -51,6 +53,7 @@ export default function ProjectDetailScreen({
   project,
   userRole,
   isLoading = false,
+  initialIssues,
 }: ProjectDetailScreenProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -568,7 +571,7 @@ export default function ProjectDetailScreen({
 
       <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8 space-y-8">
         {/* Project Issues */}
-        <ProjectIssues projectId={project.id} />
+        <ProjectIssues projectId={project.id} initialIssues={initialIssues} />
       </div>
 
       {/* Project Invitation Dialog */}

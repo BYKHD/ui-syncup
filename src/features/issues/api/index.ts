@@ -9,3 +9,7 @@ export * from './delete-issue';
 export * from "./get-project-issues";
 export * from "./create-issue";
 export * from "./upload-attachment";
+
+// Server-side APIs (for SSR prefetching)
+export * from "./get-project-issues-server";
+

@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useRef } from "react";
 import {
   Table,
   TableBody,
@@ -11,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import IssueStatusBadge from "./issues-status-badge";
 import PriorityBadge from "./issues-priority-badge";
+import { preloadIssueDetailComponents } from "./preload";
 import type { IssueSummary } from "@/features/issues/types";
 
 interface IssuesListProps {
@@ -29,16 +31,29 @@ function formatDate(dateString: string) {
  * NOTE: Loading state is intentionally NOT handled here.
  * The parent component (ProjectIssues) manages loading via React Query
  * to prevent duplicate skeleton layers with route-level loading.tsx
+ * 
+ * Preloads issue detail components on hover for faster navigation.
  */
 export default function IssuesList({
   issues,
   onIssueClick,
 }: IssuesListProps) {
+  // Track if we've already preloaded to avoid redundant calls
+  const hasPreloaded = useRef(false);
+
   const handleIssueClick = (issueKey: string) => {
     if (onIssueClick) {
       onIssueClick(issueKey);
     }
   };
+
+  // Preload issue detail components on first hover
+  const handleRowHover = useCallback(() => {
+    if (!hasPreloaded.current) {
+      hasPreloaded.current = true;
+      preloadIssueDetailComponents();
+    }
+  }, []);
 
   return (
     <div className="flex flex-col overflow-hidden rounded-md border">
@@ -67,6 +82,8 @@ export default function IssuesList({
                 key={issue.id}
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleIssueClick(issue.issueKey)}
+                onMouseEnter={handleRowHover}
+                onFocus={handleRowHover}
               >
                 <TableCell>
                   <PriorityBadge priority={issue.priority} />
@@ -98,4 +115,3 @@ export default function IssuesList({
     </div>
   );
 }
-

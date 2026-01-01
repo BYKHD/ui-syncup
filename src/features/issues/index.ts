@@ -56,3 +56,10 @@ export {
   createIssue,
   uploadAttachment,
 } from './api';
+
+// Preload utilities (for performance optimization)
+export {
+  preloadIssueDetailComponents,
+  preloadIssueLayout,
+} from './components/preload';
+

@@ -6,23 +6,36 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RiAddLine } from '@remixicon/react'
 import { IssuesList, IssuesListFilter, useIssueFilters, useProjectIssues } from '@/features/issues'
+import type { IssueSummary } from '@/features/issues/types'
 
 interface ProjectIssuesProps {
   projectId: string
   onCreateIssue?: () => void
+  /** Server-prefetched issues for instant display (eliminates loading state) */
+  initialIssues?: IssueSummary[]
 }
 
 /**
  * ProjectIssues - Manages loading state at this level to prevent
  * duplicate skeletons from route loading.tsx + child component
+ * 
+ * Supports initialIssues from server-side prefetching to eliminate
+ * the client-side loading state entirely.
  */
 export default function ProjectIssues({
   projectId,
   onCreateIssue,
+  initialIssues,
 }: ProjectIssuesProps) {
   const router = useRouter()
   const { data, isLoading } = useProjectIssues({ projectId })
-  const projectIssues = data?.issues ?? []
+  
+  // Use server-prefetched data if available, otherwise use React Query data
+  // This eliminates loading state when SSR prefetch is successful
+  const projectIssues = initialIssues ?? data?.issues ?? []
+  
+  // Only show loading if we have no data at all (neither initial nor fetched)
+  const showLoading = isLoading && !initialIssues && !data
 
   const {
     filters,
@@ -58,7 +71,7 @@ export default function ProjectIssues({
         )}
       </CardHeader>
       <CardContent className="space-y-4">
-        {isLoading ? (
+        {showLoading ? (
           // Single unified skeleton at this level
           <div className="space-y-4">
             <div className="flex items-center gap-4">
@@ -113,3 +126,4 @@ export default function ProjectIssues({
     </Card>
   )
 }
+

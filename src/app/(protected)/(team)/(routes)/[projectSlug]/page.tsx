@@ -1,6 +1,7 @@
 import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/shared/headers";
 import { ProjectDetailScreenWrapper } from "@/features/projects/screens/project-detail-screen-wrapper";
 import { getProject } from "@/features/projects/api";
+import { getProjectIssuesServer } from "@/features/issues/api/get-project-issues-server";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 
@@ -10,18 +11,19 @@ interface PageProps {
   }>;
 }
 
-// Server component - fetches real project data
+// Server component - fetches real project data with prefetched issues
 export default async function ProjectDetailPage({ params }: PageProps) {
   const { projectSlug } = await params;
 
   try {
-    // Fetch project from API (supports both UUID and slug)
+    // Get cookie header for authenticated requests
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.getAll()
       .map(c => `${c.name}=${c.value}`)
       .join('; ');
-    
-    const response = await fetch(
+
+    // Fetch project from API (supports both UUID and slug)
+    const projectResponse = await fetch(
       `${process.env.NEXT_PUBLIC_APP_URL}/api/projects/${projectSlug}`,
       {
         headers: {
@@ -32,14 +34,24 @@ export default async function ProjectDetailPage({ params }: PageProps) {
       }
     );
 
-    if (!response.ok) {
-      if (response.status === 404) {
+    if (!projectResponse.ok) {
+      if (projectResponse.status === 404) {
         notFound();
       }
-      throw new Error(`Failed to fetch project: ${response.statusText}`);
+      throw new Error(`Failed to fetch project: ${projectResponse.statusText}`);
     }
 
-    const { project } = await response.json();
+    const { project } = await projectResponse.json();
+
+    // Prefetch issues in parallel (non-blocking, best-effort)
+    // This eliminates the client-side loading state for issues
+    const issuesPromise = getProjectIssuesServer(project.id, { cookieHeader });
+    
+    // Wait for issues (with timeout protection)
+    const issuesData = await Promise.race([
+      issuesPromise,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
+    ]);
 
     const projectBreadcrumbs: BreadcrumbItem[] = [
       { label: "Projects", href: "/projects" },
@@ -67,6 +79,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           }}
           userRole={project.userRole}
           isLoading={false}
+          initialIssues={issuesData?.issues}
         />
       </>
     );
@@ -75,3 +88,4 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     notFound();
   }
 }
+
