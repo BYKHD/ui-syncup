@@ -59,6 +59,7 @@ export interface AnnotationBoxProps {
   interactive?: boolean;
   handToolActive?: boolean; // Disable context menu when hand tool is active
   isSaving?: boolean; // Show saving indicator when true
+  isPopoverOpen?: boolean; // Whether popover is currently shown for this annotation
   onSelect?: (annotationId: string) => void;
   onMove?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
   onMoveComplete?: (annotationId: string, start: AnnotationPosition, end: AnnotationPosition) => void;
@@ -66,6 +67,9 @@ export interface AnnotationBoxProps {
   onDragEnd?: (annotationId: string) => void;
   onEdit?: (annotationId: string) => void;
   onDelete?: (annotationId: string) => void;
+  onHoverStart?: (annotationId: string) => void;
+  onHoverEnd?: () => void;
+  labelRef?: RefObject<HTMLDivElement | null>;
 }
 
 type DragHandle = 'box' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -77,6 +81,7 @@ export function AnnotationBox({
   interactive = true,
   handToolActive = false,
   isSaving = false,
+  isPopoverOpen = false,
   onSelect,
   onMove,
   onMoveComplete,
@@ -84,6 +89,9 @@ export function AnnotationBox({
   onDragEnd,
   onEdit,
   onDelete,
+  onHoverStart,
+  onHoverEnd,
+  labelRef,
 }: AnnotationBoxProps) {
   const isMobile = useIsMobile();
   const [activeHandle, setActiveHandle] = useState<DragHandle | null>(null);
@@ -412,6 +420,19 @@ export function AnnotationBox({
     }
   }, [onDelete, annotation.id]);
 
+  // Hover handlers - only trigger when not dragging
+  const handleMouseEnter = useCallback(() => {
+    if (!dragStateRef.current && !activeHandle && !handToolActive && onHoverStart) {
+      onHoverStart(annotation.id);
+    }
+  }, [activeHandle, handToolActive, onHoverStart, annotation.id]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (!dragStateRef.current && !activeHandle && onHoverEnd) {
+      onHoverEnd();
+    }
+  }, [activeHandle, onHoverEnd]);
+
   return (
     <>
       <motion.div
@@ -427,6 +448,8 @@ export function AnnotationBox({
         }}
         data-annotation-box="true"
         data-annotation-id={annotation.id}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         {/* Box Border */}
         <div
@@ -437,9 +460,10 @@ export function AnnotationBox({
           onContextMenu={handleContextMenu}
         />
 
-        {/* Label Badge */}
+        {/* Label Badge - anchor for popover */}
         <motion.div
-          className={getAnnotationBoxLabelClassName(isActive, interactive)}
+          ref={labelRef}
+          className={getAnnotationBoxLabelClassName(isActive || isPopoverOpen, interactive)}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}

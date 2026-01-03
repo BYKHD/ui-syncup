@@ -365,6 +365,7 @@ export function AnnotatedAttachmentView({
             overlayRef={annotationOverlayRef}
             activeAnnotationId={activeAnnotationId}
             interactive={isAnnotationInteractive}
+            handToolActive={handToolActive}
             onSelect={handleAnnotationSelect}
             onMoveComplete={handleAnnotationMove}
             onBoxMoveComplete={handleBoxAnnotationMove}
@@ -372,6 +373,9 @@ export function AnnotatedAttachmentView({
             onDragEnd={(annotationId) => setDragging(annotationId, false)}
             onEdit={handleAnnotationEdit}
             onDelete={handleAnnotationDelete}
+            issueId={issueId}
+            attachmentId={attachment.id}
+            enablePopover={!editModeEnabled}
           />
         )}
         {isAnnotationInteractive && (
