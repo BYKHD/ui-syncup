@@ -15,6 +15,7 @@ import { AlertCircle, RefreshCw, FileText, Upload, PenLine, Columns2, Loader2 } 
 import { toast } from 'sonner';
 import { AnnotatedAttachmentView } from '@/features/annotations';
 import { ImageCanvas } from './image-canvas';
+import { InfiniteCanvasBackground } from './infinite-canvas-background';
 import { ZoomControls } from './zoom-controls';
 import { UploadProgressOverlay } from './upload-progress-overlay';
 import { uploadAttachment } from '@/features/issues/api/upload-attachment';
@@ -490,12 +491,13 @@ function CompareCanvasView({
             <div
               key={attachment.id}
               className="relative overflow-hidden rounded-2xl border border-border/60 bg-canvas h-full"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 1px 1px, var(--color-canvas-dotted) 1px, transparent 0)",
-                backgroundSize: "16px 16px",
-              }}
             >
+              {/* Infinite canvas background - pans and zooms with content */}
+              <InfiniteCanvasBackground
+                panX={canvasState.panX}
+                panY={canvasState.panY}
+                zoom={canvasState.zoom}
+              />
               <div className="absolute left-4 top-4 z-20 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em]">
                 <span
                   className={`h-2 w-2 rounded-full ${label === 'As-Is' ? 'bg-destructive' : 'bg-emerald-500'}`}
