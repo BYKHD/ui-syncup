@@ -247,6 +247,8 @@ function PreviewContent<T extends AnnotationAuthor = AnnotationAuthor>({
   onClick: () => void;
 }) {
   const commentCount = annotation.comments?.length ?? 0;
+  const author = annotation.author;
+  const initials = getInitials(author.name);
 
   return (
     <button
@@ -255,11 +257,15 @@ function PreviewContent<T extends AnnotationAuthor = AnnotationAuthor>({
       className="w-full text-left p-0 bg-transparent border-none cursor-pointer hover:bg-muted/50 rounded-md transition-colors"
     >
       <div className="flex items-start gap-2">
-        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-annotation text-annotation-foreground text-[10px] font-semibold">
-          {annotation.label}
-        </div>
+        <Avatar className="h-6 w-6 shrink-0">
+          <AvatarImage src={author.avatarUrl || undefined} alt={author.name} />
+          <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+        </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-foreground line-clamp-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground truncate">{author.name}</span>
+          </div>
+          <p className="text-xs text-foreground line-clamp-2 mt-0.5">
             {annotation.description || 'No description'}
           </p>
           <div className="flex items-center gap-1 mt-1 text-muted-foreground">
@@ -316,16 +322,23 @@ function ExpandedContent<T extends AnnotationAuthor = AnnotationAuthor>({
     }
   }, [handleSubmit]);
 
+  const author = annotation.author;
+  const initials = getInitials(author.name);
+
   return (
     <div className="flex flex-col max-h-[360px]">
       {/* Header */}
       <div className="flex items-start justify-between gap-2 pb-2 border-b">
         <div className="flex items-start gap-2 min-w-0">
-          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-annotation text-annotation-foreground text-[10px] font-semibold">
-            {annotation.label}
-          </div>
+          <Avatar className="h-6 w-6 shrink-0">
+            <AvatarImage src={author.avatarUrl || undefined} alt={author.name} />
+            <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+          </Avatar>
           <div className="min-w-0">
-            <p className="text-xs font-medium text-foreground">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-medium text-foreground truncate">{author.name}</span>
+            </div>
+            <p className="text-xs text-foreground line-clamp-1 mt-0.5">
               {annotation.description || 'Annotation'}
             </p>
             <span className="text-[10px] text-muted-foreground">
