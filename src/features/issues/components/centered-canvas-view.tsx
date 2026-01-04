@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, type ReactNode, type RefObject, useRef, useCallback, useEffect } from "react";
+import { useState, type ReactNode, type RefObject, useRef, useCallback, useEffect, useMemo } from "react";
+import { motion, useMotionValue, useSpring, animate } from "motion/react";
 import type { IssueAttachment, CanvasViewState } from "@/features/issues/types";
 import type { AnnotationSaveStatus } from "@/features/annotations/types";
 import { CanvasStateIndicator } from "./canvas-state-indicator";
 import { InfiniteCanvasBackground } from "./infinite-canvas-background";
 import { ZoomControls } from "./zoom-controls";
+import { useElasticScroll } from "../hooks/use-elastic-scroll";
 import { cn } from "@/lib/utils";
 
 interface CenteredCanvasViewProps {
@@ -19,14 +21,28 @@ interface CenteredCanvasViewProps {
   scrollPanEnabled?: boolean;
   saveStatus?: AnnotationSaveStatus;
   saveError?: string;
+  /** Enable iOS-style elastic overscroll */
+  elasticScrollEnabled?: boolean;
 }
 
 // Minimum zoom levels
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 5;
 
+// Spring animation config for bounce-back
+const SPRING_CONFIG = {
+  stiffness: 300,
+  damping: 30,
+  mass: 1,
+};
+
 // Helper to clamp zoom
 const clampZoom = (zoom: number) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
+
+// Check for reduced motion preference
+const prefersReducedMotion = typeof window !== 'undefined' 
+  ? window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches 
+  : false;
 
 export function CenteredCanvasView({
   attachment,
@@ -39,6 +55,7 @@ export function CenteredCanvasView({
   scrollPanEnabled = true,
   saveStatus,
   saveError,
+  elasticScrollEnabled = true,
 }: CenteredCanvasViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -50,6 +67,28 @@ export function CenteredCanvasView({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+  // Motion values for smooth animation (separate from React state to avoid re-renders)
+  const visualPanX = useMotionValue(canvasState.panX);
+  const visualPanY = useMotionValue(canvasState.panY);
+
+  // Track raw pan during drag (before rubber band is applied)
+  const rawPanRef = useRef({ x: canvasState.panX, y: canvasState.panY });
+
+  // Update container size on mount and resize
+  useEffect(() => {
+    const updateContainerSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerSize({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateContainerSize();
+    window.addEventListener('resize', updateContainerSize);
+    return () => window.removeEventListener('resize', updateContainerSize);
+  }, []);
 
   if (!attachment) {
     return (
@@ -71,9 +110,8 @@ export function CenteredCanvasView({
       return { width: 0, height: 0, scale: 1 };
     }
 
-    const container = containerRef.current.getBoundingClientRect();
-    const containerWidth = container.width;
-    const containerHeight = container.height;
+    const containerWidth = containerSize.width || containerRef.current.getBoundingClientRect().width;
+    const containerHeight = containerSize.height || containerRef.current.getBoundingClientRect().height;
     
     const imageAspectRatio = imageDimensions.width / imageDimensions.height;
     const containerAspectRatio = containerWidth / containerHeight;
@@ -104,9 +142,53 @@ export function CenteredCanvasView({
       height: imageDimensions.height * scale,
       scale,
     };
-  }, [imageDimensions, canvasState.fitMode, canvasState.zoom, imageLoaded]);
+  }, [imageDimensions, canvasState.fitMode, canvasState.zoom, imageLoaded, containerSize]);
 
   const displaySize = calculateDisplaySize();
+
+  // Calculate the zoom level that would fit the image to the container
+  const calculateFitZoom = useCallback(() => {
+    if (!containerRef.current || !imageLoaded || imageDimensions.width === 0) {
+      return 1;
+    }
+
+    const containerWidth = containerSize.width || containerRef.current.getBoundingClientRect().width;
+    const containerHeight = containerSize.height || containerRef.current.getBoundingClientRect().height;
+    
+    const imageAspectRatio = imageDimensions.width / imageDimensions.height;
+    const containerAspectRatio = containerWidth / containerHeight;
+
+    // Fit mode: scale to fit within container
+    if (imageAspectRatio > containerAspectRatio) {
+      return containerWidth / imageDimensions.width;
+    } else {
+      return containerHeight / imageDimensions.height;
+    }
+  }, [imageDimensions, imageLoaded, containerSize]);
+
+  const fitZoom = calculateFitZoom();
+
+  // Compute button disabled states
+  const isActualSize = Math.abs(canvasState.zoom - 1) < 0.001;
+  const isFitted = canvasState.panX === 0 && 
+                   canvasState.panY === 0 && 
+                   Math.abs(canvasState.zoom - fitZoom) < 0.001;
+
+  // Elastic scroll hook
+  const { applyRubberBand, isOverscrolled, getClampedPosition } = useElasticScroll({
+    containerSize,
+    contentSize: { width: displaySize.width, height: displaySize.height },
+    enabled: elasticScrollEnabled && pointerPanEnabled && displaySize.width > 0,
+  });
+
+  // Sync motion values with canvas state when not dragging
+  useEffect(() => {
+    if (!isDragging) {
+      visualPanX.set(canvasState.panX);
+      visualPanY.set(canvasState.panY);
+      rawPanRef.current = { x: canvasState.panX, y: canvasState.panY };
+    }
+  }, [canvasState.panX, canvasState.panY, isDragging, visualPanX, visualPanY]);
 
   // Handle image load
   const handleImageLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
@@ -168,12 +250,18 @@ export function CenteredCanvasView({
       const deltaX = event.shiftKey ? event.deltaY : event.deltaX;
       const deltaY = event.shiftKey ? 0 : event.deltaY;
       
-      onCanvasStateChange({
-        panX: canvasState.panX - deltaX * deltaModeFactor,
-        panY: canvasState.panY - deltaY * deltaModeFactor,
-      });
+      const newPanX = canvasState.panX - deltaX * deltaModeFactor;
+      const newPanY = canvasState.panY - deltaY * deltaModeFactor;
+
+      // For scroll panning, clamp immediately (no rubber band)
+      if (elasticScrollEnabled) {
+        const clamped = getClampedPosition(newPanX, newPanY);
+        onCanvasStateChange({ panX: clamped.x, panY: clamped.y });
+      } else {
+        onCanvasStateChange({ panX: newPanX, panY: newPanY });
+      }
     },
-    [canvasState, scrollPanEnabled, onCanvasStateChange]
+    [canvasState, scrollPanEnabled, elasticScrollEnabled, onCanvasStateChange, getClampedPosition]
   );
 
   // Mouse drag pan
@@ -183,6 +271,7 @@ export function CenteredCanvasView({
       if (event.button !== 0) return;
       
       setIsDragging(true);
+      rawPanRef.current = { x: canvasState.panX, y: canvasState.panY };
       setDragStart({
         x: event.clientX - canvasState.panX,
         y: event.clientY - canvasState.panY,
@@ -196,17 +285,54 @@ export function CenteredCanvasView({
     (event: MouseEvent) => {
       if (!isDragging) return;
       
-      onCanvasStateChange({
-        panX: event.clientX - dragStart.x,
-        panY: event.clientY - dragStart.y,
-      });
+      const rawX = event.clientX - dragStart.x;
+      const rawY = event.clientY - dragStart.y;
+      
+      // Store raw position for spring-back calculation
+      rawPanRef.current = { x: rawX, y: rawY };
+
+      if (elasticScrollEnabled) {
+        // Apply rubber band effect for visual position
+        const visual = applyRubberBand(rawX, rawY);
+        visualPanX.set(visual.x);
+        visualPanY.set(visual.y);
+      } else {
+        // No elastic scroll - direct pan
+        visualPanX.set(rawX);
+        visualPanY.set(rawY);
+        onCanvasStateChange({ panX: rawX, panY: rawY });
+      }
     },
-    [isDragging, dragStart, onCanvasStateChange]
+    [isDragging, dragStart, elasticScrollEnabled, applyRubberBand, visualPanX, visualPanY, onCanvasStateChange]
   );
 
   const handleMouseUp = useCallback(() => {
+    if (!isDragging) return;
+    
     setIsDragging(false);
-  }, []);
+    
+    if (elasticScrollEnabled && isOverscrolled(rawPanRef.current.x, rawPanRef.current.y)) {
+      // Spring back to valid bounds
+      const clamped = getClampedPosition(rawPanRef.current.x, rawPanRef.current.y);
+      
+      if (prefersReducedMotion) {
+        // Instant snap for reduced motion preference
+        visualPanX.set(clamped.x);
+        visualPanY.set(clamped.y);
+        onCanvasStateChange({ panX: clamped.x, panY: clamped.y });
+      } else {
+        // Spring animation
+        animate(visualPanX, clamped.x, {
+          ...SPRING_CONFIG,
+          onComplete: () => onCanvasStateChange({ panX: clamped.x, panY: clamped.y }),
+        });
+        animate(visualPanY, clamped.y, SPRING_CONFIG);
+      }
+    } else {
+      // Within bounds - just update state
+      onCanvasStateChange({ panX: rawPanRef.current.x, panY: rawPanRef.current.y });
+    }
+  }, [isDragging, elasticScrollEnabled, isOverscrolled, getClampedPosition, visualPanX, visualPanY, onCanvasStateChange]);
 
   // Touch events for mobile
   const handleTouchStart = useCallback(
@@ -215,6 +341,7 @@ export function CenteredCanvasView({
       if (event.touches.length === 1) {
         const touch = event.touches[0];
         setIsDragging(true);
+        rawPanRef.current = { x: canvasState.panX, y: canvasState.panY };
         setDragStart({
           x: touch.clientX - canvasState.panX,
           y: touch.clientY - canvasState.panY,
@@ -230,18 +357,49 @@ export function CenteredCanvasView({
       if (!isDragging || event.touches.length !== 1) return;
       
       const touch = event.touches[0];
-      onCanvasStateChange({
-        panX: touch.clientX - dragStart.x,
-        panY: touch.clientY - dragStart.y,
-      });
+      const rawX = touch.clientX - dragStart.x;
+      const rawY = touch.clientY - dragStart.y;
+      
+      rawPanRef.current = { x: rawX, y: rawY };
+
+      if (elasticScrollEnabled) {
+        const visual = applyRubberBand(rawX, rawY);
+        visualPanX.set(visual.x);
+        visualPanY.set(visual.y);
+      } else {
+        visualPanX.set(rawX);
+        visualPanY.set(rawY);
+        onCanvasStateChange({ panX: rawX, panY: rawY });
+      }
+      
       event.preventDefault();
     },
-    [isDragging, dragStart, onCanvasStateChange]
+    [isDragging, dragStart, elasticScrollEnabled, applyRubberBand, visualPanX, visualPanY, onCanvasStateChange]
   );
 
   const handleTouchEnd = useCallback(() => {
+    if (!isDragging) return;
+    
     setIsDragging(false);
-  }, []);
+    
+    if (elasticScrollEnabled && isOverscrolled(rawPanRef.current.x, rawPanRef.current.y)) {
+      const clamped = getClampedPosition(rawPanRef.current.x, rawPanRef.current.y);
+      
+      if (prefersReducedMotion) {
+        visualPanX.set(clamped.x);
+        visualPanY.set(clamped.y);
+        onCanvasStateChange({ panX: clamped.x, panY: clamped.y });
+      } else {
+        animate(visualPanX, clamped.x, {
+          ...SPRING_CONFIG,
+          onComplete: () => onCanvasStateChange({ panX: clamped.x, panY: clamped.y }),
+        });
+        animate(visualPanY, clamped.y, SPRING_CONFIG);
+      }
+    } else {
+      onCanvasStateChange({ panX: rawPanRef.current.x, panY: rawPanRef.current.y });
+    }
+  }, [isDragging, elasticScrollEnabled, isOverscrolled, getClampedPosition, visualPanX, visualPanY, onCanvasStateChange]);
 
   // Set up event listeners
   useEffect(() => {
@@ -317,7 +475,6 @@ export function CenteredCanvasView({
 
   // For video, render without pan/zoom
   if (isVideo) {
-    // Import VideoPlayer dynamically or render inline
     return (
       <div className="relative h-full w-full flex flex-col select-none">
         <div className="flex-1 relative overflow-hidden flex items-center justify-center">
@@ -353,18 +510,19 @@ export function CenteredCanvasView({
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
         >
-          {/* INFINITE CANVAS BACKGROUND - Transforms with pan/zoom */}
+          {/* INFINITE CANVAS BACKGROUND - Uses motion values for real-time animation */}
           <InfiniteCanvasBackground
-            panX={canvasState.panX}
-            panY={canvasState.panY}
+            panX={visualPanX}
+            panY={visualPanY}
             zoom={canvasState.zoom}
           />
 
-          {/* TRANSFORM LAYER - Single unified transform for image + annotations */}
-          <div
+          {/* TRANSFORM LAYER - Uses motion values for smooth animation */}
+          <motion.div
             className="absolute inset-0 z-10 flex items-center justify-center will-change-transform"
             style={{
-              transform: `translate(${canvasState.panX}px, ${canvasState.panY}px)`,
+              x: visualPanX,
+              y: visualPanY,
             }}
           >
             {/* Image + Overlay Container */}
@@ -407,7 +565,7 @@ export function CenteredCanvasView({
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Zoom controls overlay */}
@@ -415,13 +573,16 @@ export function CenteredCanvasView({
           <div className="absolute top-4 right-4 z-20">
             <ZoomControls
               zoomLevel={canvasState.zoom}
-              fitMode={canvasState.fitMode}
+              isFitted={isFitted}
+              isActualSize={isActualSize}
               onRecenterView={() => handlePanChange({ x: 0, y: 0 })}
               onZoomIn={() => handleZoomChange(clampZoom(canvasState.zoom * 1.5))}
               onZoomOut={() => handleZoomChange(clampZoom(canvasState.zoom / 1.5))}
-              onFitToCanvas={() => handleFitModeChange('fit')}
+              onFitToCanvas={() => {
+                handleZoomChange(fitZoom);
+                handlePanChange({ x: 0, y: 0 });
+              }}
               onActualSize={() => {
-                handleFitModeChange('actual');
                 handleZoomChange(1);
               }}
             />

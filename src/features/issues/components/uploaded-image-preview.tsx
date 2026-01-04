@@ -16,9 +16,8 @@ import {
   type AnnotationDraft,
   type AttachmentAnnotation,
 } from "@/features/annotations";
-import { ImageCanvas } from "./image-canvas";
-import { ZoomControls } from "./zoom-controls";
-import type { CanvasViewState } from "@/features/issues/types";
+import { CenteredCanvasView } from "./centered-canvas-view";
+import type { CanvasViewState, IssueAttachment } from "@/features/issues/types";
 
 interface ImageMetadata {
   file: File;
@@ -375,38 +374,7 @@ export function UploadedImagePreview({
         >
         {isAsIs ? (
           <>
-            {/* Zoom Controls - Top Right */}
-            {imageLoaded && (
-              <div className="absolute top-4 right-4 z-30">
-                <ZoomControls
-                  zoomLevel={canvasState.zoom}
-                  fitMode={canvasState.fitMode}
-                  onRecenterView={() =>
-                    setCanvasState((prev) => ({ ...prev, panX: 0, panY: 0 }))
-                  }
-                  onZoomIn={() =>
-                    setCanvasState((prev) => ({
-                      ...prev,
-                      zoom: Math.min(prev.zoom * 1.5, 5),
-                    }))
-                  }
-                  onZoomOut={() =>
-                    setCanvasState((prev) => ({
-                      ...prev,
-                      zoom: Math.max(prev.zoom / 1.5, 0.1),
-                    }))
-                  }
-                  onFitToCanvas={() =>
-                    setCanvasState((prev) => ({ ...prev, fitMode: "fit", zoom: 1 }))
-                  }
-                  onActualSize={() =>
-                    setCanvasState({ zoom: 1, panX: 0, panY: 0, fitMode: "actual" })
-                  }
-                />
-              </div>
-            )}
-
-            {/* Annotation Toolbar - Bottom */}
+          {/* Annotation Toolbar - Bottom */}
             {imageLoaded && (
               <div className="absolute inset-x-0 bottom-6 z-20 flex flex-col items-start gap-3 px-4 w-full">
                 <AnnotationToolbar
@@ -423,21 +391,25 @@ export function UploadedImagePreview({
               </div>
             )}
 
-            {/* Image Canvas with Zoom & Pan */}
+            {/* Image Canvas with Infinite Background & Elastic Scroll */}
             <div className="relative w-full h-full">
-              <ImageCanvas
-                src={image.preview}
-                alt="As-is preview"
-                zoomLevel={canvasState.zoom}
-                panOffset={{ x: canvasState.panX, y: canvasState.panY }}
-                fitMode={canvasState.fitMode}
-                onZoomChange={(zoom) =>
-                  setCanvasState((prev) => ({ ...prev, zoom }))
+              <CenteredCanvasView
+                attachment={{
+                  id: 'preview',
+                  issueId: 'draft',
+                  fileName: image.file.name,
+                  fileSize: image.file.size,
+                  fileType: image.file.type,
+                  url: image.preview,
+                  width: image.width,
+                  height: image.height,
+                  uploadedBy: { id: 'current_user', name: 'You', email: '' },
+                  createdAt: new Date().toISOString(),
+                } as IssueAttachment}
+                canvasState={canvasState}
+                onCanvasStateChange={(updates) =>
+                  setCanvasState((prev) => ({ ...prev, ...updates }))
                 }
-                onPanChange={(pan) =>
-                  setCanvasState((prev) => ({ ...prev, panX: pan.x, panY: pan.y }))
-                }
-                onImageLoad={() => setImageLoaded(true)}
                 overlayRef={overlayRef}
                 overlayContent={
                   <>
@@ -473,6 +445,7 @@ export function UploadedImagePreview({
                 }
                 pointerPanEnabled={!editModeEnabled || handToolActive}
                 scrollPanEnabled={true}
+                elasticScrollEnabled={true}
               />
             </div>
           </>
