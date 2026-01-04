@@ -76,6 +76,7 @@ export default function ProjectDetailScreen({
   const [issueDialogOpen, setIssueDialogOpen] = useState(false);
   const [issueFormData, setIssueFormData] = useState({
     title: "",
+    page: "",
     description: "",
     type: null as IssueTypeValue,
     priority: null as IssuePriorityValue,
@@ -211,6 +212,7 @@ export default function ProjectDetailScreen({
       const { issue } = await createIssueMutation({
         projectId: project.id,
         title: issueFormData.title,
+        page: issueFormData.page,
         description: issueFormData.description,
         type: issueFormData.type!,
         priority: issueFormData.priority!,
@@ -269,6 +271,7 @@ export default function ProjectDetailScreen({
       setIssueDialogOpen(false);
       setIssueFormData({
         title: "",
+        page: "",
         description: "",
         type: null,
         priority: null,
@@ -286,6 +289,7 @@ export default function ProjectDetailScreen({
     setIssueDialogOpen(false);
     setIssueFormData({
       title: "",
+      page: "",
       description: "",
       type: null,
       priority: null,
@@ -476,6 +480,10 @@ export default function ProjectDetailScreen({
             onTitleChange={(value) => {
               setIssueFormData((prev) => ({ ...prev, title: value }));
               if (value.trim()) clearFieldError("title");
+            }}
+            onPageChange={(value) => {
+              setIssueFormData((prev) => ({ ...prev, page: value }));
+              if (value.trim()) clearFieldError("page");
             }}
             onDescriptionChange={(value) => {
               setIssueFormData((prev) => ({ ...prev, description: value }));

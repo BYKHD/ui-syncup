@@ -6,6 +6,9 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { ExternalLink, Pencil } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Issue Components
 import IssuesPriorityBadge from './issues-priority-badge';
@@ -306,6 +309,43 @@ export function MetadataSection({
               minLength={0}
               maxLength={500}
               displayClassName="text-sm break-words"
+              renderView={({ value, placeholder, startEditing }) => {
+                const isUrl = value && (value.startsWith('http://') || value.startsWith('https://'));
+                
+                return (
+                  <div className="group flex items-center justify-between gap-2 w-full min-h-[2rem] rounded px-2 py-1 -mx-2 hover:bg-accent/50 transition-colors">
+                    {isUrl ? (
+                      <a 
+                        href={value} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline truncate flex items-center gap-1.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="truncate">{value}</span>
+                        <ExternalLink className="h-3 w-3 shrink-0" />
+                      </a>
+                    ) : (
+                      <span 
+                        className={cn("text-sm cursor-text", !value && "text-muted-foreground")}
+                        onClick={startEditing}
+                      >
+                        {value || placeholder}
+                      </span>
+                    )}
+                    
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 shrink-0"
+                      onClick={startEditing}
+                      aria-label="Edit page link"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  </div>
+                );
+              }}
             />
           </MetadataField>
 

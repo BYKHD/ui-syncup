@@ -7,6 +7,7 @@ export interface CreateIssueParams {
   description?: string;
   type: string;
   priority: string;
+  page?: string;
 }
 
 export async function createIssue(params: CreateIssueParams): Promise<{ issue: IssueDetailData }> {

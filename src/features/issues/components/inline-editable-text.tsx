@@ -19,6 +19,7 @@ interface InlineEditableTextProps {
   // External editing state control for keyboard shortcuts
   isEditing?: boolean;
   onEditingChange?: (editing: boolean) => void;
+  renderView?: (props: { value: string; placeholder: string; startEditing: () => void }) => React.ReactNode;
 }
 
 export function InlineEditableText({
@@ -31,7 +32,8 @@ export function InlineEditableText({
   className,
   displayClassName,
   isEditing: externalIsEditing,
-  onEditingChange
+  onEditingChange,
+  renderView
 }: InlineEditableTextProps) {
   const [internalIsEditing, setInternalIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
@@ -160,6 +162,18 @@ export function InlineEditableText({
   }
 
   if (!isEditing) {
+    if (renderView) {
+      return (
+        <>
+          {renderView({
+            value,
+            placeholder,
+            startEditing: () => setIsEditing(true)
+          })}
+        </>
+      );
+    }
+
     return (
       <button
         onClick={() => setIsEditing(true)}
