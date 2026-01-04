@@ -30,9 +30,8 @@ export default function ProjectIssues({
   const router = useRouter()
   const { data, isLoading } = useProjectIssues({ projectId })
   
-  // Use server-prefetched data if available, otherwise use React Query data
-  // This eliminates loading state when SSR prefetch is successful
-  const projectIssues = initialIssues ?? data?.issues ?? []
+  // Prioritize fresh data from React Query over initial server props
+  const projectIssues = data?.issues ?? initialIssues ?? []
   
   // Only show loading if we have no data at all (neither initial nor fetched)
   const showLoading = isLoading && !initialIssues && !data
