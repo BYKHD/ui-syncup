@@ -7,18 +7,17 @@
 // ============================================================================
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, animate } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, RefreshCw, FileText, Upload, PenLine, Columns2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnnotatedAttachmentView } from '@/features/annotations';
-import { InfiniteCanvasBackground } from './infinite-canvas-background';
+import { CenteredCanvasView } from './centered-canvas-view';
 import { ZoomControls } from './zoom-controls';
 import { UploadProgressOverlay } from './upload-progress-overlay';
 import { uploadAttachment } from '@/features/issues/api/upload-attachment';
-import { useElasticScroll } from '../hooks/use-elastic-scroll';
 import type { IssueAttachment, CanvasViewState, AttachmentReviewVariant } from '@/features/issues/types';
 
 const VIEW_MODES = [
@@ -400,6 +399,10 @@ interface CompareCanvasViewProps {
   isUploading?: boolean;
 }
 
+/**
+ * Compare view showing As-Is and To-Be images side-by-side with synced pan/zoom.
+ * Uses CenteredCanvasView composition for consistent behavior across the platform.
+ */
 function CompareCanvasView({
   asIsAttachment,
   toBeAttachment,
@@ -457,196 +460,69 @@ function CompareCanvasView({
     );
   }
 
-  const handleZoomChange = (zoom: number) => {
-    onCanvasStateChange({ zoom });
-  };
-
-  const handlePanChange = (panOffset: { x: number; y: number }) => {
-    onCanvasStateChange({ panX: panOffset.x, panY: panOffset.y });
-  };
-
-  // Compute button disabled states for compare mode
-  const isActualSize = Math.abs(canvasState.zoom - 1) < 0.001;
-  const isFitted = canvasState.panX === 0 && canvasState.panY === 0 && Math.abs(canvasState.zoom - 1) < 0.001;
-
-  // Motion values for smooth animation during drag
-  const visualPanX = useMotionValue(canvasState.panX);
-  const visualPanY = useMotionValue(canvasState.panY);
-  
-  // Track raw pan during drag
-  const rawPanRef = useRef({ x: canvasState.panX, y: canvasState.panY });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-
-  // Update container size
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setContainerSize({ width: rect.width, height: rect.height });
-      }
-    };
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
-
-  // Elastic scroll hook - use a reasonable estimate for content size
-  const contentSize = useMemo(() => ({
-    width: containerSize.width * canvasState.zoom,
-    height: containerSize.height * canvasState.zoom,
-  }), [containerSize, canvasState.zoom]);
-
-  const { applyRubberBand, isOverscrolled, getClampedPosition } = useElasticScroll({
-    containerSize,
-    contentSize,
-    enabled: true,
-  });
-
-  // Sync motion values with state when not dragging
-  useEffect(() => {
-    if (!isDragging) {
-      visualPanX.set(canvasState.panX);
-      visualPanY.set(canvasState.panY);
-      rawPanRef.current = { x: canvasState.panX, y: canvasState.panY };
-    }
-  }, [canvasState.panX, canvasState.panY, isDragging, visualPanX, visualPanY]);
-
-  // Mouse handlers for pan
-  const handleMouseDown = useCallback((event: React.MouseEvent) => {
-    if (event.button !== 0) return;
-    setIsDragging(true);
-    rawPanRef.current = { x: canvasState.panX, y: canvasState.panY };
-    setDragStart({
-      x: event.clientX - canvasState.panX,
-      y: event.clientY - canvasState.panY,
-    });
-    event.preventDefault();
-  }, [canvasState.panX, canvasState.panY]);
-
-  const handleMouseMove = useCallback((event: MouseEvent) => {
-    if (!isDragging) return;
-    const rawX = event.clientX - dragStart.x;
-    const rawY = event.clientY - dragStart.y;
-    rawPanRef.current = { x: rawX, y: rawY };
-    const visual = applyRubberBand(rawX, rawY);
-    visualPanX.set(visual.x);
-    visualPanY.set(visual.y);
-  }, [isDragging, dragStart, applyRubberBand, visualPanX, visualPanY]);
-
-  const handleMouseUp = useCallback(() => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    if (isOverscrolled(rawPanRef.current.x, rawPanRef.current.y)) {
-      const clamped = getClampedPosition(rawPanRef.current.x, rawPanRef.current.y);
-      animate(visualPanX, clamped.x, { type: 'spring', stiffness: 300, damping: 30 });
-      animate(visualPanY, clamped.y, {
-        type: 'spring',
-        stiffness: 300,
-        damping: 30,
-        onComplete: () => onCanvasStateChange({ panX: clamped.x, panY: clamped.y }),
-      });
-    } else {
-      onCanvasStateChange({ panX: rawPanRef.current.x, panY: rawPanRef.current.y });
-    }
-  }, [isDragging, isOverscrolled, getClampedPosition, visualPanX, visualPanY, onCanvasStateChange]);
-
-  // Wheel zoom handler
-  const handleWheel = useCallback((event: WheelEvent) => {
-    if (event.ctrlKey || event.metaKey) {
-      event.preventDefault();
-      const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
-      const newZoom = Math.max(0.1, Math.min(5, canvasState.zoom * zoomFactor));
-      onCanvasStateChange({ zoom: newZoom });
-    }
-  }, [canvasState.zoom, onCanvasStateChange]);
-
-  // Event listeners
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    }
-
-    return () => {
-      container.removeEventListener('wheel', handleWheel);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [handleWheel, isDragging, handleMouseMove, handleMouseUp]);
+  // Compute button disabled states for zoom controls
+  const isActualSize = canvasState.fitMode === 'actual' && Math.abs(canvasState.zoom - 1) < 0.001;
+  const isFitted = canvasState.fitMode === 'fit';
 
   return (
     <div className="relative flex h-full max-h-full min-h-0 flex-col gap-4 p-4">
+      {/* Shared zoom controls for both panes */}
       <div className="pointer-events-auto self-end">
         <ZoomControls
           zoomLevel={canvasState.zoom}
           isFitted={isFitted}
           isActualSize={isActualSize}
           onRecenterView={() => onCanvasStateChange({ panX: 0, panY: 0 })}
-          onZoomIn={() => handleZoomChange(Math.min(canvasState.zoom * 1.5, 5))}
-          onZoomOut={() => handleZoomChange(Math.max(canvasState.zoom / 1.5, 0.1))}
+          onZoomIn={() => onCanvasStateChange({ zoom: Math.min(canvasState.zoom * 1.5, 5), fitMode: 'free' })}
+          onZoomOut={() => onCanvasStateChange({ zoom: Math.max(canvasState.zoom / 1.5, 0.1), fitMode: 'free' })}
           onFitToCanvas={() => {
-            handleZoomChange(1);
-            handlePanChange({ x: 0, y: 0 });
+            onCanvasStateChange({ fitMode: 'fit', panX: 0, panY: 0 });
           }}
           onActualSize={() => {
-            handleZoomChange(1);
+            const targetZoom = 1;
+            const newPanX = canvasState.panX * (targetZoom / canvasState.zoom);
+            const newPanY = canvasState.panY * (targetZoom / canvasState.zoom);
+            onCanvasStateChange({ 
+              fitMode: 'actual',
+              zoom: targetZoom,
+              panX: newPanX,
+              panY: newPanY
+            });
           }}
         />
       </div>
-      <div 
-        ref={containerRef}
-        id="compare-canvas-container" 
-        className="grid flex-1 min-h-0 gap-4 md:grid-cols-2 cursor-grab active:cursor-grabbing"
-        onMouseDown={handleMouseDown}
-      >
-        {[{ label: 'As-Is', attachment: asIsAttachment }, { label: 'To-Be', attachment: toBeAttachment }].map(
-          ({ label, attachment }) => (
-            <div
-              key={attachment.id}
-              className="relative overflow-hidden rounded-2xl border border-border/60 bg-canvas h-full"
-            >
-              {/* Infinite canvas background with motion values */}
-              <InfiniteCanvasBackground
-                panX={visualPanX}
-                panY={visualPanY}
-                zoom={canvasState.zoom}
-              />
-              <div className="absolute left-4 top-4 z-20 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em]">
-                <span
-                  className={`h-2 w-2 rounded-full ${label === 'As-Is' ? 'bg-destructive' : 'bg-emerald-500'}`}
-                />
-                {label}
-              </div>
-              {/* Image with motion transform */}
-              <motion.div
-                className="absolute inset-0 flex items-center justify-center will-change-transform"
-                style={{
-                  x: visualPanX,
-                  y: visualPanY,
-                }}
-              >
-                <img
-                  src={attachment.url}
-                  alt={attachment.fileName}
-                  className="max-w-none pointer-events-none"
-                  style={{
-                    transform: `scale(${canvasState.zoom})`,
-                    transformOrigin: 'center center',
-                  }}
-                  draggable={false}
-                />
-              </motion.div>
+      
+      {/* Compare grid with two CenteredCanvasView instances */}
+      <div className="grid flex-1 min-h-0 gap-4 md:grid-cols-2">
+        {[
+          { label: 'As-Is', attachment: asIsAttachment, color: 'bg-destructive' },
+          { label: 'To-Be', attachment: toBeAttachment, color: 'bg-emerald-500' }
+        ].map(({ label, attachment, color }) => (
+          <div
+            key={attachment.id}
+            className="relative overflow-hidden rounded-2xl border border-border/60 h-full"
+          >
+            {/* Label overlay */}
+            <div className="absolute left-4 top-4 z-20 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em]">
+              <span className={`h-2 w-2 rounded-full ${color}`} />
+              {label}
             </div>
-          )
-        )}
+            
+            {/* CenteredCanvasView for each pane - shares canvas state for synced pan/zoom */}
+            <CenteredCanvasView
+              attachment={attachment}
+              canvasState={canvasState}
+              onCanvasStateChange={onCanvasStateChange}
+              hideZoomControls={true}
+              hideStateIndicator={true}
+              pointerPanEnabled={true}
+              scrollPanEnabled={true}
+              elasticScrollEnabled={true}
+            />
+          </div>
+        ))}
       </div>
     </div>
   );
 }
+

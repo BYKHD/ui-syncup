@@ -17,7 +17,9 @@ interface ZoomControlsProps {
   onRecenterView: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  /** Fit image to be fully contained within the viewport */
   onFitToCanvas: () => void;
+  /** Set zoom to 100% (1:1 pixel), pivoting around viewport center */
   onActualSize: () => void;
 }
 

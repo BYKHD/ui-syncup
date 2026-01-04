@@ -120,9 +120,9 @@ export function useElasticScroll({
    * The bounds define how far the content can be panned before rubber-band kicks in.
    * 
    * Behavior:
-   * - If content is LARGER than container: can pan until minVisibility remains at edge
-   * - If content is SMALLER than container: can pan until content edge reaches container edge
-   * - Rubber-band activates when trying to push content edge PAST the container edge
+   * - Content LARGER than container: Can pan until minVisibility of VIEWPORT is still covered by image
+   * - Content SMALLER than container: Can pan until minVisibility of CONTENT remains visible
+   * - This ensures consistent 20% visibility constraint in both scenarios
    */
   const bounds = useMemo<Bounds>(() => {
     if (!enabled || contentSize.width === 0 || contentSize.height === 0) {
@@ -135,16 +135,6 @@ export function useElasticScroll({
       };
     }
 
-    // Calculate minimum visibility (the larger of fixed px or ratio)
-    const minVisibleWidth = Math.max(
-      minVisibilityPx,
-      contentSize.width * minVisibilityRatio
-    );
-    const minVisibleHeight = Math.max(
-      minVisibilityPx,
-      contentSize.height * minVisibilityRatio
-    );
-
     // Half dimensions for centering calculations
     const halfContainerWidth = containerSize.width / 2;
     const halfContainerHeight = containerSize.height / 2;
@@ -156,22 +146,41 @@ export function useElasticScroll({
 
     if (contentSize.width > containerSize.width) {
       // Content is WIDER than container
-      // Can pan until minVisibility remains visible at edge
-      maxPanX = halfContentWidth - minVisibleWidth + halfContainerWidth;
+      // Allow pan until minVisibility of VIEWPORT remains covered by image
+      // The image edge can go (containerWidth * minVisibilityRatio) past the viewport edge
+      const minVisibleViewportWidth = Math.max(
+        minVisibilityPx,
+        containerSize.width * minVisibilityRatio
+      );
+      // At center (pan=0), image spans past both edges
+      // Max pan = how far we can go before only minVisibility of viewport is covered
+      maxPanX = halfContentWidth - minVisibleViewportWidth;
     } else {
       // Content is SMALLER than or equal to container
-      // Can pan until minVisibility (20%) remains visible at edge
-      // This allows more freedom to position smaller images
-      maxPanX = halfContentWidth - minVisibleWidth + halfContainerWidth;
+      // Allow pan until minVisibility of CONTENT remains visible in viewport
+      const minVisibleContentWidth = Math.max(
+        minVisibilityPx,
+        contentSize.width * minVisibilityRatio
+      );
+      maxPanX = halfContentWidth - minVisibleContentWidth + halfContainerWidth;
     }
 
     if (contentSize.height > containerSize.height) {
       // Content is TALLER than container
-      maxPanY = halfContentHeight - minVisibleHeight + halfContainerHeight;
+      // Allow pan until minVisibility of VIEWPORT remains covered by image
+      const minVisibleViewportHeight = Math.max(
+        minVisibilityPx,
+        containerSize.height * minVisibilityRatio
+      );
+      maxPanY = halfContentHeight - minVisibleViewportHeight;
     } else {
       // Content is SMALLER than or equal to container
-      // Can pan until minVisibility (20%) remains visible at edge
-      maxPanY = halfContentHeight - minVisibleHeight + halfContainerHeight;
+      // Allow pan until minVisibility of CONTENT remains visible in viewport
+      const minVisibleContentHeight = Math.max(
+        minVisibilityPx,
+        contentSize.height * minVisibilityRatio
+      );
+      maxPanY = halfContentHeight - minVisibleContentHeight + halfContainerHeight;
     }
 
     return {
