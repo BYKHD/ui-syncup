@@ -246,6 +246,8 @@ interface ThreadContentProps {
   attachmentId: string;
   currentUserId?: string;
   onClose: () => void;
+  /** Hide the close button (used when Sheet provides its own) */
+  hideCloseButton?: boolean;
 }
 
 function ThreadContent({
@@ -254,6 +256,7 @@ function ThreadContent({
   attachmentId,
   currentUserId,
   onClose,
+  hideCloseButton = false,
 }: ThreadContentProps) {
   const [newComment, setNewComment] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -345,15 +348,17 @@ function ThreadContent({
               </div>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0"
-            onClick={onClose}
-            aria-label="Close thread preview"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          {!hideCloseButton && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0"
+              onClick={onClose}
+              aria-label="Close thread preview"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -454,6 +459,7 @@ export function AnnotationThreadPanel({
             attachmentId={attachmentId}
             currentUserId={user?.id}
             onClose={onClose}
+            hideCloseButton={true}
           />
         </SheetContent>
       </Sheet>

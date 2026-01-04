@@ -413,13 +413,6 @@ export default function ResponsiveIssueLayout({
                     onEditingTitleChange={onEditingTitleChange}
                     onEditingDescriptionChange={onEditingDescriptionChange}
                     onToggleShortcutsHelp={onToggleShortcutsHelp}
-                    isMobile={isMobile}
-                    hideThreadPreview={true}
-                    annotations={mappedAnnotations}
-                    issueId={issueId}
-                    selectedAttachmentId={selectedAttachmentId}
-                    activeAnnotationId={activeAnnotationId}
-                    onAnnotationSelect={setActiveAnnotationId}
                   />
                 </Suspense>
               </motion.div>
@@ -572,15 +565,6 @@ export default function ResponsiveIssueLayout({
             onToggleShortcutsHelp={onToggleShortcutsHelp}
             isPanelCollapsed={isPanelCollapsed}
             onPanelToggle={() => setIsPanelCollapsed(!isPanelCollapsed)}
-            isMobile={isMobile}
-            onPanelTabChange={() => {
-              // Desktop auto-switch to annotations tab handled in IssueDetailsPanel useEffect
-            }}
-            annotations={mappedAnnotations}
-            issueId={issueId}
-            selectedAttachmentId={selectedAttachmentId}
-            activeAnnotationId={activeAnnotationId}
-            onAnnotationSelect={setActiveAnnotationId}
           />
         </Suspense>
       </motion.div>

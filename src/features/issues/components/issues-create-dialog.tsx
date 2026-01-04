@@ -43,6 +43,7 @@ interface ImageData {
 interface IssueFormData {
   title: string;
   description: string;
+  page?: string;
   type: IssueTypeValue;
   priority: IssuePriorityValue;
   asIsImage: ImageData | null;
@@ -56,6 +57,7 @@ interface IssuesCreateDialogProps extends PropsWithChildren {
   errors?: {
     title?: string;
     description?: string;
+    page?: string;
     type?: string;
     priority?: string;
     asIsImage?: string;
@@ -66,6 +68,7 @@ interface IssuesCreateDialogProps extends PropsWithChildren {
   isSubmitting?: boolean;
   onTitleChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
+  onPageChange: (value: string) => void;
   onTypeChange: (value: IssueTypeValue) => void;
   onPriorityChange: (value: IssuePriorityValue) => void;
   onAsIsImageChange: (image: ImageData | null) => void;
@@ -82,6 +85,7 @@ export function IssuesCreateDialog({
   isSubmitting = false,
   onTitleChange,
   onDescriptionChange,
+  onPageChange,
   onTypeChange,
   onPriorityChange,
   onAsIsImageChange,
@@ -319,6 +323,29 @@ export function IssuesCreateDialog({
                       {errors.description && (
                         <FieldDescription className="text-destructive">
                           {errors.description}
+                        </FieldDescription>
+                      )}
+                    </Field>
+
+
+                    <Field>
+                      <FieldLabel className="sr-only text-sm font-semibold">
+                        Page Link
+                      </FieldLabel>
+                      <FieldContent>
+                        <Input
+                          type="text"
+                          placeholder="Page URL or name (optional)"
+                          value={formData.page || ""}
+                          onChange={(e) => onPageChange(e.target.value)}
+                          aria-invalid={!!errors.page}
+                          maxLength={500}
+                          className="bg-transparent dark:bg-transparent border-none rounded-none w-full shadow-none outline-none px-0 h-auto focus-visible:ring-0 overflow-hidden text-sm font-normal text-muted-foreground"
+                        />
+                      </FieldContent>
+                      {errors.page && (
+                        <FieldDescription className="text-destructive">
+                          {errors.page}
                         </FieldDescription>
                       )}
                     </Field>

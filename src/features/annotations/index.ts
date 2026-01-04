@@ -26,6 +26,8 @@ export { AnnotationThreadPanel } from './components/annotation-thread-panel';
 export type { AnnotationThreadPanelProps } from './components/annotation-thread-panel';
 export { KeyboardShortcutsModal } from './components/keyboard-shortcuts-modal';
 export type { KeyboardShortcutsModalProps } from './components/keyboard-shortcuts-modal';
+export { AnnotationPopover } from './components/annotation-popover';
+
 
 // Types
 export type {
@@ -100,3 +102,10 @@ export {
   type UseAutoSaveOptions,
   type UseAutoSaveResult,
 } from './hooks/use-auto-save';
+
+export {
+  useAnnotationPopover,
+  type PopoverMode,
+  type PopoverState,
+} from './hooks/use-annotation-popover';
+

@@ -31,8 +31,8 @@ import { KeyboardShortcutsModal } from './keyboard-shortcuts-modal';
 // ============================================================================
 
 export interface AnnotatedAttachmentViewProps {
-  /** Issue ID for API calls */
-  issueId: string;
+  /** Issue ID for API calls (not required in local mode) */
+  issueId?: string;
   /** Attachment to display */
   attachment: IssueAttachment;
   /** Project ID for permission checking */
@@ -51,8 +51,19 @@ export interface AnnotatedAttachmentViewProps {
   onAnnotationSelect?: (annotationId: string | null) => void;
   /** Optional permissions override (skips internal check) */
   permissions?: Partial<AnnotationPermissions>;
-  /** External annotations override */
+  /** External annotations override (for API mode) */
   annotations?: AttachmentAnnotation[];
+  
+  // ============================================================================
+  // LOCAL MODE PROPS (for draft/preview without API persistence)
+  // ============================================================================
+  
+  /** Enable local mode - bypasses API fetch/save, uses local state */
+  localMode?: boolean;
+  /** Local annotations (controlled state) */
+  localAnnotations?: AttachmentAnnotation[];
+  /** Callback when local annotations change */
+  onLocalAnnotationsChange?: (annotations: AttachmentAnnotation[]) => void;
 }
 
 // ============================================================================
@@ -93,6 +104,10 @@ export function AnnotatedAttachmentView({
   onAnnotationSelect: externalOnAnnotationSelect,
   permissions: propPermissions,
   annotations: propAnnotations,
+  // Local mode props
+  localMode = false,
+  localAnnotations = [],
+  onLocalAnnotationsChange,
 }: AnnotatedAttachmentViewProps) {
   // ============================================================================
   // STATE
@@ -145,47 +160,156 @@ export function AnnotatedAttachmentView({
   }), [hookPermissions, propPermissions]);
 
   // ============================================================================
-  // ANNOTATION INTEGRATION
+  // ANNOTATION INTEGRATION (skipped in local mode)
   // ============================================================================
 
   const {
-    annotations,
+    annotations: apiAnnotations,
     isLoading: annotationsLoading,
     isSaving,
-    activeTool,
-    editModeEnabled,
-    canUndo,
-    canRedo,
-    handToolActive,
-    showShortcutsHelp,
-    createAnnotation,
-    handleAnnotationMove,
-    handleBoxAnnotationMove,
-    deleteAnnotation,
-    selectTool,
-    toggleEditMode,
-    undo,
-    redo,
-    setShowShortcutsHelp,
-    setDragging,
+    activeTool: apiActiveTool,
+    editModeEnabled: apiEditModeEnabled,
+    canUndo: apiCanUndo,
+    canRedo: apiCanRedo,
+    handToolActive: apiHandToolActive,
+    showShortcutsHelp: apiShowShortcutsHelp,
+    createAnnotation: apiCreateAnnotation,
+    handleAnnotationMove: apiHandleAnnotationMove,
+    handleBoxAnnotationMove: apiHandleBoxAnnotationMove,
+    deleteAnnotation: apiDeleteAnnotation,
+    selectTool: apiSelectTool,
+    toggleEditMode: apiToggleEditMode,
+    undo: apiUndo,
+    redo: apiRedo,
+    setShowShortcutsHelp: apiSetShowShortcutsHelp,
+    setDragging: apiSetDragging,
     refetch,
   } = useAnnotationIntegration({
-    issueId,
+    issueId: issueId || '',
     attachmentId: attachment.id,
-    enabled: interactive && permissions.canView,
+    enabled: !localMode && interactive && permissions.canView && !!issueId,
   });
 
-  // Sync prop annotations with local state if provided
-  useEffect(() => {
-    if (propAnnotations) {
-      // We need a way to set annotations. useAnnotationIntegration exposes `annotations` but not `setAnnotations`.
-      // However, it uses `useQuery`. If we want to override, we should probably rely on `queryClient.setQueryData` or just return `propAnnotations` if passed.
-      // But refactoring hook is cleaner.
-      // For now, let's assume we want to use propAnnotations if available.
-    }
-  }, [propAnnotations]);
+  // ============================================================================
+  // LOCAL MODE STATE (when localMode is true)
+  // ============================================================================
 
-  const annotationsToUse = propAnnotations || annotations;
+  const [localActiveTool, setLocalActiveTool] = useState<AnnotationToolId>('cursor');
+  const [localEditModeEnabled, setLocalEditModeEnabled] = useState(false);
+  const [localHistory, setLocalHistory] = useState<{ past: AttachmentAnnotation[][]; future: AttachmentAnnotation[][] }>({ past: [], future: [] });
+  const [localShowShortcutsHelp, setLocalShowShortcutsHelp] = useState(false);
+
+  // Local mode tool selection
+  const selectTool = localMode ? setLocalActiveTool : apiSelectTool;
+  const activeTool = localMode ? localActiveTool : apiActiveTool;
+  const editModeEnabled = localMode ? localEditModeEnabled : apiEditModeEnabled;
+  const toggleEditMode = localMode ? () => setLocalEditModeEnabled(prev => !prev) : apiToggleEditMode;
+  const handToolActive = localMode ? (localActiveTool === 'cursor' && !localEditModeEnabled) : apiHandToolActive;
+  const showShortcutsHelp = localMode ? localShowShortcutsHelp : apiShowShortcutsHelp;
+  const setShowShortcutsHelp = localMode ? setLocalShowShortcutsHelp : apiSetShowShortcutsHelp;
+
+  // Local mode undo/redo
+  const canUndo = localMode ? localHistory.past.length > 0 : apiCanUndo;
+  const canRedo = localMode ? localHistory.future.length > 0 : apiCanRedo;
+  
+  const localUndo = useCallback(() => {
+    if (localHistory.past.length === 0 || !onLocalAnnotationsChange) return;
+    const prev = localHistory.past[localHistory.past.length - 1];
+    setLocalHistory(h => ({
+      past: h.past.slice(0, -1),
+      future: [localAnnotations, ...h.future],
+    }));
+    onLocalAnnotationsChange(prev);
+  }, [localHistory, localAnnotations, onLocalAnnotationsChange]);
+
+  const localRedo = useCallback(() => {
+    if (localHistory.future.length === 0 || !onLocalAnnotationsChange) return;
+    const next = localHistory.future[0];
+    setLocalHistory(h => ({
+      past: [...h.past, localAnnotations],
+      future: h.future.slice(1),
+    }));
+    onLocalAnnotationsChange(next);
+  }, [localHistory, localAnnotations, onLocalAnnotationsChange]);
+
+  const undo = localMode ? localUndo : apiUndo;
+  const redo = localMode ? localRedo : apiRedo;
+
+  // Local annotation helpers
+  const pushLocalHistory = useCallback(() => {
+    if (!onLocalAnnotationsChange) return;
+    setLocalHistory(h => ({
+      past: [...h.past.slice(-19), localAnnotations],
+      future: [],
+    }));
+  }, [localAnnotations, onLocalAnnotationsChange]);
+
+  // Local mode annotation operations
+  const localCreateAnnotation = useCallback((shape: AnnotationShape, message?: string) => {
+    if (!onLocalAnnotationsChange) return;
+    pushLocalHistory();
+    const nextLabel = String(localAnnotations.length + 1);
+    const newAnnotation: AttachmentAnnotation = {
+      id: `draft_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+      attachmentId: attachment.id,
+      label: nextLabel,
+      description: message || '',
+      x: shape.type === 'pin' ? shape.position.x : (shape.start.x + shape.end.x) / 2,
+      y: shape.type === 'pin' ? shape.position.y : (shape.start.y + shape.end.y) / 2,
+      author: { id: 'current_user', name: 'You', email: '' },
+      createdAt: new Date().toISOString(),
+      shape,
+      comments: message ? [{
+        id: `comment_${Date.now()}`,
+        annotationId: '',
+        message,
+        author: { id: 'current_user', name: 'You', email: '' },
+        createdAt: new Date().toISOString(),
+      }] : [],
+    };
+    onLocalAnnotationsChange([...localAnnotations, newAnnotation]);
+  }, [localAnnotations, onLocalAnnotationsChange, pushLocalHistory, attachment.id]);
+
+  const localHandleAnnotationMove = useCallback((annotationId: string, coords: { x: number; y: number }) => {
+    if (!onLocalAnnotationsChange) return;
+    pushLocalHistory();
+    const updated = localAnnotations.map(a =>
+      a.id === annotationId
+        ? { ...a, x: coords.x, y: coords.y, shape: { type: 'pin' as const, position: coords } }
+        : a
+    );
+    onLocalAnnotationsChange(updated);
+  }, [localAnnotations, onLocalAnnotationsChange, pushLocalHistory]);
+
+  const localHandleBoxAnnotationMove = useCallback((annotationId: string, start: { x: number; y: number }, end: { x: number; y: number }) => {
+    if (!onLocalAnnotationsChange) return;
+    pushLocalHistory();
+    const updated = localAnnotations.map(a =>
+      a.id === annotationId
+        ? { ...a, shape: { type: 'box' as const, start, end }, x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 }
+        : a
+    );
+    onLocalAnnotationsChange(updated);
+  }, [localAnnotations, onLocalAnnotationsChange, pushLocalHistory]);
+
+  const localDeleteAnnotation = useCallback((annotationId: string) => {
+    if (!onLocalAnnotationsChange) return;
+    pushLocalHistory();
+    const filtered = localAnnotations.filter(a => a.id !== annotationId);
+    // Re-sequence labels
+    const resequenced = filtered.map((a, i) => ({ ...a, label: String(i + 1) }));
+    onLocalAnnotationsChange(resequenced);
+  }, [localAnnotations, onLocalAnnotationsChange, pushLocalHistory]);
+
+  // Choose API or local handlers
+  const createAnnotation = localMode ? localCreateAnnotation : apiCreateAnnotation;
+  const handleAnnotationMove = localMode ? localHandleAnnotationMove : apiHandleAnnotationMove;
+  const handleBoxAnnotationMove = localMode ? localHandleBoxAnnotationMove : apiHandleBoxAnnotationMove;
+  const deleteAnnotation = localMode ? localDeleteAnnotation : apiDeleteAnnotation;
+  const setDragging = localMode ? () => {} : apiSetDragging;
+
+  // Choose annotation source
+  const annotationsToUse = localMode ? localAnnotations : (propAnnotations || apiAnnotations);
 
   // Filter annotations for current attachment
   const currentAnnotations = useMemo(
@@ -346,8 +470,8 @@ export function AnnotatedAttachmentView({
     );
   }
 
-  // Loading state
-  if (annotationsLoading || permissionsLoading) {
+  // Loading state (skip in local mode)
+  if (!localMode && (annotationsLoading || permissionsLoading)) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
@@ -365,6 +489,7 @@ export function AnnotatedAttachmentView({
             overlayRef={annotationOverlayRef}
             activeAnnotationId={activeAnnotationId}
             interactive={isAnnotationInteractive}
+            handToolActive={handToolActive}
             onSelect={handleAnnotationSelect}
             onMoveComplete={handleAnnotationMove}
             onBoxMoveComplete={handleBoxAnnotationMove}
@@ -372,6 +497,9 @@ export function AnnotatedAttachmentView({
             onDragEnd={(annotationId) => setDragging(annotationId, false)}
             onEdit={handleAnnotationEdit}
             onDelete={handleAnnotationDelete}
+            issueId={issueId}
+            attachmentId={attachment.id}
+            enablePopover={!editModeEnabled}
           />
         )}
         {isAnnotationInteractive && (

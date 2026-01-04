@@ -10,11 +10,16 @@ import { RiAlignVertically, RiAspectRatioLine, RiFullscreenLine, RiZoomInLine, R
 
 interface ZoomControlsProps {
   zoomLevel: number;
-  fitMode: CanvasViewState["fitMode"];
+  /** True when image is centered at fit-calculated zoom */
+  isFitted: boolean;
+  /** True when zoom === 1 (100%) */
+  isActualSize: boolean;
   onRecenterView: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  /** Fit image to be fully contained within the viewport */
   onFitToCanvas: () => void;
+  /** Set zoom to 100% (1:1 pixel), pivoting around viewport center */
   onActualSize: () => void;
 }
 
@@ -23,7 +28,8 @@ const ZOOM_MAX = 5;
 
 export function ZoomControls({
   zoomLevel,
-  fitMode,
+  isFitted,
+  isActualSize,
   onRecenterView,
   onZoomIn,
   onZoomOut,
@@ -112,8 +118,8 @@ export function ZoomControls({
               className={buttonClass}
               aria-label="Fit to canvas"
               onClick={onFitToCanvas}
-              aria-pressed={fitMode === "fit"}
-              disabled={fitMode === "fit"}
+              aria-pressed={isFitted}
+              disabled={isFitted}
             >
               <RiAspectRatioLine className={iconClass} aria-hidden="true" />
             </Button>
@@ -130,8 +136,8 @@ export function ZoomControls({
               className={buttonClass}
               aria-label="Actual size"
               onClick={onActualSize}
-              aria-pressed={fitMode === "actual"}
-              disabled={fitMode === "actual"}
+              aria-pressed={isActualSize}
+              disabled={isActualSize}
             >
               <RiFullscreenLine className={iconClass} aria-hidden="true" />
             </Button>

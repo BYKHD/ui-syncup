@@ -15,15 +15,11 @@ import IssueStatusBadge from "./issues-status-badge";
 import PriorityBadge from "./issues-priority-badge";
 import { preloadIssueDetailComponents } from "./preload";
 import type { IssueSummary } from "@/features/issues/types";
+import { RelativeTime } from "@/components/shared/relative-time";
 
 interface IssuesListProps {
   issues: IssueSummary[]
   onIssueClick?: (issueKey: string) => void
-}
-
-function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString();
 }
 
 /**
@@ -67,13 +63,14 @@ export default function IssuesList({
               Title
             </TableHead>
             <TableHead className="text-muted-foreground">Status</TableHead>
+            <TableHead className="text-right text-muted-foreground">Created</TableHead>
             <TableHead className="text-right text-muted-foreground">Updated</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {issues.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
+              <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
                 No issues recorded yet. Create one to get started.
               </TableCell>
             </TableRow>
@@ -106,7 +103,10 @@ export default function IssuesList({
                   <IssueStatusBadge status={issue.status} />
                 </TableCell>
                 <TableCell className="text-right text-sm text-muted-foreground">
-                  {formatDate(issue.updatedAt)}
+                  <RelativeTime date={issue.createdAt} />
+                </TableCell>
+                <TableCell className="text-right text-sm text-muted-foreground">
+                  <RelativeTime date={issue.updatedAt} />
                 </TableCell>
               </TableRow>
             ))

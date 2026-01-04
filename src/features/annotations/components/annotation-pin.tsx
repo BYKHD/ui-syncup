@@ -35,6 +35,7 @@ export interface AnnotationPinProps<A extends AttachmentAnnotation = AttachmentA
   interactive?: boolean;
   handToolActive?: boolean; // Disable context menu when hand tool is active
   isSaving?: boolean; // Show saving indicator when true
+  isPopoverOpen?: boolean; // Whether popover is currently shown for this annotation
   onSelect?: (annotationId: string) => void;
   onMove?: (annotationId: string, position: AnnotationPosition) => void;
   onMoveComplete?: (annotationId: string, position: AnnotationPosition) => void;
@@ -42,6 +43,8 @@ export interface AnnotationPinProps<A extends AttachmentAnnotation = AttachmentA
   onDragEnd?: (annotationId: string) => void;
   onEdit?: (annotationId: string) => void;
   onDelete?: (annotationId: string) => void;
+  onHoverStart?: (annotationId: string) => void;
+  onHoverEnd?: () => void;
 }
 
 export function AnnotationPin<A extends AttachmentAnnotation>({
@@ -51,6 +54,7 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   interactive = true,
   handToolActive = false,
   isSaving = false,
+  isPopoverOpen = false,
   onSelect,
   onMove,
   onMoveComplete,
@@ -58,6 +62,8 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   onDragEnd,
   onEdit,
   onDelete,
+  onHoverStart,
+  onHoverEnd,
 }: AnnotationPinProps<A>) {
   const isMobile = useIsMobile();
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -245,6 +251,19 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     }
   };
 
+  // Hover handlers - only trigger when not dragging
+  const handleMouseEnter = () => {
+    if (!isDraggingRef.current && !handToolActive && onHoverStart) {
+      onHoverStart(annotation.id);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (!isDraggingRef.current && onHoverEnd) {
+      onHoverEnd();
+    }
+  };
+
   return (
     <>
       <motion.button
@@ -253,7 +272,9 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onContextMenu={handleContextMenu}
-        className={getAnnotationPinClassName({ isActive, interactive, isSaving })}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className={getAnnotationPinClassName({ isActive: isActive || isPopoverOpen, interactive, isSaving })}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
