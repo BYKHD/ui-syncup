@@ -262,9 +262,6 @@ export default function ProjectDetailScreen({
         }
       }
 
-      // 3. Redirect to issue details page (always happens even if uploads fail)
-      router.push(`/issue/${issue.issueKey}`);
-
       setIsSubmittingIssue(false);
       setAsIsUploadProgress(0);
       setToBeUploadProgress(0);
