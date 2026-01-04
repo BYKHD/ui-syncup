@@ -70,7 +70,7 @@ export interface CanvasViewState {
   zoom: number
   panX: number
   panY: number
-  fitMode: 'fit' | 'fill' | 'actual'
+  fitMode: 'fit' | 'fill' | 'actual' | 'free'
 }
 
 export interface ImageSelectorProps {

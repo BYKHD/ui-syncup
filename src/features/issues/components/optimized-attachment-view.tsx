@@ -7,14 +7,14 @@
 // ============================================================================
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, RefreshCw, FileText, Upload, PenLine, Columns2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnnotatedAttachmentView } from '@/features/annotations';
-import { ImageCanvas } from './image-canvas';
+import { CenteredCanvasView } from './centered-canvas-view';
 import { ZoomControls } from './zoom-controls';
 import { UploadProgressOverlay } from './upload-progress-overlay';
 import { uploadAttachment } from '@/features/issues/api/upload-attachment';
@@ -399,6 +399,10 @@ interface CompareCanvasViewProps {
   isUploading?: boolean;
 }
 
+/**
+ * Compare view showing As-Is and To-Be images side-by-side with synced pan/zoom.
+ * Uses CenteredCanvasView composition for consistent behavior across the platform.
+ */
 function CompareCanvasView({
   asIsAttachment,
   toBeAttachment,
@@ -456,66 +460,69 @@ function CompareCanvasView({
     );
   }
 
-  const handleZoomChange = (zoom: number) => {
-    onCanvasStateChange({ zoom });
-  };
-
-  const handlePanChange = (panOffset: { x: number; y: number }) => {
-    onCanvasStateChange({ panX: panOffset.x, panY: panOffset.y });
-  };
-
-  const handleFitModeChange = (fitMode: CanvasViewState['fitMode']) => {
-    onCanvasStateChange({ fitMode });
-  };
+  // Compute button disabled states for zoom controls
+  const isActualSize = canvasState.fitMode === 'actual' && Math.abs(canvasState.zoom - 1) < 0.001;
+  const isFitted = canvasState.fitMode === 'fit';
 
   return (
     <div className="relative flex h-full max-h-full min-h-0 flex-col gap-4 p-4">
+      {/* Shared zoom controls for both panes */}
       <div className="pointer-events-auto self-end">
         <ZoomControls
           zoomLevel={canvasState.zoom}
-          fitMode={canvasState.fitMode}
+          isFitted={isFitted}
+          isActualSize={isActualSize}
           onRecenterView={() => onCanvasStateChange({ panX: 0, panY: 0 })}
-          onZoomIn={() => handleZoomChange(Math.min(canvasState.zoom * 1.5, 5))}
-          onZoomOut={() => handleZoomChange(Math.max(canvasState.zoom / 1.5, 0.1))}
-          onFitToCanvas={() => handleFitModeChange('fit')}
+          onZoomIn={() => onCanvasStateChange({ zoom: Math.min(canvasState.zoom * 1.5, 5), fitMode: 'free' })}
+          onZoomOut={() => onCanvasStateChange({ zoom: Math.max(canvasState.zoom / 1.5, 0.1), fitMode: 'free' })}
+          onFitToCanvas={() => {
+            onCanvasStateChange({ fitMode: 'fit', panX: 0, panY: 0 });
+          }}
           onActualSize={() => {
-            handleFitModeChange('actual');
-            handleZoomChange(1);
+            const targetZoom = 1;
+            const newPanX = canvasState.panX * (targetZoom / canvasState.zoom);
+            const newPanY = canvasState.panY * (targetZoom / canvasState.zoom);
+            onCanvasStateChange({ 
+              fitMode: 'actual',
+              zoom: targetZoom,
+              panX: newPanX,
+              panY: newPanY
+            });
           }}
         />
       </div>
-      <div id="compare-canvas-container" className="grid flex-1 min-h-0 gap-4 md:grid-cols-2">
-        {[{ label: 'As-Is', attachment: asIsAttachment }, { label: 'To-Be', attachment: toBeAttachment }].map(
-          ({ label, attachment }) => (
-            <div
-              key={attachment.id}
-              className="relative overflow-hidden rounded-2xl border border-border/60 bg-canvas h-full"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 1px 1px, var(--color-canvas-dotted) 1px, transparent 0)",
-                backgroundSize: "16px 16px",
-              }}
-            >
-              <div className="absolute left-4 top-4 z-20 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em]">
-                <span
-                  className={`h-2 w-2 rounded-full ${label === 'As-Is' ? 'bg-destructive' : 'bg-emerald-500'}`}
-                />
-                {label}
-              </div>
-              <ImageCanvas
-                key={attachment.id}
-                src={attachment.url}
-                alt={attachment.fileName}
-                zoomLevel={canvasState.zoom}
-                panOffset={{ x: canvasState.panX, y: canvasState.panY }}
-                fitMode={canvasState.fitMode}
-                onZoomChange={handleZoomChange}
-                onPanChange={handlePanChange}
-              />
+      
+      {/* Compare grid with two CenteredCanvasView instances */}
+      <div className="grid flex-1 min-h-0 gap-4 md:grid-cols-2">
+        {[
+          { label: 'As-Is', attachment: asIsAttachment, color: 'bg-destructive' },
+          { label: 'To-Be', attachment: toBeAttachment, color: 'bg-emerald-500' }
+        ].map(({ label, attachment, color }) => (
+          <div
+            key={attachment.id}
+            className="relative overflow-hidden rounded-2xl border border-border/60 h-full"
+          >
+            {/* Label overlay */}
+            <div className="absolute left-4 top-4 z-20 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em]">
+              <span className={`h-2 w-2 rounded-full ${color}`} />
+              {label}
             </div>
-          )
-        )}
+            
+            {/* CenteredCanvasView for each pane - shares canvas state for synced pan/zoom */}
+            <CenteredCanvasView
+              attachment={attachment}
+              canvasState={canvasState}
+              onCanvasStateChange={onCanvasStateChange}
+              hideZoomControls={true}
+              hideStateIndicator={true}
+              pointerPanEnabled={true}
+              scrollPanEnabled={true}
+              elasticScrollEnabled={true}
+            />
+          </div>
+        ))}
       </div>
     </div>
   );
 }
+

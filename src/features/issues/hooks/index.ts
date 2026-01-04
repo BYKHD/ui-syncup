@@ -19,3 +19,7 @@ export * from './use-keyboard-shortcuts';
 
 // Performance hooks
 export * from './use-optimized-image';
+
+// Canvas hooks
+export * from './use-canvas-transform';
+export * from './use-elastic-scroll';
