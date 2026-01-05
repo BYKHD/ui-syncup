@@ -9,5 +9,8 @@ import { formatDistanceToNow } from "date-fns";
  */
 export function formatRelativeTime(date: Date | string | number): string {
   const dateObj = new Date(date);
-  return formatDistanceToNow(dateObj, { addSuffix: true });
+  const result = formatDistanceToNow(dateObj, { addSuffix: true });
+  // Remove "about" prefix to keep it shorter
+  return result.replace(/^about /, '');
 }
+

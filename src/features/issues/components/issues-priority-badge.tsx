@@ -56,7 +56,10 @@ export default function PriorityBadge({
         <TooltipTrigger asChild>
           <div
             className={cn(
-              'flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm',
+              'flex h-6 w-6 items-center justify-center rounded-full border shadow-sm',
+              priorityKey === 'critical'
+                ? 'border-red-200 bg-red-50 text-red-600 dark:border-red-600 dark:bg-red-900/50 dark:text-red-400'
+                : 'border-border bg-background text-muted-foreground',
               className
             )}
             role="status"

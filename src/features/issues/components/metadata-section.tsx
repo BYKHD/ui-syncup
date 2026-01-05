@@ -16,8 +16,6 @@ import { InlineEditableText } from './inline-editable-text';
 import { InlineEditableTextarea } from './inline-editable-textarea';
 import { InlineEditableSelect } from './inline-editable-select';
 import { InlineEditableUserSelect } from './inline-editable-user-select';
-// TODO: wire WorkflowControl when dependencies are ready
-// import { WorkflowControl } from './workflow-control';
 
 // Config
 import { TYPE_OPTIONS, PRIORITY_OPTIONS } from '@/features/issues/config';
@@ -66,6 +64,16 @@ function formatTimestamp(date: Date | string): string {
   if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
   if (diffDays < 30) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
   return dateObj.toLocaleDateString();
+}
+
+// Normal date format (e.g., "Jan 5, 2026")
+function formatDate(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 function MetadataField({
@@ -280,7 +288,7 @@ export function MetadataSection({
             dateTime={new Date(issue.createdAt).toISOString()}
             className="text-sm text-muted-foreground break-words"
           >
-            {formatTimestamp(issue.createdAt)}
+            {formatDate(issue.createdAt)}
           </time>
         </MetadataField>
 

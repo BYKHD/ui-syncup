@@ -115,6 +115,79 @@ export const STATUS_OPTIONS: StatusOption[] = [
 export const DEFAULT_STATUS_ICON = RiCheckboxBlankCircleLine
 
 // ============================================================================
+// STATUS COLORS - SEMANTIC COLOR SCHEME
+// ============================================================================
+
+export interface StatusColorConfig {
+  /** Tailwind classes for the colored dot indicator */
+  dot: string
+  /** Tailwind classes for background (badges, pills) */
+  bg: string
+  /** Tailwind classes for text color */
+  text: string
+  /** Tailwind classes for border color */
+  border: string
+  /** Tailwind classes for row left-border indicator */
+  rowBorder: string
+  /** Tailwind classes for subtle row background on hover */
+  rowHoverBg: string
+}
+
+/**
+ * Semantic color mapping for each issue status.
+ * Colors chosen for intuitive meaning:
+ * - open: Slate (neutral, waiting to start)
+ * - in_progress: Blue (active, working)
+ * - in_review: Amber (attention needed, waiting)
+ * - resolved: Emerald (success, complete)
+ * - archived: Purple (inactive, historical)
+ */
+export const STATUS_COLORS: Record<IssueStatusValue, StatusColorConfig> = {
+  open: {
+    dot: 'bg-slate-500 dark:bg-slate-400',
+    bg: 'bg-slate-100 dark:bg-slate-800',
+    text: 'text-slate-700 dark:text-slate-300',
+    border: 'border-slate-300 dark:border-slate-600',
+    rowBorder: 'border-l-slate-400 dark:border-l-slate-500',
+    rowHoverBg: 'hover:bg-slate-50 dark:hover:bg-slate-900/30',
+  },
+  in_progress: {
+    dot: 'bg-blue-500 dark:bg-blue-400',
+    bg: 'bg-blue-100 dark:bg-blue-900/50',
+    text: 'text-blue-700 dark:text-blue-300',
+    border: 'border-blue-300 dark:border-blue-600',
+    rowBorder: 'border-l-blue-500 dark:border-l-blue-400',
+    rowHoverBg: 'hover:bg-blue-50 dark:hover:bg-blue-950/30',
+  },
+  in_review: {
+    dot: 'bg-amber-500 dark:bg-amber-400',
+    bg: 'bg-amber-100 dark:bg-amber-900/50',
+    text: 'text-amber-700 dark:text-amber-300',
+    border: 'border-amber-300 dark:border-amber-600',
+    rowBorder: 'border-l-amber-500 dark:border-l-amber-400',
+    rowHoverBg: 'hover:bg-amber-50 dark:hover:bg-amber-950/30',
+  },
+  resolved: {
+    dot: 'bg-emerald-500 dark:bg-emerald-400',
+    bg: 'bg-emerald-100 dark:bg-emerald-900/50',
+    text: 'text-emerald-700 dark:text-emerald-300',
+    border: 'border-emerald-300 dark:border-emerald-600',
+    rowBorder: 'border-l-emerald-500 dark:border-l-emerald-400',
+    rowHoverBg: 'hover:bg-emerald-50 dark:hover:bg-emerald-950/30',
+  },
+  archived: {
+    dot: 'bg-purple-400 dark:bg-purple-500',
+    bg: 'bg-purple-100 dark:bg-purple-900/50',
+    text: 'text-purple-600 dark:text-purple-300',
+    border: 'border-purple-300 dark:border-purple-600',
+    rowBorder: 'border-l-purple-400 dark:border-l-purple-500',
+    rowHoverBg: 'hover:bg-purple-50 dark:hover:bg-purple-950/30',
+  },
+}
+
+export const DEFAULT_STATUS_COLOR: StatusColorConfig = STATUS_COLORS.open
+
+// ============================================================================
 // TYPE OPTIONS + METADATA
 // ============================================================================
 

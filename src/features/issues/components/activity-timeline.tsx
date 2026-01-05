@@ -1,26 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "motion/react";
 import { formatDistanceToNow } from "date-fns";
 import {
-  Clock,
-  FileText,
-  MessageSquare,
-  Paperclip,
-  ArrowRight,
   Loader2,
   AlertCircle,
-  Sparkles,
-  MapPin,
-  Square,
-  Trash2
+  Clock,
 } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { STATUS_COLORS } from "@/features/issues/config";
+import type { IssueStatus } from "@/features/issues/types";
 
 import type { ActivityEntry } from "@/features/issues/types";
 
@@ -39,7 +30,7 @@ export interface ActivityTimelineProps {
 }
 
 // ============================================================================
-// ACTIVITY TIMELINE CONTAINER
+// ACTIVITY TIMELINE CONTAINER (Compact Version)
 // ============================================================================
 
 export function ActivityTimeline({
@@ -51,7 +42,6 @@ export function ActivityTimeline({
   error,
   onRetry
 }: ActivityTimelineProps) {
-  const scrollRef = React.useRef<HTMLDivElement>(null);
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
 
   const handleLoadMore = React.useCallback(async () => {
@@ -68,19 +58,15 @@ export function ActivityTimeline({
   // Error state
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <AlertCircle className="size-12 text-destructive/50 mb-4" />
-        <p className="text-sm font-medium text-foreground">Failed to load activity</p>
-        <p className="text-xs text-muted-foreground mt-1">
-          {error.message}
-        </p>
+      <div className="flex items-center gap-2 py-4 text-sm text-destructive">
+        <AlertCircle className="size-4" />
+        <span>Failed to load activity</span>
         {onRetry && (
           <button
             onClick={onRetry}
-            className="text-xs text-primary hover:text-primary/80 underline mt-2 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded px-2 py-1"
-            aria-label="Retry loading activity"
+            className="text-xs text-primary hover:underline"
           >
-            Try again
+            Retry
           </button>
         )}
       </div>
@@ -90,695 +76,336 @@ export function ActivityTimeline({
   // Empty state
   if (!isLoading && activities.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <Clock className="size-12 text-muted-foreground/50 mb-4" />
-        <p className="text-sm text-muted-foreground">No activity yet</p>
-        <p className="text-xs text-muted-foreground/70 mt-1">
-          Activity will appear here as changes are made
-        </p>
+      <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+        <Clock className="size-4" />
+        <span>No activity yet</span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col space-y-4" role="region" aria-label="Issue activity timeline">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col" role="region" aria-label="Issue activity timeline">
+      <div className="flex items-center gap-2 mb-3">
         <h3 className="text-sm font-semibold" id="activity-heading">Activity</h3>
         {activities.length > 0 && (
-          <Badge variant="secondary" className="text-xs">
+          <Badge variant="secondary" className="text-xs h-5 px-1.5">
             {activities.length}
           </Badge>
         )}
       </div>
 
       <div
-        className="space-y-4"
-        ref={scrollRef}
+        className="relative"
         role="log"
         aria-labelledby="activity-heading"
         aria-live="polite"
       >
-        {isLoading && activities.length === 0 ? (
-          <ActivityTimelineSkeleton />
-        ) : (
-          <AnimatePresence initial={false}>
-            {activities.map((activity, index) => (
-              <motion.div
-                key={activity.id}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2, delay: index * 0.05 }}
-              >
-                <ActivityEntryRenderer activity={activity} />
-                {index < activities.length - 1 && (
-                  <Separator className="my-4" />
-                )}
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        )}
+        {/* Vertical timeline line */}
+        <div 
+          className="absolute left-[5px] top-2 bottom-2 w-px bg-border" 
+          aria-hidden="true" 
+        />
+        
+        <div className="space-y-0">
+          {isLoading && activities.length === 0 ? (
+            <CompactSkeleton />
+          ) : (
+            activities.map((activity, index) => (
+              <CompactActivityEntry 
+                key={activity.id} 
+                activity={activity} 
+                isLast={index === activities.length - 1}
+              />
+            ))
+          )}
 
-        {/* Load More Button */}
-        {hasMore && !isLoading && onLoadMore && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex justify-center pt-4"
-          >
+          {/* Load More Button */}
+          {hasMore && !isLoading && onLoadMore && (
             <button
               onClick={handleLoadMore}
               disabled={isLoadingMore}
               className={cn(
-                "text-sm text-muted-foreground hover:text-foreground",
-                "transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                "flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded px-2 py-1"
+                "text-xs text-muted-foreground hover:text-foreground",
+                "transition-colors disabled:opacity-50 flex items-center gap-1 py-1 pl-5"
               )}
-              aria-label={isLoadingMore ? "Loading more activity entries" : "Load more activity entries"}
             >
               {isLoadingMore ? (
                 <>
-                  <Loader2 className="size-4 animate-spin" />
+                  <Loader2 className="size-3 animate-spin" />
                   Loading...
                 </>
               ) : (
-                "Load more activity"
+                "Load more"
               )}
             </button>
-          </motion.div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 // ============================================================================
-// ACTIVITY ENTRY RENDERER
+// COMPACT ACTIVITY ENTRY (Single line)
 // ============================================================================
 
-function ActivityEntryRenderer({ activity }: { activity: ActivityEntry }) {
+function CompactActivityEntry({ activity, isLast }: { activity: ActivityEntry; isLast?: boolean }) {
+  const content = getActivityContent(activity);
+  
+  return (
+    <div className="flex items-start gap-3 py-1.5 text-xs leading-relaxed">
+      {/* Timeline dot */}
+      <div className="relative z-10 ml-0.5 mt-1.5 shrink-0">
+        <div className="size-[8px] rounded-full border-1 border-border bg-background" />
+      </div>
+      
+      {/* Content */}
+      <div className="flex flex-1 items-baseline justify-between gap-2 min-w-0">
+        <div className="flex items-baseline gap-1.5 min-w-0">
+          <span className="font-medium text-foreground shrink-0">
+            {activity.actor.name.split(' ')[0]}
+          </span>
+          <span className="text-muted-foreground truncate">{content}</span>
+        </div>
+        
+        {/* Relative time pushed to right */}
+        <span className="text-muted-foreground/60 shrink-0 text-[11px]">
+          <RelativeTime timestamp={activity.createdAt} />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// ACTIVITY CONTENT GENERATOR
+// ============================================================================
+
+function getActivityContent(activity: ActivityEntry): React.ReactNode {
   switch (activity.type) {
     case "created":
-      return <CreatedEntry activity={activity} />;
-    case "status_changed":
-      return <StatusChangedEntry activity={activity} />;
-    case "priority_changed":
-      return <PriorityChangedEntry activity={activity} />;
-    case "type_changed":
-      return <TypeChangedEntry activity={activity} />;
+      return "created this issue";
+    
+    case "status_changed": {
+      const change = activity.changes?.find((c) => c.field === "status");
+      if (change) {
+        return (
+          <>
+            changed status{" "}
+            {change.oldValue && (
+              <>
+                <InlineStatus status={change.oldValue} /> → 
+              </>
+            )}
+            {change.newValue && <InlineStatus status={change.newValue} />}
+          </>
+        );
+      }
+      return "changed status";
+    }
+    
+    case "priority_changed": {
+      const change = activity.changes?.find((c) => c.field === "priority");
+      if (change) {
+        return (
+          <>
+            changed priority{" "}
+            {change.oldValue && (
+              <span className="line-through opacity-60">{change.oldValue}</span>
+            )}
+            {change.oldValue && change.newValue && " → "}
+            {change.newValue && (
+              <span className={cn(
+                "font-medium",
+                change.newValue === "critical" && "text-red-600 dark:text-red-400"
+              )}>
+                {change.newValue}
+              </span>
+            )}
+          </>
+        );
+      }
+      return "changed priority";
+    }
+    
+    case "type_changed": {
+      const change = activity.changes?.find((c) => c.field === "type");
+      if (change) {
+        return (
+          <>
+            changed type{" "}
+            {change.oldValue && (
+              <span className="line-through opacity-60">{change.oldValue}</span>
+            )}
+            {change.oldValue && change.newValue && " → "}
+            {change.newValue && <span className="font-medium">{change.newValue}</span>}
+          </>
+        );
+      }
+      return "changed type";
+    }
+    
     case "title_changed":
-      return <TitleChangedEntry activity={activity} />;
+      return "updated the title";
+    
     case "description_changed":
-      return <DescriptionChangedEntry activity={activity} />;
-    case "assignee_changed":
-      return <AssigneeChangedEntry activity={activity} />;
+      return "updated the description";
+    
+    case "assignee_changed": {
+      const change = activity.changes?.find((c) => c.field === "assignee");
+      if (change?.newValue) {
+        return (
+          <>
+            assigned to <span className="font-medium">{change.newValue}</span>
+          </>
+        );
+      }
+      return "removed assignee";
+    }
+    
     case "comment_added":
-      return <CommentAddedEntry activity={activity} />;
+      if (activity.comment) {
+        const truncated = activity.comment.length > 60 
+          ? activity.comment.slice(0, 60) + "..." 
+          : activity.comment;
+        return (
+          <>
+            commented: <span className="italic">"{truncated}"</span>
+          </>
+        );
+      }
+      return "added a comment";
+    
     case "attachment_added":
-      return <AttachmentAddedEntry activity={activity} />;
+      return (
+        <>
+          <span className="text-green-600 dark:text-green-400">added</span> attachment
+          {activity.comment && `: ${activity.comment}`}
+        </>
+      );
+    
     case "attachment_removed":
-      return <AttachmentRemovedEntry activity={activity} />;
-    // Annotation activity types (Task 17.2)
-    case "annotation_created":
-      return <AnnotationCreatedEntry activity={activity} />;
-    case "annotation_updated":
-      return <AnnotationUpdatedEntry activity={activity} />;
-    case "annotation_commented":
-      return <AnnotationCommentedEntry activity={activity} />;
-    case "annotation_deleted":
-      return <AnnotationDeletedEntry activity={activity} />;
+      return (
+        <>
+          <span className="text-red-600 dark:text-red-400">removed</span> attachment
+          {activity.comment && `: ${activity.comment}`}
+        </>
+      );
+    
+    case "annotation_created": {
+      const labelChange = activity.changes?.find((c) => c.field === "label");
+      const label = labelChange?.newValue;
+      return (
+        <>
+          <span className="text-green-600 dark:text-green-400">added</span> annotation
+          {label && (
+            <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-pink-500 text-white text-[10px] font-semibold mx-0.5">
+              {label}
+            </span>
+          )}
+        </>
+      );
+    }
+    
+    case "annotation_updated": {
+      const labelChange = activity.changes?.find((c) => c.field === "label");
+      const label = labelChange?.newValue;
+      return (
+        <>
+          moved annotation
+          {label && (
+            <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-pink-500 text-white text-[10px] font-semibold mx-0.5">
+              {label}
+            </span>
+          )}
+        </>
+      );
+    }
+    
+    case "annotation_commented": {
+      const labelChange = activity.changes?.find((c) => c.field === "label");
+      const label = labelChange?.newValue;
+      return (
+        <>
+          commented on annotation
+          {label && (
+            <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-pink-500 text-white text-[10px] font-semibold mx-0.5">
+              {label}
+            </span>
+          )}
+        </>
+      );
+    }
+    
+    case "annotation_deleted": {
+      const labelChange = activity.changes?.find((c) => c.field === "label");
+      const label = labelChange?.oldValue;
+      return (
+        <>
+          <span className="text-red-600 dark:text-red-400">deleted</span> annotation
+          {label && (
+            <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-muted text-muted-foreground text-[10px] font-semibold mx-0.5 line-through">
+              {label}
+            </span>
+          )}
+        </>
+      );
+    }
+    
     default:
-      // Fallback for unknown activity types
-      return <GenericEntry activity={activity} />;
+      return String(activity.type).replace(/_/g, " ");
   }
 }
 
 // ============================================================================
-// CREATED ENTRY
+// INLINE STATUS (Compact colored text)
 // ============================================================================
 
-function CreatedEntry({ activity }: { activity: ActivityEntry }) {
+function InlineStatus({ status }: { status: string }) {
+  const normalized = status.trim().toLowerCase().replace(/\s+/g, '_') as IssueStatus;
+  const colors = STATUS_COLORS[normalized];
+  const label = status.replace(/_/g, " ");
+  
   return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm text-muted-foreground">created this issue</span>
-        </div>
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={Sparkles} variant="created" />
-    </div>
+    <span className={cn("font-medium capitalize", colors?.text)}>
+      {label}
+    </span>
   );
 }
 
 // ============================================================================
-// STATUS CHANGED ENTRY
+// RELATIVE TIME (Compact)
 // ============================================================================
 
-function StatusChangedEntry({ activity }: { activity: ActivityEntry }) {
-  const change = activity.changes?.find((c) => c.field === "status");
+function RelativeTime({ timestamp }: { timestamp: string }) {
+  const [relativeTime, setRelativeTime] = React.useState(() => {
+    const time = formatDistanceToNow(new Date(timestamp), { addSuffix: false });
+    // Shorten common phrases
+    return time
+      .replace(" minutes", "m")
+      .replace(" minute", "m")
+      .replace(" hours", "h")
+      .replace(" hour", "h")
+      .replace(" days", "d")
+      .replace(" day", "d")
+      .replace("about ", "")
+      .replace("less than a", "<1");
+  });
 
-  return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm text-muted-foreground">changed status</span>
-        </div>
-
-        {change && (
-          <div className="flex items-center gap-2">
-            {change.oldValue && (
-              <>
-                <StatusBadge status={change.oldValue} />
-                <ArrowRight className="size-3 text-muted-foreground" />
-              </>
-            )}
-            {change.newValue && <StatusBadge status={change.newValue} />}
-          </div>
-        )}
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={Clock} variant="status" />
-    </div>
-  );
-}
-
-// ============================================================================
-// PRIORITY CHANGED ENTRY
-// ============================================================================
-
-function PriorityChangedEntry({ activity }: { activity: ActivityEntry }) {
-  const change = activity.changes?.find((c) => c.field === "priority");
-
-  return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm text-muted-foreground">changed priority</span>
-        </div>
-
-        {change && (
-          <div className="flex items-center gap-2 text-sm">
-            {change.oldValue && (
-              <>
-                <span className="capitalize text-muted-foreground line-through">{change.oldValue}</span>
-                <ArrowRight className="size-3 text-muted-foreground" />
-              </>
-            )}
-            {change.newValue && (
-              <span className="capitalize font-medium">{change.newValue}</span>
-            )}
-          </div>
-        )}
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={AlertCircle} variant="priority" />
-    </div>
-  );
-}
-
-// ============================================================================
-// TYPE CHANGED ENTRY
-// ============================================================================
-
-function TypeChangedEntry({ activity }: { activity: ActivityEntry }) {
-  const change = activity.changes?.find((c) => c.field === "type");
-
-  return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm text-muted-foreground">changed type</span>
-        </div>
-
-        {change && (
-          <div className="flex items-center gap-2 text-sm">
-            {change.oldValue && (
-              <>
-                <span className="capitalize text-muted-foreground line-through">{change.oldValue}</span>
-                <ArrowRight className="size-3 text-muted-foreground" />
-              </>
-            )}
-            {change.newValue && (
-              <span className="capitalize font-medium">{change.newValue}</span>
-            )}
-          </div>
-        )}
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={FileText} variant="update" />
-    </div>
-  );
-}
-
-// ============================================================================
-// TITLE CHANGED ENTRY
-// ============================================================================
-
-function TitleChangedEntry({ activity }: { activity: ActivityEntry }) {
-  const change = activity.changes?.find((c) => c.field === "title");
-
-  return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm text-muted-foreground">changed title</span>
-        </div>
-
-        {change && (
-          <div className="text-sm space-y-1">
-            {change.oldValue && (
-              <div className="flex items-start gap-2">
-                <span className="text-muted-foreground shrink-0">From:</span>
-                <span className="text-muted-foreground line-through">
-                  {change.oldValue}
-                </span>
-              </div>
-            )}
-            {change.newValue && (
-              <div className="flex items-start gap-2">
-                <span className="text-muted-foreground shrink-0">To:</span>
-                <span className="font-medium">
-                  {change.newValue}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={FileText} variant="update" />
-    </div>
-  );
-}
-
-// ============================================================================
-// DESCRIPTION CHANGED ENTRY
-// ============================================================================
-
-function DescriptionChangedEntry({ activity }: { activity: ActivityEntry }) {
-  return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm text-muted-foreground">updated the description</span>
-        </div>
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={FileText} variant="update" />
-    </div>
-  );
-}
-
-// ============================================================================
-// ASSIGNEE CHANGED ENTRY
-// ============================================================================
-
-function AssigneeChangedEntry({ activity }: { activity: ActivityEntry }) {
-  const change = activity.changes?.find((c) => c.field === "assignee");
-
-  return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm text-muted-foreground">changed assignee</span>
-        </div>
-
-        {change && (
-          <div className="flex items-center gap-2 text-sm">
-            {change.oldValue && (
-              <>
-                <span className="text-muted-foreground line-through">{change.oldValue}</span>
-                <ArrowRight className="size-3 text-muted-foreground" />
-              </>
-            )}
-            {change.newValue ? (
-              <span className="font-medium">{change.newValue}</span>
-            ) : (
-              <span className="text-muted-foreground italic">Unassigned</span>
-            )}
-          </div>
-        )}
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={FileText} variant="update" />
-    </div>
-  );
-}
-
-// ============================================================================
-// COMMENT ADDED ENTRY
-// ============================================================================
-
-function CommentAddedEntry({ activity }: { activity: ActivityEntry }) {
-  return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm text-muted-foreground">commented</span>
-        </div>
-
-        {activity.comment && (
-          <div className="bg-muted/50 rounded-lg p-3 mt-2">
-            <p className="text-sm whitespace-pre-wrap">{activity.comment}</p>
-          </div>
-        )}
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={MessageSquare} variant="comment" />
-    </div>
-  );
-}
-
-// ============================================================================
-// ATTACHMENT ADDED ENTRY
-// ============================================================================
-
-function AttachmentAddedEntry({ activity }: { activity: ActivityEntry }) {
-  return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm font-medium text-green-600 dark:text-green-400">added</span>
-          <span className="text-sm text-muted-foreground">attachment</span>
-        </div>
-
-        {activity.comment && (
-          <div className="flex items-center gap-2 mt-2">
-            <Paperclip className="size-4 text-muted-foreground" />
-            <span className="text-sm">{activity.comment}</span>
-          </div>
-        )}
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={Paperclip} variant="attachment" />
-    </div>
-  );
-}
-
-// ============================================================================
-// ATTACHMENT REMOVED ENTRY
-// ============================================================================
-
-function AttachmentRemovedEntry({ activity }: { activity: ActivityEntry }) {
-  return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm font-medium text-red-600 dark:text-red-400">removed</span>
-          <span className="text-sm text-muted-foreground">attachment</span>
-        </div>
-
-        {activity.comment && (
-          <div className="flex items-center gap-2 mt-2">
-            <Paperclip className="size-4 text-muted-foreground" />
-            <span className="text-sm">{activity.comment}</span>
-          </div>
-        )}
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={Paperclip} variant="attachment" />
-    </div>
-  );
-}
-
-// ============================================================================
-// ANNOTATION CREATED ENTRY
-// Requirements: 7.4, 7.5
-// ============================================================================
-
-function AnnotationCreatedEntry({ activity }: { activity: ActivityEntry }) {
-  // Extract metadata from changes
-  const labelChange = activity.changes?.find((c) => c.field === "label");
-  const typeChange = activity.changes?.find((c) => c.field === "annotationType");
-  const annotationType = typeChange?.newValue || "pin";
-  const label = labelChange?.newValue || "";
-
-  return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm font-medium text-green-600 dark:text-green-400">added</span>
-          <span className="text-sm text-muted-foreground">
-            {annotationType === "box" ? "box" : "pin"} annotation
-          </span>
-          {label && (
-            <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-annotation text-annotation-foreground text-xs font-semibold">
-              {label}
-            </span>
-          )}
-        </div>
-
-        {activity.comment && (
-          <p className="text-sm text-muted-foreground italic">"{activity.comment}"</p>
-        )}
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={annotationType === "box" ? Square : MapPin} variant="annotation" />
-    </div>
-  );
-}
-
-// ============================================================================
-// ANNOTATION UPDATED ENTRY
-// Requirements: 7.4, 7.5
-// ============================================================================
-
-function AnnotationUpdatedEntry({ activity }: { activity: ActivityEntry }) {
-  const labelChange = activity.changes?.find((c) => c.field === "label");
-  const label = labelChange?.newValue || "";
-
-  return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm text-muted-foreground">moved annotation</span>
-          {label && (
-            <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-annotation text-annotation-foreground text-xs font-semibold">
-              {label}
-            </span>
-          )}
-        </div>
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={MapPin} variant="annotation" />
-    </div>
-  );
-}
-
-// ============================================================================
-// ANNOTATION COMMENTED ENTRY
-// Requirements: 7.4, 7.5
-// ============================================================================
-
-function AnnotationCommentedEntry({ activity }: { activity: ActivityEntry }) {
-  const labelChange = activity.changes?.find((c) => c.field === "label");
-  const label = labelChange?.newValue || "";
-
-  return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm text-muted-foreground">commented on annotation</span>
-          {label && (
-            <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-annotation text-annotation-foreground text-xs font-semibold">
-              {label}
-            </span>
-          )}
-        </div>
-
-        {activity.comment && (
-          <div className="bg-muted/50 rounded-lg p-3 mt-2">
-            <p className="text-sm whitespace-pre-wrap">{activity.comment}</p>
-          </div>
-        )}
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={MessageSquare} variant="annotation" />
-    </div>
-  );
-}
-
-// ============================================================================
-// ANNOTATION DELETED ENTRY
-// Requirements: 7.4, 7.5
-// ============================================================================
-
-function AnnotationDeletedEntry({ activity }: { activity: ActivityEntry }) {
-  const labelChange = activity.changes?.find((c) => c.field === "label");
-  const label = labelChange?.oldValue || "";
-
-  return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm font-medium text-red-600 dark:text-red-400">deleted</span>
-          <span className="text-sm text-muted-foreground">annotation</span>
-          {label && (
-            <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-muted text-muted-foreground text-xs font-semibold line-through">
-              {label}
-            </span>
-          )}
-        </div>
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={Trash2} variant="annotation" />
-    </div>
-  );
-}
-
-// ============================================================================
-// GENERIC ENTRY (Fallback)
-// ============================================================================
-
-function GenericEntry({ activity }: { activity: ActivityEntry }) {
-  return (
-    <div className="flex gap-3">
-      <ActivityAvatar actor={activity.actor} />
-
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium">{activity.actor.name}</span>
-          <span className="text-sm text-muted-foreground">
-            {activity.type.replace(/_/g, " ")}
-          </span>
-        </div>
-
-        {activity.comment && (
-          <p className="text-sm text-muted-foreground">{activity.comment}</p>
-        )}
-
-        <ActivityTimestamp timestamp={activity.createdAt} />
-      </div>
-
-      <ActivityIcon icon={FileText} variant="update" />
-    </div>
-  );
-}
-
-// ============================================================================
-// SHARED COMPONENTS
-// ============================================================================
-
-function ActivityAvatar({ actor }: { actor: ActivityEntry["actor"] }) {
-  const initials = actor.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  return (
-    <Avatar className="size-6">
-      <AvatarImage src={actor.image || undefined} alt={actor.name} />
-      <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-    </Avatar>
-  );
-}
-
-function ActivityIcon({
-  icon: Icon,
-  variant
-}: {
-  icon: React.ElementType;
-  variant: "created" | "status" | "update" | "comment" | "attachment" | "priority" | "annotation";
-}) {
-  const colors = {
-    created: "text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/30",
-    status: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30",
-    priority: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30",
-    update: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30",
-    comment: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
-    attachment: "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30",
-    annotation: "text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/30"
-  };
-
-  return (
-    <div className={cn("size-8 rounded-full flex items-center justify-center shrink-0", colors[variant])}>
-      <Icon className="size-4" />
-    </div>
-  );
-}
-
-function ActivityTimestamp({ timestamp }: { timestamp: string }) {
-  const [relativeTime, setRelativeTime] = React.useState(() =>
-    formatDistanceToNow(new Date(timestamp), { addSuffix: true })
-  );
-
-  // Update relative time every minute
   React.useEffect(() => {
     const interval = setInterval(() => {
-      setRelativeTime(formatDistanceToNow(new Date(timestamp), { addSuffix: true }));
+      const time = formatDistanceToNow(new Date(timestamp), { addSuffix: false });
+      setRelativeTime(
+        time
+          .replace(" minutes", "m")
+          .replace(" minute", "m")
+          .replace(" hours", "h")
+          .replace(" hour", "h")
+          .replace(" days", "d")
+          .replace(" day", "d")
+          .replace("about ", "")
+          .replace("less than a", "<1")
+      );
     }, 60000);
 
     return () => clearInterval(interval);
@@ -786,7 +413,6 @@ function ActivityTimestamp({ timestamp }: { timestamp: string }) {
 
   return (
     <time
-      className="text-xs text-muted-foreground"
       dateTime={new Date(timestamp).toISOString()}
       title={new Date(timestamp).toLocaleString()}
     >
@@ -795,41 +421,18 @@ function ActivityTimestamp({ timestamp }: { timestamp: string }) {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const variants: Record<string, { variant: "default" | "secondary" | "outline"; className?: string }> = {
-    open: { variant: "outline", className: "border-blue-500 text-blue-700 dark:text-blue-400" },
-    in_progress: { variant: "default", className: "bg-purple-500 hover:bg-purple-600" },
-    in_review: { variant: "secondary", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400" },
-    resolved: { variant: "secondary", className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" },
-    archived: { variant: "outline", className: "border-muted-foreground/30 text-muted-foreground" }
-  };
-
-  const config = variants[status] || { variant: "outline" as const };
-  const label = status.replace(/_/g, " ");
-
-  return (
-    <Badge variant={config.variant} className={cn("capitalize", config.className)}>
-      {label}
-    </Badge>
-  );
-}
-
 // ============================================================================
-// LOADING SKELETON
+// LOADING SKELETON (Compact)
 // ============================================================================
 
-function ActivityTimelineSkeleton() {
+function CompactSkeleton() {
   return (
-    <div className="space-y-4" role="status" aria-label="Loading activity">
+    <div className="space-y-2" role="status" aria-label="Loading activity">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="flex gap-3 animate-pulse">
-          <div className="size-8 rounded-full bg-muted" />
-          <div className="flex-1 space-y-2">
-            <div className="h-4 bg-muted rounded w-3/4" />
-            <div className="h-3 bg-muted rounded w-1/2" />
-            <div className="h-3 bg-muted rounded w-1/4" />
-          </div>
-          <div className="size-8 rounded-full bg-muted" />
+        <div key={i} className="flex gap-2 animate-pulse">
+          <div className="h-3 bg-muted rounded w-16" />
+          <div className="h-3 bg-muted rounded w-32" />
+          <div className="h-3 bg-muted rounded w-8" />
         </div>
       ))}
     </div>

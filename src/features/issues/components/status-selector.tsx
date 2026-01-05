@@ -13,8 +13,7 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { STATUS_OPTIONS } from '@/features/issues/config';
-import { ISSUE_WORKFLOW } from '@/features/issues/config';
+import { STATUS_OPTIONS, STATUS_COLORS, ISSUE_WORKFLOW } from '@/features/issues/config';
 import type { IssueStatus } from '@/features/issues/types';
 import { STATUS_TRANSITIONS } from '@/features/issues/types';
 import { cn } from '@/lib/utils';
@@ -119,7 +118,7 @@ export function StatusSelector({
       >
         <div className="flex flex-col gap-1 text-left">
           <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <option.icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            <option.icon className={`h-4 w-4 ${STATUS_COLORS[option.value].text}`} aria-hidden="true" />
             {option.label}
             {isActive && (
               <Badge variant="outline" className="text-[10px] uppercase">
