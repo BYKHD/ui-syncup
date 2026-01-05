@@ -1,7 +1,6 @@
 'use client';
 
-import { useId, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useId, useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
   Command,
@@ -11,14 +10,13 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { STATUS_OPTIONS, STATUS_COLORS, ISSUE_WORKFLOW } from '@/features/issues/config';
 import type { IssueStatus } from '@/features/issues/types';
 import { STATUS_TRANSITIONS } from '@/features/issues/types';
 import { cn } from '@/lib/utils';
 import { RiArrowDownSLine, RiCheckLine, RiLoader4Line, RiShieldKeyholeLine } from '@remixicon/react';
 import { toast } from 'sonner';
+import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
 
 interface StatusSelectorProps {
   value: IssueStatus;
@@ -39,6 +37,19 @@ const formatStageLabel = (stage?: string) => {
     .join(' ');
 };
 
+// Spring transition for the morphing effect
+const springTransition = {
+  type: 'spring' as const,
+  stiffness: 400,
+  damping: 30,
+};
+
+// Content fade transition
+const contentTransition = {
+  duration: 0.15,
+  ease: 'easeOut' as const,
+};
+
 export function StatusSelector({
   value,
   onChange,
@@ -48,9 +59,11 @@ export function StatusSelector({
   className,
 }: StatusSelectorProps) {
   const generatedId = useId();
-  const triggerId = id ?? `status-selector-${generatedId}`;
+  const layoutId = `status-selector-${generatedId}`;
+  const triggerId = id ?? layoutId;
   const [open, setOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const currentOption =
     STATUS_OPTIONS.find((option) => option.value === value) ?? STATUS_OPTIONS[0];
@@ -67,15 +80,23 @@ export function StatusSelector({
     (option) => !actionableStatuses.has(option.value),
   );
 
-  const currentIndex = Math.max(statusOrder.indexOf(value), 0);
-  const denominator = Math.max(statusOrder.length - 1, 1);
-  const progressPercent = Math.min(100, Math.max(0, (currentIndex / denominator) * 100));
-
   const stage = ISSUE_WORKFLOW[value]?.stage;
   const stageLabel = formatStageLabel(stage);
   const stageDescription = ISSUE_WORKFLOW[value]?.description;
 
-  const handleStatusChange = async (nextStatus: IssueStatus) => {
+  // Close on Escape key
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open]);
+
+  const handleStatusChange = useCallback(async (nextStatus: IssueStatus) => {
     if (nextStatus === value || isSaving) {
       setOpen(false);
       return;
@@ -96,7 +117,7 @@ export function StatusSelector({
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [value, isSaving, onChange]);
 
   const renderCommandItem = (option: (typeof STATUS_OPTIONS)[number], isLocked: boolean) => {
     const isActive = option.value === value;
@@ -137,95 +158,133 @@ export function StatusSelector({
     );
   };
 
-  const triggerButton = (
-    <Button
-      id={triggerId}
-      type="button"
-      variant="default"
-      size="lg"
-      className={cn(
-        'min-w-[9rem] justify-between gap-3 border border-border text-left',
-        !canChange && 'opacity-80',
-      )}
-      aria-label={`Current status: ${currentOption.label}`}
-      aria-haspopup="listbox"
-      aria-expanded={open}
-      disabled={disabled || isSaving}
-    >
-      <span className="flex items-center gap-2">
-        {isSaving ? (
-          <RiLoader4Line className="h-4 w-4 animate-spin" aria-hidden="true" />
-        ) : (
-          <currentOption.icon className="h-4 w-4" aria-hidden="true" />
-        )}
-        <span className="text-sm font-medium">{currentOption.label}</span>
-      </span>
-      <RiArrowDownSLine className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-    </Button>
-  );
-
   return (
-    <div className={cn('flex min-w-[10rem] flex-1 flex-col gap-1', className)}>
-      <span className="sr-only text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        Status
-      </span>
-      <div className="flex flex-wrap items-center gap-3">
-        <Popover open={open && !disabled} onOpenChange={setOpen}>
-          {canChange ? (
-            <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                You need edit access to move this issue forward.
-              </TooltipContent>
-            </Tooltip>
+    <LayoutGroup>
+      <div ref={containerRef} className={cn('relative flex min-w-[10rem] flex-1 flex-col gap-1', className)}>
+        <span className="sr-only text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          Status
+        </span>
+
+        {/* Click-outside handler (invisible) */}
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              className="fixed inset-0 z-40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
+              onClick={() => setOpen(false)}
+              aria-hidden="true"
+            />
           )}
-          <PopoverContent
-            className="w-[340px] p-0"
-            align="end"
-            collisionPadding={16}
-          >
-            <div className="border-b border-border px-4 py-3">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Current stage</p>
-              <div className="mt-2 flex items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <currentOption.icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                    {currentOption.label}
-                  </div>
-                  {stageDescription && (
-                    <p className="mt-1 text-xs text-muted-foreground">{stageDescription}</p>
+        </AnimatePresence>
+
+        {/* Fixed-size wrapper to prevent parent height changes */}
+        <div className="relative z-50 h-[44px] min-w-[9rem]">
+          <AnimatePresence mode="popLayout">
+            {!open ? (
+              /* Collapsed: Trigger Button */
+              <motion.button
+                key="trigger"
+                layoutId={layoutId}
+                id={triggerId}
+                type="button"
+                onClick={() => !disabled && !isSaving && setOpen(true)}
+                className={cn(
+                  'absolute inset-0 inline-flex items-center justify-between gap-3 rounded-md border border-border bg-primary px-4 text-left text-primary-foreground shadow-sm transition-colors',
+                  'hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                  !canChange && 'opacity-80',
+                  (disabled || isSaving) && 'pointer-events-none opacity-60',
+                )}
+                aria-label={`Current status: ${currentOption.label}`}
+                aria-haspopup="listbox"
+                aria-expanded={open}
+                disabled={disabled || isSaving}
+                transition={springTransition}
+                style={{ borderRadius: 8 }}
+              >
+                <motion.span
+                  className="flex items-center gap-2"
+                  initial={{ opacity: 0, filter: 'blur(8px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, filter: 'blur(8px)' }}
+                  transition={{ ...springTransition, delay: 0.15 }}
+                >
+                  {isSaving ? (
+                    <RiLoader4Line className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <currentOption.icon className="h-4 w-4" aria-hidden="true" />
                   )}
-                </div>
-                <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
-                  {stageLabel}
-                </Badge>
-              </div>
-            </div>
-            <Command>
-              <CommandInput placeholder="Search status..." />
-              <CommandList>
-                <CommandEmpty>No status available.</CommandEmpty>
-                {actionableOptions.length > 0 && (
-                  <CommandGroup heading="Next steps">
-                    {actionableOptions.map((option) => renderCommandItem(option, false))}
-                  </CommandGroup>
-                )}
-                {lockedOptions.length > 0 && (
-                  <CommandGroup heading="Other states">
-                    {lockedOptions.map((option) => renderCommandItem(option, true))}
-                  </CommandGroup>
-                )}
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+                  <span className="text-sm font-medium">{currentOption.label}</span>
+                </motion.span>
+                <motion.span
+                  initial={{ opacity: 0, filter: 'blur(8px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, filter: 'blur(8px)' }}
+                  transition={{ ...springTransition, delay: 0.15 }}
+                >
+                  <RiArrowDownSLine className="h-3.5 w-3.5 text-primary-foreground/70" aria-hidden="true" />
+                </motion.span>
+              </motion.button>
+            ) : (
+              /* Expanded: Menu Container */
+              <motion.div
+                key="menu"
+                layoutId={layoutId}
+                className="absolute top-0 left-0 w-[340px] overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-lg"
+                transition={springTransition}
+                style={{ borderRadius: 12 }}
+              >
+                {/* Blur in content */}
+                <motion.div
+                  initial={{ opacity: 0, filter: 'blur(8px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, filter: 'blur(8px)' }}
+                  transition={{ ...springTransition, delay: 0.15 }}
+                >
+                  {/* Current stage header */}
+                  <div className="border-b border-border px-4 py-3">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Current stage</p>
+                    <div className="mt-2 flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <currentOption.icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                          {currentOption.label}
+                        </div>
+                        {stageDescription && (
+                          <p className="mt-1 text-xs text-muted-foreground">{stageDescription}</p>
+                        )}
+                      </div>
+                      <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+                        {stageLabel}
+                      </Badge>
+                    </div>
+                  </div>
 
-
+                  {/* Command menu */}
+                  <Command>
+                    <CommandInput placeholder="Search status..." />
+                    <CommandList>
+                      <CommandEmpty>No status available.</CommandEmpty>
+                      {actionableOptions.length > 0 && (
+                        <CommandGroup heading="Next steps">
+                          {actionableOptions.map((option) => renderCommandItem(option, false))}
+                        </CommandGroup>
+                      )}
+                      {lockedOptions.length > 0 && (
+                        <CommandGroup heading="Other states">
+                          {lockedOptions.map((option) => renderCommandItem(option, true))}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
-    </div>
+    </LayoutGroup>
   );
 }

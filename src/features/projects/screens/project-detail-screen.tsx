@@ -559,7 +559,7 @@ export default function ProjectDetailScreen({
             {trigger}
           </ProjectSettingsDialog>
         )}
-        renderLeaveButton={(trigger) => (
+        renderLeaveDialog={(trigger: React.ReactNode) => (
           <ProjectLeaveButton
             projectName={project.name}
             userRole={

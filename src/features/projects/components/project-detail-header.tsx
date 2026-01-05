@@ -26,11 +26,12 @@ interface ProjectDetailHeaderRefactoredProps {
   onMembershipChanged?: () => void;
   onProjectUpdated?: () => void;
   onLeftProject?: () => void;
+  onProjectDeleted?: () => void;
   // Render props for dialogs (allows parent to control state)
   renderIssueDialog: (trigger: ReactNode) => ReactNode;
   renderMemberDialog?: (trigger: ReactNode) => ReactNode;
   renderSettingsDialog?: (trigger: ReactNode) => ReactNode;
-  renderLeaveButton?: (trigger: ReactNode) => ReactNode;
+  renderLeaveDialog?: (trigger: ReactNode) => ReactNode;
 }
 
 /**
@@ -49,15 +50,17 @@ export function ProjectDetailHeader({
   onMembershipChanged,
   onProjectUpdated,
   onLeftProject,
+  onProjectDeleted,
   renderIssueDialog,
   renderMemberDialog,
   renderSettingsDialog,
-  renderLeaveButton,
+  renderLeaveDialog,
 }: ProjectDetailHeaderRefactoredProps) {
   // Permission calculations
   const canManageMembers = userRole === 'owner' || userRole === 'editor';
   const canEditSettings = userRole === 'owner' || userRole === 'editor';
   const canLeaveProject = userRole !== null && userRole !== 'owner';
+  const canDeleteProject = userRole === 'owner';
 
   return (
     <div className="border-b bg-card">
@@ -83,13 +86,15 @@ export function ProjectDetailHeader({
             canManageMembers={canManageMembers}
             canEditSettings={canEditSettings}
             canLeaveProject={canLeaveProject}
+            canDeleteProject={canDeleteProject}
             onMembershipChanged={onMembershipChanged}
             onProjectUpdated={onProjectUpdated}
             onLeftProject={onLeftProject}
+            onProjectDeleted={onProjectDeleted}
             renderIssueDialog={renderIssueDialog}
             renderMemberDialog={renderMemberDialog}
             renderSettingsDialog={renderSettingsDialog}
-            renderLeaveButton={renderLeaveButton}
+            renderLeaveDialog={renderLeaveDialog}
           />
         </div>
       </div>
