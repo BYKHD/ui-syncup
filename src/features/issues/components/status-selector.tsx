@@ -50,6 +50,36 @@ const contentTransition = {
   ease: 'easeOut' as const,
 };
 
+// Variants for button content with separate enter/exit delays
+const buttonContentVariants = {
+  hidden: { opacity: 0, filter: 'blur(8px)' },
+  visible: {
+    opacity: 1,
+    filter: 'blur(0px)',
+    transition: { ...springTransition, delay: 0.15 },
+  },
+  exit: {
+    opacity: 0,
+    filter: 'blur(16px)',
+    transition: { ...springTransition, delay: 0 },
+  },
+};
+
+// Variants for menu content with separate enter/exit delays
+const menuContentVariants = {
+  hidden: { opacity: 0, filter: 'blur(8px)' },
+  visible: {
+    opacity: 1,
+    filter: 'blur(0px)',
+    transition: { ...springTransition, delay: 0.1 },
+  },
+  exit: {
+    opacity: 0,
+    filter: 'blur(16px)',
+    transition: { ...springTransition, delay: 0 },
+  },
+};
+
 export function StatusSelector({
   value,
   onChange,
@@ -206,10 +236,10 @@ export function StatusSelector({
               >
                 <motion.span
                   className="flex items-center gap-2"
-                  initial={{ opacity: 0, filter: 'blur(8px)' }}
-                  animate={{ opacity: 1, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, filter: 'blur(8px)' }}
-                  transition={{ ...springTransition, delay: 0.15 }}
+                  variants={buttonContentVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                 >
                   {isSaving ? (
                     <RiLoader4Line className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -219,10 +249,10 @@ export function StatusSelector({
                   <span className="text-sm font-medium">{currentOption.label}</span>
                 </motion.span>
                 <motion.span
-                  initial={{ opacity: 0, filter: 'blur(8px)' }}
-                  animate={{ opacity: 1, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, filter: 'blur(8px)' }}
-                  transition={{ ...springTransition, delay: 0.15 }}
+                  variants={buttonContentVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                 >
                   <RiArrowDownSLine className="h-3.5 w-3.5 text-primary-foreground/70" aria-hidden="true" />
                 </motion.span>
@@ -238,10 +268,10 @@ export function StatusSelector({
               >
                 {/* Blur in content */}
                 <motion.div
-                  initial={{ opacity: 0, filter: 'blur(8px)' }}
-                  animate={{ opacity: 1, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, filter: 'blur(8px)' }}
-                  transition={{ ...springTransition, delay: 0.15 }}
+                  variants={menuContentVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                 >
                   {/* Current stage header */}
                   <div className="border-b border-border px-4 py-3">
