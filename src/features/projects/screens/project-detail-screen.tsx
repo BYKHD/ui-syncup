@@ -88,8 +88,8 @@ export default function ProjectDetailScreen({
   const [asIsUploadProgress, setAsIsUploadProgress] = useState(0);
   const [toBeUploadProgress, setToBeUploadProgress] = useState(0);
 
-  // Settings dialog state
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  // Settings dialog state - note: dialog open/close is managed by project-actions.tsx
+  // We only manage form state here
   const [settingsFormData, setSettingsFormData] = useState({
     name: project.name,
     description: project.description || "",
@@ -108,17 +108,19 @@ export default function ProjectDetailScreen({
   const [isLeaving, setIsLeaving] = useState(false);
   const [leaveError, setLeaveError] = useState<string | null>(null);
 
-  // Member dialog state
-  const [memberDialogOpen, setMemberDialogOpen] = useState(false);
+  // Member dialog state - dialog open/close is managed by project-actions.tsx
   const [invitationDialogOpen, setInvitationDialogOpen] = useState(false);
   
-  // Real data hooks for members
+  // Track if member dialog has been opened (for enabling hooks)
+  const [memberDialogOpened, setMemberDialogOpened] = useState(false);
+  
+  // Real data hooks for members - enabled once dialog has been opened
   const { 
     data: membersData, 
     isLoading: isMembersLoading, 
     error: membersQueryError,
     refetch: refetchMembers 
-  } = useProjectMembers({ projectId: project.id, enabled: memberDialogOpen });
+  } = useProjectMembers({ projectId: project.id, enabled: memberDialogOpened });
   
   const { mutateAsync: updateRoleMutation } = useUpdateMemberRole();
   const { mutateAsync: removeMemberMutation } = useRemoveMember();
@@ -127,7 +129,7 @@ export default function ProjectDetailScreen({
   const { 
     pendingInvitations: invitationsData,
     refetch: refetchInvitations 
-  } = useProjectInvitations({ projectId: project.id, enabled: memberDialogOpen });
+  } = useProjectInvitations({ projectId: project.id, enabled: memberDialogOpened });
   
   const { mutateAsync: revokeInvitationMutation } = useRevokeInvitation();
   const { mutateAsync: resendInvitationMutation } = useResendInvitation();
@@ -350,11 +352,12 @@ export default function ProjectDetailScreen({
     // TODO: wire PATCH /api/projects/:id
     await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
     setIsSubmittingSettings(false);
-    setSettingsDialogOpen(false);
+    // Note: Dialog close is handled by project-actions.tsx via onOpenChange
   };
 
   const handleSettingsCancel = () => {
-    setSettingsDialogOpen(false);
+    // Note: Dialog close is handled by project-actions.tsx via onOpenChange
+    // We just reset the form state here
     setSettingsFormData({
       name: project.name,
       description: project.description || "",
@@ -380,8 +383,8 @@ export default function ProjectDetailScreen({
 
   // Member dialog handlers
   const handleMemberDialogOpen = useCallback((open: boolean) => {
-    setMemberDialogOpen(open);
     if (open) {
+      setMemberDialogOpened(true); // Enable hooks
       refetchMembers();
       refetchInvitations();
     }
@@ -510,28 +513,35 @@ export default function ProjectDetailScreen({
             {trigger}
           </IssuesCreateDialog>
         )}
-        renderMemberDialog={(trigger) => (
-          <ProjectMemberManagerDialog
-            projectId={project.id}
-            projectName={project.name}
-            userRole={userRole}
-            canManageMembers={userRole === "owner" || userRole === "editor"}
-            open={memberDialogOpen}
-            onOpenChange={handleMemberDialogOpen}
-            members={members}
-            pendingInvitations={pendingInvitations}
-            isLoading={isMembersLoading}
-            error={membersError}
-            onRoleChange={handleRoleChange}
-            onRemoveMember={handleRemoveMember}
-            onRevokeInvitation={handleRevokeInvitation}
-            onResendInvitation={handleResendInvitation}
-            onInviteMember={handleInviteMember}
-          >
-            {trigger}
-          </ProjectMemberManagerDialog>
-        )}
-        renderSettingsDialog={(trigger) => (
+        renderMemberDialog={({ trigger, open, onOpenChange }) => {
+          // Wrap onOpenChange to trigger data fetching
+          const handleOpenChange = (isOpen: boolean) => {
+            onOpenChange(isOpen);
+            handleMemberDialogOpen(isOpen);
+          };
+          return (
+            <ProjectMemberManagerDialog
+              projectId={project.id}
+              projectName={project.name}
+              userRole={userRole}
+              canManageMembers={userRole === "owner" || userRole === "editor"}
+              open={open}
+              onOpenChange={handleOpenChange}
+              members={members}
+              pendingInvitations={pendingInvitations}
+              isLoading={isMembersLoading}
+              error={membersError}
+              onRoleChange={handleRoleChange}
+              onRemoveMember={handleRemoveMember}
+              onRevokeInvitation={handleRevokeInvitation}
+              onResendInvitation={handleResendInvitation}
+              onInviteMember={handleInviteMember}
+            >
+              {trigger}
+            </ProjectMemberManagerDialog>
+          );
+        }}
+        renderSettingsDialog={({ trigger, open, onOpenChange }) => (
           <ProjectSettingsDialog
             project={{
               id: project.id,
@@ -541,8 +551,8 @@ export default function ProjectDetailScreen({
               status: "active",
             }}
             userRole={userRole}
-            open={settingsDialogOpen}
-            onOpenChange={setSettingsDialogOpen}
+            open={open}
+            onOpenChange={onOpenChange}
             formData={settingsFormData}
             errors={settingsErrors}
             isSubmitting={isSubmittingSettings}
@@ -559,7 +569,7 @@ export default function ProjectDetailScreen({
             {trigger}
           </ProjectSettingsDialog>
         )}
-        renderLeaveDialog={(trigger: React.ReactNode) => (
+        renderLeaveDialog={({ trigger, open, onOpenChange }) => (
           <ProjectLeaveButton
             projectName={project.name}
             userRole={
@@ -568,6 +578,8 @@ export default function ProjectDetailScreen({
             isLeaving={isLeaving}
             error={leaveError}
             onLeave={handleLeave}
+            open={open}
+            onOpenChange={onOpenChange}
           >
             {trigger}
           </ProjectLeaveButton>

@@ -29,9 +29,9 @@ interface ProjectDetailHeaderRefactoredProps {
   onProjectDeleted?: () => void;
   // Render props for dialogs (allows parent to control state)
   renderIssueDialog: (trigger: ReactNode) => ReactNode;
-  renderMemberDialog?: (trigger: ReactNode) => ReactNode;
-  renderSettingsDialog?: (trigger: ReactNode) => ReactNode;
-  renderLeaveDialog?: (trigger: ReactNode) => ReactNode;
+  renderMemberDialog?: (props: { trigger: ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => ReactNode;
+  renderSettingsDialog?: (props: { trigger: ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => ReactNode;
+  renderLeaveDialog?: (props: { trigger: ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => ReactNode;
 }
 
 /**

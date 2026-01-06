@@ -162,14 +162,11 @@ export function ProjectMemberManagerDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogTrigger asChild>
-          {children || (
-            <Button variant="outline" size="sm">
-              <RiTeamLine className="h-4 w-4" />
-              Members
-            </Button>
-          )}
-        </DialogTrigger>
+        {children && (
+          <DialogTrigger asChild>
+            {children}
+          </DialogTrigger>
+        )}
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Project Members</DialogTitle>
