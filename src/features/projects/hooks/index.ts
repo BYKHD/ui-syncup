@@ -25,3 +25,4 @@ export { useProjectFilters, type ProjectFilters } from './use-project-filters'
 
 // UI Hooks
 export { useRecentProjects } from './use-recent-projects'
+export { useTeamMemberSuggestions } from './use-team-member-suggestions'

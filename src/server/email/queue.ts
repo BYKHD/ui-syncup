@@ -240,6 +240,33 @@ async function processJob(job: typeof emailJobs.$inferSelect): Promise<boolean> 
         })
         .where(eq(emailJobs.id, job.id));
 
+      // Update project invitation if this was a project invitation email
+      if (job.type === 'project_invitation' && job.tokenId) {
+        try {
+          const { projectInvitations } = await import('@/server/db/schema');
+          
+          await db
+            .update(projectInvitations)
+            .set({
+              emailDeliveryFailed: true,
+              emailFailureReason: errorMessage,
+              emailLastAttemptAt: new Date(),
+            })
+            .where(eq(projectInvitations.id, job.tokenId));
+          
+          logger.error('invitation.email.failed', {
+            invitationId: job.tokenId,
+            attempts: newAttempts,
+            error: errorMessage,
+          });
+        } catch (invitationUpdateError) {
+          logger.error('invitation.email.update_failed', {
+            invitationId: job.tokenId,
+            error: invitationUpdateError instanceof Error ? invitationUpdateError.message : 'Unknown error',
+          });
+        }
+      }
+
       logger.error('email.failed.max_retries', {
         jobId: job.id,
         userId: job.userId,

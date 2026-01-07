@@ -55,6 +55,9 @@ export async function listProjectInvitations(
       createdAt: projectInvitations.createdAt,
       usedAt: projectInvitations.usedAt,
       cancelledAt: projectInvitations.cancelledAt,
+      emailDeliveryFailed: projectInvitations.emailDeliveryFailed,
+      emailFailureReason: projectInvitations.emailFailureReason,
+      emailLastAttemptAt: projectInvitations.emailLastAttemptAt,
       invitedByUserId: users.id,
       invitedByUserName: users.name,
       invitedByUserEmail: users.email,
@@ -93,6 +96,9 @@ export async function listProjectInvitations(
       createdAt: inv.createdAt,
       usedAt: inv.usedAt,
       cancelledAt: inv.cancelledAt,
+      emailDeliveryFailed: inv.emailDeliveryFailed,
+      emailFailureReason: inv.emailFailureReason,
+      emailLastAttemptAt: inv.emailLastAttemptAt,
       invitedUser: invitedUser ? {
         id: invitedUser.id,
         name: invitedUser.name,
@@ -332,6 +338,9 @@ export async function resendProjectInvitation(
       tokenHash,
       expiresAt,
       createdAt: new Date(),
+      emailDeliveryFailed: false,
+      emailFailureReason: null,
+      emailLastAttemptAt: null,
     })
     .where(eq(projectInvitations.id, invitationId));
 
