@@ -134,13 +134,14 @@
   - _Requirements: 13.1, 13.2_
   - _Location: `src/server/email/queue.ts`_
 
-- [ ] 10.2 Write integration tests for email trigger
+- [x] 10.2 Write integration tests for email trigger
   - Test email is queued on invitation creation
   - Test email is queued on resend
   - Test email contains correct data
   - Test retry logic executes with backoff
   - Test emailDeliveryFailed flag set after 4 attempts
   - Test resend clears emailDeliveryFailed flag
+  - _Location: `src/server/projects/__tests__/invitation-email.integration.test.ts`_
 
 ---
 
@@ -171,7 +172,7 @@
   - _Requirements: 1.2, 4.8_
   - _Location: `src/features/projects/hooks/use-team-member-suggestions.ts`_
 
-- [ ] 11.5 Add validation for existing members in invitation service
+- [x] 11.5 Add validation for existing members in invitation service
   - Implement `checkExistingProjectMember(projectId, email)` helper
   - Return MEMBER_EXISTS_USE_ROLE_CHANGE error in `createProjectInvitation()`
   - _Requirements: 4.6, 4.7_
@@ -200,7 +201,7 @@
   - _Requirements: 4.1_
   - _Location: `src/features/projects/components/project-invitation-status.tsx`_
 
-- [ ] 14.5 Add email delivery failure indicator to invitation list
+- [x] 14.5 Add email delivery failure indicator to invitation list
   - Display "Email Failed" badge when emailDeliveryFailed is true
   - Show tooltip with emailFailureReason on hover
   - Enable "Resend" button for failed invitations
@@ -208,14 +209,14 @@
   - _Requirements: 13.3, 13.4, 13.5_
   - _Location: `src/features/projects/components/project-member-manager-dialog.tsx`_
 
-- [ ] 14.1 Write component tests for invitation dialog
+- [x] 14.1 Write component tests for invitation dialog
   - Test email validation feedback
   - Test role selection updates description
   - Test form submission triggers API call
   - Test loading state during submission
   - _Location: `src/features/projects/components/__tests__/project-invitation-dialog.test.tsx`_
 
-- [ ] 14.2 Write component tests for member manager
+- [x] 14.2 Write component tests for member manager
   - Test pending invitations display correctly
   - Test revoke action calls API
   - Test resend action calls API

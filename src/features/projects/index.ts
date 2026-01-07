@@ -81,7 +81,7 @@ export {
   ProjectStats as ProjectStatsComponent,
   ProjectActions,
   ProjectLeaveButton,
-  ProjectInvitationStatus,
+
 } from './components'
 
 // Screens

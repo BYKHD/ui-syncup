@@ -159,14 +159,15 @@ export default function ProjectDetailScreen({
     if (!invitationsData) return [];
     return invitationsData.map((inv) => ({
       id: inv.id,
-      invitedUserId: inv.invitedUser?.id || '', // Get from invitedUser object
+      invitedUserId: inv.invitedUser?.id || '', // Get from invitedUser object if exists
       role: inv.role as 'editor' | 'member' | 'viewer',
       status: inv.status,
       createdAt: new Date(inv.createdAt),
       expiresAt: new Date(inv.expiresAt),
+      // For external invites, invitedUser is null - create fallback from email
       invitedUser: inv.invitedUser || {
         id: '',
-        name: inv.email, // Use email as fallback for name
+        name: inv.email.split('@')[0], // Use email username as fallback name
         email: inv.email,
         image: null,
       },
@@ -176,6 +177,10 @@ export default function ProjectDetailScreen({
         email: '',
         image: null,
       },
+      // Email delivery tracking fields
+      emailDeliveryFailed: inv.emailDeliveryFailed ?? false,
+      emailFailureReason: inv.emailFailureReason ?? null,
+      emailLastAttemptAt: inv.emailLastAttemptAt ? new Date(inv.emailLastAttemptAt) : null,
     }));
   }, [invitationsData]);
 

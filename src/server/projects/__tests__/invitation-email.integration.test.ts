@@ -12,6 +12,7 @@ import { projectInvitations, users, teams, teamMembers, projects, projectMembers
 import { eq } from 'drizzle-orm';
 import { createTeam } from '@/server/teams/team-service';
 import { createProject } from '@/server/projects/project-service';
+import { PROJECT_ROLES } from '@/config/roles';
 
 // Mock email queue
 vi.mock('@/server/email', () => ({
@@ -107,7 +108,7 @@ describe('Invitation Email Integration', () => {
     const { invitation } = await createProjectInvitation({
       projectId: project.id,
       email: 'newuser@example.com',
-      role: 'PROJECT_DEVELOPER',
+      role: PROJECT_ROLES.PROJECT_DEVELOPER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -144,7 +145,7 @@ describe('Invitation Email Integration', () => {
     const { invitation, token: oldToken } = await createProjectInvitation({
       projectId: project.id,
       email: 'resend@example.com',
-      role: 'PROJECT_EDITOR',
+      role: PROJECT_ROLES.PROJECT_EDITOR,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -179,7 +180,7 @@ describe('Invitation Email Integration', () => {
     const { invitation } = await createProjectInvitation({
       projectId: project.id,
       email: 'failed@example.com',
-      role: 'PROJECT_DEVELOPER',
+      role: PROJECT_ROLES.PROJECT_DEVELOPER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -230,7 +231,7 @@ describe('Invitation Email Integration', () => {
     const { invitation } = await createProjectInvitation({
       projectId: project.id,
       email: 'willfall@example.com',
-      role: 'PROJECT_VIEWER',
+      role: PROJECT_ROLES.PROJECT_VIEWER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);

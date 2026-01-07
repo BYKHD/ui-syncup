@@ -39,6 +39,31 @@ function getInvitationStatus(invitation: {
 }
 
 /**
+ * Check if a user with the given email is already a project member
+ * @returns User ID if member exists, null otherwise
+ */
+async function checkExistingProjectMember(
+  projectId: string,
+  email: string
+): Promise<string | null> {
+  const normalizedEmail = email.toLowerCase().trim();
+  
+  const member = await db
+    .select({ userId: projectMembers.userId })
+    .from(projectMembers)
+    .innerJoin(users, eq(projectMembers.userId, users.id))
+    .where(
+      and(
+        eq(projectMembers.projectId, projectId),
+        eq(users.email, normalizedEmail)
+      )
+    )
+    .limit(1);
+
+  return member.length > 0 ? member[0].userId : null;
+}
+
+/**
  * List all invitations for a project
  */
 export async function listProjectInvitations(
@@ -144,16 +169,8 @@ export async function createProjectInvitation(
   }
 
   // Check if user is already a member
-  const existingMember = await db
-    .select()
-    .from(projectMembers)
-    .innerJoin(users, eq(projectMembers.userId, users.id))
-    .where(and(
-      eq(projectMembers.projectId, projectId),
-      eq(users.email, email)
-    ));
-
-  if (existingMember.length > 0) {
+  const existingMemberId = await checkExistingProjectMember(projectId, email);
+  if (existingMemberId) {
     throw new Error("User is already a member of this project");
   }
 

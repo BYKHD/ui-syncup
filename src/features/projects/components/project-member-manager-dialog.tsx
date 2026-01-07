@@ -14,7 +14,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Separator } from '@/components/ui/separator'
-import { RiTeamLine, RiMore2Line, RiUserLine, RiDeleteBinLine, RiAddLine, RiVipCrownLine, RiMailSendLine } from '@remixicon/react'
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip'
+import { RiTeamLine, RiMore2Line, RiUserLine, RiDeleteBinLine, RiAddLine, RiVipCrownLine, RiMailSendLine, RiAlertLine } from '@remixicon/react'
 
 interface User {
   id: string
@@ -41,6 +42,9 @@ interface ProjectInvitation {
   expiresAt: Date
   invitedUser: User
   invitedByUser: User
+  emailDeliveryFailed?: boolean
+  emailFailureReason?: string | null
+  emailLastAttemptAt?: Date | null
 }
 
 interface ProjectMemberManagerDialogProps {
@@ -302,6 +306,29 @@ export function ProjectMemberManagerDialog({
                                 {getRoleDisplayName(invitation.role)}
                               </Badge>
                               <Badge variant="secondary">Pending</Badge>
+                              
+                              {invitation.emailDeliveryFailed && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="destructive" className="gap-1 cursor-help">
+                                        <RiAlertLine className="h-3 w-3" />
+                                        Email Failed
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs">
+                                      <p className="text-sm">
+                                        {invitation.emailFailureReason || 'Email delivery failed after multiple attempts'}
+                                      </p>
+                                      {invitation.emailLastAttemptAt && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          Last attempt: {new Date(invitation.emailLastAttemptAt).toLocaleString()}
+                                        </p>
+                                      )}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                               
                               {canManageMembers && (
                                 <DropdownMenu>
