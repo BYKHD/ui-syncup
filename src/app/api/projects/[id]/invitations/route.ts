@@ -190,9 +190,6 @@ export async function POST(
       email: validation.data.email,
     });
 
-    // TODO: Send invitation email with token
-    // await enqueueEmail({ ... })
-
     return NextResponse.json(
       { 
         invitation: {

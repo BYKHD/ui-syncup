@@ -151,6 +151,73 @@ export const LeaveMemberResponseSchema = z.object({
 })
 
 // ============================================================================
+// PROJECT INVITATION SCHEMAS
+// ============================================================================
+
+export const InvitationStatusSchema = z.enum(['pending', 'accepted', 'declined', 'expired'])
+
+export const InvitationRoleSchema = z.enum(['editor', 'member', 'viewer'])
+
+export const ProjectInvitationUserSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  image: z.string().nullable(),
+})
+
+export const ProjectInvitationSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  email: z.string(),
+  role: InvitationRoleSchema,
+  status: InvitationStatusSchema,
+  invitedBy: z.string().nullable(),
+  expiresAt: z.string(),
+  createdAt: z.string(),
+  usedAt: z.string().nullable(),
+  cancelledAt: z.string().nullable(),
+  emailDeliveryFailed: z.boolean().default(false),
+  emailFailureReason: z.string().nullable(),
+  emailLastAttemptAt: z.string().nullable(),
+})
+
+export const ProjectInvitationWithUsersSchema = ProjectInvitationSchema.extend({
+  invitedUser: ProjectInvitationUserSchema.nullable(),
+  invitedByUser: ProjectInvitationUserSchema.nullable(),
+})
+
+// ============================================================================
+// INVITATION REQUEST SCHEMAS
+// ============================================================================
+
+export const CreateInvitationBodySchema = z.object({
+  email: z.string().email('Invalid email address'),
+  role: InvitationRoleSchema,
+})
+
+// ============================================================================
+// INVITATION RESPONSE SCHEMAS
+// ============================================================================
+
+export const CreateInvitationResponseSchema = z.object({
+  invitation: ProjectInvitationSchema,
+})
+
+export const ListInvitationsResponseSchema = z.object({
+  invitations: z.array(ProjectInvitationWithUsersSchema),
+})
+
+export const RevokeInvitationResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+})
+
+export const ResendInvitationResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+})
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -167,3 +234,14 @@ export type UpdateMemberRoleResponse = z.infer<typeof UpdateMemberRoleResponseSc
 export type RemoveMemberResponse = z.infer<typeof RemoveMemberResponseSchema>
 export type DeleteProjectResponse = z.infer<typeof DeleteProjectResponseSchema>
 export type LeaveMemberResponse = z.infer<typeof LeaveMemberResponseSchema>
+
+// Invitation type exports
+export type InvitationStatus = z.infer<typeof InvitationStatusSchema>
+export type InvitationRole = z.infer<typeof InvitationRoleSchema>
+export type ProjectInvitation = z.infer<typeof ProjectInvitationSchema>
+export type ProjectInvitationWithUsers = z.infer<typeof ProjectInvitationWithUsersSchema>
+export type CreateInvitationBody = z.infer<typeof CreateInvitationBodySchema>
+export type CreateInvitationResponse = z.infer<typeof CreateInvitationResponseSchema>
+export type ListInvitationsResponse = z.infer<typeof ListInvitationsResponseSchema>
+export type RevokeInvitationResponse = z.infer<typeof RevokeInvitationResponseSchema>
+export type ResendInvitationResponse = z.infer<typeof ResendInvitationResponseSchema>

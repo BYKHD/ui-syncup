@@ -16,6 +16,7 @@ export { useJoinProject } from './use-join-project'
 export { useLeaveProject } from './use-leave-project'
 export { useUpdateMemberRole } from './use-update-member-role'
 export { useRemoveMember } from './use-remove-member'
+export { useCreateInvitation } from './use-create-invitation'
 export { useRevokeInvitation } from './use-revoke-invitation'
 export { useResendInvitation } from './use-resend-invitation'
 

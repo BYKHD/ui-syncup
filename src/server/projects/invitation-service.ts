@@ -16,6 +16,7 @@ import { logger } from "@/lib/logger";
 import { addMember } from "./member-service";
 import { PROJECT_ROLES } from "@/config/roles";
 import type { ProjectRole } from "@/config/roles";
+import { enqueueEmail } from "@/server/email";
 import type { 
   ProjectInvitation,
   ProjectInvitationWithUsers,
@@ -195,6 +196,56 @@ export async function createProjectInvitation(
     invitedBy,
   });
 
+  // Queue invitation email
+  try {
+    // Get project and inviter details for email
+    const [projectData, inviterData] = await Promise.all([
+      db.select().from(projects).where(eq(projects.id, projectId)).limit(1),
+      db.select().from(users).where(eq(users.id, invitedBy)).limit(1),
+    ]);
+
+    const project = projectData[0];
+    const inviter = inviterData[0];
+
+    if (project && inviter) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const invitationUrl = `${baseUrl}/invite/project/${token}`;
+      
+      // Format role for display (e.g., "PROJECT_DEVELOPER" -> "Developer")
+      const roleDisplay = role.replace('PROJECT_', '').toLowerCase()
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+      await enqueueEmail({
+        userId: invitedBy,
+        type: 'project_invitation',
+        to: email,
+        template: {
+          type: 'project_invitation',
+          data: {
+            inviterName: inviter.name,
+            projectName: project.name,
+            role: roleDisplay,
+            invitationUrl,
+            expiresIn: '7 days',
+          },
+        },
+      });
+
+      logger.info("project.invitation.email_queued", {
+        invitationId: invitation.id,
+        email,
+      });
+    }
+  } catch (emailError) {
+    // Log error but don't fail invitation creation
+    logger.error("project.invitation.email_failed", {
+      invitationId: invitation.id,
+      error: emailError instanceof Error ? emailError.message : 'Unknown error',
+    });
+  }
+
   return {
     invitation: {
       id: invitation.id,
@@ -289,6 +340,56 @@ export async function resendProjectInvitation(
     projectId: invitation.projectId,
     actorId,
   });
+
+  // Queue invitation email
+  try {
+    // Get project and inviter details for email
+    const [projectData, inviterData] = await Promise.all([
+      db.select().from(projects).where(eq(projects.id, invitation.projectId)).limit(1),
+      db.select().from(users).where(eq(users.id, actorId)).limit(1),
+    ]);
+
+    const project = projectData[0];
+    const inviter = inviterData[0];
+
+    if (project && inviter) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const invitationUrl = `${baseUrl}/invite/project/${token}`;
+      
+      // Format role for display
+      const roleDisplay = invitation.role.replace('PROJECT_', '').toLowerCase()
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+      await enqueueEmail({
+        userId: actorId,
+        type: 'project_invitation',
+        to: invitation.email,
+        template: {
+          type: 'project_invitation',
+          data: {
+            inviterName: inviter.name,
+            projectName: project.name,
+            role: roleDisplay,
+            invitationUrl,
+            expiresIn: '7 days',
+          },
+        },
+      });
+
+      logger.info("project.invitation.email_queued", {
+        invitationId,
+        email: invitation.email,
+      });
+    }
+  } catch (emailError) {
+    // Log error but don't fail resend
+    logger.error("project.invitation.email_failed", {
+      invitationId,
+      error: emailError instanceof Error ? emailError.message : 'Unknown error',
+    });
+  }
 
   return { token };
 }

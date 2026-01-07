@@ -159,13 +159,23 @@ export default function ProjectDetailScreen({
     if (!invitationsData) return [];
     return invitationsData.map((inv) => ({
       id: inv.id,
-      invitedUserId: inv.invitedUserId || '',
+      invitedUserId: inv.invitedUser?.id || '', // Get from invitedUser object
       role: inv.role as 'editor' | 'member' | 'viewer',
       status: inv.status,
       createdAt: new Date(inv.createdAt),
       expiresAt: new Date(inv.expiresAt),
-      invitedUser: inv.invitedUser,
-      invitedByUser: inv.invitedByUser,
+      invitedUser: inv.invitedUser || {
+        id: '',
+        name: inv.email, // Use email as fallback for name
+        email: inv.email,
+        image: null,
+      },
+      invitedByUser: inv.invitedByUser || {
+        id: '',
+        name: 'Deleted User',
+        email: '',
+        image: null,
+      },
     }));
   }, [invitationsData]);
 

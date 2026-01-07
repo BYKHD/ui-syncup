@@ -23,27 +23,27 @@ import { sendEmail } from './client';
 export interface EmailJobInput {
   userId: string;
   tokenId?: string;
-  type: 'verification' | 'password_reset' | 'welcome' | 'security_alert' | 'team_invitation' | 'ownership_transfer';
+  type: 'verification' | 'password_reset' | 'welcome' | 'security_alert' | 'team_invitation' | 'ownership_transfer' | 'project_invitation';
   to: string;
   template: EmailTemplate;
 }
 
 /**
  * Calculate backoff delay based on attempt number
- * - Attempt 1: 30 seconds
+ * - Attempt 1: 1 minute
  * - Attempt 2: 5 minutes
- * - Attempt 3: 30 minutes
+ * - Attempt 3: 15 minutes
  */
 function calculateBackoff(attempts: number): number {
   switch (attempts) {
     case 1:
-      return 30 * 1000; // 30 seconds
+      return 1 * 60 * 1000; // 1 minute
     case 2:
       return 5 * 60 * 1000; // 5 minutes
     case 3:
-      return 30 * 60 * 1000; // 30 minutes
+      return 15 * 60 * 1000; // 15 minutes
     default:
-      return 30 * 1000; // Default to 30 seconds
+      return 1 * 60 * 1000; // Default to 1 minute
   }
 }
 
@@ -105,7 +105,7 @@ export async function enqueueEmail(job: EmailJobInput): Promise<void> {
         template: job.template.type,
         data: job.template.data as any,
         attempts: 0,
-        maxAttempts: 3,
+        maxAttempts: 4,
         status: 'pending',
         scheduledFor: new Date(),
       })

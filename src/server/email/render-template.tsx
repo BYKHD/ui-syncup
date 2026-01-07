@@ -5,6 +5,7 @@ import { WelcomeEmail } from './templates/welcome-email';
 import { SecurityAlertEmail } from './templates/security-alert-email';
 import { TeamInvitationEmail } from './templates/team-invitation-email';
 import { OwnershipTransferEmail } from './templates/ownership-transfer-email';
+import { ProjectInvitationEmail } from './templates/project-invitation-email';
 
 /**
  * Template types and their corresponding data structures
@@ -27,7 +28,13 @@ export type EmailTemplate =
       inviterName: string;
       teamName: string;
       invitationUrl: string;
-
+      expiresIn: string;
+    }}
+  | { type: 'project_invitation'; data: {
+      inviterName: string;
+      projectName: string;
+      role: string;
+      invitationUrl: string;
       expiresIn: string;
     }}
   | { type: 'ownership_transfer'; data: {
@@ -63,6 +70,9 @@ export async function renderTemplate(template: EmailTemplate): Promise<string> {
     case 'team_invitation':
       component = <TeamInvitationEmail {...template.data} />;
       break;
+    case 'project_invitation':
+      component = <ProjectInvitationEmail {...template.data} />;
+      break;
     case 'ownership_transfer':
       component = <OwnershipTransferEmail {...template.data} />;
       break;
@@ -97,6 +107,8 @@ export function getEmailSubject(template: EmailTemplate): string {
       }
     case 'team_invitation':
       return `Join ${template.data.teamName} on UI SyncUp`;
+    case 'project_invitation':
+      return `You've been invited to join ${template.data.projectName}`;
     case 'ownership_transfer':
       return `Ownership transfer for ${template.data.teamName} - UI SyncUp`;
     default:

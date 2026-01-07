@@ -679,3 +679,474 @@ Accept an invitation.
 Decline an invitation.
 
 **Response:** `200 OK` with redirect to confirmation page
+
+---
+
+## Known Gaps & Limitations
+
+This section documents known gaps, incomplete implementations, and deferred features in the current implementation. Each gap is linked to the phase where it will be addressed.
+
+### 1. Team Role Promotion Not Implemented
+
+**Status:** ⚠️ Deferred to Phase 7
+
+**Description:**
+
+The `acceptProjectInvitation()` service function does NOT currently implement automatic team role promotion as specified in the design (lines 302-338).
+
+**Expected Behavior:**
+
+When a user accepts an invitation with `PROJECT_OWNER` or `PROJECT_EDITOR` role, their team operational role should be automatically promoted to `TEAM_EDITOR` (if not already).
+
+| Invitation Role | Current Team Role | Expected Team Role | Current Behavior | Expected Behavior |
+|----------------|-------------------|-------------------|------------------|-------------------|
+| PROJECT_EDITOR | TEAM_MEMBER | TEAM_EDITOR | ❌ Stays TEAM_MEMBER | ✅ Promote to TEAM_EDITOR |
+| PROJECT_OWNER | TEAM_MEMBER | TEAM_EDITOR | ❌ Stays TEAM_MEMBER | ✅ Promote to TEAM_EDITOR |
+| PROJECT_EDITOR | TEAM_EDITOR | TEAM_EDITOR | ✅ Preserves TEAM_EDITOR | ✅ Preserves TEAM_EDITOR |
+
+**Impact:**
+
+- Users who accept PROJECT_EDITOR/OWNER invitations will NOT be auto-promoted to billable TEAM_EDITOR role
+- Billing calculations may be incorrect
+- Manual role promotion required by team admin
+
+**Workaround:**
+
+Team admins must manually promote users to TEAM_EDITOR role after invitation acceptance.
+
+**Resolution Plan:**
+
+Add role promotion logic to `acceptProjectInvitation()` in Phase 7:
+
+```typescript
+// After adding user to project
+if (invitation.role === 'PROJECT_OWNER' || invitation.role === 'PROJECT_EDITOR') {
+  const currentTeamRole = await getTeamOperationalRole(userId, project.teamId)
+  
+  if (currentTeamRole !== 'TEAM_EDITOR') {
+    await updateTeamOperationalRole(userId, project.teamId, 'TEAM_EDITOR')
+    logger.info('team.role.promoted', { 
+      userId, 
+      teamId: project.teamId, 
+      newRole: 'TEAM_EDITOR' 
+    })
+  }
+}
+```
+
+**Requirements:** 6.4, 6.6, 6.7, 6.8
+
+---
+
+### 2. Accept Endpoint Missing Project Redirect Information
+
+**Status:** ⚠️ Partial Implementation
+
+**Description:**
+
+The `POST /api/invite/project/[token]` endpoint returns success but does NOT include project details needed for frontend redirect.
+
+**Current Response:**
+```json
+{
+  "success": true,
+  "message": "Invitation accepted successfully"
+}
+```
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "message": "Invitation accepted successfully",
+  "projectId": "uuid",
+  "projectSlug": "project-slug",
+  "redirectUrl": "/projects/project-slug"
+}
+```
+
+**Impact:**
+
+- Frontend cannot automatically redirect user to project after acceptance
+- User must manually navigate to project
+- Poor UX for acceptance flow
+
+**Workaround:**
+
+Frontend can redirect to projects list page instead of specific project.
+
+**Resolution Plan:**
+
+Update accept endpoint in Phase 6 to fetch and return project details:
+
+```typescript
+// After accepting invitation
+const project = await getProject(invitation.projectId)
+
+return NextResponse.json({
+  success: true,
+  message: "Invitation accepted successfully",
+  projectId: project.id,
+  projectSlug: project.slug,
+  redirectUrl: `/projects/${project.slug}`
+})
+```
+
+---
+
+### 3. Email Integration Not Complete
+
+**Status:** ⚠️ Partial Implementation (Phase 4)
+
+**Description:**
+
+Email sending is NOT fully integrated with invitation creation and resend operations.
+
+**Current State:**
+
+- ✅ Email template exists (`src/server/email/templates/`)
+- ❌ Email NOT sent on invitation creation (TODO comment in code)
+- ❌ Email NOT sent on invitation resend
+- ❌ Retry logic NOT implemented
+- ❌ Email failure tracking NOT integrated
+
+**Code Reference:**
+
+`src/app/api/projects/[id]/invitations/route.ts:193-194`
+```typescript
+// TODO: Send invitation email with token
+// await enqueueEmail({ ... })
+```
+
+**Impact:**
+
+- Invited users do NOT receive email notifications
+- Must manually share invitation links
+- No retry on email failures
+- No visibility into email delivery status
+
+**Resolution Plan (Phase 4):**
+
+1. Integrate email queue on invitation creation
+2. Add retry logic with exponential backoff (1min, 5min, 15min)
+3. Update `emailDeliveryFailed` flag on permanent failure
+4. Log email failures for visibility
+5. Add resend email on invitation resend
+
+**Requirements:** 2.1, 13.1-13.8
+
+---
+
+### 4. Decline Invitation Endpoint Missing
+
+**Status:** ❌ Not Implemented (Phase 6)
+
+**Description:**
+
+No API endpoint exists for declining invitations.
+
+**Expected Endpoint:** `POST /api/invite/project/[token]/decline`
+
+**Expected Behavior:**
+- Mark invitation with `declinedAt` timestamp
+- Log activity with type "invitation_declined"
+- Return success response
+
+**Current Workaround:**
+
+Users can only ignore invitations; they cannot explicitly decline them.
+
+**Impact:**
+
+- No way to record explicit user rejection
+- Pending invitations remain "pending" instead of "declined"
+- Activity log incomplete
+
+**Resolution Plan (Phase 6):**
+
+Implement decline endpoint following accept endpoint pattern.
+
+**Requirements:** 10.1-10.3
+
+---
+
+### 5. Invitation Acceptance Page UI Missing
+
+**Status:** ❌ Not Implemented (Phase 6)
+
+**Description:**
+
+No UI page exists at `/invite/project/[token]` for users to accept invitations.
+
+**Current State:**
+
+- ✅ Backend API endpoint exists (`POST /api/invite/project/[token]`)
+- ❌ No frontend page to display invitation details
+- ❌ No Accept/Decline buttons
+- ❌ No unauthenticated user flow with callback URL
+
+**Expected Flow:**
+
+1. User clicks invitation link → `/invite/project/[token]`
+2. Page displays invitation details (project name, role, inviter)
+3. If unauthenticated → redirect to `/auth/signin?callbackUrl=/invite/project/[token]`
+4. If authenticated → show Accept/Decline buttons
+5. On accept → call API → redirect to project
+6. On decline → call decline API → redirect to confirmation page
+
+**Impact:**
+
+- No user-facing way to accept invitations
+- Backend functionality cannot be tested by users
+- Complete acceptance flow blocked
+
+**Resolution Plan (Phase 6):**
+
+Create acceptance page with:
+- Server component to check auth status
+- Invitation details display
+- Accept/Decline actions
+- Unauthenticated flow handling
+- Loading and error states
+
+**Requirements:** 6.1-6.4, 15.1-15.3
+
+---
+
+### 6. Activity Logging Incomplete
+
+**Status:** ⚠️ Partial Implementation (Phase 7)
+
+**Description:**
+
+Activity logging for invitation events is incomplete.
+
+**Current State:**
+
+- ✅ Service functions log to logger
+- ❌ Activity NOT recorded in activity feed/table
+- ❌ No activity types defined for invitations
+- ❌ No email failure activity logging
+
+**Missing Activity Types:**
+
+- `invitation_sent` - When invitation created
+- `invitation_accepted` - When user accepts
+- `invitation_declined` - When user declines
+- `invitation_revoked` - When admin cancels
+- `invitation_email_failed` - When email permanently fails
+- `member_role_changed` - When role updated (separate feature)
+
+**Impact:**
+
+- No visibility into invitation history in activity feed
+- Audit trail incomplete
+- Users cannot see who invited them
+
+**Resolution Plan (Phase 7):**
+
+Add activity records for all invitation events.
+
+**Requirements:** 8.1-8.4, 11.4, 13.8
+
+---
+
+### 7. Rate Limiting Incomplete
+
+**Status:** ⚠️ Partial Implementation (Phase 9)
+
+**Description:**
+
+Rate limiting is partially implemented but not comprehensive.
+
+**Current State:**
+
+- ✅ Per-project rate limit (10/hour) in service
+- ❌ No per-user rate limit (10/10min)
+- ❌ No Redis-based rate limiter integration
+- ❌ No rate limit on accept endpoint
+
+**Expected Rate Limits:**
+
+| Limit Type | Current | Expected |
+|------------|---------|----------|
+| Per-project invitation creation | 10/hour | 10/hour ✅ |
+| Per-user invitation creation | None | 10/10min ❌ |
+| Per-project pending invitations | None | Max 50 ❌ |
+| Accept endpoint | None | Standard rate limit ❌ |
+
+**Impact:**
+
+- Potential abuse vector (spam invitations)
+- No protection against compromised accounts
+- DoS risk on accept endpoint
+
+**Resolution Plan (Phase 9):**
+
+Extend `src/server/auth/rate-limiter.ts` with invitation-specific limits.
+
+**Requirements:** 7.4, 7.5
+
+---
+
+### 8. RBAC Verification Not Documented
+
+**Status:** ⚠️ Implicit Implementation (Phase 9)
+
+**Description:**
+
+RBAC permissions for invitation actions are enforced but not explicitly documented.
+
+**Current Implementation:**
+
+- Uses `PERMISSIONS.PROJECT_MANAGE_MEMBERS` for create/revoke/resend
+- Uses `PERMISSIONS.PROJECT_VIEW` for listing invitations
+- No explicit permission for accepting (authentication only)
+
+**Gap:**
+
+No verification checklist confirms all RBAC rules are correctly implemented.
+
+**Resolution Plan (Phase 9):**
+
+Add security tests to verify RBAC integration:
+- PROJECT_OWNER can invite ✓
+- PROJECT_EDITOR can invite ✓
+- PROJECT_DEVELOPER cannot invite ✓
+- PROJECT_VIEWER cannot invite ✓
+
+**Requirements:** 18.5
+
+---
+
+### 9. Mobile Optimization Not Implemented
+
+**Status:** ❌ Not Implemented (Phase 10)
+
+**Description:**
+
+Invitation dialogs and acceptance page not optimized for mobile devices.
+
+**Missing Optimizations:**
+
+- Scrollable dialogs on small screens
+- Touch-friendly form controls
+- Responsive layouts
+- Large touch targets
+- Mobile email link handling
+
+**Impact:**
+
+- Poor mobile user experience
+- Difficult to use on phones/tablets
+- May not work correctly on mobile browsers
+
+**Resolution Plan (Phase 10):**
+
+Test and optimize all invitation UI components for mobile.
+
+**Requirements:** 9.1-9.4, 20-21
+
+---
+
+### 10. Performance Optimizations Not Implemented
+
+**Status:** ❌ Not Implemented (Phase 10.5)
+
+**Description:**
+
+Several identified performance optimizations have not been implemented.
+
+**Missing Optimizations:**
+
+1. **Database Indexes**
+   - No partial index on `(project_id, email)` for duplicate checks
+   - No index on `email_delivery_failed` for retry queries
+
+2. **Query Optimization**
+   - `listProjectInvitations` may have N+1 query (needs verification)
+   - No confirmation that `leftJoin` is used
+
+3. **Caching**
+   - Team member suggestions not using SWR cache
+   - Pending invitation count not cached
+
+4. **Email Queue**
+   - Need to verify email sending is asynchronous
+   - Invitation creation may wait for email (needs verification)
+
+**Impact:**
+
+- Slower duplicate checks on large datasets
+- Potential N+1 query performance issues
+- Slower autocomplete suggestions
+- Email failures may block invitation creation
+
+**Resolution Plan (Phase 10.5):**
+
+1. Add database indexes
+2. Verify query patterns with EXPLAIN ANALYZE
+3. Add caching where appropriate
+4. Verify email queue is non-blocking
+
+**Requirements:** 21.5-21.8
+
+---
+
+## Summary of Known Gaps
+
+| Gap | Severity | Phase | Workaround Available |
+|-----|----------|-------|---------------------|
+| Team role promotion | 🔴 High | 7 | Manual promotion |
+| Accept endpoint redirect info | 🟡 Medium | 6 | Redirect to projects list |
+| Email integration | 🔴 High | 4 | Manual link sharing |
+| Decline endpoint | 🟡 Medium | 6 | Ignore invitation |
+| Acceptance page UI | 🔴 High | 6 | Direct API calls only |
+| Activity logging | 🟡 Medium | 7 | Logger only |
+| Rate limiting | 🟠 Medium | 9 | Partial protection |
+| RBAC verification | 🟢 Low | 9 | Implicit enforcement |
+| Mobile optimization | 🟡 Medium | 10 | Desktop-first |
+| Performance optimization | 🟢 Low | 10.5 | Acceptable for MVP |
+
+**Legend:**
+- 🔴 High - Blocks core functionality or has significant impact
+- 🟠 Medium-High - Important for production but workarounds exist  
+- 🟡 Medium - Should be addressed before GA
+- 🟢 Low - Nice-to-have, can be deferred
+
+---
+
+## Mitigation Strategy
+
+### For MVP/Beta Release
+
+**Must Fix (before user testing):**
+1. Email integration (Phase 4)
+2. Acceptance page UI (Phase 6)
+
+**Should Fix (before beta):**
+3. Team role promotion (Phase 7)
+4. Decline endpoint (Phase 6)
+
+**Can Defer:**
+5. Activity logging (Phase 7)
+6. Rate limiting (Phase 9)
+7. Mobile optimization (Phase 10)
+8. Performance optimization (Phase 10.5)
+
+### Risk Assessment
+
+**Highest Risk Gaps:**
+1. **Email integration** - Core UX expectation, must be fixed
+2. **Team role promotion** - Billing implication, data integrity issue
+3. **Acceptance page** - No user-facing flow without it
+
+**Monitoring Required:**
+- Watch for manual invitation link sharing (indicates email gap)
+- Monitor team role mismatches (indicates promotion gap)
+- Track invitation expiration rate (may indicate UX issues)
+
+---
+
+*Last Updated: Phase 3 Completion - 2026-01-07*
+
