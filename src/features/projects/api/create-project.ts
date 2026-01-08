@@ -60,5 +60,5 @@ export async function createProject(body: CreateProjectBody): Promise<CreateProj
   }
 
   const data = await response.json()
-  return CreateProjectResponseSchema.parse(data)
+  return CreateProjectResponseSchema.parse(data.project)
 }

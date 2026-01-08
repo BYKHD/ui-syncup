@@ -63,6 +63,7 @@ interface ProjectMemberManagerDialogProps {
   onRevokeInvitation: (invitationId: string) => void
   onResendInvitation: (invitationId: string) => void
   onInviteMember: () => void
+  onOpen?: () => void
   children?: React.ReactNode
 }
 
@@ -88,6 +89,7 @@ export function ProjectMemberManagerDialog({
   onRevokeInvitation,
   onResendInvitation,
   onInviteMember,
+  onOpen,
   children 
 }: ProjectMemberManagerDialogProps) {
   // Confirmation dialogs
@@ -95,6 +97,13 @@ export function ProjectMemberManagerDialog({
   const [memberToRemove, setMemberToRemove] = useState<ProjectMember | null>(null)
   const [showRoleChangeConfirm, setShowRoleChangeConfirm] = useState(false)
   const [roleChangeData, setRoleChangeData] = useState<{ member: ProjectMember; newRole: 'owner' | 'editor' | 'member' | 'viewer' } | null>(null)
+
+  // Trigger onOpen callback when dialog opens
+  React.useEffect(() => {
+    if (open && onOpen) {
+      onOpen()
+    }
+  }, [open, onOpen])
 
   const handleRoleChange = (member: ProjectMember, newRole: 'owner' | 'editor' | 'member' | 'viewer') => {
     if (newRole === 'owner') {

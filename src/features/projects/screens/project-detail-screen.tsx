@@ -12,7 +12,7 @@ import { ProjectLeaveButton } from "../components/project-leave-button";
 import { ProjectDetailHeader, ProjectIssues } from "../components";
 import type { ProjectRole } from "../types";
 import type { IssuePriority, IssueType, IssueSummary } from "@/features/issues/types";
-import { useRecentProjects, useProjectMembers, useUpdateMemberRole, useRemoveMember, useProjectInvitations, useRevokeInvitation, useResendInvitation } from "../hooks";
+import { useRecentProjects, useProjectMembers, useUpdateMemberRole, useRemoveMember, useProjectInvitations, useRevokeInvitation, useResendInvitation, useUpdateProject } from "../hooks";
 
 interface ProjectStats {
   memberCount: number;
@@ -67,11 +67,19 @@ export default function ProjectDetailScreen({
         url: pathname,
         icon: project.icon,
       });
+      
+      // Update local form state when project data changes (e.g. after refresh)
+      setSettingsFormData({
+        name: project.name,
+        description: project.description || "",
+        visibility: project.visibility,
+      });
     }
   }, [project, addRecentProject, pathname]);
 
   const canManageMembers = userRole === "owner" || userRole === "editor";
   const { mutateAsync: createIssueMutation } = useCreateIssue();
+  const { mutateAsync: updateProjectMutation } = useUpdateProject();
   // Issue dialog state
   const [issueDialogOpen, setIssueDialogOpen] = useState(false);
   const [issueFormData, setIssueFormData] = useState({
@@ -360,14 +368,31 @@ export default function ProjectDetailScreen({
 
     if (Object.keys(errors).length > 0) {
       setSettingsErrors(errors);
-      return;
+      return false;
     }
 
     setIsSubmittingSettings(true);
-    // TODO: wire PATCH /api/projects/:id
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
-    setIsSubmittingSettings(false);
-    // Note: Dialog close is handled by project-actions.tsx via onOpenChange
+    
+    try {
+      await updateProjectMutation({
+        projectId: project.id,
+        data: {
+          name: settingsFormData.name,
+          description: settingsFormData.description,
+          visibility: settingsFormData.visibility,
+        },
+      });
+      router.refresh();
+      return true;
+      // Success toast is handled by the hook
+    } catch (error) {
+      console.error("Failed to update project:", error);
+      return false;
+      // Error toast is handled by the hook
+    } finally {
+      setIsSubmittingSettings(false);
+      // Note: Dialog close is handled by project-actions.tsx via onOpenChange
+    }
   };
 
   const handleSettingsCancel = () => {
@@ -551,6 +576,7 @@ export default function ProjectDetailScreen({
               onRevokeInvitation={handleRevokeInvitation}
               onResendInvitation={handleResendInvitation}
               onInviteMember={handleInviteMember}
+              onOpen={() => handleMemberDialogOpen(true)}
             >
               {trigger}
             </ProjectMemberManagerDialog>
@@ -577,7 +603,12 @@ export default function ProjectDetailScreen({
             onVisibilityChange={handleVisibilityChange}
             onConfirmVisibilityChange={handleConfirmVisibilityChange}
             onCancelVisibilityChange={handleCancelVisibilityChange}
-            onSubmit={handleSettingsSubmit}
+            onSubmit={async (e) => {
+              const success = await handleSettingsSubmit(e);
+              if (success) {
+                onOpenChange(false);
+              }
+            }}
             onCancel={handleSettingsCancel}
             hasChanges={hasSettingsChanges}
           >
