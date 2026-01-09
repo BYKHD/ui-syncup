@@ -11,7 +11,7 @@ import {
   type ProjectActivityType,
 } from "@/server/db/schema/project-activities";
 import { users } from "@/server/db/schema/users";
-import { eq, and, desc, count, sql } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 
 // ============================================================================
@@ -20,12 +20,12 @@ import { logger } from "@/lib/logger";
 
 /**
  * Actor information for activity display
+ * Note: Email is intentionally excluded to minimize PII exposure
  */
 export interface ProjectActivityActor {
   id: string;
   name: string;
-  email: string;
-  image: string | null;
+  avatarUrl: string | null;
 }
 
 /**
@@ -133,7 +133,14 @@ export interface MemberRemovedMetadata {
 // ============================================================================
 
 /**
+ * Maximum number of activities per page to prevent abuse
+ */
+const MAX_ACTIVITIES_LIMIT = 100;
+
+/**
  * Get paginated activities for a project with actor information
+ *
+ * Uses a window function to get count in a single query for performance.
  *
  * @param params - List parameters including pagination
  * @returns Paginated list of activities with actor details
@@ -141,8 +148,10 @@ export interface MemberRemovedMetadata {
 export async function getProjectActivities(
   params: ListProjectActivitiesParams
 ): Promise<ProjectActivityListResult> {
-  const { projectId, type, page = 1, limit = 20 } = params;
+  const { projectId, type, page = 1, limit: requestedLimit = 20 } = params;
 
+  // Clamp limit to prevent abuse
+  const limit = Math.min(Math.max(1, requestedLimit), MAX_ACTIVITIES_LIMIT);
   const offset = (page - 1) * limit;
 
   // Build where conditions
@@ -152,24 +161,16 @@ export async function getProjectActivities(
     conditions.push(eq(projectActivities.type, type));
   }
 
-  // Get total count
-  const totalResult = await db
-    .select({ count: count() })
-    .from(projectActivities)
-    .where(and(...conditions));
-
-  const total = totalResult[0]?.count ?? 0;
-
-  // Fetch activities with actor info (left join since actorId can be null)
+  // Single query with window function for count optimization
   const rows = await db
     .select({
       activity: projectActivities,
       actor: {
         id: users.id,
         name: users.name,
-        email: users.email,
-        image: users.image,
+        avatarUrl: users.image,
       },
+      totalCount: sql<number>`count(*) over()`.as("total_count"),
     })
     .from(projectActivities)
     .leftJoin(users, eq(projectActivities.actorId, users.id))
@@ -177,6 +178,9 @@ export async function getProjectActivities(
     .orderBy(desc(projectActivities.createdAt))
     .limit(limit)
     .offset(offset);
+
+  // Get total from first row (window function provides same value for all rows)
+  const total = rows[0]?.totalCount ?? 0;
 
   const items: ProjectActivityWithActor[] = rows.map((row) => ({
     id: row.activity.id,
@@ -187,8 +191,7 @@ export async function getProjectActivities(
       ? {
           id: row.actor.id,
           name: row.actor.name,
-          email: row.actor.email,
-          image: row.actor.image,
+          avatarUrl: row.actor.avatarUrl,
         }
       : null,
     type: row.activity.type,
@@ -220,8 +223,7 @@ export async function getProjectActivity(
       actor: {
         id: users.id,
         name: users.name,
-        email: users.email,
-        image: users.image,
+        avatarUrl: users.image,
       },
     })
     .from(projectActivities)
@@ -243,8 +245,7 @@ export async function getProjectActivity(
       ? {
           id: row.actor.id,
           name: row.actor.name,
-          email: row.actor.email,
-          image: row.actor.image,
+          avatarUrl: row.actor.avatarUrl,
         }
       : null,
     type: row.activity.type,

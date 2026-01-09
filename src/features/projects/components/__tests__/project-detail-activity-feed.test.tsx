@@ -20,8 +20,7 @@ const mockActivities: ProjectActivity[] = [
     actor: {
       id: "u1",
       name: "Alice",
-      email: "alice@example.com",
-      image: null,
+      avatarUrl: null,
     },
     metadata: {
       email: "bob@example.com",
@@ -38,8 +37,7 @@ const mockActivities: ProjectActivity[] = [
     actor: {
       id: "u1",
       name: "Alice",
-      email: "alice@example.com",
-      image: null,
+      avatarUrl: null,
     },
     metadata: {
       userName: "Bob",

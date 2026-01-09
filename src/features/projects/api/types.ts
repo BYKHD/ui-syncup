@@ -243,8 +243,7 @@ export const ProjectActivitySchema = z.object({
   actor: z.object({
     id: z.string(),
     name: z.string().nullable(),
-    email: z.string().nullable(),
-    image: z.string().nullable(),
+    avatarUrl: z.string().nullable(),
   }).nullable(),
 })
 

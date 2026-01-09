@@ -13,6 +13,51 @@ import { PERMISSIONS } from "@/config/roles";
 import { getProjectActivities } from "@/server/projects/activity-service";
 import { logger } from "@/lib/logger";
 
+// ============================================================================
+// SECURITY: Email Masking for PII Protection
+// ============================================================================
+
+/**
+ * Mask email address for privacy (preserves first/last char and domain)
+ * Example: "john.doe@example.com" -> "j***e@example.com"
+ */
+function maskEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  if (!domain) return "***";
+  const maskedLocal =
+    local.length > 2 ? `${local[0]}***${local[local.length - 1]}` : "***";
+  return `${maskedLocal}@${domain}`;
+}
+
+/**
+ * Activity types that contain email addresses in metadata
+ */
+const EMAIL_METADATA_TYPES = [
+  "invitation_sent",
+  "invitation_declined",
+  "invitation_revoked",
+  "invitation_email_failed",
+];
+
+/**
+ * Sanitize activity metadata to mask PII before API response
+ */
+function sanitizeMetadata(
+  metadata: Record<string, unknown>,
+  type: string
+): Record<string, unknown> {
+  if (
+    EMAIL_METADATA_TYPES.includes(type) &&
+    typeof metadata.email === "string"
+  ) {
+    return {
+      ...metadata,
+      email: maskEmail(metadata.email),
+    };
+  }
+  return metadata;
+}
+
 /**
  * GET /api/projects/[id]/activities
  *
@@ -97,9 +142,10 @@ export async function GET(
       count: activities.length,
     });
 
-    // Serialize dates to strings for API response
+    // Serialize dates to strings for API response and sanitize PII
     const serializedActivities = activities.map((activity) => ({
       ...activity,
+      metadata: sanitizeMetadata(activity.metadata, activity.type),
       createdAt: activity.createdAt.toISOString(),
     }));
 
@@ -108,11 +154,11 @@ export async function GET(
       { status: 200 }
     );
   } catch (error) {
-    console.error("GET project activities error:", error);
     logger.error("api.projects.activities.error", {
       requestId,
       projectId,
       error: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
     });
 
     return NextResponse.json(

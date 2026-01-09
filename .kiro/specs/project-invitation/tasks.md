@@ -257,19 +257,23 @@
 
 ---
 
-## Phase 7: Activity Logging
+## Phase 7: Activity Logging (Complete)
 
-- [ ] 16. Add invitation activity types
-  - Define activity types: invitation_sent, invitation_accepted, invitation_revoked, member_role_changed, invitation_email_failed
+- [x] 16. Add invitation activity types
+  - Define activity types: invitation_sent, invitation_accepted, invitation_declined, invitation_revoked, member_role_changed, invitation_email_failed, member_added, member_removed
   - Create activity records on invitation events
   - Create activity records on role change events
   - Create activity record on email permanent failure
   - _Requirements: 8.1-8.4, 11.4, 13.8_
+  - _Location: `src/server/db/schema/project-activities.ts`, `src/server/projects/activity-service.ts`_
 
-- [ ] 16.1 Write integration tests for activity logging
+- [x] 16.1 Write integration tests for activity logging
   - Test invitation_sent activity created on invite
   - Test invitation_accepted activity created on accept
   - Test invitation_revoked activity created on revoke
+  - Test invitation_declined activity created on decline
+  - Test member_added activity created on invitation acceptance
+  - _Location: `src/server/projects/__tests__/activity-logging.integration.test.ts`_
 
 ---
 
@@ -403,7 +407,7 @@
 | Invitation Dialog | ✅ Complete | `src/features/projects/components/project-invitation-dialog.tsx` |
 | Member Manager | ✅ Complete | `src/features/projects/components/project-member-manager-dialog.tsx` |
 | Acceptance Page | ⏳ Not Started | `src/app/(auth)/invite/project/[token]/page.tsx` |
-| Activity Logging | ⏳ Not Started | - |
+| Activity Logging | ✅ Complete | `src/server/projects/activity-service.ts`, `src/server/db/schema/project-activities.ts` |
 | Rate Limiting | ⏳ Not Started | `src/server/auth/rate-limiter.ts` (extend) |
 | RBAC Verification | ⏳ Not Started | `src/server/auth/rbac.ts`, `config/roles.ts` |
 

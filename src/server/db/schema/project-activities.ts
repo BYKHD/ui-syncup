@@ -90,6 +90,12 @@ export const projectActivities = pgTable(
     ),
     // Team-level index for multi-tenant queries
     teamIdIdx: index("project_activities_team_id_idx").on(table.teamId),
+    // Composite index for type-filtered queries (e.g., "show only invitation events")
+    projectTypeCreatedIdx: index("project_activities_project_type_created_idx").on(
+      table.projectId,
+      table.type,
+      table.createdAt
+    ),
   })
 );
 
