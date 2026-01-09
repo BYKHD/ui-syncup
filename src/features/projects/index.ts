@@ -85,7 +85,7 @@ export {
 } from './components'
 
 // Screens
-export { ProjectsListScreen } from './screens'
+export { ProjectsListScreen, InvitationAcceptanceScreen } from './screens'
 
 // Utils
 export { formatLastActivity, getRoleDisplayName, getRoleBadgeVariant } from './utils'

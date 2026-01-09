@@ -243,16 +243,44 @@ async function processJob(job: typeof emailJobs.$inferSelect): Promise<boolean> 
       // Update project invitation if this was a project invitation email
       if (job.type === 'project_invitation' && job.tokenId) {
         try {
-          const { projectInvitations } = await import('@/server/db/schema');
+          const { projectInvitations, projects } = await import('@/server/db/schema');
+          const { logInvitationEmailFailed } = await import('@/server/projects/activity-service');
           
-          await db
+          const updatedInvitations = await db
             .update(projectInvitations)
             .set({
               emailDeliveryFailed: true,
               emailFailureReason: errorMessage,
               emailLastAttemptAt: new Date(),
             })
-            .where(eq(projectInvitations.id, job.tokenId));
+            .where(eq(projectInvitations.id, job.tokenId))
+            .returning({ 
+              projectId: projectInvitations.projectId 
+            });
+          
+          if (updatedInvitations.length > 0) {
+            const { projectId } = updatedInvitations[0];
+            
+            // Fetch teamId
+            const projectResult = await db
+              .select({ teamId: projects.teamId })
+              .from(projects)
+              .where(eq(projects.id, projectId))
+              .limit(1);
+            
+            if (projectResult.length > 0) {
+              await logInvitationEmailFailed(
+                projectResult[0].teamId,
+                projectId,
+                {
+                  invitationId: job.tokenId,
+                  email: job.to,
+                  reason: errorMessage,
+                  lastAttemptAt: new Date().toISOString(),
+                }
+              );
+            }
+          }
           
           logger.error('invitation.email.failed', {
             invitationId: job.tokenId,

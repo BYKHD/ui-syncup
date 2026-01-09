@@ -218,6 +218,41 @@ export const ResendInvitationResponseSchema = z.object({
 })
 
 // ============================================================================
+// ACTIVITY SCHEMAS
+// ============================================================================
+
+export const ProjectActivityTypeSchema = z.enum([
+  'invitation_sent',
+  'invitation_accepted',
+  'invitation_declined',
+  'invitation_revoked',
+  'invitation_email_failed',
+  'member_role_changed',
+  'member_added',
+  'member_removed',
+])
+
+export const ProjectActivitySchema = z.object({
+  id: z.string(),
+  teamId: z.string(),
+  projectId: z.string(),
+  actorId: z.string().nullable(),
+  type: ProjectActivityTypeSchema,
+  metadata: z.record(z.any()),
+  createdAt: z.string(),
+  actor: z.object({
+    id: z.string(),
+    name: z.string().nullable(),
+    email: z.string().nullable(),
+    image: z.string().nullable(),
+  }).nullable(),
+})
+
+export const ListProjectActivitiesResponseSchema = z.object({
+  activities: z.array(ProjectActivitySchema),
+})
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -245,3 +280,8 @@ export type CreateInvitationResponse = z.infer<typeof CreateInvitationResponseSc
 export type ListInvitationsResponse = z.infer<typeof ListInvitationsResponseSchema>
 export type RevokeInvitationResponse = z.infer<typeof RevokeInvitationResponseSchema>
 export type ResendInvitationResponse = z.infer<typeof ResendInvitationResponseSchema>
+
+// Activity type exports
+export type ProjectActivityType = z.infer<typeof ProjectActivityTypeSchema>
+export type ProjectActivity = z.infer<typeof ProjectActivitySchema>
+export type ListProjectActivitiesResponse = z.infer<typeof ListProjectActivitiesResponseSchema>

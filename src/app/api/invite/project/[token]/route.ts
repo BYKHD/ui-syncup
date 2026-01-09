@@ -1,6 +1,7 @@
 /**
  * Accept Project Invitation API Route
  * 
+ * GET /api/invite/project/[token] - Get invitation details
  * POST /api/invite/project/[token] - Accept a project invitation
  * 
  * @module api/invite/project/[token]
@@ -8,9 +9,97 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/server/auth/session";
-import { acceptProjectInvitation } from "@/server/projects/invitation-service";
-import { getProject } from "@/server/projects/project-service";
+import { acceptProjectInvitation, getInvitationByToken } from "@/server/projects/invitation-service";
 import { logger } from "@/lib/logger";
+import { checkLimit, RATE_LIMITS, createRateLimitKey } from "@/server/auth/rate-limiter";
+
+/**
+ * GET /api/invite/project/[token]
+ * 
+ * Get project invitation details (publicly accessible).
+ * Used to display the acceptance confirmation page.
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ token: string }> }
+) {
+  const { token } = await params;
+  const requestId = crypto.randomUUID();
+
+  // Validate token format (should be 64 hex characters from 32 bytes)
+  if (!token || token.length < 8 || !/^[a-f0-9]+$/i.test(token)) {
+    return NextResponse.json(
+      { error: { code: "INVALID_TOKEN_FORMAT", message: "Invalid token format" } },
+      { status: 400 }
+    );
+  }
+
+  // Rate limiting
+  const rateLimitKey = createRateLimitKey.invitationAction(token);
+  const isAllowed = await checkLimit(
+    rateLimitKey,
+    RATE_LIMITS.INVITATION_ACTION.limit,
+    RATE_LIMITS.INVITATION_ACTION.windowMs,
+    { requestId }
+  );
+
+  if (!isAllowed) {
+    logger.warn("api.invite.get.rate_limit_exceeded", {
+      requestId,
+      tokenPrefix: token.substring(0, 8),
+    });
+    return NextResponse.json(
+      { error: { code: "RATE_LIMIT_EXCEEDED", message: "Too many requests. Please try again later." } },
+      { status: 429 }
+    );
+  }
+
+  try {
+    const invitationData = await getInvitationByToken(token);
+
+    if (!invitationData) {
+      return NextResponse.json(
+        { error: { code: "NOT_FOUND", message: "Invitation not found" } },
+        { status: 404 }
+      );
+    }
+
+    // Check status
+    if (invitationData.invitation.status === "expired") {
+      return NextResponse.json(
+        { error: { code: "INVITATION_EXPIRED", message: "Invitation has expired" } },
+        { status: 410 }
+      );
+    }
+
+    if (invitationData.invitation.status !== "pending") {
+      return NextResponse.json(
+        { error: { code: "INVITATION_INVALID", message: "Invitation is no longer valid" } },
+        { status: 410 }
+      );
+    }
+
+    return NextResponse.json({
+      invitation: {
+        id: invitationData.invitation.id,
+        email: invitationData.invitation.email,
+        role: invitationData.invitation.role,
+        projectName: invitationData.projectName,
+        inviterName: invitationData.inviterName,
+        expiresAt: invitationData.invitation.expiresAt,
+      }
+    });
+  } catch (error) {
+    logger.error("api.invite.get.error", {
+      requestId,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+    return NextResponse.json(
+      { error: { code: "INTERNAL_SERVER_ERROR", message: "Failed to fetch invitation" } },
+      { status: 500 }
+    );
+  }
+}
 
 /**
  * POST /api/invite/project/[token]
@@ -24,6 +113,34 @@ export async function POST(
 ) {
   const requestId = crypto.randomUUID();
   const { token } = await params;
+
+  // Validate token format
+  if (!token || token.length < 8 || !/^[a-f0-9]+$/i.test(token)) {
+    return NextResponse.json(
+      { error: { code: "INVALID_TOKEN_FORMAT", message: "Invalid token format" } },
+      { status: 400 }
+    );
+  }
+
+  // Rate limiting
+  const rateLimitKey = createRateLimitKey.invitationAction(token);
+  const isAllowed = await checkLimit(
+    rateLimitKey,
+    RATE_LIMITS.INVITATION_ACTION.limit,
+    RATE_LIMITS.INVITATION_ACTION.windowMs,
+    { requestId }
+  );
+
+  if (!isAllowed) {
+    logger.warn("api.invite.accept.rate_limit_exceeded", {
+      requestId,
+      tokenPrefix: token.substring(0, 8),
+    });
+    return NextResponse.json(
+      { error: { code: "RATE_LIMIT_EXCEEDED", message: "Too many requests. Please try again later." } },
+      { status: 429 }
+    );
+  }
 
   try {
     // 1. Verify user is authenticated
@@ -41,29 +158,31 @@ export async function POST(
       );
     }
 
-    // 2. Accept the invitation (validates token, checks expiration, adds member)
-    await acceptProjectInvitation(token, user.id);
-
-    // 3. Get project details for redirect (we need to fetch the project after acceptance)
-    // Note: acceptProjectInvitation doesn't return projectId, so we need to look it up
-    // For now, we'll return success without specific project details
-    // The frontend can redirect based on the response or handle navigation
+    // 2. Accept the invitation
+    const { projectId, projectSlug } = await acceptProjectInvitation(token, user.id);
 
     logger.info("api.invite.accept.success", {
       requestId,
       userId: user.id,
+      projectId,
     });
 
     return NextResponse.json(
       { 
         success: true,
-        message: "Invitation accepted successfully" 
+        message: "Invitation accepted successfully",
+        projectId,
+        projectSlug,
+        redirectUrl: `/projects/${projectSlug}`
       },
       { status: 200 }
     );
 
   } catch (error) {
-    console.error("POST accept invitation error:", error);
+    logger.error("api.invite.accept.error_initial", {
+      requestId,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
 
     // Handle specific errors from acceptProjectInvitation
     if (error instanceof Error) {
@@ -124,6 +243,14 @@ export async function POST(
         return NextResponse.json(
           { error: { code: "PROJECT_NOT_FOUND", message: "The project for this invitation no longer exists" } },
           { status: 404 }
+        );
+      }
+      
+      // User already member
+      if (error.message.includes("User is already a member")) {
+         return NextResponse.json(
+          { error: { code: "ALREADY_MEMBER", message: "You are already a member of this project" } },
+          { status: 400 }
         );
       }
     }

@@ -226,7 +226,7 @@
 
 ## Phase 6: Invitation Acceptance Flow
 
-- [ ] 15. Create invitation acceptance page
+- [x] 15. Create invitation acceptance page
   - Route: /invite/project/[token]
   - Display invitation details for confirmation
   - Check authentication status on page load
@@ -243,14 +243,14 @@
   - Test expired invitation shows error
   - Test successful acceptance redirects to project
 
-- [ ] 15.2 Implement decline invitation endpoint
+- [x] 15.2 Implement decline invitation endpoint
   - POST /api/invite/project/[token]/decline
   - Mark invitation as declined with timestamp
   - Log activity with type "invitation_declined"
   - _Requirements: 10.1-10.3_
   - _Location: `src/app/api/invite/project/[token]/decline/route.ts`_
 
-- [ ] 15.3 Add decline button to acceptance page
+- [x] 15.3 Add decline button to acceptance page
   - Display "Decline" option alongside "Accept"
   - Redirect to appropriate page after decline
   - _Requirements: 10.1, 10.4_

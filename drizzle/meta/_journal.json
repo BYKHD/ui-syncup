@@ -148,6 +148,13 @@
       "when": 1767779539965,
       "tag": "0020_dizzy_meteorite",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1767898125332,
+      "tag": "0021_glorious_thaddeus_ross",
+      "breakpoints": true
     }
   ]
 }

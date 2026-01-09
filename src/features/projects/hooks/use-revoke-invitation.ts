@@ -46,6 +46,10 @@ export function useRevokeInvitation(options?: UseRevokeInvitationOptions): UseRe
       queryClient.invalidateQueries({ 
         queryKey: [...projectKeys.detail(variables.projectId), 'invitations'] 
       })
+      // Invalidate activities query
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.activities(variables.projectId)
+      })
 
       toast.success('Invitation revoked successfully')
       options?.onSuccess?.(data)

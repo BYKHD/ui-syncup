@@ -46,6 +46,10 @@ export function useCreateInvitation(options?: UseCreateInvitationOptions): UseCr
       queryClient.invalidateQueries({ 
         queryKey: [...projectKeys.detail(variables.projectId), 'invitations'] 
       })
+      // Invalidate activities query
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.activities(variables.projectId)
+      })
 
       toast.success('Invitation sent successfully')
       options?.onSuccess?.(data)

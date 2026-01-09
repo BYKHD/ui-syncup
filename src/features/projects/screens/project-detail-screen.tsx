@@ -10,6 +10,7 @@ import { ProjectInvitationDialog } from "../components/project-invitation-dialog
 import { ProjectSettingsDialog } from "../components/project-settings-dialog";
 import { ProjectLeaveButton } from "../components/project-leave-button";
 import { ProjectDetailHeader, ProjectIssues } from "../components";
+import { ProjectActivityFeed } from "../components/project-detail-activity-feed";
 import type { ProjectRole } from "../types";
 import type { IssuePriority, IssueType, IssueSummary } from "@/features/issues/types";
 import { useRecentProjects, useProjectMembers, useUpdateMemberRole, useRemoveMember, useProjectInvitations, useRevokeInvitation, useResendInvitation, useUpdateProject } from "../hooks";
@@ -632,9 +633,18 @@ export default function ProjectDetailScreen({
         )}
       />
 
-      <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8 space-y-8">
-        {/* Project Issues */}
-        <ProjectIssues projectId={project.id} initialIssues={initialIssues} />
+      <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            {/* Project Issues */}
+            <ProjectIssues projectId={project.id} initialIssues={initialIssues} />
+          </div>
+
+          <div className="space-y-8">
+            {/* Activity Feed */}
+            <ProjectActivityFeed projectId={project.id} />
+          </div>
+        </div>
       </div>
 
       {/* Project Invitation Dialog */}

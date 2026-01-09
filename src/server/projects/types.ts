@@ -132,6 +132,9 @@ export interface ProjectInvitation {
   createdAt: Date;
   usedAt: Date | null;
   cancelledAt: Date | null;
+  emailDeliveryFailed: boolean;
+  emailFailureReason: string | null;
+  emailLastAttemptAt: Date | null;
 }
 
 /**

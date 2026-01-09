@@ -17,6 +17,13 @@ import { addMember } from "./member-service";
 import { PROJECT_ROLES } from "@/config/roles";
 import type { ProjectRole } from "@/config/roles";
 import { enqueueEmail } from "@/server/email";
+import {
+  logInvitationSent,
+  logInvitationAccepted,
+  logInvitationRevoked,
+  logInvitationDeclined,
+  logMemberAdded,
+} from "./activity-service";
 import type { 
   ProjectInvitation,
   ProjectInvitationWithUsers,
@@ -269,6 +276,35 @@ export async function createProjectInvitation(
     });
   }
 
+  // Log activity for invitation sent
+  try {
+    // Fetch project to get teamId for activity logging
+    const projectResult = await db
+      .select({ teamId: projects.teamId })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    if (projectResult[0]) {
+      await logInvitationSent(
+        projectResult[0].teamId,
+        projectId,
+        invitedBy,
+        {
+          invitationId: invitation.id,
+          email,
+          role,
+        }
+      );
+    }
+  } catch (activityError) {
+    // Log error but don't fail invitation creation
+    logger.error("project.invitation.activity_log_failed", {
+      invitationId: invitation.id,
+      error: activityError instanceof Error ? activityError.message : 'Unknown error',
+    });
+  }
+
   return {
     invitation: {
       id: invitation.id,
@@ -281,6 +317,9 @@ export async function createProjectInvitation(
       createdAt: invitation.createdAt,
       usedAt: invitation.usedAt,
       cancelledAt: invitation.cancelledAt,
+      emailDeliveryFailed: invitation.emailDeliveryFailed ?? false,
+      emailFailureReason: invitation.emailFailureReason,
+      emailLastAttemptAt: invitation.emailLastAttemptAt,
     },
     token,
   };
@@ -319,6 +358,34 @@ export async function revokeProjectInvitation(
     projectId: invitation.projectId,
     actorId,
   });
+
+  // Log activity for invitation revoked
+  try {
+    // Fetch project to get teamId for activity logging
+    const projectResult = await db
+      .select({ teamId: projects.teamId })
+      .from(projects)
+      .where(eq(projects.id, invitation.projectId))
+      .limit(1);
+
+    if (projectResult[0]) {
+      await logInvitationRevoked(
+        projectResult[0].teamId,
+        invitation.projectId,
+        actorId,
+        {
+          invitationId,
+          email: invitation.email,
+        }
+      );
+    }
+  } catch (activityError) {
+    // Log error but don't fail revocation
+    logger.error("project.invitation.activity_log_failed", {
+      invitationId,
+      error: activityError instanceof Error ? activityError.message : 'Unknown error',
+    });
+  }
 }
 
 /**
@@ -426,7 +493,7 @@ export async function resendProjectInvitation(
 export async function acceptProjectInvitation(
   token: string,
   userId: string
-): Promise<void> {
+): Promise<{ projectId: string; projectSlug: string }> {
   const tokenHash = createHash("sha256").update(token).digest("hex");
 
   const invitationResult = await db
@@ -485,4 +552,170 @@ export async function acceptProjectInvitation(
     projectId: invitation.projectId,
     userId,
   });
+
+  // Log activity for invitation accepted and member added
+  try {
+    // Get user details for activity metadata
+    const userResult = await db
+      .select({ name: users.name })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    const userName = userResult[0]?.name ?? 'Unknown User';
+
+    await logInvitationAccepted(
+      project.teamId,
+      invitation.projectId,
+      userId,
+      {
+        invitationId: invitation.id,
+        userId,
+        userName,
+        role: invitation.role,
+      }
+    );
+
+    await logMemberAdded(
+      project.teamId,
+      invitation.projectId,
+      userId,
+      {
+        userId,
+        userName,
+        role: invitation.role,
+        addedVia: "invitation",
+      }
+    );
+  } catch (activityError) {
+    // Log error but don't fail acceptance
+    logger.error("project.invitation.activity_log_failed", {
+      invitationId: invitation.id,
+      error: activityError instanceof Error ? activityError.message : 'Unknown error',
+    });
+  }
+
+  return {
+    projectId: project.id,
+    projectSlug: project.slug,
+  };
+}
+
+/**
+ * Get invitation details by token
+ * Used for the invitation acceptance page
+ */
+export async function getInvitationByToken(token: string): Promise<{
+  invitation: ProjectInvitation;
+  projectName: string;
+  inviterName: string;
+} | null> {
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+
+  const invitationResult = await db
+    .select({
+      invitation: projectInvitations,
+      projectName: projects.name,
+      inviterName: users.name,
+    })
+    .from(projectInvitations)
+    .innerJoin(projects, eq(projectInvitations.projectId, projects.id))
+    .leftJoin(users, eq(projectInvitations.invitedBy, users.id))
+    .where(eq(projectInvitations.tokenHash, tokenHash))
+    .limit(1);
+
+  if (invitationResult.length === 0) {
+    return null;
+  }
+
+  const { invitation, projectName, inviterName } = invitationResult[0];
+
+  return {
+    invitation: {
+      id: invitation.id,
+      projectId: invitation.projectId,
+      email: invitation.email,
+      role: invitation.role as Exclude<ProjectRole, "PROJECT_OWNER">,
+      status: getInvitationStatus({
+        usedAt: invitation.usedAt,
+        cancelledAt: invitation.cancelledAt,
+        expiresAt: invitation.expiresAt,
+      }),
+      invitedBy: invitation.invitedBy ?? '',
+      expiresAt: invitation.expiresAt,
+      createdAt: invitation.createdAt,
+      usedAt: invitation.usedAt,
+      cancelledAt: invitation.cancelledAt,
+      emailDeliveryFailed: invitation.emailDeliveryFailed ?? false,
+      emailFailureReason: invitation.emailFailureReason,
+      emailLastAttemptAt: invitation.emailLastAttemptAt,
+    },
+    projectName,
+    inviterName: inviterName ?? 'Deleted User',
+  };
+}
+
+/**
+ * Decline a project invitation
+ */
+export async function declineProjectInvitation(token: string): Promise<void> {
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+
+  const invitationResult = await db
+    .select()
+    .from(projectInvitations)
+    .where(eq(projectInvitations.tokenHash, tokenHash))
+    .limit(1);
+
+  const invitation = invitationResult[0];
+
+  if (!invitation) {
+    throw new Error("Invalid invitation token");
+  }
+
+  if (invitation.usedAt || invitation.cancelledAt) {
+    throw new Error("Invitation is no longer active");
+  }
+
+  // Check if invitation has expired
+  if (new Date() > invitation.expiresAt) {
+    throw new Error("Invitation has expired");
+  }
+
+  await db
+    .update(projectInvitations)
+    .set({ cancelledAt: new Date() }) // We use cancelledAt for declined status as well
+    .where(eq(projectInvitations.id, invitation.id));
+
+  logger.info("project.invitation.declined", {
+    invitationId: invitation.id,
+    projectId: invitation.projectId,
+  });
+
+  // Log activity for invitation declined
+  try {
+    // Fetch project to get teamId for activity logging
+    const projectResult = await db
+      .select({ teamId: projects.teamId })
+      .from(projects)
+      .where(eq(projects.id, invitation.projectId))
+      .limit(1);
+
+    if (projectResult[0]) {
+      await logInvitationDeclined(
+        projectResult[0].teamId,
+        invitation.projectId,
+        {
+          invitationId: invitation.id,
+          email: invitation.email,
+        }
+      );
+    }
+  } catch (activityError) {
+    // Log error but don't fail decline
+    logger.error("project.invitation.activity_log_failed", {
+      invitationId: invitation.id,
+      error: activityError instanceof Error ? activityError.message : 'Unknown error',
+    });
+  }
 }
