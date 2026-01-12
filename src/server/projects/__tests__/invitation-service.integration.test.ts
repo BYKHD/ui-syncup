@@ -11,7 +11,7 @@
  * Requirements: 1.5, 4.2, 4.3
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, afterEach } from 'vitest';
 import { db } from '@/lib/db';
 import { users, teams, teamMembers, projects, projectMembers, projectInvitations } from '@/server/db/schema';
 import { eq, and } from 'drizzle-orm';

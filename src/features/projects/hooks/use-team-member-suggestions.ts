@@ -3,6 +3,8 @@
  * React hook for searching team members with debounce for autocomplete
  */
 
+"use client"
+
 import { useState, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 

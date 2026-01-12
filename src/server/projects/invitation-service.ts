@@ -14,7 +14,6 @@ import { eq, and, gt, isNull, sql, desc } from "drizzle-orm";
 import { randomBytes, createHash } from "crypto";
 import { logger } from "@/lib/logger";
 import { addMember } from "./member-service";
-import { PROJECT_ROLES } from "@/config/roles";
 import type { ProjectRole } from "@/config/roles";
 import { enqueueEmail } from "@/server/email";
 import {
