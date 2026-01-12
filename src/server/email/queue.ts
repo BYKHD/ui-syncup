@@ -23,27 +23,27 @@ import { sendEmail } from './client';
 export interface EmailJobInput {
   userId: string;
   tokenId?: string;
-  type: 'verification' | 'password_reset' | 'welcome' | 'security_alert' | 'team_invitation' | 'ownership_transfer';
+  type: 'verification' | 'password_reset' | 'welcome' | 'security_alert' | 'team_invitation' | 'ownership_transfer' | 'project_invitation';
   to: string;
   template: EmailTemplate;
 }
 
 /**
  * Calculate backoff delay based on attempt number
- * - Attempt 1: 30 seconds
+ * - Attempt 1: 1 minute
  * - Attempt 2: 5 minutes
- * - Attempt 3: 30 minutes
+ * - Attempt 3: 15 minutes
  */
 function calculateBackoff(attempts: number): number {
   switch (attempts) {
     case 1:
-      return 30 * 1000; // 30 seconds
+      return 1 * 60 * 1000; // 1 minute
     case 2:
       return 5 * 60 * 1000; // 5 minutes
     case 3:
-      return 30 * 60 * 1000; // 30 minutes
+      return 15 * 60 * 1000; // 15 minutes
     default:
-      return 30 * 1000; // Default to 30 seconds
+      return 1 * 60 * 1000; // Default to 1 minute
   }
 }
 
@@ -105,7 +105,7 @@ export async function enqueueEmail(job: EmailJobInput): Promise<void> {
         template: job.template.type,
         data: job.template.data as any,
         attempts: 0,
-        maxAttempts: 3,
+        maxAttempts: 4,
         status: 'pending',
         scheduledFor: new Date(),
       })
@@ -239,6 +239,61 @@ async function processJob(job: typeof emailJobs.$inferSelect): Promise<boolean> 
           updatedAt: new Date(),
         })
         .where(eq(emailJobs.id, job.id));
+
+      // Update project invitation if this was a project invitation email
+      if (job.type === 'project_invitation' && job.tokenId) {
+        try {
+          const { projectInvitations, projects } = await import('@/server/db/schema');
+          const { logInvitationEmailFailed } = await import('@/server/projects/activity-service');
+          
+          const updatedInvitations = await db
+            .update(projectInvitations)
+            .set({
+              emailDeliveryFailed: true,
+              emailFailureReason: errorMessage,
+              emailLastAttemptAt: new Date(),
+            })
+            .where(eq(projectInvitations.id, job.tokenId))
+            .returning({ 
+              projectId: projectInvitations.projectId 
+            });
+          
+          if (updatedInvitations.length > 0) {
+            const { projectId } = updatedInvitations[0];
+            
+            // Fetch teamId
+            const projectResult = await db
+              .select({ teamId: projects.teamId })
+              .from(projects)
+              .where(eq(projects.id, projectId))
+              .limit(1);
+            
+            if (projectResult.length > 0) {
+              await logInvitationEmailFailed(
+                projectResult[0].teamId,
+                projectId,
+                {
+                  invitationId: job.tokenId,
+                  email: job.to,
+                  reason: errorMessage,
+                  lastAttemptAt: new Date().toISOString(),
+                }
+              );
+            }
+          }
+          
+          logger.error('invitation.email.failed', {
+            invitationId: job.tokenId,
+            attempts: newAttempts,
+            error: errorMessage,
+          });
+        } catch (invitationUpdateError) {
+          logger.error('invitation.email.update_failed', {
+            invitationId: job.tokenId,
+            error: invitationUpdateError instanceof Error ? invitationUpdateError.message : 'Unknown error',
+          });
+        }
+      }
 
       logger.error('email.failed.max_retries', {
         jobId: job.id,

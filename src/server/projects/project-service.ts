@@ -9,7 +9,7 @@ import { db } from "@/lib/db";
 import { projects } from "@/server/db/schema/projects";
 import { projectMembers } from "@/server/db/schema/project-members";
 import { issues } from "@/server/db/schema/issues";
-import { eq, and, isNull, or, like, sql, count, inArray } from "drizzle-orm";
+import { eq, and, isNull, or, like, count, inArray } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { generateUniqueSlug, validateProjectKey, validateProjectName } from "./utils";
 import { autoPromoteToEditor, getManagementRole } from "@/server/auth/rbac";

@@ -7,73 +7,56 @@ import {
   RiUserAddLine,
   RiUserLine,
   RiSettingsLine,
-  RiLockLine,
-  RiGlobalLine,
-  RiArchiveLine,
-  RiDeleteBinLine,
-  RiEditLine,
+  RiMailSendLine,
+  RiMailCloseLine,
+  RiCloseCircleLine,
+  RiErrorWarningLine,
   RiTimeLine,
+  RiUserUnfollowLine,
+  RiCheckDoubleLine,
 } from "@remixicon/react";
-
-type ActivityType =
-  | 'member_added'
-  | 'member_removed'
-  | 'member_role_changed'
-  | 'project_updated'
-  | 'visibility_changed'
-  | 'project_archived'
-  | 'project_deleted'
-
-interface ActivityItem {
-  id: string
-  type: ActivityType
-  actor: {
-    id: string
-    name: string
-    avatar?: string
-  }
-  target?: {
-    id: string
-    name: string
-  }
-  metadata?: Record<string, any>
-  timestamp: string
-}
+import { useProjectActivities } from "../hooks/use-project-activities";
+import type { ProjectActivity } from "../api/types";
 
 interface ProjectActivityFeedProps {
-  activities: ActivityItem[]
-  isLoading?: boolean
+  projectId: string;
 }
 
-function getActivityIcon(type: ActivityType) {
+function getActivityIcon(type: ProjectActivity['type']) {
   switch (type) {
     case 'member_added':
       return <RiUserAddLine className="h-4 w-4 text-green-500" />;
     case 'member_removed':
-      return <RiUserLine className="h-4 w-4 text-red-500" />;
+      return <RiUserUnfollowLine className="h-4 w-4 text-red-500" />;
     case 'member_role_changed':
       return <RiUserLine className="h-4 w-4 text-blue-500" />;
-    case 'project_updated':
-      return <RiEditLine className="h-4 w-4 text-blue-500" />;
-    case 'visibility_changed':
-      return <RiSettingsLine className="h-4 w-4 text-orange-500" />;
-    case 'project_archived':
-      return <RiArchiveLine className="h-4 w-4 text-gray-500" />;
-    case 'project_deleted':
-      return <RiDeleteBinLine className="h-4 w-4 text-red-500" />;
+    case 'invitation_sent':
+      return <RiMailSendLine className="h-4 w-4 text-blue-500" />;
+    case 'invitation_accepted':
+      return <RiCheckDoubleLine className="h-4 w-4 text-green-500" />;
+    case 'invitation_declined':
+      return <RiCloseCircleLine className="h-4 w-4 text-red-500" />;
+    case 'invitation_revoked':
+      return <RiMailCloseLine className="h-4 w-4 text-orange-500" />;
+    case 'invitation_email_failed':
+      return <RiErrorWarningLine className="h-4 w-4 text-red-500" />;
     default:
       return <RiTimeLine className="h-4 w-4 text-muted-foreground" />;
   }
 }
 
-function getActivityMessage(activity: ActivityItem) {
-  const { type, actor, target, metadata } = activity;
+function getActivityMessage(activity: ProjectActivity) {
+  const { type, actor, metadata } = activity;
+  const actorName = actor?.name || 'System'; // Invitations might be declined by anonymous, but logInvitationDeclined has null actor.
 
   switch (type) {
     case 'member_added':
       return (
         <span>
-          <strong>{actor.name}</strong> added <strong>{target?.name}</strong> to the project
+          <strong>{actorName}</strong> added a member
+          {metadata?.userName && (
+             <span>: <strong>{metadata.userName}</strong></span>
+          )}
           {metadata?.role && (
             <Badge variant="outline" className="ml-2 text-xs">
               {metadata.role}
@@ -84,13 +67,13 @@ function getActivityMessage(activity: ActivityItem) {
     case 'member_removed':
       return (
         <span>
-          <strong>{actor.name}</strong> removed <strong>{target?.name}</strong> from the project
+          <strong>{actorName}</strong> removed <strong>{metadata?.userName || 'a member'}</strong>
         </span>
       );
     case 'member_role_changed':
       return (
         <span>
-          <strong>{actor.name}</strong> changed <strong>{target?.name}</strong>'s role
+          <strong>{actorName}</strong> changed <strong>{metadata?.userName}</strong>'s role
           {metadata?.oldRole && metadata?.newRole && (
             <span className="ml-2">
               from <Badge variant="outline" className="text-xs">{metadata.oldRole}</Badge> to{' '}
@@ -99,52 +82,48 @@ function getActivityMessage(activity: ActivityItem) {
           )}
         </span>
       );
-    case 'project_updated':
+    case 'invitation_sent':
       return (
         <span>
-          <strong>{actor.name}</strong> updated the project
-          {metadata?.changes && (
-            <span className="ml-1">
-              ({metadata.changes.join(', ')})
-            </span>
+          <strong>{actorName}</strong> sent an invitation to <strong>{metadata?.email}</strong>
+          {metadata?.role && (
+            <Badge variant="outline" className="ml-2 text-xs">
+              {metadata.role}
+            </Badge>
           )}
         </span>
       );
-    case 'visibility_changed':
+    case 'invitation_accepted':
       return (
         <span>
-          <strong>{actor.name}</strong> changed project visibility to{' '}
-          <Badge variant="outline" className="ml-1 text-xs">
-            {metadata?.visibility === 'private' ? (
-              <>
-                <RiLockLine className="h-3 w-3 mr-1" />
-                Private
-              </>
-            ) : (
-              <>
-                <RiGlobalLine className="h-3 w-3 mr-1" />
-                Public
-              </>
-            )}
-          </Badge>
+          <strong>{metadata?.userName || actorName}</strong> accepted invitation
         </span>
       );
-    case 'project_archived':
+    case 'invitation_declined':
       return (
         <span>
-          <strong>{actor.name}</strong> archived the project
+          Invitation to <strong>{metadata?.email}</strong> was declined
         </span>
       );
-    case 'project_deleted':
+    case 'invitation_revoked':
       return (
         <span>
-          <strong>{actor.name}</strong> deleted the project
+          <strong>{actorName}</strong> revoked invitation to <strong>{metadata?.email}</strong>
+        </span>
+      );
+    case 'invitation_email_failed':
+      return (
+        <span>
+          Email delivery failed for <strong>{metadata?.email}</strong>
+          {metadata?.reason && (
+             <span className="ml-1 text-red-500 text-xs">({metadata.reason})</span>
+          )}
         </span>
       );
     default:
       return (
         <span>
-          <strong>{actor.name}</strong> performed an action
+          <strong>{actorName}</strong> performed an action
         </span>
       );
   }
@@ -164,7 +143,10 @@ function formatTimestamp(timestamp: string) {
   return date.toLocaleDateString();
 }
 
-export function ProjectActivityFeed({ activities, isLoading = false }: ProjectActivityFeedProps) {
+export function ProjectActivityFeed({ projectId }: ProjectActivityFeedProps) {
+  const { data, isLoading } = useProjectActivities({ projectId });
+  const activities = data?.activities || [];
+
   if (isLoading) {
     return (
       <Card>
@@ -211,7 +193,7 @@ export function ProjectActivityFeed({ activities, isLoading = false }: ProjectAc
                     {getActivityMessage(activity)}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {formatTimestamp(activity.timestamp)}
+                    {formatTimestamp(activity.createdAt)}
                   </div>
                 </div>
               </div>

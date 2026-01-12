@@ -45,5 +45,5 @@ export async function getProject(projectId: string): Promise<GetProjectResponse>
   }
 
   const data = await response.json()
-  return GetProjectResponseSchema.parse(data)
+  return GetProjectResponseSchema.parse(data.project)
 }

@@ -10,9 +10,10 @@ import { ProjectInvitationDialog } from "../components/project-invitation-dialog
 import { ProjectSettingsDialog } from "../components/project-settings-dialog";
 import { ProjectLeaveButton } from "../components/project-leave-button";
 import { ProjectDetailHeader, ProjectIssues } from "../components";
+import { ProjectActivityFeed } from "../components/project-detail-activity-feed";
 import type { ProjectRole } from "../types";
 import type { IssuePriority, IssueType, IssueSummary } from "@/features/issues/types";
-import { useRecentProjects, useProjectMembers, useUpdateMemberRole, useRemoveMember, useProjectInvitations, useRevokeInvitation, useResendInvitation } from "../hooks";
+import { useRecentProjects, useProjectMembers, useUpdateMemberRole, useRemoveMember, useProjectInvitations, useRevokeInvitation, useResendInvitation, useUpdateProject } from "../hooks";
 
 interface ProjectStats {
   memberCount: number;
@@ -67,11 +68,19 @@ export default function ProjectDetailScreen({
         url: pathname,
         icon: project.icon,
       });
+      
+      // Update local form state when project data changes (e.g. after refresh)
+      setSettingsFormData({
+        name: project.name,
+        description: project.description || "",
+        visibility: project.visibility,
+      });
     }
   }, [project, addRecentProject, pathname]);
 
   const canManageMembers = userRole === "owner" || userRole === "editor";
   const { mutateAsync: createIssueMutation } = useCreateIssue();
+  const { mutateAsync: updateProjectMutation } = useUpdateProject();
   // Issue dialog state
   const [issueDialogOpen, setIssueDialogOpen] = useState(false);
   const [issueFormData, setIssueFormData] = useState({
@@ -88,8 +97,8 @@ export default function ProjectDetailScreen({
   const [asIsUploadProgress, setAsIsUploadProgress] = useState(0);
   const [toBeUploadProgress, setToBeUploadProgress] = useState(0);
 
-  // Settings dialog state
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  // Settings dialog state - note: dialog open/close is managed by project-actions.tsx
+  // We only manage form state here
   const [settingsFormData, setSettingsFormData] = useState({
     name: project.name,
     description: project.description || "",
@@ -108,17 +117,19 @@ export default function ProjectDetailScreen({
   const [isLeaving, setIsLeaving] = useState(false);
   const [leaveError, setLeaveError] = useState<string | null>(null);
 
-  // Member dialog state
-  const [memberDialogOpen, setMemberDialogOpen] = useState(false);
+  // Member dialog state - dialog open/close is managed by project-actions.tsx
   const [invitationDialogOpen, setInvitationDialogOpen] = useState(false);
   
-  // Real data hooks for members
+  // Track if member dialog has been opened (for enabling hooks)
+  const [memberDialogOpened, setMemberDialogOpened] = useState(false);
+  
+  // Real data hooks for members - enabled once dialog has been opened
   const { 
     data: membersData, 
     isLoading: isMembersLoading, 
     error: membersQueryError,
     refetch: refetchMembers 
-  } = useProjectMembers({ projectId: project.id, enabled: memberDialogOpen });
+  } = useProjectMembers({ projectId: project.id, enabled: memberDialogOpened });
   
   const { mutateAsync: updateRoleMutation } = useUpdateMemberRole();
   const { mutateAsync: removeMemberMutation } = useRemoveMember();
@@ -127,7 +138,7 @@ export default function ProjectDetailScreen({
   const { 
     pendingInvitations: invitationsData,
     refetch: refetchInvitations 
-  } = useProjectInvitations({ projectId: project.id, enabled: memberDialogOpen });
+  } = useProjectInvitations({ projectId: project.id, enabled: memberDialogOpened });
   
   const { mutateAsync: revokeInvitationMutation } = useRevokeInvitation();
   const { mutateAsync: resendInvitationMutation } = useResendInvitation();
@@ -157,13 +168,28 @@ export default function ProjectDetailScreen({
     if (!invitationsData) return [];
     return invitationsData.map((inv) => ({
       id: inv.id,
-      invitedUserId: inv.invitedUserId || '',
+      invitedUserId: inv.invitedUser?.id || '', // Get from invitedUser object if exists
       role: inv.role as 'editor' | 'member' | 'viewer',
       status: inv.status,
       createdAt: new Date(inv.createdAt),
       expiresAt: new Date(inv.expiresAt),
-      invitedUser: inv.invitedUser,
-      invitedByUser: inv.invitedByUser,
+      // For external invites, invitedUser is null - create fallback from email
+      invitedUser: inv.invitedUser || {
+        id: '',
+        name: inv.email.split('@')[0], // Use email username as fallback name
+        email: inv.email,
+        image: null,
+      },
+      invitedByUser: inv.invitedByUser || {
+        id: '',
+        name: 'Deleted User',
+        email: '',
+        image: null,
+      },
+      // Email delivery tracking fields
+      emailDeliveryFailed: inv.emailDeliveryFailed ?? false,
+      emailFailureReason: inv.emailFailureReason ?? null,
+      emailLastAttemptAt: inv.emailLastAttemptAt ? new Date(inv.emailLastAttemptAt) : null,
     }));
   }, [invitationsData]);
 
@@ -343,18 +369,36 @@ export default function ProjectDetailScreen({
 
     if (Object.keys(errors).length > 0) {
       setSettingsErrors(errors);
-      return;
+      return false;
     }
 
     setIsSubmittingSettings(true);
-    // TODO: wire PATCH /api/projects/:id
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
-    setIsSubmittingSettings(false);
-    setSettingsDialogOpen(false);
+    
+    try {
+      await updateProjectMutation({
+        projectId: project.id,
+        data: {
+          name: settingsFormData.name,
+          description: settingsFormData.description,
+          visibility: settingsFormData.visibility,
+        },
+      });
+      router.refresh();
+      return true;
+      // Success toast is handled by the hook
+    } catch (error) {
+      console.error("Failed to update project:", error);
+      return false;
+      // Error toast is handled by the hook
+    } finally {
+      setIsSubmittingSettings(false);
+      // Note: Dialog close is handled by project-actions.tsx via onOpenChange
+    }
   };
 
   const handleSettingsCancel = () => {
-    setSettingsDialogOpen(false);
+    // Note: Dialog close is handled by project-actions.tsx via onOpenChange
+    // We just reset the form state here
     setSettingsFormData({
       name: project.name,
       description: project.description || "",
@@ -380,8 +424,8 @@ export default function ProjectDetailScreen({
 
   // Member dialog handlers
   const handleMemberDialogOpen = useCallback((open: boolean) => {
-    setMemberDialogOpen(open);
     if (open) {
+      setMemberDialogOpened(true); // Enable hooks
       refetchMembers();
       refetchInvitations();
     }
@@ -510,28 +554,36 @@ export default function ProjectDetailScreen({
             {trigger}
           </IssuesCreateDialog>
         )}
-        renderMemberDialog={(trigger) => (
-          <ProjectMemberManagerDialog
-            projectId={project.id}
-            projectName={project.name}
-            userRole={userRole}
-            canManageMembers={userRole === "owner" || userRole === "editor"}
-            open={memberDialogOpen}
-            onOpenChange={handleMemberDialogOpen}
-            members={members}
-            pendingInvitations={pendingInvitations}
-            isLoading={isMembersLoading}
-            error={membersError}
-            onRoleChange={handleRoleChange}
-            onRemoveMember={handleRemoveMember}
-            onRevokeInvitation={handleRevokeInvitation}
-            onResendInvitation={handleResendInvitation}
-            onInviteMember={handleInviteMember}
-          >
-            {trigger}
-          </ProjectMemberManagerDialog>
-        )}
-        renderSettingsDialog={(trigger) => (
+        renderMemberDialog={({ trigger, open, onOpenChange }) => {
+          // Wrap onOpenChange to trigger data fetching
+          const handleOpenChange = (isOpen: boolean) => {
+            onOpenChange(isOpen);
+            handleMemberDialogOpen(isOpen);
+          };
+          return (
+            <ProjectMemberManagerDialog
+              projectId={project.id}
+              projectName={project.name}
+              userRole={userRole}
+              canManageMembers={userRole === "owner" || userRole === "editor"}
+              open={open}
+              onOpenChange={handleOpenChange}
+              members={members}
+              pendingInvitations={pendingInvitations}
+              isLoading={isMembersLoading}
+              error={membersError}
+              onRoleChange={handleRoleChange}
+              onRemoveMember={handleRemoveMember}
+              onRevokeInvitation={handleRevokeInvitation}
+              onResendInvitation={handleResendInvitation}
+              onInviteMember={handleInviteMember}
+              onOpen={() => handleMemberDialogOpen(true)}
+            >
+              {trigger}
+            </ProjectMemberManagerDialog>
+          );
+        }}
+        renderSettingsDialog={({ trigger, open, onOpenChange }) => (
           <ProjectSettingsDialog
             project={{
               id: project.id,
@@ -541,8 +593,8 @@ export default function ProjectDetailScreen({
               status: "active",
             }}
             userRole={userRole}
-            open={settingsDialogOpen}
-            onOpenChange={setSettingsDialogOpen}
+            open={open}
+            onOpenChange={onOpenChange}
             formData={settingsFormData}
             errors={settingsErrors}
             isSubmitting={isSubmittingSettings}
@@ -552,14 +604,19 @@ export default function ProjectDetailScreen({
             onVisibilityChange={handleVisibilityChange}
             onConfirmVisibilityChange={handleConfirmVisibilityChange}
             onCancelVisibilityChange={handleCancelVisibilityChange}
-            onSubmit={handleSettingsSubmit}
+            onSubmit={async (e) => {
+              const success = await handleSettingsSubmit(e);
+              if (success) {
+                onOpenChange(false);
+              }
+            }}
             onCancel={handleSettingsCancel}
             hasChanges={hasSettingsChanges}
           >
             {trigger}
           </ProjectSettingsDialog>
         )}
-        renderLeaveDialog={(trigger: React.ReactNode) => (
+        renderLeaveDialog={({ trigger, open, onOpenChange }) => (
           <ProjectLeaveButton
             projectName={project.name}
             userRole={
@@ -568,15 +625,26 @@ export default function ProjectDetailScreen({
             isLeaving={isLeaving}
             error={leaveError}
             onLeave={handleLeave}
+            open={open}
+            onOpenChange={onOpenChange}
           >
             {trigger}
           </ProjectLeaveButton>
         )}
       />
 
-      <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8 space-y-8">
-        {/* Project Issues */}
-        <ProjectIssues projectId={project.id} initialIssues={initialIssues} />
+      <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            {/* Project Issues */}
+            <ProjectIssues projectId={project.id} initialIssues={initialIssues} />
+          </div>
+
+          <div className="space-y-8">
+            {/* Activity Feed */}
+            <ProjectActivityFeed projectId={project.id} />
+          </div>
+        </div>
       </div>
 
       {/* Project Invitation Dialog */}
