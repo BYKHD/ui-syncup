@@ -428,3 +428,66 @@ bun run test
 bun run test:watch
 # Run E2E tests (Uses local DB)
 bun run test:ui
+```
+
+---
+
+## 13) Extended Documentation
+
+For detailed topic-specific guidance, see the `docs/` folder:
+
+### Architecture
+- [RBAC & Permissions](docs/architecture/RBAC.md) - Role-based access control system
+- [Team Plan Architecture](docs/architecture/TEAM_PLAN_ARCHITECTURE.md) - Subscription tiers & limits
+- [Security](docs/architecture/SECURITY.md) - Security practices & guidelines
+- [Loading Architecture](docs/architecture/LOADING_ARCHITECTURE.md) - Loading states & patterns
+
+### Development
+- [Local Development](docs/development/LOCAL_DEVELOPMENT.md) - Getting started locally
+- [Environment Config](docs/development/ENVIRONMENT_CONFIG.md) - Environment variables
+- [Remote Database Setup](docs/development/REMOTE_DATABASE_SETUP.md) - Production DB setup
+- [Supabase Local Setup](docs/development/SUPABASE_LOCAL_SETUP.md) - Local Supabase config
+
+### Testing
+- [Testing Strategy](docs/testing/TESTING.md) - Full testing guidelines
+- [Testing Quick Start](docs/testing/TESTING_QUICK_START.md) - Quick reference
+
+### CI/CD & Monitoring
+- [CI/CD Monitoring](docs/CI_CD_MONITORING.md) - Pipeline monitoring
+- [CI/CD Alerts Setup](docs/CI_CD_ALERTS_SETUP.md) - Alert configuration
+
+### Other
+- [Media Storage](docs/MEDIA_STORAGE.md) - File upload & storage
+- [Versioning](docs/VERSIONING.md) - Version management
+
+---
+
+## 14) Feature Modules
+
+Current feature modules in `src/features/`:
+
+| Feature | Purpose |
+|---------|---------|
+| `annotations` | Issue annotation & markup system |
+| `auth` | Authentication, sessions, social login |
+| `email-preview` | Email template preview tooling |
+| `issues` | Core issue tracking functionality |
+| `landing` | Marketing/landing page components |
+| `legal` | Terms of service, privacy policy |
+| `onboarding` | User onboarding flows |
+| `projects` | Project management & settings |
+| `team-settings` | Team configuration & billing |
+| `teams` | Team management & membership |
+| `user-settings` | User preferences & profile |
+
+Each feature follows the standard anatomy:
+```
+features/<name>/
+├─ api/          # Fetchers + DTO schemas
+├─ hooks/        # React Query wrappers
+├─ components/   # Feature UI
+├─ screens/      # Feature screens
+├─ types/        # Domain models
+├─ utils/        # Feature helpers
+└─ index.ts      # Barrel exports
+```
