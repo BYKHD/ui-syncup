@@ -7,31 +7,31 @@ This plan implements a real-time notification system with Supabase Realtime, sup
 
 ## Tasks
 
-- [ ] 1. Set up database schema and types
-  - [ ] 1.1 Create notifications table schema in Drizzle
+- [x] 1. Set up database schema and types
+  - [x] 1.1 Create notifications table schema in Drizzle
     - Define `notification_type` enum with all 8 types
     - Create `notifications` table with all columns and indexes
     - _Location: `src/server/db/schema/notifications.ts`_
     - _Requirements: 1.1-1.4, 2.1-2.2, 3.1-3.3, 4.1-4.5_
 
-  - [ ] 1.2 Create Row Level Security policies
+  - [x] 1.2 Create Row Level Security policies
     - Enable RLS on notifications table
     - Create SELECT policy for own notifications
     - Create UPDATE policy for own notifications
     - _Location: Database migration_
     - _Requirements: 6.1, 6.2_
 
-  - [ ] 1.3 Generate and apply database migration
+  - [x] 1.3 Generate and apply database migration
     - Run `bun run db:generate` and `bun run db:push`
     - _Requirements: 1.1-1.4, 2.1-2.2, 3.1-3.3, 6.1, 6.2_
 
-  - [ ] 1.4 Define TypeScript types and DTOs
+  - [x] 1.4 Define TypeScript types and DTOs
     - Create `Notification`, `NotificationMetadata`, `CreateNotificationDTO`, `NotificationGroup` interfaces
     - _Location: `src/server/notifications/types.ts`_
     - _Requirements: 1.1-1.4, 2.1-2.2, 3.1-3.3, 4.4_
 
-- [ ] 2. Implement notification service layer
-  - [ ] 2.1 Create core notification service
+- [x] 2. Implement notification service layer
+  - [x] 2.1 Create core notification service
     - Implement `createNotification`, `createNotifications` (batch), `getNotifications`, `markAsRead`, `markAllAsRead`, `getUnreadCount`
     - Implement `buildTargetUrl` for deep-link generation with comment anchors
     - Implement `shouldCreateNotification` for actor exclusion
@@ -39,7 +39,7 @@ This plan implements a real-time notification system with Supabase Realtime, sup
     - _Location: `src/server/notifications/notification-service.ts`_
     - _Requirements: 1.4, 4.1, 4.2, 4.3, 5.1-5.3, 6.5_
 
-  - [ ] 2.2 Write integration tests for notification service
+  - [x] 2.2 Write integration tests for notification service
     - Test CRUD operations, actor exclusion, deduplication
     - _Location: `src/server/notifications/__tests__/notification-service.integration.test.ts`_
     - _Requirements: 5.1-5.3, 6.5_
@@ -68,28 +68,29 @@ This plan implements a real-time notification system with Supabase Realtime, sup
     - **Property 8: Deduplication Correctness**
     - **Validates: Requirements 6.5**
 
-- [ ] 3. Integrate notification triggers into existing services
-  - [ ] 3.1 Add notification triggers to comment service
+- [x] 3. Integrate notification triggers into existing services
+  - [/] 3.1 Add notification triggers to comment service
     - Trigger notifications for mentions, replies, and comments on assigned issues
+    - _NOTE: Deferred - requires mention extraction utility_
     - _Location: `src/server/annotations/comment-service.ts`_
     - _Requirements: 1.1, 1.2, 1.3_
 
-  - [ ] 3.2 Add notification triggers to issue service
+  - [x] 3.2 Add notification triggers to issue service
     - Trigger notifications for assignments and status changes
     - _Location: `src/server/issues/issue-service.ts`_
     - _Requirements: 2.1, 2.2_
 
-  - [ ] 3.3 Add notification triggers to invitation service
+  - [x] 3.3 Add notification triggers to invitation service
     - Trigger notifications for project and team invitations
     - _Location: `src/server/projects/invitation-service.ts`_
     - _Requirements: 3.1_
 
-  - [ ] 3.4 Add notification triggers for role updates
+  - [x] 3.4 Add notification triggers for role updates
     - Trigger notifications when user roles are changed
     - _Location: `src/server/projects/member-service.ts`_
     - _Requirements: 3.3_
 
-- [ ] 4. Checkpoint - Backend foundation complete
+- [x] 4. Checkpoint - Backend foundation complete
   - Ensure all service tests pass, ask the user if questions arise.
 
 - [ ] 5. Create API route handlers
