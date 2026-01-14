@@ -92,7 +92,7 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
 
   const [formData, setFormData] = useState<InviteMemberFormData>({
     email: "",
-    role: "member",
+    role: "TEAM_MEMBER",
     message: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -135,7 +135,7 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
         onSuccess: () => {
           toast.success("Invitation sent successfully");
           setIsInviteDialogOpen(false);
-          setFormData({ email: "", role: "member", message: "" });
+          setFormData({ email: "", role: "TEAM_MEMBER", message: "" });
           setFormErrors({});
         },
         onError: (error) => {
@@ -243,9 +243,9 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="member">Member</SelectItem>
-                        <SelectItem value="viewer">Viewer</SelectItem>
+                        <SelectItem value="TEAM_EDITOR">Editor</SelectItem>
+                        <SelectItem value="TEAM_MEMBER">Member</SelectItem>
+                        <SelectItem value="TEAM_VIEWER">Viewer</SelectItem>
                       </SelectContent>
                     </Select>
                     {formErrors.role && (
