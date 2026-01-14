@@ -140,6 +140,7 @@ export function ProjectMemberManagerDialog({
       owner: 'Owner',
       editor: 'Editor', 
       member: 'Member',
+      developer: 'Developer',
       viewer: 'Viewer'
     }
     return roleNames[role as keyof typeof roleNames] || role
