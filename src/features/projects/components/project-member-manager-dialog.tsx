@@ -36,7 +36,7 @@ interface ProjectMember {
 interface ProjectInvitation {
   id: string
   invitedUserId: string
-  role: 'editor' | 'member' | 'viewer'
+  role: 'editor' | 'developer' | 'viewer'
   status: 'pending' | 'accepted' | 'declined' | 'expired'
   createdAt: Date
   expiresAt: Date

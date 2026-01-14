@@ -156,7 +156,7 @@ export const LeaveMemberResponseSchema = z.object({
 
 export const InvitationStatusSchema = z.enum(['pending', 'accepted', 'declined', 'expired'])
 
-export const InvitationRoleSchema = z.enum(['editor', 'member', 'viewer'])
+export const InvitationRoleSchema = z.enum(['editor', 'developer', 'viewer'])
 
 export const ProjectInvitationUserSchema = z.object({
   id: z.string(),
