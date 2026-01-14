@@ -150,52 +150,54 @@ Always check these reference files before writing new code:
 
 ## SDLC Phases
 
-### Phase 1: Requirements & Planning
+### Phase 1-3: Specification (Requirements → Design → Tasks)
 
-**Goal:** Define what to build and why.
+> [!IMPORTANT]
+> **Phases 1-3 use the [AI Specification Workflow](./AI_SPECIFICATION_WORKFLOW.md)** — An interactive, iterative process with explicit approval gates at each phase.
 
-| Step | Output | Location |
-|------|--------|----------|
-| 1.1 Define user stories | User story + acceptance criteria | `requirements.md` |
-| 1.2 Identify stakeholders | Actor list + permissions | `requirements.md` |
-| 1.3 Define non-functional requirements | Performance, security, accessibility | `requirements.md` |
-| 1.4 Create glossary | Shared terminology | `requirements.md` |
+**Goal:** Transform feature idea into complete, testable specifications.
 
-**Deliverable:** `.kiro/specs/[feature-name]/requirements.md`
+**What You Get:**
+- `requirements.md` - EARS-compliant requirements with INCOSE quality validation
+- `design.md` - Technical design with formal correctness properties
+- `tasks.md` - Implementation checklist with requirement traceability
 
----
+**Key Features:**
+- ✅ Explicit approval gates at each phase
+- ✅ Iterative refinement with feedback loops
+- ✅ Property-based testing integration
+- ✅ Complete requirement traceability
+- ✅ EARS + INCOSE compliance
 
-### Phase 2: Technical Design
+**Quick Start:**
+```
+Create a spec for [feature description]
+```
 
-**Goal:** Define how to build it.
+The AI will guide you through three phases:
 
-| Step | Output | Location |
-|------|--------|----------|
-| 2.1 Architecture diagrams | Sequence/component diagrams (Mermaid) | `design.md` |
-| 2.2 Database schema design | Table definitions, relationships, indexes | `design.md` |
-| 2.3 API contract definition | Endpoints, request/response schemas | `design.md` |
-| 2.4 Type definitions | TypeScript interfaces, Zod schemas | `design.md` |
-| 2.5 Component architecture | UI component hierarchy | `design.md` |
-| 2.6 Security considerations | Token handling, rate limiting, RBAC | `design.md` |
-| 2.7 Error handling strategy | Error codes, user messages | `design.md` |
-| 2.8 Correctness properties | Testable invariants | `design.md` |
+1. **Requirements Gathering** - Generate EARS-compliant requirements with INCOSE validation
+2. **Design Creation** - Create technical design with correctness properties
+3. **Task Breakdown** - Build implementation checklist with requirement traceability
 
-**Deliverable:** `.kiro/specs/[feature-name]/design.md`
+**Manual Creation:** Use templates if you prefer manual creation:
+- [Requirements Template](./templates/requirements-template.md)
+- [Design Template](./templates/design-template.md)
+- [Tasks Template](./templates/tasks-template.md)
 
----
+**For detailed guidance on:**
+- EARS patterns and INCOSE quality rules
+- Correctness properties and property-based testing
+- Prework analysis and property reflection
+- Workflow commands and troubleshooting
+- Best practices for each phase
 
-### Phase 3: Task Breakdown
+**See:** [AI Specification Workflow](./AI_SPECIFICATION_WORKFLOW.md)
 
-**Goal:** Create an actionable implementation plan.
-
-| Step | Output | Location |
-|------|--------|----------|
-| 3.1 Break down into phases | Numbered phases (core → integration → polish) | `tasks.md` |
-| 3.2 Define individual tasks | Checkbox items with file locations | `tasks.md` |
-| 3.3 Link requirements | Map tasks to requirement numbers | `tasks.md` |
-| 3.4 Estimate complexity | Prioritize critical path items | `tasks.md` |
-
-**Deliverable:** `.kiro/specs/[feature-name]/tasks.md`
+**Deliverables:**
+- `.kiro/specs/[feature-name]/requirements.md`
+- `.kiro/specs/[feature-name]/design.md`
+- `.kiro/specs/[feature-name]/tasks.md`
 
 ---
 
@@ -432,90 +434,19 @@ See [`docs/testing/TESTING.md`](./testing/TESTING.md) for detailed testing guide
 
 All feature specifications live in `.kiro/specs/[feature-name]/` with three mandatory files:
 
-### requirements.md
+| File | Purpose | Template |
+|------|---------|----------|
+| **requirements.md** | WHAT to build (user stories, EARS acceptance criteria) | [requirements-template.md](./templates/requirements-template.md) |
+| **design.md** | HOW to build it (architecture, correctness properties) | [design-template.md](./templates/design-template.md) |
+| **tasks.md** | Implementation checklist with requirement traceability | [tasks-template.md](./templates/tasks-template.md) |
 
-Defines **WHAT** to build from the user's perspective.
+> [!IMPORTANT]
+> For detailed guidance on creating these documents, including EARS patterns, INCOSE quality rules, correctness properties, and property-based testing, see the [AI Specification Workflow](./AI_SPECIFICATION_WORKFLOW.md).
 
-**Structure:**
-
-```markdown
-# Requirements Document
-
-## Introduction
-Brief description of the feature and its business value.
-
-## Glossary
-- **Term_1**: Definition
-- **Term_2**: Definition
-
-## Requirements
-
-### Requirement 1
-**User Story:** As a [role], I want [goal], so that [benefit].
-
-#### Acceptance Criteria
-1. WHEN [trigger] THEN the system SHALL [action]
-2. THE system SHALL [invariant]
-```
-
-### design.md
-
-Defines **HOW** to build it technically.
-
-**Structure:**
-
-```markdown
-# Design Document: [Feature Name]
-
-## Overview
-High-level description and architecture decisions.
-
-## Architecture
-- Sequence diagrams (Mermaid)
-- Component diagrams
-
-## Components and Interfaces
-- Database schema
-- Service functions
-- API endpoints
-- UI components
-
-## Error Handling
-- Error codes and messages
-
-## Correctness Properties
-- Testable invariants linking to requirements
-
-## Testing Strategy
-- Unit, integration, E2E test plan
-```
-
-### tasks.md
-
-Defines the **IMPLEMENTATION PLAN** as a checklist.
-
-**Structure:**
-
-```markdown
-# Implementation Plan
-
-## Status Legend
-- [x] Completed
-- [/] In Progress  
-- [ ] Not Started
-
----
-
-## Phase 1: [Phase Name]
-
-- [ ] 1. Task description
-  - Sub-task details
-  - _Requirements: 1.2, 3.4_
-  - _Location: `path/to/file.ts`_
-
-- [ ] 2. Another task
-  - _Requirements: 2.1_
-```
+**Quick Reference:**
+- **requirements.md** uses EARS patterns (WHEN/WHILE/IF/WHERE/THE...SHALL) with INCOSE quality validation
+- **design.md** includes formal correctness properties with requirement traceability ("Validates: Requirements X.Y")
+- **tasks.md** marks optional tasks with `*` suffix and links each task to specific requirements
 
 ---
 
@@ -729,6 +660,14 @@ Copy this template when starting a new feature:
 ---
 
 ## Related Documentation
+
+### Specification Templates
+
+| Template | Purpose |
+|----------|---------|
+| [Requirements Template](./templates/requirements-template.md) | EARS-compliant requirements with INCOSE quality checks |
+| [Design Template](./templates/design-template.md) | Technical design with correctness properties |
+| [Tasks Template](./templates/tasks-template.md) | Implementation checklist with requirement traceability |
 
 ### Steering Documents (Start Here)
 
