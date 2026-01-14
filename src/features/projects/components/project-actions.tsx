@@ -46,9 +46,9 @@ interface ProjectActionsProps {
   onProjectDeleted?: () => void;
   // Render props for dialogs that need external state
   renderIssueDialog: (trigger: React.ReactNode) => React.ReactNode;
-  renderMemberDialog?: (trigger: React.ReactNode) => React.ReactNode;
-  renderSettingsDialog?: (trigger: React.ReactNode) => React.ReactNode;
-  renderLeaveDialog?: (trigger: React.ReactNode) => React.ReactNode;
+  renderMemberDialog?: (props: { trigger: React.ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => React.ReactNode;
+  renderSettingsDialog?: (props: { trigger: React.ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => React.ReactNode;
+  renderLeaveDialog?: (props: { trigger: React.ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => React.ReactNode;
 }
 
 /**
@@ -182,26 +182,14 @@ export function ProjectActions({
         )}
       </div>
 
-      {/* Member Dialog - controlled by external render prop */}
-      {showMemberDialog && renderMemberDialog && (
-        <div onClick={() => setShowMemberDialog(false)}>
-          {renderMemberDialog(null)}
-        </div>
-      )}
+      {/* Member Dialog - controlled by internal state */}
+      {renderMemberDialog && renderMemberDialog({ trigger: null, open: showMemberDialog, onOpenChange: setShowMemberDialog })}
 
-      {/* Settings Dialog - controlled by external render prop */}
-      {showSettingsDialog && renderSettingsDialog && (
-        <div onClick={() => setShowSettingsDialog(false)}>
-          {renderSettingsDialog(null)}
-        </div>
-      )}
+      {/* Settings Dialog - controlled by internal state */}
+      {renderSettingsDialog && renderSettingsDialog({ trigger: null, open: showSettingsDialog, onOpenChange: setShowSettingsDialog })}
 
-      {/* Leave Dialog - controlled by external render prop */}
-      {showLeaveDialog && renderLeaveDialog && (
-        <div onClick={() => setShowLeaveDialog(false)}>
-          {renderLeaveDialog(null)}
-        </div>
-      )}
+      {/* Leave Dialog - controlled by internal state */}
+      {renderLeaveDialog && renderLeaveDialog({ trigger: null, open: showLeaveDialog, onOpenChange: setShowLeaveDialog })}
 
       {/* Delete Project Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={handleDeleteDialogChange}>

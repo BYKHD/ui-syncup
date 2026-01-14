@@ -65,5 +65,5 @@ export async function updateProject(
   }
 
   const data = await response.json()
-  return UpdateProjectResponseSchema.parse(data)
+  return UpdateProjectResponseSchema.parse(data.project)
 }

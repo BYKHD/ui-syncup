@@ -10,7 +10,7 @@
  * Requirements: 2.1, 2.3, 2.5, 2A.5
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, afterEach } from 'vitest';
 import { db } from '@/lib/db';
 import { users, teams, teamMembers, teamInvitations } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';

@@ -3,7 +3,7 @@ import { teamInvitations } from "@/server/db/schema/team-invitations";
 import { teamMembers } from "@/server/db/schema/team-members";
 import { teams } from "@/server/db/schema/teams";
 import { users } from "@/server/db/schema/users";
-import { eq, and, gt, isNull, sql } from "drizzle-orm";
+import { eq, and, gt, sql } from "drizzle-orm";
 import { randomBytes, createHash } from "crypto";
 import { logTeamEvent } from "./team-service";
 import { addMember } from "./member-service";

@@ -18,4 +18,4 @@ export { ProjectActions } from './project-actions'
 
 // Action components
 export { ProjectLeaveButton } from './project-leave-button'
-export { ProjectInvitationStatus } from './project-invitation-status'
+

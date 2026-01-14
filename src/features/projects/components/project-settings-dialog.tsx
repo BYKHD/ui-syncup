@@ -67,23 +67,19 @@ export function ProjectSettingsDialog({
   hasChanges,
   children
 }: ProjectSettingsDialogProps) {
+  // Permission check - only owners can edit settings
+  // Note: We don't return null here because in controlled mode (open prop),
+  // the dialog should still mount. Permission is enforced at the menu item level.
   const canEditSettings = userRole === 'owner'
-
-  if (!canEditSettings) {
-    return null
-  }
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogTrigger asChild>
-          {children || (
-            <Button variant="outline" size="sm">
-              <RiSettingsLine className="h-4 w-4" />
-              Settings
-            </Button>
-          )}
-        </DialogTrigger>
+        {children && (
+          <DialogTrigger asChild>
+            {children}
+          </DialogTrigger>
+        )}
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Project Settings</DialogTitle>

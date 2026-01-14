@@ -18,3 +18,10 @@ export { joinProject } from './join-project'
 export { leaveProject } from './leave-project'
 export { updateMemberRole } from './update-member-role'
 export { removeMember } from './remove-member'
+
+// Invitation APIs
+export { createInvitation } from './create-invitation'
+export { listInvitations } from './list-invitations'
+export { revokeInvitation } from './revoke-invitation'
+export { resendInvitation } from './resend-invitation'
+

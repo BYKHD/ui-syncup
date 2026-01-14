@@ -14,7 +14,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Separator } from '@/components/ui/separator'
-import { RiTeamLine, RiMore2Line, RiUserLine, RiDeleteBinLine, RiAddLine, RiVipCrownLine, RiMailSendLine } from '@remixicon/react'
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip'
+import { RiTeamLine, RiMore2Line, RiUserLine, RiDeleteBinLine, RiAddLine, RiVipCrownLine, RiMailSendLine, RiAlertLine } from '@remixicon/react'
 
 interface User {
   id: string
@@ -41,6 +42,9 @@ interface ProjectInvitation {
   expiresAt: Date
   invitedUser: User
   invitedByUser: User
+  emailDeliveryFailed?: boolean
+  emailFailureReason?: string | null
+  emailLastAttemptAt?: Date | null
 }
 
 interface ProjectMemberManagerDialogProps {
@@ -59,6 +63,7 @@ interface ProjectMemberManagerDialogProps {
   onRevokeInvitation: (invitationId: string) => void
   onResendInvitation: (invitationId: string) => void
   onInviteMember: () => void
+  onOpen?: () => void
   children?: React.ReactNode
 }
 
@@ -84,6 +89,7 @@ export function ProjectMemberManagerDialog({
   onRevokeInvitation,
   onResendInvitation,
   onInviteMember,
+  onOpen,
   children 
 }: ProjectMemberManagerDialogProps) {
   // Confirmation dialogs
@@ -91,6 +97,13 @@ export function ProjectMemberManagerDialog({
   const [memberToRemove, setMemberToRemove] = useState<ProjectMember | null>(null)
   const [showRoleChangeConfirm, setShowRoleChangeConfirm] = useState(false)
   const [roleChangeData, setRoleChangeData] = useState<{ member: ProjectMember; newRole: 'owner' | 'editor' | 'member' | 'viewer' } | null>(null)
+
+  // Trigger onOpen callback when dialog opens
+  React.useEffect(() => {
+    if (open && onOpen) {
+      onOpen()
+    }
+  }, [open, onOpen])
 
   const handleRoleChange = (member: ProjectMember, newRole: 'owner' | 'editor' | 'member' | 'viewer') => {
     if (newRole === 'owner') {
@@ -162,14 +175,11 @@ export function ProjectMemberManagerDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogTrigger asChild>
-          {children || (
-            <Button variant="outline" size="sm">
-              <RiTeamLine className="h-4 w-4" />
-              Members
-            </Button>
-          )}
-        </DialogTrigger>
+        {children && (
+          <DialogTrigger asChild>
+            {children}
+          </DialogTrigger>
+        )}
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Project Members</DialogTitle>
@@ -305,6 +315,29 @@ export function ProjectMemberManagerDialog({
                                 {getRoleDisplayName(invitation.role)}
                               </Badge>
                               <Badge variant="secondary">Pending</Badge>
+                              
+                              {invitation.emailDeliveryFailed && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="destructive" className="gap-1 cursor-help">
+                                        <RiAlertLine className="h-3 w-3" />
+                                        Email Failed
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs">
+                                      <p className="text-sm">
+                                        {invitation.emailFailureReason || 'Email delivery failed after multiple attempts'}
+                                      </p>
+                                      {invitation.emailLastAttemptAt && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          Last attempt: {new Date(invitation.emailLastAttemptAt).toLocaleString()}
+                                        </p>
+                                      )}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                               
                               {canManageMembers && (
                                 <DropdownMenu>

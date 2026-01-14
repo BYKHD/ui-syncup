@@ -229,6 +229,11 @@ export const RATE_LIMITS = {
     limit: 5,
     windowMs: 60 * 60 * 1000, // 1 hour
   },
+  // Invitation accept/decline: 5 attempts per token prefix per 15 minutes
+  INVITATION_ACTION: {
+    limit: 5,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+  },
 } as const;
 
 /**
@@ -242,4 +247,5 @@ export const createRateLimitKey = {
   passwordReset: (email: string) => `reset:email:${email.toLowerCase()}`,
   signupIp: (ip: string) => `signup:ip:${ip}`,
   resendVerification: (email: string) => `resend-verification:email:${email.toLowerCase()}`,
+  invitationAction: (token: string) => `invitation:${token.substring(0, 8)}`,
 } as const;

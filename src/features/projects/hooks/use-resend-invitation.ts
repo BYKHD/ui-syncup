@@ -6,33 +6,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { projectKeys } from './use-project'
-
-// ============================================================================
-// API FUNCTION
-// ============================================================================
-
-interface ResendInvitationResponse {
-  success: boolean
-  message: string
-}
-
-async function resendInvitation(
-  projectId: string,
-  invitationId: string
-): Promise<ResendInvitationResponse> {
-  const response = await fetch(`/api/projects/${projectId}/invitations/${invitationId}/resend`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-  })
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error?.message || error?.error?.message || 'Failed to resend invitation')
-  }
-
-  return response.json()
-}
+import { resendInvitation } from '../api'
+import type { ResendInvitationResponse } from '../api'
 
 // ============================================================================
 // HOOK
@@ -90,3 +65,4 @@ export function useResendInvitation(options?: UseResendInvitationOptions): UseRe
     reset: mutation.reset,
   }
 }
+

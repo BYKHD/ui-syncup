@@ -6,33 +6,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { projectKeys } from './use-project'
-
-// ============================================================================
-// API FUNCTION
-// ============================================================================
-
-interface RevokeInvitationResponse {
-  success: boolean
-  message: string
-}
-
-async function revokeInvitation(
-  projectId: string,
-  invitationId: string
-): Promise<RevokeInvitationResponse> {
-  const response = await fetch(`/api/projects/${projectId}/invitations/${invitationId}`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-  })
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error?.message || error?.error?.message || 'Failed to revoke invitation')
-  }
-
-  return response.json()
-}
+import { revokeInvitation } from '../api'
+import type { RevokeInvitationResponse } from '../api'
 
 // ============================================================================
 // HOOK
@@ -70,6 +45,10 @@ export function useRevokeInvitation(options?: UseRevokeInvitationOptions): UseRe
       // Invalidate invitations query
       queryClient.invalidateQueries({ 
         queryKey: [...projectKeys.detail(variables.projectId), 'invitations'] 
+      })
+      // Invalidate activities query
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.activities(variables.projectId)
       })
 
       toast.success('Invitation revoked successfully')

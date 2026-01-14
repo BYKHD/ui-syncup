@@ -11,6 +11,8 @@ interface ProjectLeaveButtonProps {
   isLeaving?: boolean
   error?: string | null
   onLeave: () => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   children?: React.ReactNode
 }
 
@@ -27,19 +29,18 @@ export function ProjectLeaveButton({
   isLeaving = false,
   error = null,
   onLeave,
+  open,
+  onOpenChange,
   children
 }: ProjectLeaveButtonProps) {
   return (
     <>
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          {children || (
-            <Button variant="outline" size="sm">
-              <RiLogoutBoxLine className="h-4 w-4" />
-              Leave Project
-            </Button>
-          )}
-        </AlertDialogTrigger>
+      <AlertDialog open={open} onOpenChange={onOpenChange}>
+        {children && (
+          <AlertDialogTrigger asChild>
+            {children}
+          </AlertDialogTrigger>
+        )}
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Leave Project</AlertDialogTitle>
