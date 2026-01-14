@@ -107,16 +107,16 @@ describe('ProjectInvitationDialog', () => {
   });
 
   describe('Role selection', () => {
-    it('should default to member role', () => {
+    it('should default to developer role', () => {
       render(<ProjectInvitationDialog {...defaultProps} />);
       
-      expect(screen.getByText('Member')).toBeInTheDocument();
+      expect(screen.getByText('Developer')).toBeInTheDocument();
     });
 
     it('should show role description', () => {
       render(<ProjectInvitationDialog {...defaultProps} />);
       
-      expect(screen.getByText(/can view project content and comment/i)).toBeInTheDocument();
+      expect(screen.getByText(/can update issue status and comment/i)).toBeInTheDocument();
     });
   });
 
@@ -140,7 +140,7 @@ describe('ProjectInvitationDialog', () => {
             method: 'POST',
             body: JSON.stringify({
               email: 'test@example.com',
-              role: 'member',
+              role: 'developer',
             }),
           })
         );
