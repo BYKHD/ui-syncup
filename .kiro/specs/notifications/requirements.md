@@ -82,8 +82,7 @@ The Notification feature keeps users informed about critical activities in their
 #### Acceptance Criteria
 1. THE notification dropdown SHALL be responsive and functional on mobile devices
 2. THE notification items SHALL provide appropriate touch targets (minimum 44px) for all interactive elements
-3. THE notification list SHALL support swipe gestures for mark as read on touch devices
-4. THE notification feed SHALL adapt layout for narrow viewports (< 480px)
+3. THE notification feed SHALL adapt layout for narrow viewports (< 480px)
 
 ---
 

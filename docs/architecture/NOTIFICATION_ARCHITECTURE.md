@@ -676,13 +676,11 @@ if (notification.type === 'project_invitation') {
 
 ### Requirements
 - Touch targets minimum 44px for all interactive elements
-- Swipe-to-mark-read gesture support on touch devices
 - Responsive dropdown layout for narrow viewports (< 480px)
 - Notification items adapt content for small screens
 
 ### Implementation
 - Use mobile-first CSS with media queries
-- Touch event handlers for swipe gestures
 - Scrollable notification list with pull-to-refresh (future)
 
 ---

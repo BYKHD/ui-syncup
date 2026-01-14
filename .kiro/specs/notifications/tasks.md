@@ -154,8 +154,8 @@ This plan implements a real-time notification system with Supabase Realtime, sup
 - [x] 7. Checkpoint - Data layer complete
   - Typecheck passed, all frontend data layer components created.
 
-- [ ] 8. Build UI components
-  - [ ] 8.1 Update NotificationBell component
+- [-] 8. Build UI components
+  - [-] 8.1 Update NotificationBell component
     - Display unread count badge, connect to `useUnreadCount` hook
     - _Location: `src/components/shared/notifications/notification-bell.tsx`_
     - _Requirements: 4.1_
@@ -199,7 +199,6 @@ This plan implements a real-time notification system with Supabase Realtime, sup
 
   - [ ] 8.9 Implement mobile responsiveness
     - Ensure touch targets are minimum 44px
-    - Add swipe-to-mark-read gesture support
     - Adapt layout for narrow viewports (<480px)
     - _Location: UI component files_
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
