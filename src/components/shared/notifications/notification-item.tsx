@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { NotificationActions } from './notification-actions'
-import { formatTimestamp, getNotificationIcon } from './utils'
+import { formatTimestamp, NotificationIcon } from './utils'
 import { useMarkAsRead } from '@/features/notifications/hooks'
 import type { Notification } from '@/features/notifications/api'
 
@@ -54,7 +54,6 @@ export function NotificationItem({ notification, teamId }: NotificationItemProps
   const actorName = notification.metadata.actor_name || 'Someone'
   const message = getNotificationMessage(notification)
   const timestamp = formatTimestamp(notification.createdAt)
-  const Icon = getNotificationIcon(notification.type)
   const isInvitation = notification.type === 'project_invitation' || notification.type === 'team_invitation'
 
   return (
@@ -91,7 +90,10 @@ export function NotificationItem({ notification, teamId }: NotificationItemProps
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-2">
-            {Icon && <Icon className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />}
+            <NotificationIcon 
+              type={notification.type}
+              className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" 
+            />
             <p className="text-sm text-foreground line-clamp-2 flex-1">
               {message}
             </p>

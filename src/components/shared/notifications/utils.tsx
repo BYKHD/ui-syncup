@@ -80,6 +80,41 @@ export function getNotificationIcon(
 }
 
 /**
+ * NotificationIcon - Renders the appropriate icon for a notification type
+ * 
+ * This component uses a switch statement to directly render icon components,
+ * avoiding the creation of components during render which would violate React's static-components rule.
+ */
+export function NotificationIcon({
+  type,
+  className,
+}: {
+  type: NotificationType
+  className?: string
+}) {
+  switch (type) {
+    case 'mention':
+      return <RiAtLine className={className} />
+    case 'comment_created':
+      return <RiChat1Line className={className} />
+    case 'reply':
+      return <RiReplyLine className={className} />
+    case 'issue_assigned':
+      return <RiUserAddLine className={className} />
+    case 'issue_status_changed':
+      return <RiExchangeLine className={className} />
+    case 'project_invitation':
+      return <RiMailLine className={className} />
+    case 'team_invitation':
+      return <RiTeamLine className={className} />
+    case 'role_updated':
+      return <RiShieldUserLine className={className} />
+    default:
+      return null
+  }
+}
+
+/**
  * Generate initials from name for avatar fallback
  */
 export function getInitials(name: string): string {

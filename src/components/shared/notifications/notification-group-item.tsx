@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { NotificationItem } from './notification-item'
-import { formatTimestamp, getNotificationIcon, getInitials } from './utils'
+import { formatTimestamp, NotificationIcon, getInitials } from './utils'
 import { formatActorNames, type NotificationGroup } from '@/features/notifications/utils/group-notifications'
 import { useMarkAsRead } from '@/features/notifications/hooks'
 
@@ -32,7 +32,6 @@ export function NotificationGroupItem({ group, teamId }: NotificationGroupItemPr
   const { mutate: markAsRead } = useMarkAsRead()
 
   const { latest, notifications, actorNames, hasUnread, type } = group
-  const Icon = getNotificationIcon(type)
   const timestamp = formatTimestamp(latest.createdAt)
   const actorDisplay = formatActorNames(actorNames)
 
@@ -88,7 +87,10 @@ export function NotificationGroupItem({ group, teamId }: NotificationGroupItemPr
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start gap-2">
-              {Icon && <Icon className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />}
+              <NotificationIcon 
+                type={type}
+                className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" 
+              />
               <p className="text-sm text-foreground line-clamp-2 flex-1">
                 {message}
               </p>
