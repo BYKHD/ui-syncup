@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Field, FieldDescription } from '@/components/ui/field'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { RiMailSendLine, RiUserLine } from '@remixicon/react'
+import { toast } from 'sonner'
 import { useTeamMemberSuggestions, type TeamMemberSuggestion } from '../hooks/use-team-member-suggestions'
 import { cn } from '@/lib/utils'
 
@@ -25,8 +26,8 @@ function getRoleDescription(role: string) {
   switch (role) {
     case 'editor':
       return 'Can invite members, create and edit issues, and comment'
-    case 'member':
-      return 'Can view project content and comment on issues'
+    case 'developer':
+      return 'Can update issue status and comment on issues'
     case 'viewer':
       return 'Can only view project content (read-only access)'
     default:
@@ -48,7 +49,7 @@ function validateRole(role: string): string | null {
   if (!role) {
     return 'Role is required'
   }
-  if (!['editor', 'member', 'viewer'].includes(role)) {
+  if (!['editor', 'developer', 'viewer'].includes(role)) {
     return 'Invalid role selected'
   }
   return null
@@ -72,7 +73,7 @@ export function ProjectInvitationDialog({
   onInvitationSent
 }: ProjectInvitationDialogProps) {
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState<'editor' | 'member' | 'viewer'>('member')
+  const [role, setRole] = useState<'editor' | 'developer' | 'viewer'>('developer')
   const [errors, setErrors] = useState<{ email?: string; role?: string }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -93,7 +94,7 @@ export function ProjectInvitationDialog({
   useEffect(() => {
     if (!open) {
       setEmail('')
-      setRole('member')
+      setRole('developer')
       setErrors({})
       setSubmitError(null)
       setShowSuggestions(false)
@@ -147,7 +148,7 @@ export function ProjectInvitationDialog({
     }
   }
 
-  const handleRoleChange = (value: 'editor' | 'member' | 'viewer') => {
+  const handleRoleChange = (value: 'editor' | 'developer' | 'viewer') => {
     setRole(value)
     if (errors.role) {
       setErrors(prev => ({ ...prev, role: undefined }))
@@ -200,6 +201,7 @@ export function ProjectInvitationDialog({
       }
 
       // Success - close dialog and notify parent
+      toast.success('Invitation sent successfully')
       onOpenChange(false)
       onInvitationSent?.()
     } catch (error) {
@@ -324,10 +326,10 @@ export function ProjectInvitationDialog({
                       <span className="text-xs text-muted-foreground">Can invite members and edit content</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="member">
+                  <SelectItem value="developer">
                     <div className="flex flex-col items-start">
-                      <span className="font-medium">Member</span>
-                      <span className="text-xs text-muted-foreground">Can view and comment on content</span>
+                      <span className="font-medium">Developer</span>
+                      <span className="text-xs text-muted-foreground">Can update status and comment</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="viewer">

@@ -15,6 +15,7 @@ import {
   listProjectInvitations, 
   createProjectInvitation 
 } from "@/server/projects/invitation-service";
+import { getProject } from "@/server/projects/project-service";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 
@@ -41,7 +42,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const { id: projectId } = await params;
+  const { id: idOrSlug } = await params;
 
   try {
     const user = await getSession();
@@ -52,6 +53,10 @@ export async function GET(
         { status: 401 }
       );
     }
+
+    // Resolve project ID first (handles both UUID and key/slug)
+    const project = await getProject(idOrSlug, user.id);
+    const projectId = project.id;
 
     const canView = await hasPermission({
       userId: user.id,
@@ -72,28 +77,31 @@ export async function GET(
     // Map to frontend-friendly format
     const serializedInvitations = invitations.map((inv) => ({
       id: inv.id,
-      invitedUserId: inv.invitedUser?.id || null,
+      projectId: inv.projectId,
+      email: inv.email,
+      invitedUserId: inv.invitedUser?.id || null, // For backward compatibility if needed
       role: inv.role.replace("PROJECT_", "").toLowerCase(), // e.g., "editor"
       status: inv.status,
+      invitedBy: inv.invitedBy,
       createdAt: inv.createdAt.toISOString(),
       expiresAt: inv.expiresAt.toISOString(),
+      usedAt: inv.usedAt ? inv.usedAt.toISOString() : null,
+      cancelledAt: inv.cancelledAt ? inv.cancelledAt.toISOString() : null,
+      emailDeliveryFailed: inv.emailDeliveryFailed,
+      emailFailureReason: inv.emailFailureReason,
+      emailLastAttemptAt: inv.emailLastAttemptAt ? inv.emailLastAttemptAt.toISOString() : null,
       invitedUser: inv.invitedUser ? {
         id: inv.invitedUser.id,
         name: inv.invitedUser.name,
         email: inv.invitedUser.email,
         image: inv.invitedUser.image,
-      } : {
-        id: "",
-        name: inv.email.split("@")[0], // Use email prefix as fallback name
-        email: inv.email,
-        image: null,
-      },
-      invitedByUser: {
+      } : null,
+      invitedByUser: inv.invitedByUser ? {
         id: inv.invitedByUser.id,
         name: inv.invitedByUser.name,
         email: inv.invitedByUser.email,
         image: inv.invitedByUser.image,
-      },
+      } : null,
     }));
 
     logger.info("api.projects.invitations.list.success", {
@@ -111,7 +119,7 @@ export async function GET(
     console.error("GET project invitations error:", error);
     logger.error("api.projects.invitations.list.error", {
       requestId,
-      projectId,
+      projectId: idOrSlug, // Use original input for logging if resolution failed
       error: error instanceof Error ? error.message : "Unknown error",
     });
 
@@ -133,7 +141,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const { id: projectId } = await params;
+  const { id: idOrSlug } = await params;
 
   try {
     const user = await getSession();
@@ -144,6 +152,10 @@ export async function POST(
         { status: 401 }
       );
     }
+
+    // Resolve project ID first (handles both UUID and key/slug)
+    const project = await getProject(idOrSlug, user.id);
+    const projectId = project.id;
 
     const body = await request.json();
     const validation = CreateInvitationSchema.safeParse(body);
@@ -230,7 +242,7 @@ export async function POST(
 
     logger.error("api.projects.invitations.create.error", {
       requestId,
-      projectId,
+      projectId: idOrSlug, // Use original input for logging if resolution failed
       error: error instanceof Error ? error.message : "Unknown error",
     });
 

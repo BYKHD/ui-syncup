@@ -10,12 +10,14 @@ import { projectInvitations } from "@/server/db/schema/project-invitations";
 import { projectMembers } from "@/server/db/schema/project-members";
 import { projects } from "@/server/db/schema/projects";
 import { users } from "@/server/db/schema/users";
+import { teams } from "@/server/db/schema/teams";
 import { eq, and, gt, isNull, sql, desc } from "drizzle-orm";
 import { randomBytes, createHash } from "crypto";
 import { logger } from "@/lib/logger";
 import { addMember } from "./member-service";
 import type { ProjectRole } from "@/config/roles";
 import { enqueueEmail } from "@/server/email";
+import { createNotification, buildTargetUrl } from "@/server/notifications";
 import {
   logInvitationSent,
   logInvitationAccepted,
@@ -301,6 +303,57 @@ export async function createProjectInvitation(
     logger.error("project.invitation.activity_log_failed", {
       invitationId: invitation.id,
       error: activityError instanceof Error ? activityError.message : 'Unknown error',
+    });
+  }
+
+  // Fire-and-forget notification for invited user (if they exist in the system)
+  try {
+    // Check if invited user exists
+    const invitedUserResult = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email.toLowerCase().trim()))
+      .limit(1);
+
+    if (invitedUserResult[0]) {
+      // Get project and team details for notification
+      const projectData = await db
+        .select({
+          projectName: projects.name,
+          projectKey: projects.key,
+          teamSlug: teams.slug,
+        })
+        .from(projects)
+        .innerJoin(teams, eq(projects.teamId, teams.id))
+        .where(eq(projects.id, projectId))
+        .limit(1);
+
+      const project = projectData[0];
+      if (project) {
+        await createNotification({
+          recipientId: invitedUserResult[0].id,
+          actorId: invitedBy,
+          type: "project_invitation",
+          entityType: "project",
+          entityId: projectId,
+          metadata: {
+            target_url: buildTargetUrl("project_invitation", {
+              team_slug: project.teamSlug,
+              project_key: project.projectKey,
+            }),
+            project_name: project.projectName,
+            project_key: project.projectKey,
+            team_slug: project.teamSlug,
+            invitation_id: invitation.id,
+          },
+        });
+      }
+    }
+  } catch (notificationError) {
+    // Fire-and-forget: Log error but don't block
+    logger.error("project.invitation.notification_failed", {
+      invitationId: invitation.id,
+      error: notificationError instanceof Error ? notificationError.message : 'Unknown error',
     });
   }
 

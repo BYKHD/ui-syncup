@@ -69,7 +69,7 @@ export async function POST(
     }
     
     // Resend invitation
-    await resendInvitation(invitationId, user.id);
+    const { invitation } = await resendInvitation(invitationId, user.id);
     
     logger.info('api.teams.invitations.resend.success', {
       requestId,
@@ -79,7 +79,7 @@ export async function POST(
     });
     
     return NextResponse.json(
-      { message: 'Invitation resent successfully' },
+      { invitation },
       { status: 200 }
     );
     

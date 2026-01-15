@@ -10,12 +10,14 @@ import { projectMembers } from "@/server/db/schema/project-members";
 import { projects } from "@/server/db/schema/projects";
 import { users } from "@/server/db/schema/users";
 import { userRoles } from "@/server/db/schema/user-roles";
+import { teams } from "@/server/db/schema/teams";
 import { eq, and, isNull, count } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { autoPromoteToEditor } from "@/server/auth/rbac";
 import { PROJECT_ROLES } from "@/config/roles";
 import type { ProjectRole } from "@/config/roles";
 import type { ProjectMember } from "./types";
+import { createNotification, buildTargetUrl } from "@/server/notifications";
 
 /**
  * List all members of a project with their user details
@@ -227,6 +229,54 @@ export async function updateMemberRole(
     oldRole: currentMember.role,
     newRole,
   });
+
+  // Fire-and-forget notification for role update
+  try {
+    // Get project and team details for notification
+    const projectData = await db
+      .select({
+        projectName: projects.name,
+        projectKey: projects.key,
+        teamSlug: teams.slug,
+      })
+      .from(projects)
+      .innerJoin(teams, eq(projects.teamId, teams.id))
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    const project = projectData[0];
+    if (project) {
+      // Format roles for display
+      const formatRole = (role: string) =>
+        role.replace("PROJECT_", "").toLowerCase().replace(/_/g, " ");
+
+      await createNotification({
+        recipientId: userId,
+        actorId: undefined, // System action, no specific actor
+        type: "role_updated",
+        entityType: "project",
+        entityId: projectId,
+        metadata: {
+          target_url: buildTargetUrl("role_updated", {
+            team_slug: project.teamSlug,
+            project_key: project.projectKey,
+          }),
+          project_name: project.projectName,
+          project_key: project.projectKey,
+          team_slug: project.teamSlug,
+          old_role: formatRole(currentMember.role),
+          new_role: formatRole(newRole),
+        },
+      });
+    }
+  } catch (notificationError) {
+    // Fire-and-forget: Log error but don't block
+    logger.error("project.member.role_notification_failed", {
+      projectId,
+      userId,
+      error: notificationError instanceof Error ? notificationError.message : "Unknown error",
+    });
+  }
 
   return {
     userId: result.userId,

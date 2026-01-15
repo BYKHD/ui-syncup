@@ -10,9 +10,11 @@ import { issues } from "@/server/db/schema/issues";
 import { issueAttachments } from "@/server/db/schema/issue-attachments";
 import { users } from "@/server/db/schema/users";
 import { projects } from "@/server/db/schema/projects";
+import { teams } from "@/server/db/schema/teams";
 import { eq, and, or, like, desc, count, max } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { logActivity } from "./activity-service";
+import { createNotification, buildTargetUrl } from "@/server/notifications";
 import type {
   Issue,
   IssueWithDetails,
@@ -438,6 +440,88 @@ export async function updateIssue(
       actorId,
       type: activityType,
       changes: [change],
+    });
+  }
+
+  // Fire-and-forget notifications for assignment and status changes
+  try {
+    // Get project and team details for notification metadata
+    const projectData = await db
+      .select({
+        projectKey: projects.key,
+        projectName: projects.name,
+        teamSlug: teams.slug,
+      })
+      .from(projects)
+      .innerJoin(teams, eq(projects.teamId, teams.id))
+      .where(eq(projects.id, currentIssue.projectId))
+      .limit(1);
+
+    const project = projectData[0];
+
+    if (project) {
+      // Notification for assignment change
+      const assigneeChange = changes.find((c) => c.field === "assigneeId");
+      if (assigneeChange && assigneeChange.to) {
+        await createNotification({
+          recipientId: assigneeChange.to as string,
+          actorId,
+          type: "issue_assigned",
+          entityType: "issue",
+          entityId: issueId,
+          metadata: {
+            target_url: buildTargetUrl("issue_assigned", {
+              team_slug: project.teamSlug,
+              project_key: project.projectKey,
+              issue_key: currentIssue.issueKey,
+            }),
+            issue_title: updated.title,
+            issue_key: currentIssue.issueKey,
+            project_name: project.projectName,
+            project_key: project.projectKey,
+            team_slug: project.teamSlug,
+          },
+        });
+      }
+
+      // Notification for status change (notify assignee and reporter)
+      const statusChange = changes.find((c) => c.field === "status");
+      if (statusChange) {
+        const recipients = [
+          currentIssue.assigneeId,
+          currentIssue.reporterId,
+        ].filter((id): id is string => id !== null && id !== actorId);
+
+        for (const recipientId of recipients) {
+          await createNotification({
+            recipientId,
+            actorId,
+            type: "issue_status_changed",
+            entityType: "issue",
+            entityId: issueId,
+            metadata: {
+              target_url: buildTargetUrl("issue_status_changed", {
+                team_slug: project.teamSlug,
+                project_key: project.projectKey,
+                issue_key: currentIssue.issueKey,
+              }),
+              issue_title: updated.title,
+              issue_key: currentIssue.issueKey,
+              project_name: project.projectName,
+              project_key: project.projectKey,
+              team_slug: project.teamSlug,
+              old_status: statusChange.from as string,
+              new_status: statusChange.to as string,
+            },
+          });
+        }
+      }
+    }
+  } catch (notificationError) {
+    // Fire-and-forget: Log error but don't block
+    logger.error("Failed to create issue notifications", {
+      issueId,
+      error: notificationError instanceof Error ? notificationError.message : "Unknown error",
     });
   }
 

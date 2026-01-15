@@ -162,6 +162,13 @@
       "when": 1767944185455,
       "tag": "0022_boring_shaman",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1768385368566,
+      "tag": "0023_overrated_raza",
+      "breakpoints": true
     }
   ]
 }
