@@ -474,6 +474,9 @@ export async function getHighestProjectRole(
 /**
  * Check if a user has a specific role.
  * 
+ * For team roles, this queries the team_members table (single source of truth).
+ * For project roles, this queries the project_members table.
+ * 
  * @param userId - User ID
  * @param role - Role to check
  * @param resourceType - Resource type
@@ -486,6 +489,53 @@ export async function hasRole(
   resourceType: "team" | "project",
   resourceId: string
 ): Promise<boolean> {
+  if (resourceType === "team") {
+    // Query team_members table (single source of truth for team roles)
+    const { teamMembers } = await import("@/server/db/schema/team-members");
+    
+    const teamMember = await db
+      .select()
+      .from(teamMembers)
+      .where(
+        and(
+          eq(teamMembers.teamId, resourceId),
+          eq(teamMembers.userId, userId)
+        )
+      )
+      .limit(1);
+
+    if (teamMember.length === 0) {
+      return false;
+    }
+
+    const member = teamMember[0];
+    // Check if the requested role matches either management or operational role
+    return member.managementRole === role || member.operationalRole === role;
+  }
+
+  if (resourceType === "project") {
+    // Query project_members table (single source of truth for project roles)
+    const { projectMembers } = await import("@/server/db/schema/project-members");
+    
+    const projectMember = await db
+      .select()
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, resourceId),
+          eq(projectMembers.userId, userId)
+        )
+      )
+      .limit(1);
+
+    if (projectMember.length === 0) {
+      return false;
+    }
+
+    return projectMember[0].role === role;
+  }
+
+  // Fallback: query user_roles for unknown resource types (backwards compatibility)
   const result = await db
     .select()
     .from(userRoles)

@@ -52,36 +52,42 @@ export async function createTeam(input: CreateTeamInput): Promise<Team> {
     // Generate unique slug
     const slug = await generateUniqueSlug(name);
 
-    // Create team
-    const [team] = await db
-      .insert(teams)
-      .values({
-        name,
-        slug,
-        description: description ?? null,
-        image: image ?? null,
-        planId: "free",
-        billableSeats: 1, // Creator is TEAM_EDITOR (billable)
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning();
+    // Create team with transaction
+    // All 3 writes must succeed or fail together (Requirement 1.1, 14.1)
+    const team = await db.transaction(async (tx) => {
+      // 1. Create team
+      const [createdTeam] = await tx
+        .insert(teams)
+        .values({
+          name,
+          slug,
+          description: description ?? null,
+          image: image ?? null,
+          planId: "free",
+          billableSeats: 1, // Creator is TEAM_EDITOR (billable)
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
 
-    // Assign creator as TEAM_OWNER + TEAM_EDITOR
-    await db.insert(teamMembers).values({
-      teamId: team.id,
-      userId: creatorId,
-      managementRole: "TEAM_OWNER",
-      operationalRole: "TEAM_EDITOR",
-      joinedAt: new Date(),
-      invitedBy: null, // Creator is not invited
+      // 2. Assign creator as TEAM_OWNER + TEAM_EDITOR
+      await tx.insert(teamMembers).values({
+        teamId: createdTeam.id,
+        userId: creatorId,
+        managementRole: "TEAM_OWNER",
+        operationalRole: "TEAM_EDITOR",
+        joinedAt: new Date(),
+        invitedBy: null, // Creator is not invited
+      });
+
+      // 3. Update user's lastActiveTeamId
+      await tx
+        .update(users)
+        .set({ lastActiveTeamId: createdTeam.id })
+        .where(eq(users.id, creatorId));
+      
+      return createdTeam;
     });
-
-    // Update user's lastActiveTeamId
-    await db
-      .update(users)
-      .set({ lastActiveTeamId: team.id })
-      .where(eq(users.id, creatorId));
 
     // Log team creation (Requirement 1.5, 14.1)
     logTeamEvent("team.create.success", {
@@ -98,7 +104,7 @@ export async function createTeam(input: CreateTeamInput): Promise<Team> {
     return team;
   } catch (error) {
     // Log failure if not already logged
-    if (error instanceof Error && !error.message.includes("Invalid team name")) {
+    if (error instanceof Error && !error.message.includes("Invalid team name") && !error.message.includes("Creator user not found")) {
       logTeamEvent("team.create.failure", {
         outcome: "error",
         userId: creatorId,

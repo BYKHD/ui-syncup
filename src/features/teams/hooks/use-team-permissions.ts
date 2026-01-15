@@ -17,6 +17,7 @@ export interface TeamPermissions {
   isEditor: boolean;
   isMember: boolean;
   isViewer: boolean;
+  isLoading: boolean;
 }
 
 /**
@@ -57,6 +58,7 @@ export function useTeamPermissions(teamId: string | undefined): TeamPermissions 
         isEditor: false,
         isMember: false,
         isViewer: false,
+        isLoading: true,
       };
     }
 
@@ -94,6 +96,7 @@ export function useTeamPermissions(teamId: string | undefined): TeamPermissions 
       isEditor,
       isMember,
       isViewer,
+      isLoading,
     };
   }, [team, isLoading]);
 }

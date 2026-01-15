@@ -42,7 +42,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { useTeamMembers, useUpdateMemberRoles, useRemoveMember } from "@/features/teams";
+import { useTeamMembers, useUpdateMemberRoles, useRemoveMember, useTeamPermissions } from "@/features/teams";
 import type { TeamMember } from "@/features/teams/api";
 import { SettingsCard } from "./settings-card";
 import { TeamMembersLoadingSkeleton } from "./loading-states";
@@ -150,8 +150,8 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
     }).format(new Date(dateString));
   };
 
-  // TODO: Implement proper permission checks based on current user's role
-  const canManageMembers = true; 
+  // Use real permission checks
+  const { canManageMembers } = useTeamPermissions(teamId); 
 
   if (isLoading) {
     return <TeamMembersLoadingSkeleton />;

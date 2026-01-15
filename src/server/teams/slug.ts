@@ -8,13 +8,20 @@ import { eq, and, isNull } from "drizzle-orm";
  * Only allows lowercase letters, numbers, and hyphens
  */
 export function generateSlug(name: string): string {
-  return name
+  const slug = name
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9\s-]/g, "") // Remove all except letters, numbers, spaces, hyphens
     .replace(/\s+/g, "-") // Replace spaces with hyphens
     .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
     .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+
+  // Fallback for names that result in empty slug (e.g. non-ASCII names)
+  if (!slug) {
+    return `team-${crypto.randomUUID().slice(0, 8)}`;
+  }
+
+  return slug;
 }
 
 /**

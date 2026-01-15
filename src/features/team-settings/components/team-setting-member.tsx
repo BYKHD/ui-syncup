@@ -3,6 +3,7 @@
 import { SettingsSection } from "./settings-section";
 import { TeamMembersList } from "./team-members-list";
 import { TeamInvitationsList } from "./team-invitations-list";
+import { TeamPermissionGuard } from "./team-permission-guard";
 
 interface TeamMembersPageProps {
   teamId: string;
@@ -17,7 +18,10 @@ export default function TeamMembersPage({ teamId, currentUserId }: TeamMembersPa
     >
       <div className="space-y-8">
         <TeamMembersList teamId={teamId} currentUserId={currentUserId} />
-        <TeamInvitationsList teamId={teamId} />
+        
+        <TeamPermissionGuard teamId={teamId} permission="canManageInvitations">
+          <TeamInvitationsList teamId={teamId} />
+        </TeamPermissionGuard>
       </div>
     </SettingsSection>
   );
