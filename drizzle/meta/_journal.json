@@ -169,6 +169,13 @@
       "when": 1768385368566,
       "tag": "0023_overrated_raza",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1768385368567,
+      "tag": "0024_enable_notifications_realtime",
+      "breakpoints": true
     }
   ]
 }
