@@ -13,6 +13,46 @@ export interface ChangelogItem {
 
 export const changelogData: ChangelogItem[] = [
   {
+    version: '0.3.0',
+    date: '2026-01-15',
+    title: 'Notifications & Team Collaboration',
+    description: 'Introducing real-time notifications system and enhanced team invitation experience.',
+    changes: [
+      {
+        type: 'feature',
+        text: 'Real-time in-app notifications with Supabase Realtime.',
+      },
+      {
+        type: 'feature',
+        text: 'Notification panel with read/unread status and badge count.',
+      },
+      {
+        type: 'feature',
+        text: 'Toast notifications with quick accept action for invitations.',
+      },
+      {
+        type: 'feature',
+        text: 'Notification grouping by type with expandable sections.',
+      },
+      {
+        type: 'improvement',
+        text: 'Enhanced team invitation flow with better error handling.',
+      },
+      {
+        type: 'improvement',
+        text: 'Activity logging security and performance improvements.',
+      },
+      {
+        type: 'fix',
+        text: 'Fixed public project visibility for team members.',
+      },
+      {
+        type: 'fix',
+        text: 'Fixed invitation redirect issues after acceptance.',
+      },
+    ],
+  },
+  {
     version: '0.2.0',
     date: '2026-01-05',
     title: 'Canvas & Workflow Enhancements',
