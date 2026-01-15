@@ -7,8 +7,24 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { NotificationItem } from '../notification-item'
 import type { Notification } from '@/features/notifications/api'
+
+// Mock QueryClient
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: false },
+  },
+})
+
+const renderWithProviders = (ui: React.ReactNode) => {
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {ui}
+    </QueryClientProvider>
+  )
+}
 
 // Mock next/navigation
 const mockPush = vi.fn()
@@ -48,7 +64,7 @@ describe('NotificationItem', () => {
         },
       })
 
-      render(<NotificationItem notification={notification} teamId={teamId} />)
+      renderWithProviders(<NotificationItem notification={notification} teamId={teamId} />)
 
       expect(screen.getByText(/Alice mentioned you/)).toBeInTheDocument()
       expect(screen.getByText(/APP-123/)).toBeInTheDocument()
@@ -65,7 +81,7 @@ describe('NotificationItem', () => {
         },
       })
 
-      render(<NotificationItem notification={notification} teamId={teamId} />)
+      renderWithProviders(<NotificationItem notification={notification} teamId={teamId} />)
 
       expect(screen.getByText(/Bob commented on APP-456/)).toBeInTheDocument()
     })
@@ -80,7 +96,7 @@ describe('NotificationItem', () => {
         },
       })
 
-      render(<NotificationItem notification={notification} teamId={teamId} />)
+      renderWithProviders(<NotificationItem notification={notification} teamId={teamId} />)
 
       expect(screen.getByText(/Carol replied to your comment/)).toBeInTheDocument()
     })
@@ -96,7 +112,7 @@ describe('NotificationItem', () => {
         },
       })
 
-      render(<NotificationItem notification={notification} teamId={teamId} />)
+      renderWithProviders(<NotificationItem notification={notification} teamId={teamId} />)
 
       expect(screen.getByText(/Dave assigned you to APP-101/)).toBeInTheDocument()
     })
@@ -112,7 +128,7 @@ describe('NotificationItem', () => {
         },
       })
 
-      render(<NotificationItem notification={notification} teamId={teamId} />)
+      renderWithProviders(<NotificationItem notification={notification} teamId={teamId} />)
 
       expect(screen.getByText(/Eve changed APP-202 status/)).toBeInTheDocument()
       expect(screen.getByText(/In Review/)).toBeInTheDocument()
@@ -129,7 +145,7 @@ describe('NotificationItem', () => {
         },
       })
 
-      render(<NotificationItem notification={notification} teamId={teamId} />)
+      renderWithProviders(<NotificationItem notification={notification} teamId={teamId} />)
 
       expect(screen.getByText(/Frank invited you to join New Project/)).toBeInTheDocument()
       // Should show Accept/Decline buttons
@@ -148,7 +164,7 @@ describe('NotificationItem', () => {
         },
       })
 
-      render(<NotificationItem notification={notification} teamId={teamId} />)
+      renderWithProviders(<NotificationItem notification={notification} teamId={teamId} />)
 
       expect(screen.getByText(/Grace invited you to join New Team/)).toBeInTheDocument()
     })
@@ -164,7 +180,7 @@ describe('NotificationItem', () => {
         },
       })
 
-      render(<NotificationItem notification={notification} teamId={teamId} />)
+      renderWithProviders(<NotificationItem notification={notification} teamId={teamId} />)
 
       expect(screen.getByText(/Your role was updated/)).toBeInTheDocument()
       expect(screen.getByText(/Editor/)).toBeInTheDocument()
@@ -186,7 +202,7 @@ describe('NotificationItem', () => {
         },
       })
 
-      render(<NotificationItem notification={notification} teamId={teamId} />)
+      renderWithProviders(<NotificationItem notification={notification} teamId={teamId} />)
 
       const item = screen.getByRole('listitem')
       fireEvent.click(item)
@@ -205,7 +221,7 @@ describe('NotificationItem', () => {
         },
       })
 
-      render(<NotificationItem notification={notification} teamId={teamId} />)
+      renderWithProviders(<NotificationItem notification={notification} teamId={teamId} />)
 
       const item = screen.getByRole('listitem')
       fireEvent.click(item)
@@ -224,7 +240,7 @@ describe('NotificationItem', () => {
         },
       })
 
-      render(<NotificationItem notification={notification} teamId={teamId} />)
+      renderWithProviders(<NotificationItem notification={notification} teamId={teamId} />)
 
       const item = screen.getByRole('listitem')
       fireEvent.keyDown(item, { key: 'Enter' })
@@ -249,7 +265,7 @@ describe('NotificationItem', () => {
         },
       })
 
-      render(<NotificationItem notification={notification} teamId={teamId} />)
+      renderWithProviders(<NotificationItem notification={notification} teamId={teamId} />)
 
       expect(screen.getByLabelText('Unread')).toBeInTheDocument()
     })

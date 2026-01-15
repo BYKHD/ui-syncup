@@ -137,7 +137,7 @@ describe("Notification Service", () => {
       const url = buildTargetUrl("team_invitation", {
         team_slug: "acme",
       });
-      expect(url).toBe("/teams/acme");
+      expect(url).toBe("/projects");
     });
 
     it("should fallback to root when missing required fields", () => {

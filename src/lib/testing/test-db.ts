@@ -36,6 +36,12 @@ export async function createTestDb(): Promise<TestDbContext> {
   // Wait for the database to be ready
   await client.waitReady
 
+  // Create supabase_realtime publication (mocks Supabase environment)
+  await client.exec(`
+    DROP PUBLICATION IF EXISTS supabase_realtime;
+    CREATE PUBLICATION supabase_realtime;
+  `)
+
   // Apply migrations
   await applyMigrations(client)
 
