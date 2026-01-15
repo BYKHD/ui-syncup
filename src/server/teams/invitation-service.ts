@@ -363,6 +363,42 @@ export async function resendInvitation(invitationId: string, actorId: string): P
           },
         },
       });
+
+      // Fire-and-forget notification for invited user (if they exist in the system)
+      try {
+        // Check if invited user exists
+        const invitedUserResult = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.email, invitation.email.toLowerCase().trim()))
+          .limit(1);
+
+        if (invitedUserResult[0]) {
+          await createNotification({
+            recipientId: invitedUserResult[0].id,
+            actorId: actorId,
+            type: "team_invitation",
+            entityType: "team",
+            entityId: invitation.teamId,
+            metadata: {
+              target_url: buildTargetUrl("team_invitation", {
+                team_slug: team.slug,
+              }),
+              team_name: team.name,
+              team_slug: team.slug,
+              invitation_id: invitation.id,
+            },
+          });
+        }
+      } catch (notificationError) {
+        // Fire-and-forget: Log error but don't block
+        logger.error("team.invitation.resend.notification.failed", {
+          userId: actorId,
+          teamId: invitation.teamId,
+          invitationId: invitation.id,
+          error: notificationError instanceof Error ? notificationError.message : 'Unknown error',
+        });
+      }
     }
     
     // Log resend (Requirement 2A.2, 14.2)

@@ -139,14 +139,33 @@ export function NotificationActions({
         }
       }
     } catch (error) {
-      console.error(`Failed to ${action} invitation:`, error)
-      
-      // Check if this is a "no longer active" type error
       const errorMessage = error instanceof Error ? error.message : ''
+      
+      // Handle "Already used" as a success state (user already joined)
+      if (errorMessage.includes('already been used') || errorMessage.includes('already used')) {
+        setLocalStatus({
+          status: 'accepted',
+          message: 'You have already accepted this invitation',
+        })
+        toast.info('You have already joined this team')
+        
+        // Mark as read to clean up
+        markAsReadMutation(notification.id)
+        queryClient.invalidateQueries({ queryKey: notificationKeys.all })
+        
+        // Optional: Redirect if target URL exists
+        if (action === 'accept' && notification.metadata.target_url) {
+          router.push(notification.metadata.target_url)
+        }
+        return
+      }
+
+      console.error(`Failed to ${action} invitation:`, error)
+
+      // Check if this is a "no longer active" type error
       const isInactiveError = 
         errorMessage.includes('cancelled') || 
         errorMessage.includes('expired') ||
-        errorMessage.includes('already been used') ||
         errorMessage.includes('no longer active')
 
       if (isInactiveError) {
@@ -252,13 +271,20 @@ export function NotificationActions({
 function deriveInvitationState(notification: Notification): InvitationState {
   // If notification has been read, treat as already responded
   // (invitation notifications are only marked read after accept/decline)
-  if (notification.readAt) {
-    return {
-      status: 'accepted', // Generic "responded" status
-      message: 'You responded to this invitation',
-      disabledReason: undefined,
-    }
-  }
+  // If notification has been read, treat as already responded
+  // (invitation notifications are only marked read after accept/decline)
+  /* 
+  We are removing this check because "Read" != "Responded".
+  A user might read the notification but decide to act later.
+  We always default to pending and let the API decide if it's still valid.
+  */
+  // if (notification.readAt) {
+  //   return {
+  //     status: 'accepted', // Generic "responded" status
+  //     message: 'You responded to this invitation',
+  //     disabledReason: undefined,
+  //   }
+  // }
 
   // Otherwise, invitation is still pending
   return {
