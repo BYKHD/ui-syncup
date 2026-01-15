@@ -13,24 +13,19 @@ export { NotificationPanel } from './notification-panel'
 export { NotificationBell } from './notification-bell-button'
 export { NotificationDropdown } from './notification-dropdown'
 export { NotificationItem } from './notification-item'
+export { NotificationGroupItem } from './notification-group-item'
 export { NotificationActions } from './notification-actions'
 export { NotificationLoadMore } from './notification-load-more'
-
-// Types and mock data (re-exported from centralized mocks)
-export type { Notification } from '@/mocks'
-export {
-  MOCK_NOTIFICATIONS,
-  MOCK_UNREAD_COUNT,
-  MOCK_TEAM_ID,
-  MOCK_MEMBER_ROLE
-} from '@/mocks'
 
 // Utility functions
 export {
   formatTimestamp,
-  getNotificationMessage,
+  getNotificationIcon,
   getInitials,
 } from './utils'
+
+// Re-export types from features for convenience
+export type { Notification, NotificationType, NotificationMetadata } from '@/features/notifications/api'
 
 // ============================================================================
 // USAGE EXAMPLES
@@ -39,12 +34,11 @@ export {
 // Import notification components:
 // import { NotificationPanel, NotificationBell } from '@/components/shared/notifications'
 //
-// Import types and mock data:
+// Import types:
 // import type { Notification } from '@/components/shared/notifications'
-// import { MOCK_NOTIFICATIONS } from '@/components/shared/notifications'
 //
 // Import utilities:
-// import { formatTimestamp, getNotificationMessage } from '@/components/shared/notifications'
+// import { formatTimestamp, getNotificationIcon } from '@/components/shared/notifications'
 //
 // Example usage in header:
 // <NotificationPanel />

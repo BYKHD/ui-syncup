@@ -39,8 +39,42 @@ sequenceDiagram
 
 ### B. Real-time Updates with Fallback
 
-1. **Primary:** Supabase Realtime subscription (`useNotifications` hook listens for INSERT events)
+1. **Primary:** Supabase Realtime subscription via `useNotificationSubscription` hook
 2. **Fallback:** If Realtime connection is lost, automatically switches to polling `/api/notifications/unread-count` every 30 seconds
+
+#### Supabase Realtime Implementation
+
+The `useNotificationSubscription` hook (`src/features/notifications/hooks/use-notification-subscription.ts`) provides:
+
+```typescript
+const { isConnected, isPolling, error, reconnect } = useNotificationSubscription({
+  userId: user?.id,
+  enabled: !!user && !!currentTeam,
+  onNewNotification: (notification) => {
+    // Optional callback for custom handling
+  },
+})
+```
+
+**Features:**
+- Subscribes to `postgres_changes` INSERT events on `notifications` table
+- Filters by `recipient_id=eq.{userId}` for security
+- Automatically invalidates React Query cache on new notifications
+- Falls back to polling if connection fails
+- Provides `reconnect()` function for manual retry
+
+**Connection States:**
+- `isConnected: true` → Realtime active, polling disabled
+- `isPolling: true` → Realtime failed, polling every 30s
+- Both `false` → Disconnected (e.g., no user logged in)
+
+#### Supabase Client Setup
+
+The browser client (`src/lib/supabase-client.ts`) uses:
+- `NEXT_PUBLIC_SUPABASE_URL` (or `SUPABASE_URL` for SSR)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `SUPABASE_ANON_KEY` for SSR)
+
+**Important:** Only the anon key is used client-side. RLS policies ensure users only receive their own notifications.
 
 ---
 
@@ -225,21 +259,31 @@ Location: `src/features/notifications/hooks/`
 
 #### `useNotifications(options?: PaginationOptions)`
 - Fetches paginated notifications
-- Subscribes to Realtime INSERT events
-- Auto-updates cache when new notifications arrive
+- Auto-updates cache when new notifications arrive via Realtime
 - Implements fallback polling if Realtime disconnects
 
 #### `useUnreadCount()`
 - Fetches unread count for badge display
-- Auto-updates via Realtime subscription
+- Supports polling interval for fallback mode
+
+#### `useNotificationSubscription(options)`
+- **Primary Realtime hook** - subscribes to Supabase Realtime INSERT events
+- Filters by `recipient_id` for security
+- Invalidates React Query cache on new notifications
+- Falls back to polling if connection fails
+- Returns `{ isConnected, isPolling, error, reconnect }`
 
 #### `useMarkAsRead()`
 - Mutation for marking notifications as read
 - Optimistic updates for instant UI feedback
 
+#### `useMarkAllAsRead()`
+- Mutation for marking all notifications as read
+- Invalidates notification queries on success
+
 #### `useNotificationToast()`
-- Listens for new notification events
-- Triggers Sonner toast with notification preview
+- Listens for React Query cache updates
+- Triggers Sonner toast with notification preview for new notifications
 
 #### `useGroupedNotifications()`
 - Groups notifications by `(type, entity_type, entity_id)` for display
@@ -754,6 +798,9 @@ Each correctness property with minimum 100 iterations:
 
 ```
 src/
+├── lib/
+│   └── supabase-client.ts                    # Supabase browser client (Realtime)
+│
 ├── server/
 │   └── notifications/
 │       ├── types.ts                          # TypeScript types
@@ -775,17 +822,21 @@ src/
 │   │   ├── use-notifications.ts
 │   │   ├── use-unread-count.ts
 │   │   ├── use-mark-as-read.ts
+│   │   ├── use-mark-all-as-read.ts
+│   │   ├── use-notification-subscription.ts  # Supabase Realtime subscription
 │   │   ├── use-notification-toast.ts
-│   │   └── use-grouped-notifications.ts
+│   │   └── index.ts                          # Barrel export
 │   └── utils/
 │       └── group-notifications.ts
 │
 └── components/shared/notifications/
-    ├── notification-bell.tsx
+    ├── notification-panel.tsx                # Main entry point (integrates Realtime)
+    ├── notification-bell-button.tsx
     ├── notification-dropdown.tsx
     ├── notification-item.tsx
     ├── notification-group-item.tsx
-    └── notification-actions.tsx
+    ├── notification-actions.tsx
+    └── __tests__/
 ```
 
 ### Migration Files

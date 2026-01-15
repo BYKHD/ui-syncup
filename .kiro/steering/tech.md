@@ -22,6 +22,7 @@
 - **TanStack Query (React Query) 5** - Server state management, caching, mutations
 - **Zod** - Runtime validation and type inference
 - **SWR** - Alternative data fetching (used in some features)
+- **Supabase Realtime** - Real-time database updates via WebSockets
 
 ## Forms & Validation
 

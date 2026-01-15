@@ -162,11 +162,9 @@ export function buildTargetUrl(
       break;
 
     case "team_invitation":
-      // Team invitation navigates to team (after acceptance)
-      if (team_slug) {
-        return teamUrl;
-      }
-      break;
+      // Team invitation redirects to /projects after team context is switched
+      // The /teams/{slug} route doesn't exist - app uses route groups
+      return "/projects";
 
     case "role_updated":
       // Role update navigates to team settings or project

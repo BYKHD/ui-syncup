@@ -25,7 +25,13 @@ This plan implements a real-time notification system with Supabase Realtime, sup
     - Run `bun run db:generate` and `bun run db:push`
     - _Requirements: 1.1-1.4, 2.1-2.2, 3.1-3.3, 6.1, 6.2_
 
-  - [x] 1.4 Define TypeScript types and DTOs
+  - [x] 1.4 Enable Supabase Realtime replication
+    - Add notifications table to `supabase_realtime` publication
+    - Set replica identity to FULL
+    - _Location: `drizzle/0024_enable_notifications_realtime.sql`_
+    - _Requirements: 4.5_
+
+  - [x] 1.5 Define TypeScript types and DTOs
     - Create `Notification`, `NotificationMetadata`, `CreateNotificationDTO`, `NotificationGroup` interfaces
     - _Location: `src/server/notifications/types.ts`_
     - _Requirements: 1.1-1.4, 2.1-2.2, 3.1-3.3, 4.4_
@@ -132,7 +138,6 @@ This plan implements a real-time notification system with Supabase Realtime, sup
 
   - [x] 6.3 Implement Supabase Realtime subscription hook
     - Subscribe to notification INSERT events for real-time updates
-    - _NOTE: Deferred to Task 8 - requires Supabase client integration with UI_
     - _Location: `src/features/notifications/hooks/use-notification-subscription.ts`_
     - _Requirements: 4.5_
 
@@ -154,57 +159,57 @@ This plan implements a real-time notification system with Supabase Realtime, sup
 - [x] 7. Checkpoint - Data layer complete
   - Typecheck passed, all frontend data layer components created.
 
-- [-] 8. Build UI components
-  - [-] 8.1 Update NotificationBell component
+- [x] 8. Build UI components
+  - [x] 8.1 Update NotificationBell component
     - Display unread count badge, connect to `useUnreadCount` hook
     - _Location: `src/components/shared/notifications/notification-bell.tsx`_
     - _Requirements: 4.1_
 
-  - [ ] 8.2 Update NotificationDropdown component
+  - [x] 8.2 Update NotificationDropdown component
     - Paginated list with grouped notifications
     - _Location: `src/components/shared/notifications/notification-dropdown.tsx`_
     - _Requirements: 4.4_
 
-  - [ ] 8.3 Update NotificationItem component
+  - [x] 8.3 Update NotificationItem component
     - Polymorphic rendering based on notification type
     - Deep-link navigation on click with scroll-to-comment
     - _Location: `src/components/shared/notifications/notification-item.tsx`_
     - _Requirements: 1.4_
 
-  - [ ] 8.4 Create NotificationGroupItem component
+  - [x] 8.4 Create NotificationGroupItem component
     - Collapsed view for grouped notifications ("User A and 3 others...")
     - _Location: `src/components/shared/notifications/notification-group-item.tsx`_
     - _Requirements: 4.4_
 
-  - [ ] 8.5 Create NotificationActions component
+  - [x] 8.5 Create NotificationActions component
     - Inline Accept/Decline buttons for invitation notifications
     - _Location: `src/components/shared/notifications/notification-actions.tsx`_
     - _Requirements: 3.2_
 
-  - [ ]* 8.6 Write property test for invitation actions rendering
+  - [x]* 8.6 Write property test for invitation actions rendering
     - **Property 3: Invitation Actions Rendering**
     - **Validates: Requirements 3.2**
 
-  - [ ] 8.7 Implement toast notifications for real-time events
+  - [x] 8.7 Implement toast notifications for real-time events
     - Show Sonner toast when new notification arrives via Realtime
     - _Location: `src/features/notifications/hooks/use-notification-toast.ts`_
     - _Requirements: 4.5_
 
-  - [ ] 8.8 Write component tests for UI components
+  - [x] 8.8 Write component tests for UI components
     - Test NotificationItem renders correctly for each type
     - Test NotificationBell displays badge correctly
     - Test NotificationDropdown pagination and grouping
     - _Location: `src/components/shared/notifications/__tests__/`_
     - _Requirements: 4.1, 4.4, 1.4_
 
-  - [ ] 8.9 Implement mobile responsiveness
+  - [x] 8.9 Implement mobile responsiveness
     - Ensure touch targets are minimum 44px
     - Adapt layout for narrow viewports (<480px)
     - _Location: UI component files_
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 9. Integrate with application layout
-  - [ ] 9.1 Connect NotificationBell to header
+- [x] 9. Integrate with application layout
+  - [x] 9.1 Connect NotificationBell to header
     - Wire up notification components in the app header
     - _Location: `src/components/layout/` or `src/app/(protected)/layout.tsx`_
     - _Requirements: 4.1_

@@ -39,7 +39,7 @@ export function NotificationLoadMore({
         size="sm"
         disabled={isLoading || disabled}
         onClick={onLoadMore}
-        className="gap-2"
+        className="gap-2 min-h-[44px] px-4"
         aria-disabled={isLoading || disabled}
       >
         {isLoading && <Spinner />}

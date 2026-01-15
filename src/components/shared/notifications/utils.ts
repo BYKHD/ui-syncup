@@ -1,8 +1,19 @@
 // ============================================================================
-// UTILITY FUNCTIONS FOR NOTIFICATIONS (MOCKUP UI)
+// UTILITY FUNCTIONS FOR NOTIFICATIONS
 // ============================================================================
 
-import type { Notification } from '@/mocks'
+import {
+  RiAtLine,
+  RiChat1Line,
+  RiReplyLine,
+  RiUserAddLine,
+  RiExchangeLine,
+  RiMailLine,
+  RiTeamLine,
+  RiShieldUserLine,
+} from '@remixicon/react'
+import type { NotificationType } from '@/features/notifications/api'
+import type { ComponentType } from 'react'
 
 /**
  * Format timestamp to human-readable relative time
@@ -41,54 +52,30 @@ export function formatTimestamp(timestamp: string): string {
 }
 
 /**
- * Get notification message text based on type and metadata
+ * Get icon component for notification type
  */
-export function getNotificationMessage(notification: Notification): string {
-  const { type, actorName, metadata } = notification
-  const actor = actorName || 'Someone'
-
+export function getNotificationIcon(
+  type: NotificationType
+): ComponentType<{ className?: string }> | null {
   switch (type) {
-    case 'invitation':
-      return `${metadata.inviterName || actor} invited you to join ${metadata.projectName || 'a project'}`
-
-    case 'comment':
-      return `${actor} commented on ${metadata.projectName || 'your project'}`
-
     case 'mention':
-      return `${actor} mentioned you in ${metadata.projectName || 'a project'}`
-
-    case 'status_change':
-      return `${actor} changed ${metadata.projectName || 'project'} status to ${metadata.newStatus || 'updated'}`
-
-    case 'assignment':
-      return `${actor} assigned you to ${metadata.taskName || 'a task'} in ${metadata.projectName || 'a project'}`
-
+      return RiAtLine
+    case 'comment_created':
+      return RiChat1Line
+    case 'reply':
+      return RiReplyLine
+    case 'issue_assigned':
+      return RiUserAddLine
+    case 'issue_status_changed':
+      return RiExchangeLine
+    case 'project_invitation':
+      return RiMailLine
+    case 'team_invitation':
+      return RiTeamLine
+    case 'role_updated':
+      return RiShieldUserLine
     default:
-      return `${actor} sent you a notification`
-  }
-}
-
-/**
- * Check if notifications should be batched (5+ notifications in last 5 minutes)
- */
-export function shouldBatchNotifications(notifications: Notification[]): {
-  shouldBatch: boolean
-  batchNotifications: Notification[]
-} {
-  const BATCH_THRESHOLD = 5
-  const BATCH_TIME_WINDOW_MS = 5 * 60 * 1000 // 5 minutes
-
-  const now = new Date().getTime()
-  const recentNotifications = notifications.filter((notif) => {
-    const notifTime = new Date(notif.createdAt).getTime()
-    return now - notifTime <= BATCH_TIME_WINDOW_MS
-  })
-
-  const shouldBatch = recentNotifications.length >= BATCH_THRESHOLD
-
-  return {
-    shouldBatch,
-    batchNotifications: shouldBatch ? recentNotifications : [],
+      return null
   }
 }
 
