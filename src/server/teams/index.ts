@@ -4,7 +4,6 @@ export * from "./team-service";
 export * from "./member-service";
 export * from "./invitation-service";
 export * from "./slug";
-export * from "./billable-seats";
 export * from "./validation";
 export * from "./resource-limits";
 export * from "./team-context";

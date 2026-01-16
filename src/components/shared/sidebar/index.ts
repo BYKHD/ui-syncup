@@ -19,7 +19,6 @@ export type { Team, Project, NavItem, NavSubItem, User } from './type'
 export {
   MOCK_TEAMS,
   MOCK_PROJECTS,
-  getPlanDisplayName
 } from './type'
 
 // ============================================================================

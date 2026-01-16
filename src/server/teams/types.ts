@@ -18,8 +18,6 @@ export interface Team {
   slug: string;
   description: string | null;
   image: string | null;
-  planId: string;
-  billableSeats: number;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;

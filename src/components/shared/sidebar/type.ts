@@ -11,7 +11,6 @@ export interface Team {
   id: string
   name: string
   image?: string | null
-  plan: 'free' | 'pro' | 'enterprise'
 }
 
 /**
@@ -62,19 +61,16 @@ export const MOCK_TEAMS: Team[] = [
     id: '1',
     name: 'Acme Corp',
     image: null,
-    plan: 'pro',
   },
   {
     id: '2',
     name: 'Design Studio',
     image: null,
-    plan: 'free',
   },
   {
     id: '3',
     name: 'Tech Startup',
     image: null,
-    plan: 'enterprise',
   },
 ]
 
@@ -99,23 +95,3 @@ export const MOCK_PROJECTS: Project[] = [
   },
 ]
 
-
-
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
-
-/**
- * Get plan display name for UI
- */
-/**
- * Get plan display name for UI
- */
-export function getPlanDisplayName(plan: string): string {
-  const planNames: Record<string, string> = {
-    free: 'Free',
-    pro: 'Pro',
-    enterprise: 'Enterprise',
-  }
-  return planNames[plan] || plan || 'Free'
-}

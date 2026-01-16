@@ -43,7 +43,7 @@ export interface TeamExportData {
     slug: string;
     description: string | null;
     image: string | null;
-    planId: string;
+
     createdAt: string;
     updatedAt: string;
   };
@@ -207,7 +207,7 @@ export async function exportTeamData(
         slug: team.slug,
         description: team.description,
         image: team.image,
-        planId: team.planId,
+
         createdAt: team.createdAt.toISOString(),
         updatedAt: team.updatedAt.toISOString(),
       },

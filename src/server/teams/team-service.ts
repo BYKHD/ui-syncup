@@ -4,7 +4,6 @@ import { teamMembers } from "@/server/db/schema/team-members";
 import { users } from "@/server/db/schema/users";
 import { eq, and, isNull, inArray, sql, desc } from "drizzle-orm";
 import { generateUniqueSlug } from "./slug";
-import { calculateBillableSeats } from "./billable-seats";
 import { logger } from "@/lib/logger";
 import { randomUUID } from "crypto";
 import { validateTeamName } from "./validation";
@@ -63,8 +62,6 @@ export async function createTeam(input: CreateTeamInput): Promise<Team> {
           slug,
           description: description ?? null,
           image: image ?? null,
-          planId: "free",
-          billableSeats: 1, // Creator is TEAM_EDITOR (billable)
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -97,7 +94,6 @@ export async function createTeam(input: CreateTeamInput): Promise<Team> {
       teamName: team.name,
       metadata: {
         slug: team.slug,
-        planId: team.planId,
       },
     });
 

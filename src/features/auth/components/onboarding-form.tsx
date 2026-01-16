@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 
 import type { InvitationDetails, OnboardingMode, PlanTier } from "../types";
 import type { OnboardingSchema } from "../utils/validators";
-import { OnboardingPlanSelector } from "./onboarding-plan-selector";
+
 
 type OnboardingFormProps = {
   mode: OnboardingMode;
@@ -165,11 +165,7 @@ export function OnboardingForm({
                 </p>
               </div>
 
-              <OnboardingPlanSelector
-                selectedPlan={selectedPlan}
-                onPlanChange={onPlanChange}
-                disabled={status === "working"}
-              />
+
 
               <Button
                 type="submit"

@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/sidebar";
 import { useTeams, useSwitchTeam } from "@/features/teams";
 import { TeamAvatar } from "./sidebar-team-avatar";
-import { getPlanDisplayName } from "./type";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // ============================================================================
@@ -148,7 +147,7 @@ export function TeamSwitcher() {
                   <div className="flex flex-1 flex-col truncate">
                     <span className="truncate font-medium">{team.name}</span>
                     <span className="truncate text-[11px] text-muted-foreground">
-                      {getPlanDisplayName(team.planId)}
+                      {team.memberCount} members
                     </span>
                   </div>
                 </DropdownMenuItem>
@@ -172,14 +171,8 @@ export function TeamSwitcher() {
                 Create team
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
-
-          {!isCollapsed && (
-            <span className="rounded-full border border-sidebar-border/50 px-3 py-1 text-xs font-semibold text-sidebar-accent-foreground/80">
-              {getPlanDisplayName(currentTeam.planId)}
-            </span>
-          )}
-        </div>
+        </DropdownMenu>
+      </div>
       </SidebarMenuItem>
     </SidebarMenu>
   );

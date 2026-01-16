@@ -24,8 +24,6 @@ describe("useTeamSettings", () => {
     slug: "test-team",
     description: "A test team",
     image: null,
-    planId: "free",
-    billableSeats: 0,
     createdAt: "2023-01-01T00:00:00Z",
     updatedAt: "2023-01-01T00:00:00Z",
     deletedAt: null,

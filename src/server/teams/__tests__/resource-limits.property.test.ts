@@ -7,13 +7,13 @@
 import { describe, test, expect, afterEach } from "vitest";
 import fc from "fast-check";
 import { createTeam } from "../team-service";
-import { checkMemberLimit, PlanLimitError, PLAN_LIMIT_ERROR_CODES } from "../plan-limits";
+import { checkMemberLimit, QuotaError, QUOTA_ERROR_CODES } from "../resource-limits";
 import { db } from "@/lib/db";
 import { teams } from "@/server/db/schema/teams";
 import { teamMembers } from "@/server/db/schema/team-members";
 import { users } from "@/server/db/schema/users";
 import { eq, inArray } from "drizzle-orm";
-import { PLANS } from "@/config/tiers";
+import { QUOTAS } from "@/config/quotas";
 
 // Test configuration: run 100 iterations minimum
 const propertyConfig = { numRuns: 100 };
@@ -39,7 +39,7 @@ const teamDataArb = fc.record({
   description: teamDescriptionArb,
 });
 
-describe("Property 41: Free plan member limit enforced", () => {
+describe("Property 41: Member quota enforcement", () => {
   const testUserIds: string[] = [];
   const testTeamIds: string[] = [];
 
@@ -60,7 +60,7 @@ describe("Property 41: Free plan member limit enforced", () => {
     }
   });
 
-  test("free plan allows adding members up to limit", async () => {
+  test("permits adding members up to quota", async () => {
     await fc.assert(
       fc.asyncProperty(
         teamDataArb,
@@ -133,7 +133,7 @@ describe("Property 41: Free plan member limit enforced", () => {
     );
   });
 
-  test("free plan blocks adding 11th member", { timeout: 30000 }, async () => {
+  test("blocks adding members beyond quota", { timeout: 30000 }, async () => {
     await fc.assert(
       fc.asyncProperty(teamDataArb, async (data) => {
         // Create test user (team creator)
@@ -188,9 +188,9 @@ describe("Property 41: Free plan member limit enforced", () => {
 
         try {
           await checkMemberLimit(team.id);
-        } catch (error) {
+        } catch (error: unknown) {
           errorThrown = true;
-          if (error instanceof PlanLimitError) {
+          if (error instanceof QuotaError) {
             errorCode = error.code;
             errorLimit = error.limit;
             errorCurrent = error.current;
@@ -199,8 +199,11 @@ describe("Property 41: Free plan member limit enforced", () => {
 
         // Verify error was thrown with correct details
         expect(errorThrown).toBe(true);
-        expect(errorCode).toBe(PLAN_LIMIT_ERROR_CODES.MEMBERS);
-        expect(errorLimit).toBe(PLANS.free.limits.members);
+        expect(errorCode).toBe(QUOTA_ERROR_CODES.MEMBERS);
+        // We know the quota is 10 from config, so strict equality is fine if config matches
+        // But better to compare against the imported QUOTAS
+        // Note: QUOTAS.members might be 'unlimited', but this test assumes a number
+        expect(errorLimit).toBe(QUOTAS.members);
         expect(errorCurrent).toBe(10);
 
         // Clean up - delete team_members first, then team, then users
@@ -221,7 +224,7 @@ describe("Property 41: Free plan member limit enforced", () => {
     );
   });
 
-  test("free plan error includes correct limit and current count", { timeout: 30000 }, async () => {
+  test("error includes correct limit and current count", { timeout: 30000 }, async () => {
     await fc.assert(
       fc.asyncProperty(teamDataArb, async (data) => {
         // Create test user (team creator)
@@ -273,13 +276,13 @@ describe("Property 41: Free plan member limit enforced", () => {
           await checkMemberLimit(team.id);
           // Should not reach here
           expect(true).toBe(false);
-        } catch (error) {
-          if (error instanceof PlanLimitError) {
+        } catch (error: unknown) {
+          if (error instanceof QuotaError) {
             // Verify error contains correct information
-            expect(error.code).toBe(PLAN_LIMIT_ERROR_CODES.MEMBERS);
+            expect(error.code).toBe(QUOTA_ERROR_CODES.MEMBERS);
             expect(error.limit).toBe(10);
             expect(error.current).toBe(10);
-            expect(error.message).toContain("Free");
+            expect(error.message).toContain("quota");
             expect(error.message).toContain("10");
           } else {
             throw error;

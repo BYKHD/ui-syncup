@@ -12,7 +12,6 @@ import { db } from "@/lib/db";
 import { userRoles } from "@/server/db/schema/user-roles";
 import {
   ALL_ROLES,
-  BILLABLE_ROLES,
   type Permission,
   PROJECT_ROLES,
   type ProjectRole,
@@ -26,7 +25,6 @@ import {
   TEAM_ROLES,
   type TeamRole,
 } from "@/config/roles";
-import { PLANS } from "@/config/tiers";
 import { logger } from "@/lib/logger";
 
 // ============================================================================
@@ -146,11 +144,6 @@ export async function assignRole(
     roleId: userRole.id,
   });
 
-  // Update billable seats if this is a billable role
-  if (BILLABLE_ROLES.includes(role) && resourceType === "team") {
-    await updateBillableSeats(resourceId);
-  }
-
   return userRole as UserRole;
 }
 
@@ -200,17 +193,6 @@ export async function assignRoles(
     userId: assignments[0].userId,
   });
 
-  // Update billable seats for all affected teams
-  const teamIds = new Set(
-    assignments
-      .filter((a) => a.resourceType === "team" && BILLABLE_ROLES.includes(a.role))
-      .map((a) => a.resourceId)
-  );
-
-  for (const teamId of teamIds) {
-    await updateBillableSeats(teamId);
-  }
-
   return roles;
 }
 
@@ -244,11 +226,6 @@ export async function removeRole(assignment: RoleAssignment): Promise<boolean> {
       resourceType,
       resourceId,
     });
-
-    // Update billable seats if this was a billable role
-    if (BILLABLE_ROLES.includes(role) && resourceType === "team") {
-      await updateBillableSeats(resourceId);
-    }
   }
 
   return removed;
@@ -313,14 +290,6 @@ export async function updateRole(
     resourceType,
     resourceId,
   });
-
-  // Update billable seats if either role is billable
-  if (
-    resourceType === "team" &&
-    (BILLABLE_ROLES.includes(oldRole) || BILLABLE_ROLES.includes(newRole))
-  ) {
-    await updateBillableSeats(resourceId);
-  }
 }
 
 // ============================================================================
@@ -835,85 +804,6 @@ export async function getUserPermissions(
 
 
 // ============================================================================
-// BILLABLE SEATS
-// ============================================================================
-
-/**
- * Calculate billable seats for a team.
- * Only counts users with TEAM_EDITOR operational role.
- * Management roles (TEAM_OWNER, TEAM_ADMIN) are not billable by themselves.
- * 
- * @param teamId - Team ID
- * @returns Number of billable seats
- */
-export async function calculateBillableSeats(teamId: string): Promise<number> {
-  // Get all users with TEAM_EDITOR operational role
-  const roles = await db
-    .select()
-    .from(userRoles)
-    .where(
-      and(
-        eq(userRoles.resourceType, "team"),
-        eq(userRoles.resourceId, teamId),
-        eq(userRoles.role, "TEAM_EDITOR")
-      )
-    );
-
-  // Count unique users (should be one role per user, but use Set for safety)
-  const billableUsers = new Set<string>();
-
-  for (const role of roles) {
-    billableUsers.add(role.userId);
-  }
-
-  return billableUsers.size;
-}
-
-/**
- * Update billable seats count for a team.
- * This should be called whenever roles change.
- * 
- * @param teamId - Team ID
- * @returns Updated billable seats count
- */
-export async function updateBillableSeats(teamId: string): Promise<number> {
-  const count = await calculateBillableSeats(teamId);
-
-  logger.info("rbac.update_billable_seats", {
-    teamId,
-    billableSeats: count,
-  });
-
-  // TODO: Update team record with billable seats count
-  // This will be implemented when the teams table is created
-
-  return count;
-}
-
-/**
- * Check if a team can add more billable seats based on their plan.
- * 
- * @param teamId - Team ID
- * @param planId - Plan ID
- * @returns True if team can add more billable seats
- */
-export async function canAddBillableSeat(
-  teamId: string,
-  planId: "free" | "pro"
-): Promise<boolean> {
-  const plan = PLANS[planId];
-  const currentSeats = await calculateBillableSeats(teamId);
-
-  // Pro plan has unlimited seats
-  if (plan.limits.members === "unlimited") {
-    return true;
-  }
-
-  // Free plan has a limit
-  return currentSeats < plan.limits.members;
-}
-
-// ============================================================================
 // TWO-TIER ROLE HELPERS
 // ============================================================================
 
@@ -1217,9 +1107,6 @@ export async function demoteWithOwnershipTransfer(
     newRole: newOperationalRole,
     projectsTransferred: Object.keys(projectOwnershipTransfers).length,
   });
-
-  // Update billable seats
-  await updateBillableSeats(teamId);
 }
 
 // ============================================================================

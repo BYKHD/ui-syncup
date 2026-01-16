@@ -3,7 +3,6 @@ import { teamMembers } from "@/server/db/schema/team-members";
 import { projectMembers } from "@/server/db/schema/project-members";
 import { users } from "@/server/db/schema/users";
 import { eq, and, sql, desc } from "drizzle-orm";
-import { updateBillableSeats } from "./billable-seats";
 import { logTeamEvent } from "./team-service";
 import type { AddMemberInput, UpdateMemberRolesInput, TeamMember } from "./types";
 
@@ -60,9 +59,6 @@ export async function addMember(input: AddMemberInput): Promise<TeamMember> {
         joinedAt: new Date(),
       })
       .returning();
-
-    // Update billable seats
-    await updateBillableSeats(teamId);
 
     // Log member addition (Requirement 14.2)
     logTeamEvent("team.member.add.success", {
@@ -189,9 +185,6 @@ export async function updateMemberRoles(
       ))
       .returning();
 
-    // Update billable seats
-    await updateBillableSeats(teamId);
-
     // Log role change (Requirement 3.4, 14.2)
     logTeamEvent("team.member.role_change.success", {
       outcome: "success",
@@ -267,9 +260,6 @@ export async function removeMember(
         eq(teamMembers.teamId, teamId),
         eq(teamMembers.userId, userId)
       ));
-
-    // Update billable seats
-    await updateBillableSeats(teamId);
 
     // Log removal (Requirement 3.4, 14.2)
     logTeamEvent("team.member.remove.success", {

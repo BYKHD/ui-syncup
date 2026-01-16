@@ -36,7 +36,6 @@ type SeedUser = {
 type TeamSeed = {
   slug: string;
   name: string;
-  planId: "free" | "pro";
   description: string;
   image?: string;
 };
@@ -106,19 +105,16 @@ const TEAM_SEEDS: TeamSeed[] = [
   {
     slug: "demo-team",
     name: "Demo Team",
-    planId: "free",
     description: "Baseline workspace used throughout docs and onboarding flows.",
   },
   {
     slug: "product-design",
     name: "Product Design",
-    planId: "pro",
-    description: "Pro plan workspace that exercises billing + admin features.",
+    description: "Workspace that exercises admin features.",
   },
   {
     slug: "qa-guild",
     name: "QA Guild",
-    planId: "free",
     description: "Secondary workspace for testing team switching and exports.",
   },
 ];
@@ -340,7 +336,6 @@ async function main() {
         .values({
           name: seed.name,
           slug: seed.slug,
-          planId: seed.planId,
           description: seed.description,
           image: seed.image ?? null,
         })
@@ -350,7 +345,6 @@ async function main() {
             name: seed.name,
             description: seed.description,
             image: seed.image ?? null,
-            planId: seed.planId,
             updatedAt: new Date(),
           },
         })
@@ -383,7 +377,6 @@ async function main() {
 
     const lastActiveTeamByUser = new Map<string, string>();
     const teamMemberCounts = new Map<string, number>();
-    const billableSeats = new Map<string, number>();
     const roleAssignments: typeof schema.userRoles.$inferInsert[] = [];
 
     for (const seed of MEMBERSHIP_SEEDS) {
@@ -420,10 +413,6 @@ async function main() {
         lastActiveTeamByUser.set(user.id, team.id);
       }
 
-      if (seed.operationalRole === "TEAM_EDITOR") {
-        billableSeats.set(team.id, (billableSeats.get(team.id) ?? 0) + 1);
-      }
-
       if (seed.managementRole) {
         roleAssignments.push({
           userId: user.id,
@@ -441,15 +430,7 @@ async function main() {
       });
     }
 
-    // Update billable seats per team
-    for (const [slug, team] of teamsBySlug.entries()) {
-      const count = billableSeats.get(team.id) ?? 0;
-      await db
-        .update(schema.teams)
-        .set({ billableSeats: count })
-        .where(eq(schema.teams.id, team.id));
-      billableSeats.set(team.id, count);
-    }
+
 
     // Update last active team pointer per user
     for (const [email, user] of usersByEmail.entries()) {
@@ -576,7 +557,7 @@ async function main() {
     console.log(`👥 Users ensured: ${summary.users} (password: ${DEFAULT_PASSWORD})`);
     console.log(
       `🏢 Teams: ${summary.teams} (${Array.from(teamsBySlug.values())
-        .map((team) => `${team.name} → ${billableSeats.get(team.id) ?? 0} billable`)
+        .map((team) => team.name)
         .join(", ")})`
     );
     console.log(`🤝 Team memberships: ${summary.teamMembers}`);

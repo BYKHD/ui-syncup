@@ -56,7 +56,7 @@ Team roles are split into **management roles** (control team settings) and **ope
 
 | Role | Description |
 |------|-------------|
-| **TEAM_OWNER** | Full control over team, billing, and members. Can transfer ownership and delete team. Must also have an operational role. |
+| **TEAM_OWNER** | Full control over team and members. Can transfer ownership and delete team. Must also have an operational role. |
 | **TEAM_ADMIN** | Manage team members, projects, and integrations. Cannot delete team or transfer ownership. Must also have an operational role. |
 
 #### Operational Roles (Determine Access)
@@ -71,11 +71,11 @@ Team roles are split into **management roles** (control team settings) and **ope
 
 Users have **one management role** (optional) + **one operational role** (required):
 
-- `TEAM_OWNER` + `TEAM_EDITOR` → Uses 1 editor quota (owner who creates issues)
-- `TEAM_OWNER` + `TEAM_MEMBER` → Uses 0 quota (owner who only manages)
-- `TEAM_ADMIN` + `TEAM_VIEWER` → Uses 0 quota (admin with read-only)
-- `TEAM_EDITOR` (no management) → Uses 1 editor quota (designer/QA)
-- `TEAM_MEMBER` (no management) → Uses 0 quota (developer)
+- `TEAM_OWNER` + `TEAM_EDITOR` → Owner who creates issues
+- `TEAM_OWNER` + `TEAM_MEMBER` → Owner who only manages
+- `TEAM_ADMIN` + `TEAM_VIEWER` → Admin with read-only
+- `TEAM_EDITOR` (no management) → Designer/QA
+- `TEAM_MEMBER` (no management) → Developer
 
 ### Project Roles
 
@@ -92,7 +92,7 @@ Use project roles to define permissions for specific projects.
 
 1. **Management roles are separate from operational roles** - TEAM_OWNER/ADMIN control settings, operational roles control content access
 2. **Users must have both a management role AND an operational role** if they need both capabilities
-3. **Quotas are determined by operational role** - TEAM_EDITOR uses a resource seat
+
 4. **Higher operational roles inherit lower role permissions** (EDITOR > MEMBER > VIEWER)
 5. **Team roles do not automatically grant project roles** - users must be explicitly assigned to projects
 6. **Project roles only apply to that specific project** - they don't grant access to other projects
@@ -119,7 +119,7 @@ Permissions are organized into four categories:
 | `team:update` | Update team settings | OWNER, ADMIN |
 | `team:delete` | Delete the team | OWNER only |
 | `team:manage_members` | Add/remove team members | OWNER, ADMIN |
-| `team:manage_billing` | Manage billing and subscription | OWNER, ADMIN |
+
 | `team:manage_settings` | Manage team settings | OWNER, ADMIN |
 | `team:transfer_ownership` | Transfer team ownership | OWNER only |
 

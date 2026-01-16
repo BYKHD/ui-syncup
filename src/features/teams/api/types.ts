@@ -12,8 +12,6 @@ export const teamSchema = z.object({
   slug: z.string(),
   description: z.string().nullable(),
   image: z.string().nullable(),
-  planId: z.string(),
-  billableSeats: z.number().int().min(0),
   createdAt: z.string(),
   updatedAt: z.string(),
   deletedAt: z.string().nullable(),

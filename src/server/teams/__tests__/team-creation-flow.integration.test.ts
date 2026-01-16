@@ -98,8 +98,6 @@ describe('Integration Test: Complete Team Creation Flow', () => {
     expect(team.name).toBe(teamData.name);
     expect(team.description).toBe(teamData.description);
     expect(team.slug).toBeTruthy();
-    expect(team.planId).toBe('free');
-    expect(team.billableSeats).toBe(1); // Creator is TEAM_EDITOR
     
     // Step 3: Verify creator has correct roles (TEAM_OWNER + TEAM_EDITOR)
     const [memberRecord] = await db
@@ -156,7 +154,7 @@ describe('Integration Test: Complete Team Creation Flow', () => {
     
     await expect(
       checkMemberLimit(team.id)
-    ).rejects.toThrow('Cannot add member: team has reached the Free plan limit of 10 members');
+    ).rejects.toThrow(/Cannot add member: team has reached the instance quota/);
   });
   
   test('should handle team creation with special characters in name', async () => {
@@ -269,7 +267,7 @@ describe('Integration Test: Complete Team Creation Flow', () => {
     expect(currentUser.lastActiveTeamId).toBe(team1.id);
   });
   
-  test('should enforce free plan limits on team creation', async () => {
+  test('should enforce member quotas on team creation', async () => {
     const user = await createTestUser(
       `limits-${Date.now()}@example.com`,
       'Limits User'
@@ -283,14 +281,7 @@ describe('Integration Test: Complete Team Creation Flow', () => {
     });
     testTeamIds.push(team.id);
     
-    // Verify free plan is assigned
-    expect(team.planId).toBe('free');
-    
-    // Verify billable seats calculation
-    // Creator is TEAM_EDITOR, so 1 billable seat
-    expect(team.billableSeats).toBe(1);
-    
-    // Add a TEAM_MEMBER (not billable)
+    // Add a TEAM_MEMBER
     const member1 = await createTestUser(
       `member1-${Date.now()}@example.com`,
       'Member 1'
@@ -303,16 +294,7 @@ describe('Integration Test: Complete Team Creation Flow', () => {
       invitedBy: user.id,
     });
     
-    // Billable seats should still be 1
-    const [updatedTeam1] = await db
-      .select()
-      .from(teams)
-      .where(eq(teams.id, team.id))
-      .limit(1);
-    
-    expect(updatedTeam1.billableSeats).toBe(1);
-    
-    // Add a TEAM_EDITOR (billable)
+    // Add a TEAM_EDITOR
     const member2 = await createTestUser(
       `member2-${Date.now()}@example.com`,
       'Member 2'
@@ -324,14 +306,5 @@ describe('Integration Test: Complete Team Creation Flow', () => {
       operationalRole: 'TEAM_EDITOR',
       invitedBy: user.id,
     });
-    
-    // Billable seats should now be 2
-    const [updatedTeam2] = await db
-      .select()
-      .from(teams)
-      .where(eq(teams.id, team.id))
-      .limit(1);
-    
-    expect(updatedTeam2.billableSeats).toBe(2);
   });
 });

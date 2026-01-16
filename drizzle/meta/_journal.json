@@ -176,6 +176,13 @@
       "when": 1768385368567,
       "tag": "0024_enable_notifications_realtime",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1768558149000,
+      "tag": "0025_remove_billing_fields",
+      "breakpoints": true
     }
   ]
 }

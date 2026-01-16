@@ -13,7 +13,6 @@
 
 /**
  * Management roles control team settings and administration.
- * Not billable by themselves - users must also have an operational role.
  */
 export const TEAM_MANAGEMENT_ROLES = {
   TEAM_OWNER: "TEAM_OWNER",
@@ -23,7 +22,7 @@ export const TEAM_MANAGEMENT_ROLES = {
 export type TeamManagementRole = (typeof TEAM_MANAGEMENT_ROLES)[keyof typeof TEAM_MANAGEMENT_ROLES];
 
 /**
- * Operational roles determine content access and billing.
+ * Operational roles determine content access.
  * Every user must have exactly one operational role.
  */
 export const TEAM_OPERATIONAL_ROLES = {
@@ -78,7 +77,6 @@ export const PERMISSIONS = {
   TEAM_UPDATE: "team:update",
   TEAM_DELETE: "team:delete",
   TEAM_MANAGE_MEMBERS: "team:manage_members",
-  TEAM_MANAGE_BILLING: "team:manage_billing",
   TEAM_MANAGE_SETTINGS: "team:manage_settings",
   TEAM_TRANSFER_OWNERSHIP: "team:transfer_ownership",
 
@@ -131,7 +129,6 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     PERMISSIONS.TEAM_UPDATE,
     PERMISSIONS.TEAM_DELETE,
     PERMISSIONS.TEAM_MANAGE_MEMBERS,
-    PERMISSIONS.TEAM_MANAGE_BILLING,
     PERMISSIONS.TEAM_MANAGE_SETTINGS,
     PERMISSIONS.TEAM_TRANSFER_OWNERSHIP,
     
@@ -143,7 +140,6 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     PERMISSIONS.TEAM_VIEW,
     PERMISSIONS.TEAM_UPDATE,
     PERMISSIONS.TEAM_MANAGE_MEMBERS,
-    PERMISSIONS.TEAM_MANAGE_BILLING,
     PERMISSIONS.TEAM_MANAGE_SETTINGS,
     
     // Note: Content permissions come from operational role (EDITOR/MEMBER/VIEWER)
@@ -272,33 +268,6 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     PERMISSIONS.ANNOTATION_VIEW,
   ],
 };
-
-// ============================================================================
-// BILLABLE ROLES
-// ============================================================================
-
-/**
- * Only operational roles determine billing.
- * Management roles (TEAM_OWNER, TEAM_ADMIN) are NOT billable by themselves.
- * 
- * Pro plan bills $8/month per TEAM_EDITOR seat.
- * 
- * Users with PROJECT_OWNER or PROJECT_EDITOR roles automatically get
- * TEAM_EDITOR operational role (billable).
- */
-export const BILLABLE_ROLES: Role[] = [
-  TEAM_OPERATIONAL_ROLES.TEAM_EDITOR,
-  // Note: PROJECT_OWNER and PROJECT_EDITOR auto-promote to TEAM_EDITOR
-];
-
-/**
- * Check if a role is billable.
- * Only TEAM_EDITOR operational role is billable.
- * Management roles are not billable by themselves.
- */
-export function isBillableRole(role: Role): boolean {
-  return role === TEAM_OPERATIONAL_ROLES.TEAM_EDITOR;
-}
 
 /**
  * Check if a role is a management role.
@@ -432,25 +401,25 @@ export const ROLE_LABELS: Record<Role, string> = {
 export const ROLE_DESCRIPTIONS: Record<Role, string> = {
   // Team management roles
   [TEAM_ROLES.TEAM_OWNER]:
-    "Access team settings. Manage billing, members, and can delete team or transfer ownership. Not billable by itself - must also have an operational role.",
+    "Full control over team. Manage members, settings, and can delete team or transfer ownership.",
   [TEAM_ROLES.TEAM_ADMIN]:
-    "Access team settings. Manage members, projects, and integrations. Cannot delete team or transfer ownership. Not billable by itself - must also have an operational role.",
+    "Manage team members, projects, and integrations. Cannot delete team or transfer ownership.",
 
   // Team operational roles
   [TEAM_ROLES.TEAM_EDITOR]:
-    "Create and manage issues and annotations. Billable seat ($8/month). Automatically assigned when user becomes PROJECT_OWNER or PROJECT_EDITOR.",
+    "Create and manage issues and annotations. Automatically assigned when user becomes PROJECT_OWNER or PROJECT_EDITOR.",
   [TEAM_ROLES.TEAM_MEMBER]:
-    "View projects and comment on issues. Can be assigned to projects. Free seat.",
+    "View projects and comment on issues. Can be assigned to projects.",
   [TEAM_ROLES.TEAM_VIEWER]:
-    "View-only access to projects and issues. No modifications. Free seat.",
+    "View-only access to projects and issues. No modifications.",
 
   // Project roles
   [PROJECT_ROLES.PROJECT_OWNER]:
-    "Full control over project and its issues. Auto-promotes to TEAM_EDITOR (billable $8/month).",
+    "Full control over project and its issues. Auto-promotes to TEAM_EDITOR.",
   [PROJECT_ROLES.PROJECT_EDITOR]:
-    "Create and manage issues and annotations. Auto-promotes to TEAM_EDITOR (billable $8/month).",
+    "Create and manage issues and annotations. Auto-promotes to TEAM_EDITOR.",
   [PROJECT_ROLES.PROJECT_DEVELOPER]:
-    "Update issue status and comment. Free seat.",
+    "Update issue status and comment.",
   [PROJECT_ROLES.PROJECT_VIEWER]:
-    "View-only access to project and issues. Free seat.",
+    "View-only access to project and issues.",
 };

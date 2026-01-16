@@ -30,7 +30,6 @@ async function createTestTeam() {
     .values({
       name: `Test Team ${Date.now()}`,
       slug: `test-team-${Date.now()}`,
-      planId: "free",
     })
     .returning();
   return team;

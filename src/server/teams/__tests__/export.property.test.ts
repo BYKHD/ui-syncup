@@ -125,7 +125,7 @@ describe("Property 22: Data export generates complete JSON", () => {
         expect(exportData.team.name).toBe(team.name);
         expect(exportData.team.slug).toBe(team.slug);
         expect(exportData.team.description).toBe(team.description);
-        expect(exportData.team.planId).toBe("free");
+
         expect(exportData.team.createdAt).toBeDefined();
         expect(exportData.team.updatedAt).toBeDefined();
 

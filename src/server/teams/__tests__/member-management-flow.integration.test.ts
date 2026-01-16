@@ -72,7 +72,7 @@ afterEach(async () => {
 });
 
 describe('Integration Test: Member Management Flow', () => {
-  test('should update member roles and recalculate billable seats', async () => {
+  test('should update member roles', async () => {
     // Create team owner and team
     const owner = await createTestUser(
       `owner-${Date.now()}@example.com`,
@@ -86,16 +86,7 @@ describe('Integration Test: Member Management Flow', () => {
     });
     testTeamIds.push(team.id);
     
-    // Initial billable seats: 1 (owner is TEAM_EDITOR)
-    let [currentTeam] = await db
-      .select()
-      .from(teams)
-      .where(eq(teams.id, team.id))
-      .limit(1);
-    
-    expect(currentTeam.billableSeats).toBe(1);
-    
-    // Add a member as TEAM_MEMBER (not billable)
+    // Add a member as TEAM_MEMBER
     const member1 = await createTestUser(
       `member1-${Date.now()}@example.com`,
       'Member 1'
@@ -108,16 +99,16 @@ describe('Integration Test: Member Management Flow', () => {
       invitedBy: owner.id,
     });
     
-    // Billable seats should still be 1
-    [currentTeam] = await db
+    // Verify member role
+    let [member] = await db
       .select()
-      .from(teams)
-      .where(eq(teams.id, team.id))
+      .from(teamMembers)
+      .where(eq(teamMembers.userId, member1.id))
       .limit(1);
     
-    expect(currentTeam.billableSeats).toBe(1);
+    expect(member.operationalRole).toBe('TEAM_MEMBER');
     
-    // Promote member to TEAM_EDITOR (billable)
+    // Promote member to TEAM_EDITOR
     await updateMemberRoles(
       team.id,
       member1.id,
@@ -125,14 +116,14 @@ describe('Integration Test: Member Management Flow', () => {
       owner.id
     );
     
-    // Billable seats should now be 2
-    [currentTeam] = await db
+    // Verify role updated
+    [member] = await db
       .select()
-      .from(teams)
-      .where(eq(teams.id, team.id))
+      .from(teamMembers)
+      .where(eq(teamMembers.userId, member1.id))
       .limit(1);
-    
-    expect(currentTeam.billableSeats).toBe(2);
+      
+    expect(member.operationalRole).toBe('TEAM_EDITOR');
     
     // Demote member back to TEAM_MEMBER
     await updateMemberRoles(
@@ -142,14 +133,14 @@ describe('Integration Test: Member Management Flow', () => {
       owner.id
     );
     
-    // Billable seats should be back to 1
-    [currentTeam] = await db
+    // Verify role updated back
+    [member] = await db
       .select()
-      .from(teams)
-      .where(eq(teams.id, team.id))
+      .from(teamMembers)
+      .where(eq(teamMembers.userId, member1.id))
       .limit(1);
-    
-    expect(currentTeam.billableSeats).toBe(1);
+      
+    expect(member.operationalRole).toBe('TEAM_MEMBER');
   });
   
   test('should remove member successfully when no projects owned', async () => {
@@ -201,54 +192,7 @@ describe('Integration Test: Member Management Flow', () => {
     expect(memberRecord).toBeUndefined();
   });
   
-  test('should update billable seats when removing TEAM_EDITOR', async () => {
-    // Create team owner and team
-    const owner = await createTestUser(
-      `owner-seats-${Date.now()}@example.com`,
-      'Owner'
-    );
-    
-    const team = await createTeam({
-      name: 'Seats Test Team',
-      description: 'Testing seat calculation',
-      creatorId: owner.id,
-    });
-    testTeamIds.push(team.id);
-    
-    // Add a TEAM_EDITOR member
-    const editor = await createTestUser(
-      `editor-${Date.now()}@example.com`,
-      'Editor'
-    );
-    
-    await addMember({
-      teamId: team.id,
-      userId: editor.id,
-      operationalRole: 'TEAM_EDITOR',
-      invitedBy: owner.id,
-    });
-    
-    // Billable seats should be 2 (owner + editor)
-    let [currentTeam] = await db
-      .select()
-      .from(teams)
-      .where(eq(teams.id, team.id))
-      .limit(1);
-    
-    expect(currentTeam.billableSeats).toBe(2);
-    
-    // Remove editor
-    await removeMember(team.id, editor.id, owner.id);
-    
-    // Billable seats should be back to 1
-    [currentTeam] = await db
-      .select()
-      .from(teams)
-      .where(eq(teams.id, team.id))
-      .limit(1);
-    
-    expect(currentTeam.billableSeats).toBe(1);
-  });
+
   
   test('should handle multiple role changes correctly', async () => {
     // Create team owner and team
@@ -281,15 +225,6 @@ describe('Integration Test: Member Management Flow', () => {
       });
     }
     
-    // Initial: 1 billable seat (owner)
-    let [currentTeam] = await db
-      .select()
-      .from(teams)
-      .where(eq(teams.id, team.id))
-      .limit(1);
-    
-    expect(currentTeam.billableSeats).toBe(1);
-    
     // Promote all 3 to TEAM_EDITOR
     for (const member of members) {
       await updateMemberRoles(
@@ -300,14 +235,15 @@ describe('Integration Test: Member Management Flow', () => {
       );
     }
     
-    // Should have 4 billable seats (owner + 3 editors)
-    [currentTeam] = await db
-      .select()
-      .from(teams)
-      .where(eq(teams.id, team.id))
-      .limit(1);
-    
-    expect(currentTeam.billableSeats).toBe(4);
+    // Verify roles updated
+    for (const member of members) {
+      const [m] = await db
+        .select()
+        .from(teamMembers)
+        .where(eq(teamMembers.userId, member.id))
+        .limit(1);
+      expect(m.operationalRole).toBe('TEAM_EDITOR');
+    }
     
     // Demote 2 back to TEAM_MEMBER
     for (let i = 0; i < 2; i++) {
@@ -319,14 +255,15 @@ describe('Integration Test: Member Management Flow', () => {
       );
     }
     
-    // Should have 2 billable seats (owner + 1 editor)
-    [currentTeam] = await db
-      .select()
-      .from(teams)
-      .where(eq(teams.id, team.id))
-      .limit(1);
-    
-    expect(currentTeam.billableSeats).toBe(2);
+    // Verify demotions
+    for (let i = 0; i < 2; i++) {
+      const [m] = await db
+        .select()
+        .from(teamMembers)
+        .where(eq(teamMembers.userId, members[i].id))
+        .limit(1);
+      expect(m.operationalRole).toBe('TEAM_MEMBER');
+    }
   });
   
   test('should assign management roles correctly', async () => {
@@ -366,14 +303,5 @@ describe('Integration Test: Member Management Flow', () => {
     
     expect(adminMember.managementRole).toBe('TEAM_ADMIN');
     expect(adminMember.operationalRole).toBe('TEAM_MEMBER');
-    
-    // Admin with TEAM_MEMBER operational role should not be billable
-    const [currentTeam] = await db
-      .select()
-      .from(teams)
-      .where(eq(teams.id, team.id))
-      .limit(1);
-    
-    expect(currentTeam.billableSeats).toBe(1); // Only owner
   });
 });
