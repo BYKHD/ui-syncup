@@ -17,7 +17,7 @@ import { eq } from 'drizzle-orm';
 import { createTeam } from '@/server/teams/team-service';
 import { addMember } from '@/server/teams/member-service';
 import { setActiveTeam } from '@/server/teams/team-context';
-import { checkMemberLimit } from '@/server/teams/plan-limits';
+import { checkMemberLimit } from '@/server/teams/resource-limits';
 
 /**
  * Test data cleanup

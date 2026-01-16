@@ -33,7 +33,7 @@ We use **two separate buckets** to optimize for different access patterns, lifec
 1. **Lifecycle & Retention** - Attachments may be deleted with issues (GDPR), while avatars persist
 2. **Access Control** - Attachments need project-level RBAC; avatars are user/team-scoped
 3. **Performance** - Different caching strategies per bucket
-4. **Billing** - Easy to track storage usage separately for plan limits
+4. **Quotas** - Easy to track storage usage separately for quota enforcement
 
 ---
 
@@ -184,7 +184,7 @@ mediaStorage.delete(key)
 
 **Additional Rules**
 - Validate MIME type server-side
-- Enforce file size limits per plan
+- Enforce file size limits per quota
 - Sanitize filenames before storage
 
 ---

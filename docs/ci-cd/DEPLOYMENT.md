@@ -401,6 +401,22 @@ BETTER_AUTH_SECRET="your-32-character-minimum-secret-key-here"
 BETTER_AUTH_URL="https://ui-syncup.com"
 ```
 
+### Resource Limits (Instance Config)
+
+| Variable | Description | Default | Scope |
+|----------|-------------|---------|-------|
+| `MAX_MEMBERS_PER_TEAM` | Max members per team ("unlimited" or number) | `unlimited` | All |
+| `MAX_PROJECTS_PER_TEAM` | Max projects per team ("unlimited" or number) | `100` | All |
+| `MAX_ISSUES_PER_TEAM` | Max issues per team ("unlimited" or number) | `unlimited` | All |
+| `MAX_STORAGE_PER_TEAM_MB` | Max storage in MB per team | `10000` | All |
+
+**Example**:
+```bash
+MAX_MEMBERS_PER_TEAM="50"
+MAX_PROJECTS_PER_TEAM="10"
+MAX_STORAGE_PER_TEAM_MB="5000"
+```
+
 ### Feature Flags (Optional)
 
 | Variable | Description | Default | Scope |
@@ -1327,7 +1343,7 @@ export function trackError(error: Error, context: any) {
   - API rate limit approaching
 
 **Cloudflare R2 Alerts**:
-- Set up billing alerts in Cloudflare Dashboard
+- Set up cost alerts in Cloudflare Dashboard
 - Monitor storage usage and bandwidth
 - Alert on quota approaching limits
 
@@ -1606,10 +1622,10 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 ```
 
-**Plan Optimization**:
-- Monitor usage against plan limits
-- Upgrade only when consistently hitting limits
-- Consider Enterprise plan for high-traffic apps
+**Quota Optimization**:
+- Monitor usage against resource quotas
+- Upgrade infrastructure only when consistently hitting limits
+- Consider scaling up resources for high-traffic apps
 - Use preview deployments sparingly for large teams
 
 #### Supabase Cost Optimization
@@ -1672,7 +1688,7 @@ jobs:
    ```
 
 **Monitoring & Alerts**:
-- Set up billing alerts at 50%, 75%, 90% of quota
+- Set up quota alerts at 50%, 75%, 90% of limit
 - Monitor database size growth trends
 - Review slow queries and optimize
 - Use read replicas for read-heavy workloads (Pro+)
@@ -1735,7 +1751,7 @@ jobs:
 **Cost Monitoring**:
 - Monitor storage usage and growth
 - Track bandwidth usage patterns
-- Set up billing alerts
+- Set up cost alerts
 - Review and delete unused files regularly
 
 #### General Cost Optimization Strategies

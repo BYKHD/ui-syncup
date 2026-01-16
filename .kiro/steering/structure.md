@@ -51,7 +51,7 @@ src/
 │       └── settings-sidebar/     # Settings navigation
 │
 ├── config/                       # Single sources of truth (pure data)
-│   ├── tiers.ts                  # Plan limits & features
+│   ├── quotas.ts                 # Resource limits (Instance Config)
 │   ├── roles.ts                  # RBAC roles & permissions
 │   ├── workflow.ts               # Issue workflow states
 │   ├── settings-nav.ts           # Settings navigation
@@ -86,8 +86,8 @@ src/
 │       ├── team-service.ts       # Core team operations
 │       ├── member-service.ts     # Member management
 │       ├── invitation-service.ts # Invitation handling
-│       ├── billable-seats.ts     # Billing calculations
-│       └── plan-limits.ts        # Plan enforcement
+│       ├── member-counts.ts      # Member counting logic
+│       └── resource-limits.ts    # Resource usage limits
 │
 ├── mocks/                        # Mock data & fixtures
 │   ├── issue.fixtures.ts
@@ -172,7 +172,7 @@ features/<feature>/
 - `config/roles.ts` declares the canonical roles referenced in `.kiro/steering/product.md` (e.g., `PROJECT_EDITOR`, `TEAM_ADMIN`). Keep that file in sync with the product doc whenever plan limits or role names change.
 - `server/auth/rbac.ts` enforces those roles on the backend and should reference the same role/permission enums used by `features/auth/hooks/use-session.ts` and the guarding middleware(proxy) in `app/(protected)/layout.tsx`.
 - When a product role gains or loses permissions for a feature, update the adjacent `features/<feature>/components` screens (and tests) so the UI matches what the RBAC guard allows.
-- New plan-based limits belong in `config/tiers.ts` so billing logic, UI copy, and enforcement all read from the same source of truth.
+- Configuration changes should centralize in `config/` so logic, UI copy, and enforcement all read from the same source of truth.
 
 ## Naming Conventions
 

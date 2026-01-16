@@ -245,7 +245,7 @@ src/
 - Core features
 - User roles & permissions
 - Business rules
-- Monetization model
+
 - Target users
 - Workflow states
 
@@ -265,17 +265,14 @@ src/
 - ADMIN: Manage members, cannot delete team
 
 ### Operational Roles
-- EDITOR: Create content (billable at $X/month)
-- MEMBER: View and comment (free)
-- VIEWER: Read-only (free)
+- EDITOR: Create content
+- MEMBER: View and comment
+- VIEWER: Read-only
 
 ## Business Rules
-- Only EDITOR role is billable
-- Management roles are NOT billable by themselves
+- Only EDITOR role can create content
+- Management roles are NOT operational by themselves
 - Users with PROJECT_OWNER auto-promote to EDITOR
-
-## Monetization
-Pro plan bills per EDITOR at $X/month.
 ```
 
 ### AGENTS.md - Development Patterns
@@ -465,7 +462,7 @@ Update structure.md when:
 
 Update product.md when:
 - [ ] Adding/removing user roles
-- [ ] Changing billing model
+
 - [ ] Adding major features
 - [ ] Modifying business rules
 ```

@@ -2,14 +2,13 @@
 
 ## Overview
 
-UI SyncUp uses a comprehensive Role-Based Access Control (RBAC) system to manage user permissions across teams and projects. This document explains the role hierarchy, permissions model, billable seats calculation, and how to use the RBAC utilities in your code.
+UI SyncUp uses a comprehensive Role-Based Access Control (RBAC) system to manage user permissions across teams and projects. This document explains the role hierarchy, permissions model, and how to use the RBAC utilities in your code.
 
 ## Table of Contents
 
 - [Role Hierarchy](#role-hierarchy)
 - [Architecture](#architecture)
 - [Permissions Model](#permissions-model)
-- [Billable Seats](#billable-seats)
 - [Usage Examples](#usage-examples)
 - [API Reference](#api-reference)
 - [Best Practices](#best-practices)
@@ -51,49 +50,49 @@ hasPermission(userId, permission, resourceType, resourceId)
 
 ### Team Roles (Two-Tier Hierarchy)
 
-Team roles are split into **management roles** (control team settings) and **operational roles** (determine billing and content access).
+Team roles are split into **management roles** (control team settings) and **operational roles** (determine content access).
 
-#### Management Roles (Not Billable)
+#### Management Roles
 
-| Role | Description | Billable |
-|------|-------------|----------|
-| **TEAM_OWNER** | Full control over team, billing, and members. Can transfer ownership and delete team. Must also have an operational role. | ❌ No (by itself) |
-| **TEAM_ADMIN** | Manage team members, projects, and integrations. Cannot delete team or transfer ownership. Must also have an operational role. | ❌ No (by itself) |
+| Role | Description |
+|------|-------------|
+| **TEAM_OWNER** | Full control over team, billing, and members. Can transfer ownership and delete team. Must also have an operational role. |
+| **TEAM_ADMIN** | Manage team members, projects, and integrations. Cannot delete team or transfer ownership. Must also have an operational role. |
 
-#### Operational Roles (Determine Billing)
+#### Operational Roles (Determine Access)
 
-| Role | Level | Description | Billable |
-|------|-------|-------------|----------|
-| **TEAM_EDITOR** | 3 | Create and manage issues and annotations. Automatically assigned when user becomes PROJECT_OWNER or PROJECT_EDITOR. | ✅ Yes ($8/month) |
-| **TEAM_MEMBER** | 2 | View projects and comment on issues. Can be assigned to projects. | ❌ No |
-| **TEAM_VIEWER** | 1 | View-only access to projects and issues. No modifications. | ❌ No |
+| Role | Level | Description |
+|------|-------|-------------|
+| **TEAM_EDITOR** | 3 | Create and manage issues and annotations. Automatically assigned when user becomes PROJECT_OWNER or PROJECT_EDITOR. |
+| **TEAM_MEMBER** | 2 | View projects and comment on issues. Can be assigned to projects. |
+| **TEAM_VIEWER** | 1 | View-only access to projects and issues. No modifications. |
 
 #### Role Combinations
 
 Users have **one management role** (optional) + **one operational role** (required):
 
-- `TEAM_OWNER` + `TEAM_EDITOR` → Billed 1 seat (owner who creates issues)
-- `TEAM_OWNER` + `TEAM_MEMBER` → Billed 0 seats (owner who only manages)
-- `TEAM_ADMIN` + `TEAM_VIEWER` → Billed 0 seats (admin with read-only)
-- `TEAM_EDITOR` (no management) → Billed 1 seat (designer/QA)
-- `TEAM_MEMBER` (no management) → Billed 0 seats (developer)
+- `TEAM_OWNER` + `TEAM_EDITOR` → Uses 1 editor quota (owner who creates issues)
+- `TEAM_OWNER` + `TEAM_MEMBER` → Uses 0 quota (owner who only manages)
+- `TEAM_ADMIN` + `TEAM_VIEWER` → Uses 0 quota (admin with read-only)
+- `TEAM_EDITOR` (no management) → Uses 1 editor quota (designer/QA)
+- `TEAM_MEMBER` (no management) → Uses 0 quota (developer)
 
 ### Project Roles
 
-Project roles apply to a specific project. Users can have different roles in different projects.
+Use project roles to define permissions for specific projects.
 
-| Role | Level | Description | Billable |
-|------|-------|-------------|----------|
-| **PROJECT_OWNER** | 4 | Full control over project and its issues. Can manage project members. | ✅ Yes |
-| **PROJECT_EDITOR** | 3 | Create and manage issues and annotations. Cannot manage project settings. | ✅ Yes |
-| **PROJECT_DEVELOPER** | 2 | Update issue status and comment. Typical developer workflow. | ❌ No |
-| **PROJECT_VIEWER** | 1 | View-only access to project and issues. No modifications. | ❌ No |
+| Role | Level | Description |
+|------|-------|-------------|
+| **PROJECT_OWNER** | 4 | Full control over project and its issues. Can manage project members. |
+| **PROJECT_EDITOR** | 3 | Create and manage issues and annotations. Cannot manage project settings. |
+| **PROJECT_DEVELOPER** | 2 | Update issue status and comment. Typical developer workflow. |
+| **PROJECT_VIEWER** | 1 | View-only access to project and issues. No modifications. |
 
 ### Role Hierarchy Rules
 
 1. **Management roles are separate from operational roles** - TEAM_OWNER/ADMIN control settings, operational roles control content access
 2. **Users must have both a management role AND an operational role** if they need both capabilities
-3. **Billing is determined solely by operational role** - TEAM_EDITOR is the only billable team role
+3. **Quotas are determined by operational role** - TEAM_EDITOR uses a resource seat
 4. **Higher operational roles inherit lower role permissions** (EDITOR > MEMBER > VIEWER)
 5. **Team roles do not automatically grant project roles** - users must be explicitly assigned to projects
 6. **Project roles only apply to that specific project** - they don't grant access to other projects
@@ -158,55 +157,7 @@ Permissions are organized into four categories:
 
 ---
 
-## Billable Seats
 
-### Billing Model
-
-UI SyncUp uses a **per-editor seat** billing model:
-
-- **Free Plan**: Up to 10 members, 1 project, 25 issues
-- **Pro Plan**: $8/month per TEAM_EDITOR seat, unlimited members, 50 projects, unlimited issues
-
-### Billable Roles
-
-**Only operational roles determine billing. Management roles are not billable by themselves.**
-
-**Team Operational Roles:**
-- ✅ **TEAM_EDITOR** - Billable ($8/month)
-- ❌ TEAM_MEMBER - Free
-- ❌ TEAM_VIEWER - Free
-
-**Team Management Roles (not billable by themselves):**
-- ❌ TEAM_OWNER - Free (but must also have an operational role)
-- ❌ TEAM_ADMIN - Free (but must also have an operational role)
-
-**Project Roles (auto-promote to TEAM_EDITOR):**
-- ✅ PROJECT_OWNER → automatically assigns TEAM_EDITOR (billable)
-- ✅ PROJECT_EDITOR → automatically assigns TEAM_EDITOR (billable)
-- ❌ PROJECT_DEVELOPER - Free
-- ❌ PROJECT_VIEWER - Free
-
-### Billable Seat Calculation
-
-Billable seats are calculated as the **unique count of users** with any billable role in the team:
-
-```typescript
-// Example: Team with 5 users
-// User A: TEAM_OWNER → 1 billable seat
-// User B: TEAM_ADMIN → 1 billable seat
-// User C: PROJECT_OWNER (Project 1) → 1 billable seat
-// User D: PROJECT_EDITOR (Project 1), PROJECT_EDITOR (Project 2) → 1 billable seat (counted once)
-// User E: PROJECT_DEVELOPER (Project 1) → 0 billable seats (free)
-// Total: 4 billable seats × $8 = $32/month
-```
-
-### Automatic Seat Management
-
-When a user is assigned a billable role:
-1. The system automatically marks them as a TEAM_EDITOR
-2. Billable seat count is recalculated
-3. If on Free plan and limit is exceeded, the operation is blocked
-4. If on Pro plan, the seat is added and billing is updated
 
 ---
 
@@ -347,28 +298,7 @@ const highestProjectRole = await getHighestProjectRole('user_123', 'project_789'
 // Returns: 'PROJECT_OWNER' | 'PROJECT_EDITOR' | ... | null
 ```
 
-### Managing Billable Seats
 
-```typescript
-import {
-  calculateBillableSeats,
-  updateBillableSeats,
-  canAddBillableSeat,
-} from '@/server/auth/rbac';
-
-// Calculate current billable seats
-const seatCount = await calculateBillableSeats('team_456');
-console.log(`Team has ${seatCount} billable seats`);
-
-// Check if team can add more seats
-const canAdd = await canAddBillableSeat('team_456', 'free');
-if (!canAdd) {
-  throw new Error('Team has reached the maximum number of billable seats for the Free plan');
-}
-
-// Update billable seats (called automatically when roles change)
-await updateBillableSeats('team_456');
-```
 
 ### Updating Roles
 
@@ -575,25 +505,7 @@ Require a user to have a specific role, or throw an error.
 
 ---
 
-### Billable Seat Functions
 
-#### `calculateBillableSeats(teamId: string): Promise<number>`
-
-Calculate the number of billable seats for a team.
-
----
-
-#### `updateBillableSeats(teamId: string): Promise<number>`
-
-Update the billable seats count for a team (called automatically when roles change).
-
----
-
-#### `canAddBillableSeat(teamId: string, planId: 'free' | 'pro'): Promise<boolean>`
-
-Check if a team can add more billable seats based on their plan.
-
----
 
 ### Project Ownership Functions
 
@@ -734,24 +646,7 @@ await assignRole({ userId, role: TEAM_ROLES.TEAM_OWNER, resourceType: 'team', re
 await assignRole({ userId, role: PROJECT_ROLES.PROJECT_OWNER, resourceType: 'project', resourceId: projectId });
 ```
 
-### 5. Check Billable Seats Before Assignment
 
-**✅ Validate seat limits before assigning billable roles:**
-
-```typescript
-import { canAddBillableSeat, isBillableRole } from '@/server/auth/rbac';
-
-// Check if team can add more seats
-if (isBillableRole(newRole)) {
-  const canAdd = await canAddBillableSeat(teamId, team.planId);
-  if (!canAdd) {
-    throw new Error('Team has reached the maximum number of billable seats');
-  }
-}
-
-// Proceed with role assignment
-await assignRole({ userId, role: newRole, resourceType, resourceId });
-```
 
 ### 6. Log Permission Denials
 
@@ -809,13 +704,12 @@ Always validate user permissions on the server, even if the client UI hides cert
 
 ### 2. Use Transactions for Role Changes
 
-When changing roles that affect billing, use transactions to ensure consistency:
+When changing roles that affect quotas, use transactions to ensure consistency:
 
 ```typescript
 await db.transaction(async (tx) => {
   await removeRole({ userId, role: oldRole, resourceType, resourceId });
   await assignRole({ userId, role: newRole, resourceType, resourceId });
-  await updateBillableSeats(teamId);
 });
 ```
 
@@ -973,24 +867,19 @@ Test RBAC properties with random inputs:
 ```typescript
 import fc from 'fast-check';
 
-test('Property: Billable roles always count towards seat limit', () => {
+test('Property: Resource usage is tracked correctly', () => {
   fc.assert(
     fc.asyncProperty(
-      fc.constantFrom(...BILLABLE_ROLES),
       fc.uuid(),
       fc.uuid(),
-      async (role, userId, teamId) => {
-        const beforeCount = await calculateBillableSeats(teamId);
+      async (userId, teamId) => {
+        const usageBefore = await getTeamUsage(teamId);
         
-        await assignRole({
-          userId,
-          role,
-          resourceType: 'team',
-          resourceId: teamId,
-        });
+        // Check quotas
+        const result = await checkResourceLimit(teamId, 'members');
         
-        const afterCount = await calculateBillableSeats(teamId);
-        expect(afterCount).toBeGreaterThan(beforeCount);
+        expect(result).toBeDefined();
+        expect(result.allowed).toBeDefined();
       }
     )
   );
@@ -1022,15 +911,15 @@ const permissions = await getUserPermissions(userId, resourceId, 'project');
 console.log('User permissions:', permissions);
 ```
 
-#### 2. Billable Seat Limit Exceeded
+#### 2. Resource Quota Exceeded
 
-**Problem:** Cannot assign role because team has reached seat limit.
+**Problem:** Cannot assign role because team has reached resource quotas.
 
 **Solution:**
-- Check current seat count: `await calculateBillableSeats(teamId)`
-- Verify team's plan limits in `PLANS` config
-- Upgrade team to Pro plan for unlimited seats
-- Remove unused billable roles
+- Check current usage: `await getTeamUsage(teamId)`
+- Verify team's quotas in environment variables
+- Increase instance limits if valid
+- Remove unused members or resources
 
 #### 3. Role Assignment Fails
 
@@ -1096,25 +985,23 @@ await requirePermission({
 ### Creating Team Owners
 
 ```typescript
-// Owner who creates content (billable)
+// Owner who creates content
 await assignRoles([
   { userId, role: 'TEAM_OWNER', resourceType: 'team', resourceId: teamId },
   { userId, role: 'TEAM_EDITOR', resourceType: 'team', resourceId: teamId },
 ]);
-// Billable seats: 1
 
-// Owner who only manages (free)
+// Owner who only manages
 await assignRoles([
   { userId, role: 'TEAM_OWNER', resourceType: 'team', resourceId: teamId },
   { userId, role: 'TEAM_VIEWER', resourceType: 'team', resourceId: teamId },
 ]);
-// Billable seats: 0
 ```
 
 ### Creating Team Admins
 
 ```typescript
-// Admin who creates content (billable)
+// Admin who creates content
 await assignRoles([
   { userId, role: 'TEAM_ADMIN', resourceType: 'team', resourceId: teamId },
   { userId, role: 'TEAM_EDITOR', resourceType: 'team', resourceId: teamId },
@@ -1130,7 +1017,7 @@ await assignRoles([
 ### Creating Regular Team Members
 
 ```typescript
-// Designer/QA (billable)
+// Designer/QA
 await assignRole({
   userId,
   role: 'TEAM_EDITOR',
@@ -1169,8 +1056,7 @@ const operationalRole = await getOperationalRole(userId, teamId);
 // Check if user is owner
 const isOwner = managementRole === 'TEAM_OWNER';
 
-// Check if user is billable
-const isBillable = operationalRole === 'TEAM_EDITOR';
+
 ```
 
 ### Auto-Promotion to TEAM_EDITOR
@@ -1184,7 +1070,7 @@ await assignRole({
   resourceId: projectId,
 });
 
-// Auto-promote to TEAM_EDITOR (billable)
+// Auto-promote to TEAM_EDITOR
 await autoPromoteToEditor(userId, teamId);
 
 // Or use ensureOperationalRole for more control
@@ -1203,12 +1089,12 @@ await ensureOperationalRole(userId, teamId, 'TEAM_EDITOR');
 **A:** No. Users should have exactly one operational role (EDITOR, MEMBER, or VIEWER) per team.
 
 ### Q: What happens if I assign PROJECT_OWNER to a user with TEAM_VIEWER?
-**A:** The `autoPromoteToEditor()` function will upgrade them to TEAM_EDITOR (billable).
+**A:** The `autoPromoteToEditor()` function will upgrade them to TEAM_EDITOR.
 
 ### Q: Can I downgrade a TEAM_EDITOR to TEAM_MEMBER?
 **A:** Yes, but you must do it explicitly using `updateRole()`. Auto-promotion only upgrades, never downgrades. **Important:** If the user is a PROJECT_OWNER on any projects, the demotion will be blocked. You must transfer project ownership first using `demoteWithOwnershipTransfer()`.
 
-### Q: How do I make a team owner free?
+
 **A:** Assign them TEAM_OWNER (management) + TEAM_VIEWER or TEAM_MEMBER (operational, both free).
 
 ### Q: Why separate management and operational roles?
@@ -1225,7 +1111,7 @@ await ensureOperationalRole(userId, teamId, 'TEAM_EDITOR');
 ## Related Documentation
 
 - [Authentication System](./SECURITY.md) - User authentication and session management
-- [Team Plan Architecture](./TEAM_PLAN_ARCHITECTURE.md) - Team and billing structure
+- [Resource Limits & Quotas](./RESOURCE_LIMITS.md) - Resource usage and limits
 - [Product Overview](./.kiro/steering/product.md) - Product features and user roles
 - [API Documentation](./API.md) - API endpoints and authentication
 

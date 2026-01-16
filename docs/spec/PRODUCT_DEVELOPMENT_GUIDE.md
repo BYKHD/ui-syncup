@@ -673,7 +673,7 @@ Copy this template when starting a new feature:
 
 | Document | Purpose |
 |----------|---------|
-| [product.md](../.kiro/steering/product.md) | Product overview, role system, monetization |
+| [product.md](../.kiro/steering/product.md) | Product overview, role system |
 | [structure.md](../.kiro/steering/structure.md) | Codebase structure, layer contracts, naming conventions |
 | [tech.md](../.kiro/steering/tech.md) | Tech stack, commands, architecture patterns |
 

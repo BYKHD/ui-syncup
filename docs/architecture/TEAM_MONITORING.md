@@ -154,9 +154,9 @@ tags:
   - alert:spam
 ```
 
-### 3. Plan Limit Hits
+### 3. Resource Quota Hits
 
-**Purpose:** Track when users frequently hit plan limits, indicating potential upgrade opportunities.
+**Purpose:** Track when users frequently hit resource quotas, indicating potential need for higher limits.
 
 **Metric:** Count of `team.limit.reached` events
 
@@ -166,18 +166,17 @@ tags:
 
 **Alert Configuration (Example - Datadog):**
 ```yaml
-name: "High Plan Limit Hits"
+name: "High Resource Quota Hits"
 type: metric alert
 query: "sum(last_15m):count:team.limit.reached{*} > 100"
 message: |
-  High number of plan limit hits: {{value}} in the last 15 minutes.
+  High number of resource quota hits: {{value}} in the last 15 minutes.
   
-  This indicates users are actively trying to use features beyond their plan.
+  This indicates users are actively trying to use features beyond their quotas.
   
   Actions:
   - Review which limits are being hit most
-  - Consider reaching out to affected teams about upgrades
-  - Monitor for user frustration signals
+  - Check if default quotas are too restrictive
   
   @slack-growth-team
 priority: P3
@@ -239,7 +238,6 @@ tags:
 
 - `team.active.count` - Active teams count
 - `team.members.avg` - Average members per team
-- `team.billable_seats.total` - Total billable seats across all teams
 
 ### Histograms
 
@@ -256,7 +254,7 @@ tags:
 2. Active teams count (gauge)
 3. Member additions rate (line chart, last 24h)
 4. Invitation acceptance rate (percentage, last 7d)
-5. Plan limit hits by type (bar chart, last 24h)
+5. Quota limit hits by type (bar chart, last 24h)
 6. Error rate by event type (stacked area chart, last 24h)
 
 ### Operations Dashboard
@@ -274,9 +272,9 @@ tags:
 **Widgets:**
 1. New teams per day (bar chart, last 30d)
 2. Team size distribution (histogram)
-3. Plan limit hits by limit type (pie chart, last 7d)
+3. Quota limit hits by limit type (pie chart, last 7d)
 4. Invitation conversion rate (percentage, last 30d)
-5. Billable seats growth (line chart, last 90d)
+
 6. Churn rate (percentage, last 30d)
 
 ## Log Aggregation
@@ -344,11 +342,11 @@ tags:
 4. Review and update rate limiting rules
 5. Consider adding CAPTCHA for invitation creation
 
-### Plan Limit Hits
+### Resource Quota Hits
 
 1. Identify which limits are being hit most
-2. Reach out to affected teams about upgrade options
-3. Monitor for user frustration (support tickets, churn)
+2. Review if default quotas need adjustment
+3. Monitor for user frustration (support tickets)
 4. Consider adjusting limits if too restrictive
 
 ### Invalid Context Errors
