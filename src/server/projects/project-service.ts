@@ -264,7 +264,7 @@ export async function createProject(
   });
 
 
-  // Auto-promote creator to TEAM_EDITOR (billable)
+  // Auto-promote creator to TEAM_EDITOR
   await autoPromoteToEditor(userId, teamId);
 
   logger.info("project.created", {

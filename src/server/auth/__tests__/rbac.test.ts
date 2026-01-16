@@ -3,7 +3,7 @@
  * 
  * These tests use fast-check to verify correctness properties across
  * randomly generated inputs, ensuring the RBAC implementation correctly
- * handles role assignments, permission checks, and billable seat calculations.
+ * handles role assignments and permission checks.
  * 
  * @module server/auth/__tests__/rbac
  */

@@ -5,7 +5,6 @@
  * - Role updates
  * - Member removal
  * - Project ownership blocking
- * - Billable seat calculation
  * 
  * Requirements: 3.2, 3.3, 3.4, 3.5
  */

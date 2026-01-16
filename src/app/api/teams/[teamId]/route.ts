@@ -38,8 +38,7 @@ const UpdateTeamSchema = z.object({
  *     "slug": "team-name",
  *     "description": "Team description",
  *     "image": "https://example.com/image.png",
- *     "planId": "free",
- *     "billableSeats": 3,
+
  *     "memberCount": 5,
  *     "myManagementRole": "TEAM_OWNER",
  *     "myOperationalRole": "TEAM_EDITOR",

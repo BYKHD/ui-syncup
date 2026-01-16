@@ -52,7 +52,7 @@ export function OwnershipTransferEmail({
 
       {isNewOwner ? (
         <Text className="text-black text-[14px] leading-[24px]">
-          You have been designated as the new owner of this team. You now have full administrative control, including billing management and team deletion.
+          You have been designated as the new owner of this team. You now have full administrative control, including team deletion.
         </Text>
       ) : (
         <Text className="text-black text-[14px] leading-[24px]">

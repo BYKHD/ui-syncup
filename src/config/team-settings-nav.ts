@@ -1,6 +1,5 @@
-import { Settings, Users, CreditCard, Plug } from "lucide-react";
 import type { TeamSettingsNavItem } from "@/components/shared/settings-sidebar";
-import { RiBankCard2Line, RiInfoCardLine, RiPuzzle2Line, RiTeamLine } from "@remixicon/react";
+import { RiInfoCardLine, RiPuzzle2Line, RiTeamLine } from "@remixicon/react";
 
 /**
  * Team Settings Navigation Configuration
@@ -23,13 +22,6 @@ export const TEAM_SETTINGS_NAV: TeamSettingsNavItem[] = [
     description: "Manage team members and roles",
   },
   {
-    label: "Billing",
-    href: "/team/settings/billing",
-    icon: RiBankCard2Line,
-    description: "Subscription and payment settings",
-    comingSoon: true,
-  },
-  {
     label: "Integrations",
     href: "/team/settings/integrations",
     icon: RiPuzzle2Line,
@@ -37,3 +29,4 @@ export const TEAM_SETTINGS_NAV: TeamSettingsNavItem[] = [
     comingSoon: true,
   },
 ];
+

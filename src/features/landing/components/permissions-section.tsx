@@ -148,13 +148,13 @@ export function PermissionsSection() {
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
                     <span>
-                      <strong>Owner/Admin:</strong> Manage team settings, billing, and members
+                      <strong>Owner/Admin:</strong> Manage team settings and members
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
                     <span>
-                      <strong>Editor:</strong> Create projects, invite members (paid seat)
+                      <strong>Editor:</strong> Create projects, invite members
                     </span>
                   </li>
                 </ul>

@@ -40,7 +40,7 @@ const CreateTeamSchema = z.object({
  *     "id": "uuid",
  *     "name": "Team Name",
  *     "slug": "team-name",
- *     "planId": "free",
+
  *     ...
  *   }
  * }
@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
  *       "id": "uuid",
  *       "name": "Team Name",
  *       "slug": "team-name",
- *       "planId": "free",
+
  *       "memberCount": 5,
  *       "myManagementRole": "TEAM_OWNER",
  *       "myOperationalRole": "TEAM_EDITOR",

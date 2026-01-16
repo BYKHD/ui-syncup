@@ -45,7 +45,7 @@ export function useRemoveMember(
         queryKey: [TEAM_MEMBERS_QUERY_KEY, variables.teamId],
       });
 
-      // Invalidate team details (member count and billable seats may have changed)
+      // Invalidate team details (member count may have changed)
       queryClient.invalidateQueries({
         queryKey: [TEAM_QUERY_KEY, variables.teamId],
       });

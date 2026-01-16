@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Loader2, Settings, Users, Shield, CreditCard } from "lucide-react";
+import { Loader2, Settings, Users, Shield } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -211,55 +211,6 @@ export function PermissionLoadingSkeleton({
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-// Billing loading skeleton
-export function BillingLoadingSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <Skeleton className="h-8 w-48 mb-2" />
-        <Skeleton className="h-4 w-64" />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Loading Billing Information...
-          </CardTitle>
-          <CardDescription>
-            Please wait while we load your billing details.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-16 w-full" />
-              </div>
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-16 w-full" />
-              </div>
-            </div>
-            <div className="space-y-4">
-              <Skeleton className="h-4 w-40" />
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex justify-between items-center p-3 border rounded">
-                    <Skeleton className="h-4 w-48" />
-                    <Skeleton className="h-4 w-16" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
   );
 }
 

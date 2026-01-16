@@ -27,7 +27,7 @@ import { cookies } from 'next/headers';
  *     "id": "uuid",
  *     "name": "Team Name",
  *     "slug": "team-name",
- *     "planId": "free",
+
  *     ...
  *   }
  * }

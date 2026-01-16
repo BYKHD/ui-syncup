@@ -61,7 +61,6 @@ export type TeamRole = UserRole;
 export interface TeamPermissions {
   canManageTeam: boolean;
   canManageMembers: boolean;
-  canManageBilling: boolean;
   canManageIntegrations: boolean;
   canManageSettings: boolean;
   canViewAnalytics: boolean;

@@ -196,9 +196,9 @@ This task list implements the removal of all monetization and billing logic from
 ### Task 4.7: Update email templates
 **Validates: Requirement 3**
 
-- [ ] Open `src/server/email/templates/ownership-transfer-email.tsx`
-- [ ] Remove "billing management" reference (line ~55)
-- [ ] Update to focus on team administration only
+- [x] Open `src/server/email/templates/ownership-transfer-email.tsx`
+- [x] Remove "billing management" reference (line ~55)
+- [x] Update to focus on team administration only
 
 ---
 
@@ -269,10 +269,10 @@ This task list implements the removal of all monetization and billing logic from
 ### Task 5.9: Update frontend hook comments
 **Validates: Requirement 3**
 
-- [ ] Open `src/features/teams/hooks/use-remove-member.ts`
-- [ ] Update comment to remove "billable seats" reference (line ~48)
-- [ ] Open `src/features/teams/hooks/use-update-member-roles.ts`
-- [ ] Update comment to remove "billable seats" reference (line ~54)
+- [x] Open `src/features/teams/hooks/use-remove-member.ts`
+- [x] Update comment to remove "billable seats" reference (line ~48)
+- [x] Open `src/features/teams/hooks/use-update-member-roles.ts`
+- [x] Update comment to remove "billable seats" reference (line ~54)
 
 ---
 
@@ -281,33 +281,33 @@ This task list implements the removal of all monetization and billing logic from
 ### Task 6.1: Update RBAC documentation
 **Validates: Requirement 3**
 
-- [ ] Open `docs/architecture/RBAC.md`
-- [ ] Remove all mentions of "billing" (search for "billing")
-- [ ] Remove all mentions of "subscription" (search for "subscription")
-- [ ] Remove all mentions of "billable seats" (search for "billable")
-- [ ] Remove `team:manage_billing` permission from documentation
-- [ ] Update role descriptions to focus on access control only
-- [ ] Remove pricing information from role descriptions
-- [ ] Update "Two-Tier Role System Examples" section to remove billing context
-- [ ] Update FAQ section to remove billing-related questions
+- [x] Open `docs/architecture/RBAC.md`
+- [x] Remove all mentions of "billing" (search for "billing")
+- [x] Remove all mentions of "subscription" (search for "subscription")
+- [x] Remove all mentions of "billable seats" (search for "billable")
+- [x] Remove `team:manage_billing` permission from documentation
+- [x] Update role descriptions to focus on access control only
+- [x] Remove pricing information from role descriptions
+- [x] Update "Two-Tier Role System Examples" section to remove billing context
+- [x] Update FAQ section to remove billing-related questions
 
 ### Task 6.2: Update product documentation
 **Validates: Requirement 3**
 
-- [ ] Open `.kiro/steering/product.md` (if exists)
-- [ ] Remove plan/pricing references
-- [ ] Update to reflect open-source, self-hosted model
-- [ ] Emphasize instance configuration via environment variables
+- [x] Open `.kiro/steering/product.md` (if exists)
+- [x] Remove plan/pricing references
+- [x] Update to reflect open-source, self-hosted model
+- [x] Emphasize instance configuration via environment variables
 
 ### Task 6.3: Update API documentation
 **Validates: Requirement 3**
 
-- [ ] Open `src/app/api/teams/route.ts`
-- [ ] Remove `planId` from OpenAPI response examples (lines ~43, ~206)
-- [ ] Open `src/app/api/teams/[teamId]/route.ts`
-- [ ] Remove `planId` from OpenAPI response examples (line ~41)
-- [ ] Open `src/app/api/teams/[teamId]/switch/route.ts`
-- [ ] Remove `planId` from OpenAPI response examples (line ~30)
+- [x] Open `src/app/api/teams/route.ts`
+- [x] Remove `planId` from OpenAPI response examples (lines ~43, ~206)
+- [x] Open `src/app/api/teams/[teamId]/route.ts`
+- [x] Remove `planId` from OpenAPI response examples (line ~41)
+- [x] Open `src/app/api/teams/[teamId]/switch/route.ts`
+- [x] Remove `planId` from OpenAPI response examples (line ~30)
 
 ---
 
@@ -316,9 +316,9 @@ This task list implements the removal of all monetization and billing logic from
 ### Task 7.1: Run full test suite
 **Validates: Requirement 4.1**
 
-- [ ] Run `bun run test` to execute all unit tests
-- [ ] Verify all tests pass
-- [ ] Fix any remaining test failures related to billing removal
+- [x] Run `bun run test` to execute all unit tests
+- [x] Verify all tests pass (Note: 5 pre-existing test failures unrelated to billing refactor)
+- [x] Fix any remaining test failures related to billing removal
 
 ### Task 7.2: Run type checking
 **Validates: Requirement 4.1**
@@ -329,25 +329,25 @@ This task list implements the removal of all monetization and billing logic from
 ### Task 7.3: Run linting
 **Validates: Requirement 4.1**
 
-- [ ] Run `bun run lint` to check for code quality issues
-- [ ] Fix any linting errors
+- [x] Run `bun run lint` to check for code quality issues
+- [x] Fix any linting errors (0 errors, only warnings)
 
 ### Task 7.4: Search for remaining references
 **Validates: Requirement 4**
 
-- [ ] Search codebase for "PLANS" and verify no references remain
-- [ ] Search codebase for "billable" and verify no references remain
-- [ ] Search codebase for "subscription" and verify no references remain
-- [ ] Search codebase for "billing" and verify only necessary references remain
-- [ ] Search codebase for "tiers" and verify no references remain
-- [ ] Search codebase for "getPlanDisplayName" and verify no references remain
-- [ ] Search codebase for "planId" and verify no references remain (except in migrations)
+- [x] Search codebase for "PLANS" and verify no references remain
+- [x] Search codebase for "billable" and verify no references remain
+- [x] Search codebase for "subscription" and verify only necessary references remain (realtime subscriptions)
+- [x] Search codebase for "billing" and verify no references remain in src/
+- [x] Search codebase for "tiers" and verify no references remain
+- [x] Search codebase for "getPlanDisplayName" and verify no references remain
+- [x] Search codebase for "planId" and verify no references remain (except in migrations)
 
 ### Task 7.5: Test application build
 **Validates: Requirement 4.1**
 
-- [ ] Run `bun run build` to verify production build succeeds
-- [ ] Verify no build errors or warnings related to removed code
+- [x] Run `bun run build` to verify production build succeeds
+- [x] Verify no build errors or warnings related to removed code
 
 ### Task 7.6: Manual testing
 **Validates: Requirement 4.3**

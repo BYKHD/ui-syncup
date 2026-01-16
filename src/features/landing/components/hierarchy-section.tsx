@@ -19,7 +19,7 @@ export function HierarchySection() {
               </div>
               <div>
                 <h3 className="font-semibold">Team Roles</h3>
-                <p className="text-sm text-muted-foreground">Owner, Admin, Editor. Control billing and global settings.</p>
+                <p className="text-sm text-muted-foreground">Owner, Admin, Editor. Control team settings and access.</p>
               </div>
             </div>
             <div className="flex gap-4">
@@ -36,8 +36,8 @@ export function HierarchySection() {
                 <Users className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-semibold">Unlimited Developers</h3>
-                <p className="text-sm text-muted-foreground">Developers are free on Pro plans. Only pay for Editors.</p>
+                <h3 className="font-semibold">Unlimited Users</h3>
+                <p className="text-sm text-muted-foreground">Add as many team members as your instance allows.</p>
               </div>
             </div>
           </div>

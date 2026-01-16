@@ -51,7 +51,7 @@ export function useUpdateMemberRoles(
         queryKey: [TEAM_MEMBERS_QUERY_KEY, variables.teamId],
       });
 
-      // Invalidate team details (billable seats may have changed)
+      // Invalidate team details (roles may have changed)
       queryClient.invalidateQueries({
         queryKey: [TEAM_QUERY_KEY, variables.teamId],
       });
