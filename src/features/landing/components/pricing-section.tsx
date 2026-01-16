@@ -107,7 +107,7 @@ export function PricingSection() {
 
             <CardFooter>
               <a 
-                href="https://github.com/your-org/ui-syncup" 
+                href="https://github.com/BYKHD/ui-syncup" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-full"

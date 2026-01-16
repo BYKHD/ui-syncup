@@ -19,8 +19,9 @@ export function SiteFooter() {
           <h4 className="font-semibold mb-4">Product</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li><Link href="#" className="hover:text-foreground">Features</Link></li>
-            <li><Link href="#" className="hover:text-foreground">Pricing</Link></li>
-            <li><Link href="#" className="hover:text-foreground">Changelog</Link></li>
+            <li><Link href="#open-source" className="hover:text-foreground">Open Source</Link></li>
+            <li><a href="https://github.com/BYKHD/ui-syncup" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">GitHub</a></li>
+            <li><Link href="/changelog" className="hover:text-foreground">Changelog</Link></li>
           </ul>
         </div>
 

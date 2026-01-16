@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Layers, Loader2 } from "lucide-react"
+import { Layers, Loader2, Github } from "lucide-react"
 import { useSession } from "@/features/auth/hooks/use-session"
 
 export function SiteHeader() {
@@ -27,6 +27,15 @@ export function SiteHeader() {
           <span>UI SyncUp</span>
         </div>
         <nav className="flex items-center gap-4">
+          <a 
+            href="https://github.com/BYKHD/ui-syncup" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="GitHub"
+          >
+            <Github className="h-5 w-5" />
+          </a>
           <Link href="/changelog" className="text-sm font-medium hover:underline underline-offset-4">
             Changelog
           </Link>

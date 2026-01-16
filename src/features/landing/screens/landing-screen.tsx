@@ -5,6 +5,7 @@ import { PersonasSection } from "../components/personas-section"
 import { WorkflowSection } from "../components/workflow-section"
 import { HierarchySection } from "../components/hierarchy-section"
 import { PricingSection } from "../components/pricing-section"
+import { OpenSourceSection } from "../components/open-source-section"
 import { DemoSection } from "../components/demo-section"
 import { IntegrationsSection } from "../components/integrations-section"
 import { TrustSection } from "../components/trust-section"
@@ -21,6 +22,7 @@ export default function LandingScreen() {
         <WorkflowSection />
         <HierarchySection />
         <PricingSection />
+        <OpenSourceSection />
         <DemoSection />
         <IntegrationsSection />
         <TrustSection />
