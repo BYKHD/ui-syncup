@@ -88,3 +88,7 @@ web_modules/
 .tern-port
 .DS_Store
 
+# Kiro
+.kiro
+!.kiro/steering/*.md
+
