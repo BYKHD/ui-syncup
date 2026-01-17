@@ -184,12 +184,12 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
 
 ## Phase 3: Checkpoint - Core Backend Complete
 
-- [ ] 3.1 Verify all server-side tests pass
+- [x] 3.1 Verify all server-side tests pass
   - Run `bun run test` for setup service tests
   - Ensure all property tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 3.2 Verify TypeScript types
+- [x] 3.2 Verify TypeScript types
   - Run `bun run typecheck`
   - Ensure no type errors in new code
 
