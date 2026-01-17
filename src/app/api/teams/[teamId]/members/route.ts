@@ -37,8 +37,8 @@ const PaginationSchema = z.object({
  *     {
  *       "id": "uuid",
  *       "userId": "uuid",
- *       "managementRole": "TEAM_OWNER",
- *       "operationalRole": "TEAM_EDITOR",
+ *       "managementRole": "WORKSPACE_OWNER",
+ *       "operationalRole": "WORKSPACE_EDITOR",
  *       "joinedAt": "2024-01-01T00:00:00.000Z",
  *       ...
  *     }
@@ -95,11 +95,11 @@ export async function GET(
     }
     
     // Check if user is a member of the team
-    const isMember = await hasRole(user.id, 'TEAM_VIEWER', 'team', teamId) ||
-                     await hasRole(user.id, 'TEAM_MEMBER', 'team', teamId) ||
-                     await hasRole(user.id, 'TEAM_EDITOR', 'team', teamId) ||
-                     await hasRole(user.id, 'TEAM_ADMIN', 'team', teamId) ||
-                     await hasRole(user.id, 'TEAM_OWNER', 'team', teamId);
+    const isMember = await hasRole(user.id, 'WORKSPACE_VIEWER', 'team', teamId) ||
+                     await hasRole(user.id, 'WORKSPACE_MEMBER', 'team', teamId) ||
+                     await hasRole(user.id, 'WORKSPACE_EDITOR', 'team', teamId) ||
+                     await hasRole(user.id, 'WORKSPACE_ADMIN', 'team', teamId) ||
+                     await hasRole(user.id, 'WORKSPACE_OWNER', 'team', teamId);
     
     if (!isMember) {
       return NextResponse.json(

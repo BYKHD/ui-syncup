@@ -137,7 +137,7 @@ export function useAnnotationPermissions(
     }
 
     // Check for viewer-only access
-    if (teamRole === 'TEAM_VIEWER' && !projectRole) {
+    if (teamRole === 'WORKSPACE_VIEWER' && !projectRole) {
       return READ_ONLY_PERMISSIONS;
     }
 
@@ -161,7 +161,7 @@ export function useAnnotationPermissions(
  */
 function isEditorOrHigher(role?: string): boolean {
   if (!role) return false;
-  return ['TEAM_OWNER', 'TEAM_ADMIN', 'TEAM_EDITOR'].includes(role);
+  return ['WORKSPACE_OWNER', 'WORKSPACE_ADMIN', 'WORKSPACE_EDITOR'].includes(role);
 }
 
 /**

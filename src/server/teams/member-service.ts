@@ -145,8 +145,8 @@ export async function updateMemberRoles(
 
     // Requirement 3.3: Demotion blocked when projects owned
     if (
-      currentMember.operationalRole === "TEAM_EDITOR" &&
-      newOperationalRole !== "TEAM_EDITOR"
+      currentMember.operationalRole === "WORKSPACE_EDITOR" &&
+      newOperationalRole !== "WORKSPACE_EDITOR"
     ) {
       const ownedProjects = await db
         .select()

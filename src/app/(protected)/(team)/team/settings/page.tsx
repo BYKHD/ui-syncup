@@ -35,8 +35,8 @@ export default async function TeamSettingsPage() {
 
   // Check if user has permission to access settings (TEAM_OWNER or TEAM_ADMIN)
   const hasSettingsAccess = 
-    team.myManagementRole === "TEAM_OWNER" || 
-    team.myManagementRole === "TEAM_ADMIN";
+    team.myManagementRole === "WORKSPACE_OWNER" || 
+    team.myManagementRole === "WORKSPACE_ADMIN";
 
   if (!hasSettingsAccess) {
     // Requirement 8.4: Redirect users without proper permissions
@@ -45,7 +45,7 @@ export default async function TeamSettingsPage() {
 
   // Map management role to UserRole type
   const userRole: UserRole = 
-    team.myManagementRole === "TEAM_OWNER" ? "owner" : "admin";
+    team.myManagementRole === "WORKSPACE_OWNER" ? "owner" : "admin";
 
   // Serialize team data for client component (convert Dates to strings)
   const serializedTeam = {

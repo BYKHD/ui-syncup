@@ -41,7 +41,7 @@ export async function POST(
       ),
     });
 
-    if (!member || member.managementRole !== "TEAM_OWNER") {
+    if (!member || member.managementRole !== "WORKSPACE_OWNER") {
       logger.warn("team.export.unauthorized", {
         userId,
         teamId,

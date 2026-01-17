@@ -25,7 +25,7 @@ export interface CreateInvitationVariables {
  *   teamId: 'team-123',
  *   input: {
  *     email: 'user@example.com',
- *     operationalRole: 'TEAM_MEMBER'
+ *     operationalRole: 'WORKSPACE_MEMBER'
  *   }
  * }, {
  *   onSuccess: (data) => {

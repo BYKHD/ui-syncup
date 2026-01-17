@@ -94,7 +94,7 @@ describe('Integration Test: Member Management Flow', () => {
     await addMember({
       teamId: team.id,
       userId: member1.id,
-      operationalRole: 'TEAM_MEMBER',
+      operationalRole: 'WORKSPACE_MEMBER',
       invitedBy: owner.id,
     });
     
@@ -105,13 +105,13 @@ describe('Integration Test: Member Management Flow', () => {
       .where(eq(teamMembers.userId, member1.id))
       .limit(1);
     
-    expect(member.operationalRole).toBe('TEAM_MEMBER');
+    expect(member.operationalRole).toBe('WORKSPACE_MEMBER');
     
     // Promote member to TEAM_EDITOR
     await updateMemberRoles(
       team.id,
       member1.id,
-      { operationalRole: 'TEAM_EDITOR' },
+      { operationalRole: 'WORKSPACE_EDITOR' },
       owner.id
     );
     
@@ -122,13 +122,13 @@ describe('Integration Test: Member Management Flow', () => {
       .where(eq(teamMembers.userId, member1.id))
       .limit(1);
       
-    expect(member.operationalRole).toBe('TEAM_EDITOR');
+    expect(member.operationalRole).toBe('WORKSPACE_EDITOR');
     
     // Demote member back to TEAM_MEMBER
     await updateMemberRoles(
       team.id,
       member1.id,
-      { operationalRole: 'TEAM_MEMBER' },
+      { operationalRole: 'WORKSPACE_MEMBER' },
       owner.id
     );
     
@@ -139,7 +139,7 @@ describe('Integration Test: Member Management Flow', () => {
       .where(eq(teamMembers.userId, member1.id))
       .limit(1);
       
-    expect(member.operationalRole).toBe('TEAM_MEMBER');
+    expect(member.operationalRole).toBe('WORKSPACE_MEMBER');
   });
   
   test('should remove member successfully when no projects owned', async () => {
@@ -165,7 +165,7 @@ describe('Integration Test: Member Management Flow', () => {
     await addMember({
       teamId: team.id,
       userId: member.id,
-      operationalRole: 'TEAM_MEMBER',
+      operationalRole: 'WORKSPACE_MEMBER',
       invitedBy: owner.id,
     });
     
@@ -219,7 +219,7 @@ describe('Integration Test: Member Management Flow', () => {
       await addMember({
         teamId: team.id,
         userId: member.id,
-        operationalRole: 'TEAM_MEMBER',
+        operationalRole: 'WORKSPACE_MEMBER',
         invitedBy: owner.id,
       });
     }
@@ -229,7 +229,7 @@ describe('Integration Test: Member Management Flow', () => {
       await updateMemberRoles(
         team.id,
         member.id,
-        { operationalRole: 'TEAM_EDITOR' },
+        { operationalRole: 'WORKSPACE_EDITOR' },
         owner.id
       );
     }
@@ -241,7 +241,7 @@ describe('Integration Test: Member Management Flow', () => {
         .from(teamMembers)
         .where(eq(teamMembers.userId, member.id))
         .limit(1);
-      expect(m.operationalRole).toBe('TEAM_EDITOR');
+      expect(m.operationalRole).toBe('WORKSPACE_EDITOR');
     }
     
     // Demote 2 back to TEAM_MEMBER
@@ -249,7 +249,7 @@ describe('Integration Test: Member Management Flow', () => {
       await updateMemberRoles(
         team.id,
         members[i].id,
-        { operationalRole: 'TEAM_MEMBER' },
+        { operationalRole: 'WORKSPACE_MEMBER' },
         owner.id
       );
     }
@@ -261,7 +261,7 @@ describe('Integration Test: Member Management Flow', () => {
         .from(teamMembers)
         .where(eq(teamMembers.userId, members[i].id))
         .limit(1);
-      expect(m.operationalRole).toBe('TEAM_MEMBER');
+      expect(m.operationalRole).toBe('WORKSPACE_MEMBER');
     }
   });
   
@@ -288,8 +288,8 @@ describe('Integration Test: Member Management Flow', () => {
     await addMember({
       teamId: team.id,
       userId: admin.id,
-      managementRole: 'TEAM_ADMIN',
-      operationalRole: 'TEAM_MEMBER',
+      managementRole: 'WORKSPACE_ADMIN',
+      operationalRole: 'WORKSPACE_MEMBER',
       invitedBy: owner.id,
     });
     
@@ -300,7 +300,7 @@ describe('Integration Test: Member Management Flow', () => {
       .where(eq(teamMembers.userId, admin.id))
       .limit(1);
     
-    expect(adminMember.managementRole).toBe('TEAM_ADMIN');
-    expect(adminMember.operationalRole).toBe('TEAM_MEMBER');
+    expect(adminMember.managementRole).toBe('WORKSPACE_ADMIN');
+    expect(adminMember.operationalRole).toBe('WORKSPACE_MEMBER');
   });
 });

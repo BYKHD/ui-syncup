@@ -9,27 +9,27 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
 ## Phase 1: Database Schema & Server Foundation
 
 ### Task 1.1: Create instance_settings database migration
-- [ ] 1.1.1 Create migration file: `drizzle/0026_add_instance_settings.sql`
+- [x] 1.1.1 Create migration file: `drizzle/0026_add_instance_settings.sql`
   - Create `instance_settings` table with columns: id, instance_name, public_url, default_workspace_id, default_member_role, setup_completed_at, admin_user_id, created_at, updated_at
   - Add singleton constraint via unique index
   - Add backwards compatibility: INSERT existing setup for instances with users
   - _Requirements: 1.1, 1.2, 4.3, 12.6, 12.7_
   - _Location: `drizzle/0026_add_instance_settings.sql`_
 
-- [ ] 1.1.2 Create Drizzle schema definition
+- [x] 1.1.2 Create Drizzle schema definition
   - Define `instanceSettings` table in Drizzle schema
   - Add proper relations to users and workspaces tables
   - Export from schema barrel
   - _Requirements: 4.3_
   - _Location: `src/server/db/schema/instance-settings.ts`_
 
-- [ ] 1.1.3 Run migration and verify
+- [x] 1.1.3 Run migration and verify
   - Run `bun run db:generate` and `bun run db:migrate`
   - Verify table created correctly
   - _Requirements: 4.3_
 
 ### Task 1.2: Create workspace mode configuration
-- [ ] 1.2.1 Create workspace config module
+- [x] 1.2.1 Create workspace config module
   - Implement `WORKSPACE_CONFIG` constant reading from env
   - Implement `isMultiWorkspaceMode()` utility function
   - Implement `isSingleWorkspaceMode()` utility function
@@ -42,7 +42,7 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
   - _Location: `src/config/__tests__/workspace.property.test.ts`_
 
 ### Task 1.3: Create setup server service
-- [ ] 1.3.1 Create setup service with core operations
+- [x] 1.3.1 Create setup service with core operations
   - Implement `getInstanceStatus()`: Check if setup is complete, include defaultWorkspaceId
   - Implement `createAdmin()`: Create first admin user with WORKSPACE_OWNER role
   - Implement `saveInstanceConfig()`: Save instance name and public URL
@@ -58,7 +58,7 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
   - _Location: `src/server/setup/__tests__/setup.property.test.ts`_
 
 ### Task 1.4: Create health check service
-- [ ] 1.4.1 Implement service health checks
+- [x] 1.4.1 Implement service health checks
   - Implement `checkDatabaseHealth()`: Test database connectivity
   - Implement `checkEmailHealth()`: Test Resend API key validity
   - Implement `checkStorageHealth()`: Test R2/S3 credentials
@@ -73,7 +73,7 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
   - _Location: `src/server/setup/__tests__/health-check.property.test.ts`_
 
 ### Task 1.5: Create sample data service
-- [ ] 1.5.1 Implement sample data generation
+- [x] 1.5.1 Implement sample data generation
   - Implement `createSampleProject()`: Create demo project with mock data
   - Include sample issues with various statuses
   - Include sample annotations on mock images
@@ -87,27 +87,27 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
   - _Location: `src/server/setup/__tests__/sample-data.property.test.ts`_
 
 ### Task 1.6: Create role terminology migration
-- [ ] 1.6.1 Create migration file: `drizzle/0027_rename_team_roles_to_workspace.sql`
+- [x] 1.6.1 Create migration file: `drizzle/0027_rename_team_roles_to_workspace.sql`
   - Update `team_members.management_role`: TEAM_OWNER → WORKSPACE_OWNER, TEAM_ADMIN → WORKSPACE_ADMIN
   - Update `team_members.operational_role`: TEAM_EDITOR → WORKSPACE_EDITOR, TEAM_MEMBER → WORKSPACE_MEMBER, TEAM_VIEWER → WORKSPACE_VIEWER
   - Update `team_invitations.role` with same mappings
   - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.8_
   - _Location: `drizzle/0027_rename_team_roles_to_workspace.sql`_
 
-- [ ] 1.6.2 Update roles configuration file
+- [x] 1.6.2 Update roles configuration file
   - Rename `TEAM_ROLES` to `WORKSPACE_ROLES` in `src/config/roles.ts`
   - Update all role constant names: `TEAM_OWNER` → `WORKSPACE_OWNER`, etc.
   - Export backwards-compatible aliases for transition period
   - _Requirements: 14.6, 14.9_
   - _Location: `src/config/roles.ts`_
 
-- [ ] 1.6.3 Update RBAC utilities for workspace roles
+- [x] 1.6.3 Update RBAC utilities for workspace roles
   - Update permission mappings in `src/server/auth/rbac.ts`
   - Add backwards compatibility layer accepting both TEAM_* and WORKSPACE_* roles
   - _Requirements: 14.7, 14.9_
   - _Location: `src/server/auth/rbac.ts`_
 
-- [ ] 1.6.4 Update all files referencing TEAM_* roles
+- [x] 1.6.4 Update all files referencing TEAM_* roles
   - `src/features/auth/components/role-gate.tsx`
   - `src/features/team-settings/components/team-members-list.tsx`
   - `src/features/annotations/hooks/use-annotation-permissions.ts`
@@ -123,7 +123,7 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
   - _Location: Various (41+ files identified)_
 
 ### Task 1.7: Create CLI admin password reset script
-- [ ] 1.7.1 Create password reset CLI script
+- [x] 1.7.1 Create password reset CLI script
   - Create `scripts/admin-reset-password.ts`
   - Implement email lookup and password generation
   - Add to package.json scripts: `"admin:reset-password": "bun scripts/admin-reset-password.ts"`
@@ -131,17 +131,17 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
   - _Location: `scripts/admin-reset-password.ts`_
 
 ### Task 1.8: Create email verification configuration
-- [ ] 1.8.1 Add email verification skip config
+- [x] 1.8.1 Add email verification skip config
   - Add `SKIP_EMAIL_VERIFICATION` to environment config
   - Implement `isEmailVerificationRequired()` utility
   - _Requirements: 15.1, 15.5_
   - _Location: `src/config/auth.ts`_
 
-- [ ] 1.8.2 Update auth flow for email verification toggle
+- [x] 1.8.2 Update auth flow for email verification toggle
   - Modify email verification logic to check `SKIP_EMAIL_VERIFICATION`
   - Add startup warning log when verification is disabled
   - _Requirements: 15.2, 15.6_
-  - _Location: `src/server/auth/email-verification.ts`_
+  - _Location: `src/config/auth.ts` (integrated with auth config module)_
 
 ---
 

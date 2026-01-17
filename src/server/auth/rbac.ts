@@ -255,8 +255,8 @@ export async function updateRole(
   // Check for PROJECT_OWNER demotion edge case
   if (
     resourceType === "team" &&
-    oldRole === "TEAM_EDITOR" &&
-    (newRole === "TEAM_VIEWER" || newRole === "TEAM_MEMBER")
+    oldRole === "WORKSPACE_EDITOR" &&
+    (newRole === "WORKSPACE_VIEWER" || newRole === "WORKSPACE_MEMBER")
   ) {
     await validateProjectOwnershipBeforeDemotion(userId, resourceId);
   }
@@ -830,7 +830,7 @@ export async function getManagementRole(
     );
 
   for (const role of roles) {
-    if (role.role === "TEAM_OWNER" || role.role === "TEAM_ADMIN") {
+    if (role.role === "WORKSPACE_OWNER" || role.role === "WORKSPACE_ADMIN") {
       return role.role as TeamManagementRole;
     }
   }
@@ -862,9 +862,9 @@ export async function getOperationalRole(
 
   for (const role of roles) {
     if (
-      role.role === "TEAM_EDITOR" ||
-      role.role === "TEAM_MEMBER" ||
-      role.role === "TEAM_VIEWER"
+      role.role === "WORKSPACE_EDITOR" ||
+      role.role === "WORKSPACE_MEMBER" ||
+      role.role === "WORKSPACE_VIEWER"
     ) {
       return role.role as TeamOperationalRole;
     }
@@ -998,7 +998,7 @@ export async function autoPromoteToEditor(
   userId: string,
   teamId: string
 ): Promise<void> {
-  await ensureOperationalRole(userId, teamId, "TEAM_EDITOR");
+  await ensureOperationalRole(userId, teamId, "WORKSPACE_EDITOR");
 }
 
 /**
@@ -1016,7 +1016,7 @@ export async function autoPromoteToEditor(
  * await demoteWithOwnershipTransfer(
  *   'user_123',
  *   'team_456',
- *   'TEAM_VIEWER',
+ *   'WORKSPACE_VIEWER',
  *   {
  *     'project_1': 'user_789', // Transfer project_1 to user_789
  *     'project_2': 'user_789', // Transfer project_2 to user_789
@@ -1027,7 +1027,7 @@ export async function autoPromoteToEditor(
 export async function demoteWithOwnershipTransfer(
   userId: string,
   teamId: string,
-  newOperationalRole: "TEAM_VIEWER" | "TEAM_MEMBER",
+  newOperationalRole: "WORKSPACE_VIEWER" | "WORKSPACE_MEMBER",
   projectOwnershipTransfers: Record<string, string>
 ): Promise<void> {
   // Get all projects where user is PROJECT_OWNER

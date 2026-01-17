@@ -40,8 +40,8 @@ const UpdateTeamSchema = z.object({
  *     "image": "https://example.com/image.png",
 
  *     "memberCount": 5,
- *     "myManagementRole": "TEAM_OWNER",
- *     "myOperationalRole": "TEAM_EDITOR",
+ *     "myManagementRole": "WORKSPACE_OWNER",
+ *     "myOperationalRole": "WORKSPACE_EDITOR",
  *     ...
  *   }
  * }
@@ -187,8 +187,8 @@ export async function PATCH(
       );
     }
 
-    const isOwner = await hasRole(user.id, 'TEAM_OWNER', 'team', teamId);
-    const isAdmin = await hasRole(user.id, 'TEAM_ADMIN', 'team', teamId);
+    const isOwner = await hasRole(user.id, 'WORKSPACE_OWNER', 'team', teamId);
+    const isAdmin = await hasRole(user.id, 'WORKSPACE_ADMIN', 'team', teamId);
     
     if (!isOwner && !isAdmin) {
       return NextResponse.json(
@@ -345,7 +345,7 @@ export async function DELETE(
       )
     });
     
-    const isOwner = memberRecord?.managementRole === 'TEAM_OWNER';
+    const isOwner = memberRecord?.managementRole === 'WORKSPACE_OWNER';
     
     if (!isOwner) {
       return NextResponse.json(

@@ -71,8 +71,8 @@ export async function createTeam(input: CreateTeamInput): Promise<Team> {
       await tx.insert(teamMembers).values({
         teamId: createdTeam.id,
         userId: creatorId,
-        managementRole: "TEAM_OWNER",
-        operationalRole: "TEAM_EDITOR",
+        managementRole: "WORKSPACE_OWNER",
+        operationalRole: "WORKSPACE_EDITOR",
         joinedAt: new Date(),
         invitedBy: null, // Creator is not invited
       });
@@ -437,7 +437,7 @@ export async function transferOwnership(
         where: and(
           eq(teamMembers.teamId, teamId),
           eq(teamMembers.userId, currentOwnerId),
-          eq(teamMembers.managementRole, "TEAM_OWNER")
+          eq(teamMembers.managementRole, "WORKSPACE_OWNER")
         ),
         with: {
           user: true,
@@ -464,7 +464,7 @@ export async function transferOwnership(
         throw new Error("Target user is not a member of this team");
       }
 
-      if (newOwnerMember.managementRole !== "TEAM_ADMIN") {
+      if (newOwnerMember.managementRole !== "WORKSPACE_ADMIN") {
         throw new Error("Target user must be a Team Admin to receive ownership");
       }
 
@@ -473,7 +473,7 @@ export async function transferOwnership(
       await tx
         .update(teamMembers)
         .set({
-          managementRole: "TEAM_ADMIN",
+          managementRole: "WORKSPACE_ADMIN",
         })
         .where(
           and(
@@ -486,7 +486,7 @@ export async function transferOwnership(
       await tx
         .update(teamMembers)
         .set({
-          managementRole: "TEAM_OWNER",
+          managementRole: "WORKSPACE_OWNER",
         })
         .where(
           and(

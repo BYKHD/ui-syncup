@@ -104,7 +104,7 @@ describe("Property 41: Member quota enforcement", () => {
               teamId: team.id,
               userId: member.id,
               managementRole: null,
-              operationalRole: "TEAM_MEMBER",
+              operationalRole: "WORKSPACE_MEMBER",
               joinedAt: new Date(),
               invitedBy: creator.id,
             });
@@ -174,7 +174,7 @@ describe("Property 41: Member quota enforcement", () => {
             teamId: team.id,
             userId: member.id,
             managementRole: null,
-            operationalRole: "TEAM_MEMBER",
+            operationalRole: "WORKSPACE_MEMBER",
             joinedAt: new Date(),
             invitedBy: creator.id,
           });
@@ -265,7 +265,7 @@ describe("Property 41: Member quota enforcement", () => {
             teamId: team.id,
             userId: member.id,
             managementRole: null,
-            operationalRole: "TEAM_MEMBER",
+            operationalRole: "WORKSPACE_MEMBER",
             joinedAt: new Date(),
             invitedBy: creator.id,
           });
@@ -351,7 +351,7 @@ describe("Property 41: Member quota enforcement", () => {
               teamId: team.id,
               userId: member.id,
               managementRole: null,
-              operationalRole: "TEAM_MEMBER",
+              operationalRole: "WORKSPACE_MEMBER",
               joinedAt: new Date(),
               invitedBy: creator.id,
             });

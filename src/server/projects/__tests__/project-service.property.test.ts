@@ -49,11 +49,11 @@ describe("Project Service - Access Control Logic Properties", () => {
       fc.property(
         fc.constantFrom("public", "private"),
         fc.boolean(), // Is user a project member?
-        fc.constantFrom("TEAM_OWNER", "TEAM_ADMIN", "TEAM_EDITOR", "none"), // User's team role
+        fc.constantFrom("WORKSPACE_OWNER", "WORKSPACE_ADMIN", "WORKSPACE_EDITOR", "none"), // User's team role
         (visibility, isMember, teamRole) => {
           // Determine expected access based on the rules
           const isPublic = visibility === "public";
-          const hasManagementRole = teamRole === "TEAM_OWNER" || teamRole === "TEAM_ADMIN";
+          const hasManagementRole = teamRole === "WORKSPACE_OWNER" || teamRole === "WORKSPACE_ADMIN";
           const shouldHaveAccess = isPublic || isMember || hasManagementRole;
 
           // Verify the logic is consistent

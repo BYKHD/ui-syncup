@@ -83,7 +83,7 @@ describe("Property 1: Team creation assigns correct roles", () => {
 
         // Verify TEAM_OWNER role
         expect(member).toBeDefined();
-        expect(member?.managementRole).toBe("TEAM_OWNER");
+        expect(member?.managementRole).toBe("WORKSPACE_OWNER");
 
         // Clean up
         await db.delete(teams).where(eq(teams.id, team.id));
@@ -128,7 +128,7 @@ describe("Property 1: Team creation assigns correct roles", () => {
 
         // Verify TEAM_EDITOR role
         expect(member).toBeDefined();
-        expect(member?.operationalRole).toBe("TEAM_EDITOR");
+        expect(member?.operationalRole).toBe("WORKSPACE_EDITOR");
 
         // Clean up
         await db.delete(teams).where(eq(teams.id, team.id));
@@ -173,8 +173,8 @@ describe("Property 1: Team creation assigns correct roles", () => {
 
         // Verify both roles are assigned
         expect(member).toBeDefined();
-        expect(member?.managementRole).toBe("TEAM_OWNER");
-        expect(member?.operationalRole).toBe("TEAM_EDITOR");
+        expect(member?.managementRole).toBe("WORKSPACE_OWNER");
+        expect(member?.operationalRole).toBe("WORKSPACE_EDITOR");
 
         // Clean up
         await db.delete(teams).where(eq(teams.id, team.id));

@@ -17,3 +17,4 @@ export * from "./issue-activities";
 export * from "./project-activities";
 export * from "./annotation-read-status";
 export * from "./notifications";
+export * from "./instance-settings";

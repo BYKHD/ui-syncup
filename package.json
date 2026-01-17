@@ -33,7 +33,8 @@
     "minio:stop": "docker compose -f docker-compose.minio.yml down",
     "minio:status": "docker compose -f docker-compose.minio.yml ps",
     "verify:vercel": "bun run scripts/verify-vercel-integration.ts",
-    "validate:migration-system": "bun run scripts/validate-migration-system.ts"
+    "validate:migration-system": "bun run scripts/validate-migration-system.ts",
+    "admin:reset-password": "bun run scripts/admin-reset-password.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.946.0",

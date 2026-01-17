@@ -73,7 +73,7 @@ export async function POST(
     }
     
     // Check permissions (TEAM_OWNER only)
-    const isOwner = await hasRole(user.id, 'TEAM_OWNER', 'team', teamId);
+    const isOwner = await hasRole(user.id, 'WORKSPACE_OWNER', 'team', teamId);
     
     if (!isOwner) {
       return NextResponse.json(

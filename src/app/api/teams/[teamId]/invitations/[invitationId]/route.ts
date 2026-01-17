@@ -52,8 +52,8 @@ export async function DELETE(
     }
     
     // Check permissions (TEAM_OWNER or TEAM_ADMIN)
-    const isOwner = await hasRole(user.id, 'TEAM_OWNER', 'team', teamId);
-    const isAdmin = await hasRole(user.id, 'TEAM_ADMIN', 'team', teamId);
+    const isOwner = await hasRole(user.id, 'WORKSPACE_OWNER', 'team', teamId);
+    const isAdmin = await hasRole(user.id, 'WORKSPACE_ADMIN', 'team', teamId);
     
     if (!isOwner && !isAdmin) {
       return NextResponse.json(

@@ -52,8 +52,8 @@ describe('Property 42: Cache invalidation on team changes', () => {
             updatedAt: new Date().toISOString(),
             deletedAt: null,
             memberCount: 1,
-            myManagementRole: 'TEAM_OWNER',
-            myOperationalRole: 'TEAM_EDITOR',
+            myManagementRole: 'WORKSPACE_OWNER',
+            myOperationalRole: 'WORKSPACE_EDITOR',
           },
         });
 
@@ -90,8 +90,8 @@ describe('Property 42: Cache invalidation on team changes', () => {
               updatedAt: new Date().toISOString(),
               deletedAt: null,
               memberCount: 1,
-              myManagementRole: 'TEAM_OWNER',
-              myOperationalRole: 'TEAM_EDITOR',
+              myManagementRole: 'WORKSPACE_OWNER',
+              myOperationalRole: 'WORKSPACE_EDITOR',
             },
           });
         });
@@ -124,7 +124,7 @@ describe('Property 42: Cache invalidation on team changes', () => {
               name: 'Test User',
               email: 'test@example.com',
               managementRole: null,
-              operationalRole: 'TEAM_MEMBER',
+              operationalRole: 'WORKSPACE_MEMBER',
               joinedAt: new Date().toISOString(),
               invitedBy: null,
             },
@@ -164,8 +164,8 @@ describe('Property 42: Cache invalidation on team changes', () => {
             updatedAt: new Date().toISOString(),
             deletedAt: null,
             memberCount: 1,
-            myManagementRole: 'TEAM_OWNER',
-            myOperationalRole: 'TEAM_EDITOR',
+            myManagementRole: 'WORKSPACE_OWNER',
+            myOperationalRole: 'WORKSPACE_EDITOR',
           },
         });
 
@@ -209,8 +209,8 @@ describe('Property 42: Cache invalidation on team changes', () => {
               updatedAt: new Date().toISOString(),
               deletedAt: null,
               memberCount: 1,
-              myManagementRole: 'TEAM_OWNER',
-              myOperationalRole: 'TEAM_EDITOR',
+              myManagementRole: 'WORKSPACE_OWNER',
+              myOperationalRole: 'WORKSPACE_EDITOR',
             },
           });
 
@@ -249,8 +249,8 @@ describe('Property 42: Cache invalidation on team changes', () => {
             updatedAt: new Date().toISOString(),
             deletedAt: null,
             memberCount: 1,
-            myManagementRole: 'TEAM_OWNER',
-            myOperationalRole: 'TEAM_EDITOR',
+            myManagementRole: 'WORKSPACE_OWNER',
+            myOperationalRole: 'WORKSPACE_EDITOR',
           })),
           pagination: { page: 1, limit: 20, total: teamIds.length, totalPages: 1 },
         });

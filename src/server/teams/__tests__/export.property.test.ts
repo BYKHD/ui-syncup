@@ -180,7 +180,7 @@ describe("Property 22: Data export generates complete JSON", () => {
             await addMember({
               teamId: team.id,
               userId: member.id,
-              operationalRole: "TEAM_MEMBER",
+              operationalRole: "WORKSPACE_MEMBER",
               invitedBy: owner.id,
             });
           }
@@ -248,7 +248,7 @@ describe("Property 22: Data export generates complete JSON", () => {
             await createInvitation({
               teamId: team.id,
               email,
-              operationalRole: "TEAM_MEMBER",
+              operationalRole: "WORKSPACE_MEMBER",
               invitedBy: owner.id,
             });
           }
@@ -449,7 +449,7 @@ describe("Property 22: Data export generates complete JSON", () => {
             await addMember({
               teamId: team.id,
               userId: member.id,
-              operationalRole: "TEAM_MEMBER",
+              operationalRole: "WORKSPACE_MEMBER",
               invitedBy: owner.id,
             });
           }

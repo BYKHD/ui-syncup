@@ -66,8 +66,8 @@ describe('Integration Test: Get Team Members', () => {
     await addMember({
       teamId: team.id,
       userId: admin.id,
-      managementRole: 'TEAM_ADMIN',
-      operationalRole: 'TEAM_MEMBER',
+      managementRole: 'WORKSPACE_ADMIN',
+      operationalRole: 'WORKSPACE_MEMBER',
       invitedBy: owner.id,
     });
 
@@ -79,7 +79,7 @@ describe('Integration Test: Get Team Members', () => {
     await addMember({
       teamId: team.id,
       userId: member.id,
-      operationalRole: 'TEAM_MEMBER',
+      operationalRole: 'WORKSPACE_MEMBER',
       invitedBy: owner.id,
     });
 
@@ -92,11 +92,11 @@ describe('Integration Test: Get Team Members', () => {
     
     const ownerMember = members.find(m => m.userId === owner.id);
     expect(ownerMember).toBeDefined();
-    expect(ownerMember?.managementRole).toBe('TEAM_OWNER');
+    expect(ownerMember?.managementRole).toBe('WORKSPACE_OWNER');
 
     const adminMember = members.find(m => m.userId === admin.id);
     expect(adminMember).toBeDefined();
-    expect(adminMember?.managementRole).toBe('TEAM_ADMIN');
+    expect(adminMember?.managementRole).toBe('WORKSPACE_ADMIN');
 
     const regularMember = members.find(m => m.userId === member.id);
     expect(regularMember).toBeDefined();

@@ -51,8 +51,8 @@ export default async function TeamSettingsLayout({
 
   // Map to UserRole type
   const userRole: UserRole = 
-    member.managementRole === "TEAM_OWNER" ? "owner" : 
-    member.managementRole === "TEAM_ADMIN" ? "admin" : "member";
+    member.managementRole === "WORKSPACE_OWNER" ? "owner" : 
+    member.managementRole === "WORKSPACE_ADMIN" ? "admin" : "member";
 
   // Map team to expected type (simplified for settings screen)
   const initialTeam: Team = {

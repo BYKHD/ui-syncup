@@ -52,7 +52,7 @@ export async function listProjects(
   // Get user's management role to determine if they can see all private projects
   const managementRole = await getManagementRole(userId, teamId);
   const canSeeAllPrivate =
-    managementRole === "TEAM_OWNER" || managementRole === "TEAM_ADMIN";
+    managementRole === "WORKSPACE_OWNER" || managementRole === "WORKSPACE_ADMIN";
 
   // Build where conditions
   const conditions = [
@@ -408,7 +408,7 @@ export async function canAccessProject(
 
   // Team owners/admins can see all private projects
   const managementRole = await getManagementRole(userId, project.teamId);
-  return managementRole === "TEAM_OWNER" || managementRole === "TEAM_ADMIN";
+  return managementRole === "WORKSPACE_OWNER" || managementRole === "WORKSPACE_ADMIN";
 }
 
 /**

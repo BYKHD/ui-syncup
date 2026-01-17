@@ -30,8 +30,8 @@ const validTeamNameArb = fc
   .filter((name) => !name.includes("\\"));
 
 // Arbitrary for roles
-const managementRoleArb = fc.constantFrom("TEAM_OWNER", "TEAM_ADMIN", null);
-const operationalRoleArb = fc.constantFrom("TEAM_EDITOR", "TEAM_MEMBER", "TEAM_VIEWER");
+const managementRoleArb = fc.constantFrom("WORKSPACE_OWNER", "WORKSPACE_ADMIN", null);
+const operationalRoleArb = fc.constantFrom("WORKSPACE_EDITOR", "WORKSPACE_MEMBER", "WORKSPACE_VIEWER");
 
 describe("Team Invitation Properties", () => {
   const testUserIds: string[] = [];
@@ -75,7 +75,7 @@ describe("Team Invitation Properties", () => {
         const { invitation } = await createInvitation({
           teamId: team.id,
           email,
-          operationalRole: "TEAM_MEMBER",
+          operationalRole: "WORKSPACE_MEMBER",
           invitedBy: owner.id,
         });
 
@@ -175,7 +175,7 @@ describe("Team Invitation Properties", () => {
         const { token } = await createInvitation({
           teamId: team.id,
           email: invitee.email,
-          operationalRole: "TEAM_MEMBER",
+          operationalRole: "WORKSPACE_MEMBER",
           invitedBy: owner.id,
         });
 
@@ -214,7 +214,7 @@ describe("Team Invitation Properties", () => {
           await createInvitation({
             teamId: team.id,
             email: `invitee-${i}-${Date.now()}@example.com`,
-            operationalRole: "TEAM_MEMBER",
+            operationalRole: "WORKSPACE_MEMBER",
             invitedBy: owner.id,
           });
         }
@@ -223,7 +223,7 @@ describe("Team Invitation Properties", () => {
         await expect(createInvitation({
           teamId: team.id,
           email: `invitee-11-${Date.now()}@example.com`,
-          operationalRole: "TEAM_MEMBER",
+          operationalRole: "WORKSPACE_MEMBER",
           invitedBy: owner.id,
         })).rejects.toThrow("Invitation rate limit exceeded");
 

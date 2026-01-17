@@ -100,7 +100,7 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
       {
         teamId,
         userId: memberId,
-        input: { managementRole: isAdmin ? 'TEAM_ADMIN' : null },
+        input: { managementRole: isAdmin ? 'WORKSPACE_ADMIN' : null },
       },
       {
         onSuccess: () => {
@@ -193,8 +193,8 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
               {members.map((member) => {
                 const RoleIcon = operationalRoleIcons[member.operationalRole] || RiUserLine;
                 const isCurrentUser = member.userId === currentUserId;
-                const isOwner = member.managementRole === 'TEAM_OWNER';
-                const isAdmin = member.managementRole === 'TEAM_ADMIN';
+                const isOwner = member.managementRole === 'WORKSPACE_OWNER';
+                const isAdmin = member.managementRole === 'WORKSPACE_ADMIN';
                 const canModify = canManageMembers && !isCurrentUser && !isOwner;
 
                 return (
@@ -245,19 +245,19 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="TEAM_EDITOR">
+                            <SelectItem value="WORKSPACE_EDITOR">
                               <div className="flex items-center gap-2">
                                 <RiUserLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Editor</span>
                               </div>
                             </SelectItem>
-                            <SelectItem value="TEAM_MEMBER">
+                            <SelectItem value="WORKSPACE_MEMBER">
                               <div className="flex items-center gap-2">
                                 <RiUserLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Member</span>
                               </div>
                             </SelectItem>
-                            <SelectItem value="TEAM_VIEWER">
+                            <SelectItem value="WORKSPACE_VIEWER">
                               <div className="flex items-center gap-2">
                                 <RiEyeLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Viewer</span>

@@ -61,7 +61,7 @@ describe('transferOwnership Property Tests', () => {
           const currentOwner = {
             userId: currentOwnerId,
             teamId,
-            managementRole: 'TEAM_OWNER',
+            managementRole: 'WORKSPACE_OWNER',
             user: { email: ownerEmail, name: 'Owner' },
             team: { name: teamName, slug: teamSlug },
           };
@@ -69,7 +69,7 @@ describe('transferOwnership Property Tests', () => {
           const newOwner = {
             userId: newOwnerId,
             teamId,
-            managementRole: 'TEAM_ADMIN',
+            managementRole: 'WORKSPACE_ADMIN',
             user: { email: newOwnerEmail, name: 'New Owner' },
           };
 
@@ -144,7 +144,7 @@ describe('transferOwnership Property Tests', () => {
           const currentOwner = {
             userId: currentOwnerId,
             teamId,
-            managementRole: 'TEAM_OWNER',
+            managementRole: 'WORKSPACE_OWNER',
             user: { email: 'test@test.com' },
             team: { name: 'Test Team' },
           };
@@ -152,7 +152,7 @@ describe('transferOwnership Property Tests', () => {
           const newOwner = {
             userId: newOwnerId,
             teamId,
-            managementRole: 'TEAM_MEMBER', // Not ADMIN
+            managementRole: 'WORKSPACE_MEMBER', // Not ADMIN
             user: { email: 'new@test.com' },
           };
 
