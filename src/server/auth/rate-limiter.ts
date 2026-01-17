@@ -234,6 +234,11 @@ export const RATE_LIMITS = {
     limit: 5,
     windowMs: 15 * 60 * 1000, // 15 minutes
   },
+  // Setup admin creation: 5 attempts per IP per minute
+  SETUP_ADMIN: {
+    limit: 5,
+    windowMs: 60 * 1000, // 1 minute
+  },
 } as const;
 
 /**
@@ -248,4 +253,5 @@ export const createRateLimitKey = {
   signupIp: (ip: string) => `signup:ip:${ip}`,
   resendVerification: (email: string) => `resend-verification:email:${email.toLowerCase()}`,
   invitationAction: (token: string) => `invitation:${token.substring(0, 8)}`,
+  setupAdminIp: (ip: string) => `setup:admin:ip:${ip}`,
 } as const;

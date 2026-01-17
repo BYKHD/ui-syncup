@@ -148,32 +148,32 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
 ## Phase 2: API Routes
 
 ### Task 2.1: Create setup API routes
-- [ ] 2.1.1 Create GET /api/setup/status endpoint
+- [x] 2.1.1 Create GET /api/setup/status endpoint
   - Return instance setup status (isSetupComplete, instanceName, defaultWorkspaceId, isMultiWorkspaceMode)
   - Used by proxy to determine routing
   - _Requirements: 1.1, 1.2, 11.4_
   - _Location: `src/app/api/setup/status/route.ts`_
 
-- [ ] 2.1.2 Create GET /api/setup/health endpoint
+- [x] 2.1.2 Create GET /api/setup/health endpoint
   - Return service health status for all services
   - Include degraded behavior messages
   - _Requirements: 2.1, 2.2, 2.3, 2.4_
   - _Location: `src/app/api/setup/health/route.ts`_
 
-- [ ] 2.1.3 Create POST /api/setup/admin endpoint
+- [x] 2.1.3 Create POST /api/setup/admin endpoint
   - Create admin user with validation
   - Return session/auth token
   - Implement rate limiting (5 requests per minute per IP)
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.10_
   - _Location: `src/app/api/setup/admin/route.ts`_
 
-- [ ] 2.1.4 Create POST /api/setup/config endpoint
+- [x] 2.1.4 Create POST /api/setup/config endpoint
   - Save instance configuration
   - Validate inputs
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
   - _Location: `src/app/api/setup/config/route.ts`_
 
-- [ ] 2.1.5 Create POST /api/setup/complete endpoint
+- [x] 2.1.5 Create POST /api/setup/complete endpoint
   - Mark setup as complete
   - Store default workspace ID for single-workspace mode
   - Optionally create sample data
