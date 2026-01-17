@@ -198,13 +198,13 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
 ## Phase 4: Setup Feature Module (Frontend)
 
 ### Task 4.1: Create setup feature scaffolding
-- [ ] 4.1.1 Create feature directory structure
+- [x] 4.1.1 Create feature directory structure
   - Create `src/features/setup/` with api/, hooks/, components/, screens/, types/, utils/
   - Create barrel exports in index.ts
   - _Location: `src/features/setup/`_
 
 ### Task 4.2: Create API layer
-- [ ] 4.2.1 Create fetchers and DTO schemas
+- [x] 4.2.1 Create fetchers and DTO schemas
   - Implement `getInstanceStatus()` fetcher (include workspace mode)
   - Implement `getServiceHealth()` fetcher
   - Implement `createAdmin()` fetcher
@@ -214,7 +214,7 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
   - _Location: `src/features/setup/api/`_
 
 ### Task 4.3: Create hooks
-- [ ] 4.3.1 Create React Query hooks
+- [x] 4.3.1 Create React Query hooks
   - Implement `useInstanceStatus()` query hook
   - Implement `useServiceHealth()` query hook
   - Implement `useCreateAdmin()` mutation hook
@@ -222,21 +222,21 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
   - Implement `useCompleteSetup()` mutation hook
   - _Location: `src/features/setup/hooks/`_
 
-- [ ] 4.3.2 Create wizard state hook
+- [x] 4.3.2 Create wizard state hook
   - Implement `useSetupWizard()` for step navigation
   - Track current step, completed steps, form data
   - Handle step validation and progression
   - _Requirements: All setup wizard requirements_
   - _Location: `src/features/setup/hooks/use-setup-wizard.ts`_
 
-- [ ] 4.3.3 Create workspace mode hook
+- [x] 4.3.3 Create workspace mode hook
   - Implement `useWorkspaceMode()` for client-side mode detection
   - Return isMultiWorkspaceMode and isSingleWorkspaceMode
   - _Requirements: 11.4, 12.1, 13.1_
   - _Location: `src/features/setup/hooks/use-workspace-mode.ts`_
 
 ### Task 4.4: Create components
-- [ ] 4.4.1 Create service health step component
+- [x] 4.4.1 Create service health step component
   - Display database, email, storage, Redis status
   - Show degraded behavior messages
   - Display workspace mode indicator
@@ -245,45 +245,45 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
   - _Location: `src/features/setup/components/service-health-step.tsx`_
 
-- [ ] 4.4.2 Create admin account step component
+- [x] 4.4.2 Create admin account step component
   - Form fields: Email, Password, Confirm Password, Display Name
   - Client-side validation with error messages
   - Password strength indicator
   - _Requirements: 3.1, 3.3, 3.4, 3.5, 3.6_
   - _Location: `src/features/setup/components/admin-account-step.tsx`_
 
-- [ ] 4.4.3 Create instance config step component
+- [x] 4.4.3 Create instance config step component
   - Form fields: Instance Name, Public URL (optional)
   - Display resource limits from QUOTAS config
   - _Requirements: 4.1, 4.2, 4.4_
   - _Location: `src/features/setup/components/instance-config-step.tsx`_
 
-- [ ] 4.4.4 Create first workspace step component
+- [x] 4.4.4 Create first workspace step component
   - Form field: Workspace Name
   - Auto-generate and display slug preview
   - Info text: "This will be your default workspace"
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.7_
   - _Location: `src/features/setup/components/first-workspace-step.tsx`_
 
-- [ ] 4.4.5 Create sample data step component
+- [x] 4.4.5 Create sample data step component
   - Toggle option for creating demo project
   - Description of what sample data includes
   - _Requirements: 6.1, 6.2, 6.3_
   - _Location: `src/features/setup/components/sample-data-step.tsx`_
 
-- [ ] 4.4.6 Create setup wizard container component
+- [x] 4.4.6 Create setup wizard container component
   - Manage step progression
   - Display progress indicator
   - Handle form submission across steps
   - _Location: `src/features/setup/components/setup-wizard.tsx`_
 
 ### Task 4.5: Create screen and route
-- [ ] 4.5.1 Create setup screen
+- [x] 4.5.1 Create setup screen
   - Compose wizard with all steps
   - Handle loading and error states
   - _Location: `src/features/setup/screens/setup-screen.tsx`_
 
-- [ ] 4.5.2 Create setup page route
+- [x] 4.5.2 Create setup page route
   - Create `/setup` page under `(public)` routes
   - Create layout without sidebar/header
   - _Location: `src/app/(public)/setup/page.tsx`_
