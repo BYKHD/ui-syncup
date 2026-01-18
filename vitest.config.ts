@@ -13,6 +13,8 @@ export default defineConfig(({ mode }) => ({
       "src/**/*.{test,spec}.{ts,tsx}",
       "scripts/**/__tests__/**/*.{test,spec}.{ts,tsx}",
       "scripts/**/*.{test,spec}.{ts,tsx}",
+      "cli/**/__tests__/**/*.{test,spec}.{ts,tsx}",
+      "cli/**/*.{test,spec}.{ts,tsx}",
     ],
     exclude: [
       "node_modules/**",

@@ -8,21 +8,21 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
 
 ## Tasks
 
-- [ ] 1. Set up CLI project structure and core infrastructure
-  - [ ] 1.1 Add Commander.js dependency to package.json
+- [x] 1. Set up CLI project structure and core infrastructure
+  - [x] 1.1 Add Commander.js dependency to package.json
     - Add `"commander": "^12.0.0"` to dependencies
     - Run `bun install`
     - _Requirements: 6.1, 6.2, 6.3_
     - _Location: `package.json`_
 
-  - [ ] 1.2 Create CLI directory structure and entry point
+  - [x] 1.2 Create CLI directory structure and entry point
     - Create `cli/` directory with `commands/`, `lib/`, `templates/` subdirectories
     - Create `cli/index.ts` with Commander program setup
     - Add `"bin": { "ui-syncup": "./cli/index.ts" }` to package.json
     - _Requirements: 6.1, 6.2, 6.3_
     - _Location: `cli/index.ts`, `package.json`_
 
-  - [ ] 1.3 Create shared types and constants
+  - [x] 1.3 Create shared types and constants
     - Create `cli/lib/types.ts` with CommandResult, EnvironmentCheck, FileOperationResult, ServiceStatus, GlobalOptions interfaces
     - Create `cli/lib/constants.ts` with VERSION, STORAGE_DIRS, ENV_FILES constants
     - Create `cli/lib/index.ts` barrel export
@@ -31,8 +31,8 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
 
 ---
 
-- [ ] 2. Implement core library services
-  - [ ] 2.1 Implement UI service for console output
+- [x] 2. Implement core library services
+  - [x] 2.1 Implement UI service for console output
     - Create `cli/lib/ui.ts` with success, warning, error, info, log functions
     - Implement ANSI color codes directly (no chalk dependency)
     - Support `--no-color` flag via environment check
@@ -40,14 +40,14 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
     - _Requirements: 6.5, 6.6_
     - _Location: `cli/lib/ui.ts`_
 
-  - [ ] 2.2 Implement prompts service for user input
+  - [x] 2.2 Implement prompts service for user input
     - Create `cli/lib/prompts.ts` with confirm, select, input, password, confirmPhrase functions
     - Use Node.js readline for input (no external prompts library)
     - Handle non-interactive mode (CI environment)
     - _Requirements: 6.7, 6.10, 5.2, 5.3_
     - _Location: `cli/lib/prompts.ts`_
 
-  - [ ] 2.3 Implement config service for environment detection
+  - [x] 2.3 Implement config service for environment detection
     - Create `cli/lib/config.ts` with detectEnvironment, getConfig, isProductionEnvironment
     - Check for Bun, Docker, Supabase CLI availability
     - Check port availability (3000, 54321, 54322, 54323)
@@ -60,14 +60,14 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
     - **Validates: Requirements 5.4**
     - _Location: `cli/__tests__/config.property.test.ts`_
 
-  - [ ] 2.5 Implement network service with retry logic
+  - [x] 2.5 Implement network service with retry logic
     - Create `cli/lib/network.ts` with withRetry, isOffline, checkConnectivity
     - Implement exponential backoff (1s, 2s, 4s) for up to 3 attempts
     - Detect offline state and use cached resources when available
     - _Requirements: 7.7, 7.8, 7.9_
     - _Location: `cli/lib/network.ts`_
 
-  - [ ] 2.6 Implement project config service
+  - [x] 2.6 Implement project config service
     - Create `cli/lib/project-config.ts` with loadProjectConfig, saveProjectConfig
     - Implement createDefaultConfig with schema version
     - Add config validation with Zod schema
@@ -80,15 +80,15 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
     - **Validates: Requirements 7.7**
     - _Location: `cli/__tests__/network.property.test.ts`_
 
-- [ ] 3. Implement file system service
-  - [ ] 3.1 Create filesystem service with core operations
+- [x] 3. Implement file system service
+  - [x] 3.1 Create filesystem service with core operations
     - Create `cli/lib/filesystem.ts` with fileExists, ensureDirectory, writeFile, deleteFile, deleteDirectory
     - Implement createBackup with timestamp suffix format
     - Set file permissions to 0o600 for .env files
     - _Requirements: 1.6, 1.7, 1.8, NF-Security.3_
     - _Location: `cli/lib/filesystem.ts`_
 
-  - [ ] 3.2 Implement template copying with variable interpolation
+  - [x] 3.2 Implement template copying with variable interpolation
     - Add copyTemplate function that reads from `cli/templates/`
     - Support `{{VARIABLE}}` placeholder replacement
     - Generate secure random secrets using crypto.randomBytes
@@ -104,8 +104,8 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
 
 ---
 
-- [ ] 4. Implement Docker and Supabase services
-  - [ ] 4.1 Create Docker service wrapper
+- [x] 4. Implement Docker and Supabase services
+  - [x] 4.1 Create Docker service wrapper
     - Create `cli/lib/docker.ts` with isDockerInstalled, isDockerRunning, getDockerVersion
     - Implement startServices, stopServices using child_process.spawn
     - Implement removeContainers, removeVolumes, removeImages
@@ -113,7 +113,7 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
     - _Requirements: 2.1, 2.2, 3.1, 4.3, 4.6, 5.5, 5.6, 5.7_
     - _Location: `cli/lib/docker.ts`_
 
-  - [ ] 4.2 Create Supabase CLI service wrapper
+  - [x] 4.2 Create Supabase CLI service wrapper
     - Create `cli/lib/supabase.ts` with isSupabaseInstalled, startSupabase, stopSupabase
     - Implement waitForDatabase with configurable timeout and polling
     - Wrap existing migrate.ts functionality via runMigrations
