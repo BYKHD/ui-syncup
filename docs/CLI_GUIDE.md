@@ -25,7 +25,7 @@ cd ui-syncup
 bun install
 ```
 
-Run via NPX:
+Run via Bunx:
 
 ```bash
 bunx ui-syncup <command>
@@ -36,7 +36,7 @@ bunx ui-syncup <command>
 ## Command Overview
 
 
-| Command | Purpose | Estimated Implementation Phase |
+| Command | Purpose | Implementation Phase |
 |------|--------|--------------------------------|
 | `ui-syncup init` | Bootstrap local or production setup | Phase 1 |
 | `ui-syncup up` | Start local stack | Phase 1 |
@@ -44,12 +44,13 @@ bunx ui-syncup <command>
 | `ui-syncup doctor` | Environment & health checks | Phase 2 |
 | `ui-syncup migrate` | Run database migrations | Phase 2 |
 | `ui-syncup reset` | Wipe local data safely | Phase 1 |
+| `ui-syncup purge` | Factory reset for development | Phase 1 |
 | `ui-syncup version` | Display CLI and app version info | TBD |
 | `ui-syncup logs` | Tail application and service logs | TBD |
 | `ui-syncup backup` | Create full database & storage backup | TBD |
 | `ui-syncup restore` | Restore from backup archive | TBD |
-| `ui-syncup secrets` | Manage external credentials (optional) | Optional |
-| `ui-syncup export` | Export configuration for backup | Optional |
+| `ui-syncup secrets` | Manage external credentials (optional) | TBD |
+| `ui-syncup export` | Export configuration for backup | TBD |
 
 ---
 
@@ -308,6 +309,54 @@ ui-syncup reset
 - Local database
 - Uploaded files
 - Docker containers
+
+---
+
+## `ui-syncup purge`
+
+### Purpose
+Aggressive factory reset for **development only**. Removes everything including configuration to start from absolute zero.
+
+### Usage
+```bash
+ui-syncup purge
+```
+
+### Safety
+- Requires manual confirmation with typed confirmation phrase
+- Blocked in production environments
+- Warns about irreversible action
+
+### Deletes (Everything)
+- Local database and Docker volumes
+- All uploaded files (`/storage/*`)
+- Docker containers and images
+- Configuration files (`.env.local`, `docker-compose.override.yml`)
+- Generated directories
+
+### Comparison: `reset` vs `purge`
+| Aspect | `reset` | `purge` |
+|--------|---------|--------|
+| Database | ✓ Wiped | ✓ Wiped |
+| Uploaded files | ✓ Wiped | ✓ Wiped |
+| Docker containers | ✓ Removed | ✓ Removed |
+| Docker volumes | ✗ Kept | ✓ Removed |
+| Docker images | ✗ Kept | ✓ Removed |
+| `.env*` files | ✗ Kept | ✓ Removed |
+| `docker-compose.override.yml` | ✗ Kept | ✓ Removed |
+| Use case | Fresh data | Undo `init` |
+
+### Example
+```text
+⚠ WARNING: This will remove ALL data and configuration.
+  Type "purge ui-syncup" to confirm: purge ui-syncup
+✔ Docker containers stopped
+✔ Docker volumes removed
+✔ Docker images removed
+✔ Storage directories removed
+✔ Configuration files removed
+✔ Factory reset complete. Run "ui-syncup init" to start fresh.
+```
 
 ---
 
