@@ -162,7 +162,7 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
 ---
 
 
-- [ ] 6. Checkpoint - Verify init command works
+- [x] 6. Checkpoint - Verify init command works
   - Run `bun run typecheck` and ensure no type errors
   - Run `bunx ./cli/index.ts init --help` and verify help output
   - Test in temp directory: `cd /tmp && mkdir test-init && cd test-init && bunx /path/to/cli init`
@@ -170,8 +170,8 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
 
 ---
 
-- [ ] 7. Implement `up` command
-  - [ ] 7.1 Implement up command logic
+- [x] 7. Implement `up` command
+  - [x] 7.1 Implement up command logic
     - Create `cli/commands/up.ts` with upCommand
     - Check Docker is running, display error if not
     - Start Supabase with progress indicators
@@ -182,7 +182,7 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
     - _Requirements: 2.1-2.11_
     - _Location: `cli/commands/up.ts`_
 
-  - [ ] 7.2 Wire up command to CLI entry point
+  - [x] 7.2 Wire up command to CLI entry point
     - Import and register upCommand in `cli/index.ts`
     - _Requirements: 6.1_
     - _Location: `cli/index.ts`_

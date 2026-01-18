@@ -16,7 +16,7 @@ import {
   PROGRAM_DESCRIPTION,
   ExitCode,
 } from "./lib/index";
-import { initCommand } from "./commands/index";
+import { initCommand, upCommand } from "./commands/index";
 
 // ============================================================================
 // Program Setup
@@ -34,9 +34,9 @@ const program = new Command()
 // ============================================================================
 
 program.addCommand(initCommand);
+program.addCommand(upCommand);
 
 // Commands will be registered here as they are implemented:
-// program.addCommand(upCommand);
 // program.addCommand(downCommand);
 // program.addCommand(resetCommand);
 // program.addCommand(purgeCommand);

@@ -8,8 +8,10 @@
 // Init Command
 export { initCommand } from "./init";
 
+// Up Command
+export { upCommand } from "./up";
+
 // Other commands will be added here:
-// export { upCommand } from './up';
 // export { downCommand } from './down';
 // export { resetCommand } from './reset';
 // export { purgeCommand } from './purge';

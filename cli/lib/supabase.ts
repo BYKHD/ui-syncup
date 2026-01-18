@@ -313,6 +313,66 @@ export async function seedDatabase(): Promise<CommandResult> {
 }
 
 // ============================================================================
+// Admin User Detection
+// ============================================================================
+
+export interface AdminExistsResult {
+  ok: boolean;
+  exists: boolean;
+  error?: string;
+}
+
+/**
+ * Check if the instance admin exists (authoritative: instance_settings.admin_user_id)
+ */
+export async function adminExists(): Promise<AdminExistsResult> {
+  const projectRoot = findProjectRoot();
+  if (!projectRoot) {
+    const message = "Not in a UI SyncUp project";
+    debug(`Cannot check admin: ${message}`);
+    return { ok: false, exists: false, error: message };
+  }
+
+  // Load environment
+  dotenv.config({ path: join(projectRoot, ".env.local") });
+  const dbUrl = process.env.DIRECT_URL;
+
+  if (!dbUrl) {
+    const message = "DIRECT_URL not set, cannot check for admin user";
+    debug(message);
+    return { ok: false, exists: false, error: message };
+  }
+
+  const client = postgres(dbUrl, {
+    max: 1,
+    connect_timeout: 5,
+    idle_timeout: 2,
+  });
+
+  try {
+    const result = await client`
+      SELECT admin_user_id
+      FROM instance_settings
+      WHERE admin_user_id IS NOT NULL
+      LIMIT 1
+    `;
+    const exists = result.length > 0 && Boolean(result[0]?.admin_user_id);
+    debug(`Instance admin ${exists ? "found" : "not found"}`);
+    return { ok: true, exists };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    debug(`Failed to check for admin user: ${message}`);
+    return { ok: false, exists: false, error: message };
+  } finally {
+    try {
+      await client.end({ timeout: 5 });
+    } catch {
+      // Ignore cleanup errors.
+    }
+  }
+}
+
+// ============================================================================
 // Admin User Seeding
 // ============================================================================
 
