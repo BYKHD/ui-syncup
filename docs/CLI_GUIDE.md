@@ -141,6 +141,7 @@ ui-syncup doctor
 ### Checks
 - Node & Docker availability
 - Database connectivity
+- **Schema version validation**
 - Storage provider access
 - File system permissions
 - Optional services (SMTP, OAuth)
@@ -148,8 +149,16 @@ ui-syncup doctor
 ### Example Output
 ```text
 ✔ Database reachable
+✔ Schema up-to-date (v15)
 ✔ Storage writable
 ⚠ Email not configured (optional)
+```
+
+### Schema Outdated Warning
+```text
+✔ Database reachable
+⚠ Schema outdated (v12 → v15 required)
+  Run: ui-syncup migrate
 ```
 
 ---
@@ -157,16 +166,53 @@ ui-syncup doctor
 ## `ui-syncup migrate`
 
 ### Purpose
-Run database migrations manually.
+Run database migrations manually. **Required after updating** when schema changes.
 
+### Usage
 ```bash
 ui-syncup migrate
+ui-syncup migrate --status
+ui-syncup migrate --dry-run
 ```
 
-Used in:
+### Flags
+| Flag | Description |
+|------|-------------|
+| `--status` | Show current vs required schema version |
+| `--dry-run` | Preview migrations without applying |
+| `--rollback` | Rollback last migration (use with caution) |
+
+### Status Output
+```text
+Current schema: v12
+Required schema: v15
+Pending migrations:
+  - 20260115_add_audit_logs
+  - 20260117_update_team_roles  
+  - 20260118_add_workspace_settings
+```
+
+### Migration Output
+```text
+✔ Migration 20260115_add_audit_logs applied
+✔ Migration 20260117_update_team_roles applied
+✔ Migration 20260118_add_workspace_settings applied
+✔ Schema updated to v15
+```
+
+### Used in
 - CI pipelines
 - Production deployments
+- After `git pull` when updating
 - Recovery scenarios
+
+### Schema Validation at Startup
+The application validates schema version on startup:
+```text
+❌ Database schema is outdated (v12 → v15 required)
+   Run: ui-syncup migrate
+   Process exited with code 1
+```
 
 ---
 
@@ -396,6 +442,68 @@ ui-syncup export
 - Feature flags
 
 Secrets are never included.
+
+---
+
+## Updating UI SyncUp
+
+UI SyncUp uses **Git-based updates** instead of a dedicated `update` command. This provides version control, easy rollbacks, and transparency.
+
+### Update Workflow
+
+```bash
+# 1. Check for updates
+ui-syncup version --check
+
+# 2. Stop services
+ui-syncup down
+
+# 3. Pull latest version
+git fetch origin
+git checkout v2.1.0    # or: git pull origin main
+
+# 4. Update dependencies
+bun install
+
+# 5. Run migrations (if schema changed)
+ui-syncup migrate
+
+# 6. Restart services
+ui-syncup up
+```
+
+### Check for Updates
+
+```bash
+ui-syncup version --check
+```
+
+```text
+UI SyncUp CLI: 1.2.0
+App Version:   2.0.0
+
+✨ New version available: v2.1.0
+   Release notes: https://github.com/your-org/ui-syncup/releases/v2.1.0
+   Update: git fetch && git checkout v2.1.0
+```
+
+### Rollback to Previous Version
+
+```bash
+ui-syncup down
+git checkout v2.0.0
+bun install
+ui-syncup migrate --rollback   # if needed
+ui-syncup up
+```
+
+### Why No `update` Command?
+
+| Approach | Benefit |
+|----------|---------|
+| Git-based | Full version history, easy rollbacks |
+| Explicit migrations | User controls when schema changes |
+| No magic | Transparent, predictable process |
 
 ---
 
