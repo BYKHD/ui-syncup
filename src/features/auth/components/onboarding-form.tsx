@@ -55,15 +55,15 @@ export function OnboardingForm({
   const headerCopy =
     mode === "accept"
       ? {
-          title: "Join your team",
+          title: "Join your workspace",
           description:
-            "Preview how invitation flows will feel once wired to the API.",
+            "Accept the invitation to join this workspace.",
         }
       : {
-          title: hasExistingTeams ? "Create another team" : "Create your team",
+          title: hasExistingTeams ? "Create another workspace" : "Create your workspace",
           description: hasExistingTeams
             ? "Add a new workspace to organize additional projects and collaborate with different teams."
-            : "Name the workspace that will house feedback streams and reviews.",
+            : "Name the workspace that will house your projects and feedback.",
         };
 
   const footerCopy =
@@ -136,13 +136,13 @@ export function OnboardingForm({
                 disabled={status === "working"}
                 onClick={() => onSwitchMode("create")}
               >
-                Create my own team instead
+                Create my own workspace instead
               </Button>
             </div>
           ) : (
             <form className="space-y-5" onSubmit={onCreateTeam}>
               <div className="space-y-2">
-                <Label htmlFor="teamName">Team name</Label>
+                <Label htmlFor="teamName">Workspace name</Label>
                 <Input
                   id="teamName"
                   {...register("teamName")}
@@ -179,7 +179,7 @@ export function OnboardingForm({
                   disabled={status === "working"}
                   onClick={() => onSwitchMode("accept")}
                 >
-                  Accept team invitation instead
+                  Accept workspace invitation instead
                 </Button>
               )}
             </form>

@@ -1,1 +1,0 @@
-CREATE INDEX "project_activities_project_type_created_idx" ON "project_activities" USING btree ("project_id","type","created_at");

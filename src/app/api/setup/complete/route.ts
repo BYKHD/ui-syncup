@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { completeSetup, getInstanceStatus, isSetupComplete } from "@/server/setup";
+import { getInstanceStatus, isSetupComplete } from "@/server/setup";
 import { createSampleProject } from "@/server/setup/sample-data-service";
 import { getSession } from "@/server/auth/session";
 import { logger } from "@/lib/logger";
@@ -20,10 +20,7 @@ import { logger } from "@/lib/logger";
  * Request body schema
  */
 const CompleteSetupSchema = z.object({
-  workspaceName: z
-    .string()
-    .min(2, "Workspace name must be at least 2 characters")
-    .max(50, "Workspace name must be less than 50 characters"),
+  workspaceId: z.string().uuid("Invalid workspace ID"),
   createSampleData: z.boolean().optional().default(false),
 });
 
@@ -32,18 +29,19 @@ type CompleteSetupInput = z.infer<typeof CompleteSetupSchema>;
 /**
  * POST /api/setup/complete
  * 
- * Creates the first workspace and marks setup as complete.
+ * Marks setup as complete for an existing workspace.
+ * The workspace should have been created in a previous step.
  * 
  * Request body:
  * {
- *   "workspaceName": "My Workspace",
+ *   "workspaceId": "uuid",
  *   "createSampleData": true  // optional, defaults to false
  * }
  * 
- * Success response (201):
+ * Success response (200):
  * {
+ *   "success": true,
  *   "workspaceId": "uuid",
- *   "workspaceSlug": "my-workspace",
  *   "sampleDataCreated": boolean,
  *   "message": "Setup completed successfully"
  * }
@@ -156,38 +154,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Complete setup (creates workspace and marks setup as complete)
-    const result = await completeSetup(session.id, {
-      workspaceName: body.workspaceName,
-    });
-
-    // Generate slug from workspace name for response
-    const workspaceSlug = body.workspaceName
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/[\s_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+    // Mark setup as complete (workspace should already exist from previous step)
+    const { db } = await import("@/lib/db");
+    const { instanceSettings } = await import("@/server/db/schema");
+    const { eq } = await import("drizzle-orm");
+    
+    const settings = await db.query.instanceSettings.findFirst();
+    if (settings) {
+      await db.update(instanceSettings)
+        .set({
+          setupCompletedAt: new Date(),
+          defaultWorkspaceId: body.workspaceId,
+          updatedAt: new Date(),
+        })
+        .where(eq(instanceSettings.id, settings.id));
+    }
 
     // Optionally create sample data
     let sampleDataCreated = false;
     if (body.createSampleData) {
       try {
         await createSampleProject({
-          workspaceId: result.workspaceId,
+          workspaceId: body.workspaceId,
           userId: session.id,
         });
         sampleDataCreated = true;
         
         logger.info("setup.complete.sample_data_created", {
           requestId,
-          workspaceId: result.workspaceId,
+          workspaceId: body.workspaceId,
         });
       } catch (sampleError) {
         // Log but don't fail the setup if sample data creation fails
         logger.warn("setup.complete.sample_data_failed", {
           requestId,
-          workspaceId: result.workspaceId,
+          workspaceId: body.workspaceId,
           error: sampleError instanceof Error ? sampleError.message : "Unknown error",
         });
       }
@@ -196,19 +197,18 @@ export async function POST(request: NextRequest) {
     logger.info("setup.complete.success", {
       requestId,
       userId: session.id,
-      workspaceId: result.workspaceId,
-      workspaceName: body.workspaceName,
+      workspaceId: body.workspaceId,
       sampleDataCreated,
     });
 
     return NextResponse.json(
       {
-        workspaceId: result.workspaceId,
-        workspaceSlug,
+        success: true,
+        workspaceId: body.workspaceId,
         sampleDataCreated,
         message: "Setup completed successfully",
       },
-      { status: 201 }
+      { status: 200 }
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";

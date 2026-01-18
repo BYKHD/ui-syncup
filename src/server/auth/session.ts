@@ -242,6 +242,41 @@ export async function getSession(
       };
     }
     
+    // Fallback: Check for custom session token (used by admin setup wizard)
+    // This handles the case where admin account was created with createSession()
+    // which sets the session_token cookie, not better-auth.session_token
+    const { getSessionCookie } = await import('@/server/auth/cookies');
+    const customToken = await getSessionCookie();
+    
+    if (customToken) {
+      // Look up the session in our sessions table
+      const sessionRecord = await db.query.sessions.findFirst({
+        where: (s, { eq, and, gt }) => and(
+          eq(s.token, customToken),
+          gt(s.expiresAt, new Date())
+        ),
+      });
+      
+      if (sessionRecord) {
+        // Get the user data
+        const user = await db.query.users.findFirst({
+          where: (u, { eq }) => eq(u.id, sessionRecord.userId),
+        });
+        
+        if (user) {
+          return {
+            id: user.id,
+            email: user.email,
+            emailVerified: user.emailVerified,
+            name: user.name,
+            image: user.image ?? null,
+            sessionId: sessionRecord.id,
+            hasPassword: !!user.passwordHash,
+          };
+        }
+      }
+    }
+    
     return null;
   } catch (error) {
     // Log session errors in development

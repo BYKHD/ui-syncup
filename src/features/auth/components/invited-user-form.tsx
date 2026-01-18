@@ -297,7 +297,10 @@ export function InvitedUserForm({
 
       <p className="text-center text-xs text-muted-foreground">
         Already have an account?{' '}
-        <Link href="/sign-in" className="text-primary underline-offset-4 hover:underline">
+        <Link 
+          href={`/sign-in?callbackUrl=${encodeURIComponent(`/invite/${invitation.token}`)}`} 
+          className="text-primary underline-offset-4 hover:underline"
+        >
           Sign in
         </Link>
       </p>
