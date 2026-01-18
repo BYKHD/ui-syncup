@@ -16,6 +16,7 @@ import {
   PROGRAM_DESCRIPTION,
   ExitCode,
 } from "./lib/index";
+import { initCommand } from "./commands/index";
 
 // ============================================================================
 // Program Setup
@@ -32,12 +33,14 @@ const program = new Command()
 // Command Registration
 // ============================================================================
 
+program.addCommand(initCommand);
+
 // Commands will be registered here as they are implemented:
-// program.addCommand(initCommand);
 // program.addCommand(upCommand);
 // program.addCommand(downCommand);
 // program.addCommand(resetCommand);
 // program.addCommand(purgeCommand);
+
 
 // ============================================================================
 // Unknown Command Handler

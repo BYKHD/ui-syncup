@@ -370,7 +370,8 @@ export async function deleteFile(path: string): Promise<FileOperationResult> {
 export async function copyTemplate(
   templateName: string,
   destPath: string,
-  variables: Record<string, string> = {}
+  variables: Record<string, string> = {},
+  options: WriteFileOptions = {}
 ): Promise<FileOperationResult> {
   try {
     // Find template path relative to this module
@@ -392,9 +393,11 @@ export async function copyTemplate(
     content = interpolateVariables(content, variables);
 
     // Write to destination
+    const shouldBackup = options.backup ?? existsSync(destPath);
     return writeFile(destPath, content, {
-      backup: existsSync(destPath),
-      overwrite: true,
+      ...options,
+      backup: shouldBackup,
+      overwrite: options.overwrite ?? true,
     });
   } catch (err) {
     return {

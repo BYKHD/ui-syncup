@@ -128,15 +128,15 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
 
 ---
 
-- [ ] 5. Implement `init` command
-  - [ ] 5.1 Create environment file templates
+- [x] 5. Implement `init` command
+  - [x] 5.1 Create environment file templates
     - Create `cli/templates/env.local.template` with local Supabase defaults
     - Create `cli/templates/env.production.template` with placeholders
     - Create `cli/templates/docker-compose.override.template.yml`
     - _Requirements: 1.4, 1.5_
     - _Location: `cli/templates/`_
 
-  - [ ] 5.2 Implement init command logic
+  - [x] 5.2 Implement init command logic
     - Create `cli/commands/init.ts` with initCommand
     - Run environment detection and display results
     - Prompt for setup mode (local/production)
@@ -148,18 +148,19 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
     - _Requirements: 1.1-1.11, 9.5_
     - _Location: `cli/commands/init.ts`_
 
-  - [ ] 5.3 Create config file template
+  - [x] 5.3 Create config file template
     - Create `cli/templates/config.template.json` with schema version and defaults
     - _Requirements: 8.4, 9.1, 9.2, 9.3_
     - _Location: `cli/templates/config.template.json`_
 
-  - [ ] 5.4 Wire init command to CLI entry point
+  - [x] 5.4 Wire init command to CLI entry point
     - Import and register initCommand in `cli/index.ts`
     - Add --verbose and --no-color global options
     - _Requirements: 6.1, 6.9_
     - _Location: `cli/index.ts`_
 
 ---
+
 
 - [ ] 6. Checkpoint - Verify init command works
   - Run `bun run typecheck` and ensure no type errors
