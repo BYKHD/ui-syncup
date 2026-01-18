@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PasswordStrengthIndicator } from '@/features/auth/components/password-strength-indicator';
 import {
   AdminAccountRequestSchema,
   type AdminAccountRequestDTO,
@@ -28,6 +29,9 @@ export function AdminAccountStep({ wizard }: AdminAccountStepProps) {
       displayName: '',
     },
   });
+
+  // Watch password field for strength indicator
+  const password = form.watch('password');
 
   const onSubmit = (data: AdminAccountRequestDTO) => {
     createAdmin(data, {
@@ -80,29 +84,25 @@ export function AdminAccountStep({ wizard }: AdminAccountStepProps) {
           )}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" {...form.register('password')} />
-            <p className="text-sm text-muted-foreground">
-              Min. 8 chars, 1 letter, 1 number.
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input id="password" type="password" {...form.register('password')} />
+          <PasswordStrengthIndicator password={password} showFeedback />
+          {form.formState.errors.password && (
+            <p className="text-sm font-medium text-destructive">
+              {form.formState.errors.password.message}
             </p>
-            {form.formState.errors.password && (
-              <p className="text-sm font-medium text-destructive">
-                {form.formState.errors.password.message}
-              </p>
-            )}
-          </div>
+          )}
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input id="confirmPassword" type="password" {...form.register('confirmPassword')} />
-            {form.formState.errors.confirmPassword && (
-              <p className="text-sm font-medium text-destructive">
-                {form.formState.errors.confirmPassword.message}
-              </p>
-            )}
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <Input id="confirmPassword" type="password" {...form.register('confirmPassword')} />
+          {form.formState.errors.confirmPassword && (
+            <p className="text-sm font-medium text-destructive">
+              {form.formState.errors.confirmPassword.message}
+            </p>
+          )}
         </div>
 
         <div className="flex justify-between pt-4">

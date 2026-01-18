@@ -10,4 +10,6 @@ export { useVerifyEmailToken } from "./use-verify-email-token";
 export { useLinkedAccounts, canUnlinkAccount, isProviderLinked, linkedAccountsQueryKey } from "./use-linked-accounts";
 export { useLinkAccount } from "./use-link-account";
 export { useUnlinkAccount, LastAuthMethodError } from "./use-unlink-account";
-
+export { useSelfRegistration } from "./use-self-registration";
+export type { SelfRegistrationStep } from "./use-self-registration";
+export { useAcceptInvitation } from "./use-accept-invitation";

@@ -73,22 +73,6 @@ describe("useOnboarding", () => {
     );
   });
 
-  it("should show error when Pro plan is selected", async () => {
-    const { result } = renderHook(() => useOnboarding(null, "New Team"));
-
-    act(() => {
-      result.current.setSelectedPlan("pro");
-    });
-
-    await act(async () => {
-      await result.current.handleCreateTeam({
-        preventDefault: vi.fn(),
-      } as any);
-    });
-
-    expect(mockCreateTeam).not.toHaveBeenCalled();
-    expect(result.current.error).toContain("Pro plan is coming soon");
-  });
 
   it("should redirect to projects on successful team creation", async () => {
     mockCreateTeam.mockImplementation((data, options) => {

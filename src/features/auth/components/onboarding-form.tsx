@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import type { InvitationDetails, OnboardingMode, PlanTier } from "../types";
+import type { InvitationDetails, OnboardingMode } from "../types";
 import type { OnboardingSchema } from "../utils/validators";
 
 
@@ -27,8 +27,6 @@ type OnboardingFormProps = {
   error: string | null;
   form: UseFormReturn<OnboardingSchema>;
   invitationToken: string | null;
-  selectedPlan: PlanTier;
-  onPlanChange: (plan: PlanTier) => void;
   onCreateTeam: (event: React.FormEvent<HTMLFormElement>) => void;
   onAcceptInvitation: () => void;
   onSwitchMode: (mode: OnboardingMode) => void;
@@ -44,8 +42,6 @@ export function OnboardingForm({
   error,
   form,
   invitationToken,
-  selectedPlan,
-  onPlanChange,
   onCreateTeam,
   onAcceptInvitation,
   onSwitchMode,
@@ -72,8 +68,8 @@ export function OnboardingForm({
 
   const footerCopy =
     mode === "accept"
-      ? "Accepting the invite will drop you into the shared dashboard once backend wiring is complete."
-      : "Creating a team provisions sample projects so you can explore UI flows without real data.";
+      ? "Accepting the invite will add you to the shared dashboard."
+      : "Creating a workspace provisions sample projects so you can explore.";
 
   return (
     <div className="w-full max-w-2xl space-y-6">

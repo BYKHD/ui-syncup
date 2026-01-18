@@ -20,8 +20,6 @@ export default function OnboardingScreen({
     message,
     error,
     form,
-    selectedPlan,
-    setSelectedPlan,
     handleCreateTeam,
     handleAcceptInvitation,
     switchMode,
@@ -40,8 +38,6 @@ export default function OnboardingScreen({
           error={error}
           form={form}
           invitationToken={invitationToken}
-          selectedPlan={selectedPlan}
-          onPlanChange={setSelectedPlan}
           onCreateTeam={handleCreateTeam}
           onAcceptInvitation={handleAcceptInvitation}
           onSwitchMode={switchMode}

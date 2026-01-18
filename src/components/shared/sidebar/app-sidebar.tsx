@@ -31,6 +31,7 @@ import { Separator } from '@/components/ui/separator';
 import Cookies from 'js-cookie';
 import { useCanManageTeam } from '@/features/teams/hooks/use-can-manage-team';
 import { useTeams } from '@/features/teams';
+import { isSingleWorkspaceMode } from '@/config/workspace';
 
 // Mock navigation data for mockup UI
 // const MOCK_NAV_ITEMS: NavItem[] = [ ... ] - Moved inside component for dynamic permissions
@@ -64,7 +65,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     if (canManageTeam) {
       items.push({
-        title: 'Team Settings',
+        // In single-workspace mode: Use "Settings" label (Requirement 12.4)
+        // In multi-workspace mode: Use "Team Settings" label
+        title: isSingleWorkspaceMode() ? 'Settings' : 'Team Settings',
         url: '/team/settings',
         icon: RiListSettingsLine,
         items: [

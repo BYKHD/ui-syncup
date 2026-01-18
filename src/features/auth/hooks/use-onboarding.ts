@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { useCreateTeam, useTeams } from "@/features/teams";
-import type { InvitationDetails, OnboardingMode, PlanTier } from "../types";
+import type { InvitationDetails, OnboardingMode } from "../types";
 import { onboardingSchema, type OnboardingSchema } from "../utils/validators";
 
 export function useOnboarding(
@@ -29,7 +29,6 @@ export function useOnboarding(
   const [status, setStatus] = useState<"idle" | "working">("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<PlanTier>("free");
   const [hasExistingTeams, setHasExistingTeams] = useState(false);
 
   const form = useForm<OnboardingSchema>({
@@ -86,11 +85,6 @@ export function useOnboarding(
   const handleCreateTeam = form.handleSubmit(async (data) => {
     setError(null);
     setMessage(null);
-    
-    if (selectedPlan === "pro") {
-      setError("Pro plan is coming soon. Please select the Free plan.");
-      return;
-    }
 
     createTeam(
       { name: data.teamName, description: "" },
@@ -157,8 +151,6 @@ export function useOnboarding(
     message,
     error,
     form,
-    selectedPlan,
-    setSelectedPlan,
     handleCreateTeam,
     handleAcceptInvitation,
     switchMode,

@@ -317,26 +317,26 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
 ## Phase 7: Refactor Auth Onboarding
 
 ### Task 7.1: Refactor onboarding for self-registration
-- [ ] 7.1.1 Create self-registration choice component
+- [x] 7.1.1 Create self-registration choice component
   - In multi-workspace mode: Display "Create a new workspace" and "I have an invite code" options
   - In single-workspace mode: Auto-join default workspace
   - Use `isMultiWorkspaceMode()` for conditional rendering
   - _Requirements: 8.1, 8.2, 8.3, 12.3, 13.5_
   - _Location: `src/features/auth/components/self-registration-choice.tsx`_
 
-- [ ] 7.1.2 Create invite code input component
+- [x] 7.1.2 Create invite code input component
   - Input field for manual invite code entry
   - Validate code and proceed to accept flow
   - _Requirements: 8.4, 8.5_
   - _Location: `src/features/auth/components/invite-code-input.tsx`_
 
-- [ ] 7.1.3 Refactor onboarding form
+- [x] 7.1.3 Refactor onboarding form
   - Remove plan selector (already done in open-source refactor)
   - Simplify to workspace name input only
   - _Requirements: 5.1, 5.2, 5.3_
   - _Location: `src/features/auth/components/onboarding-form.tsx`_
 
-- [ ] 7.1.4 Create self-registration hook
+- [x] 7.1.4 Create self-registration hook
   - Manage flow state for self-registered users
   - Handle workspace creation with WORKSPACE_OWNER role assignment
   - In single-workspace mode: auto-assign to default workspace as MEMBER
@@ -350,14 +350,14 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
   - _Location: `src/features/auth/hooks/__tests__/self-registration.property.test.ts`_
 
 ### Task 7.2: Refactor invitation acceptance
-- [ ] 7.2.1 Create invited user form component
+- [x] 7.2.1 Create invited user form component
   - Display invitation details (workspace, inviter, role)
   - Show inline account creation if user doesn't exist
   - Show sign-in prompt if user exists
   - _Requirements: 7.2, 7.4, 7.5_
   - _Location: `src/features/auth/components/invited-user-form.tsx`_
 
-- [ ] 7.2.2 Update invitation acceptance hook
+- [x] 7.2.2 Update invitation acceptance hook
   - Handle inline account creation
   - Handle workspace joining for existing users
   - Redirect to workspace dashboard on success
@@ -369,14 +369,14 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
   - **Validates: Requirements 7.1, 7.3**
   - _Location: `src/features/auth/hooks/__tests__/invitation.property.test.ts`_
 
-- [ ] 7.2.4 Create invitation acceptance route
+- [x] 7.2.4 Create invitation acceptance route
   - Create `/invite/[token]` page under `(public)` routes
   - Handle token validation and error display
   - _Requirements: 7.1, 7.3_
-  - _Location: `src/app/(public)/invite/[token]/page.tsx`_
+  - _Location: `src/app/(public)/invite/[token]/page.tsx` (using existing route structure)_
 
 ### Task 7.3: Update onboarding screen
-- [ ] 7.3.1 Refactor onboarding screen for role-based flow
+- [x] 7.3.1 Refactor onboarding screen for role-based flow
   - Detect if user is invited vs self-registered
   - Route to appropriate flow component
   - Handle single vs multi workspace mode
@@ -384,7 +384,7 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
   - _Location: `src/features/auth/screens/onboarding-screen.tsx`_
 
 ### Task 7.4: Remove deprecated types
-- [ ] 7.4.1 Remove PlanTier from auth types
+- [x] 7.4.1 Remove PlanTier from auth types
   - Remove `PlanTier` type (already in open-source refactor)
   - Remove `selectedPlan` from OnboardingSchema if present
   - Update validators
@@ -395,14 +395,14 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
 ## Phase 8: Workspace Mode UI Conditionals
 
 ### Task 8.1: Update sidebar for workspace mode
-- [ ] 8.1.1 Conditionally render workspace switcher
+- [x] 8.1.1 Conditionally render workspace switcher
   - Hide workspace switcher in single-workspace mode
   - Show workspace switcher in multi-workspace mode
   - Use `isMultiWorkspaceMode()` from config
   - _Requirements: 12.1, 13.1_
   - _Location: `src/components/shared/sidebar/workspace-switcher.tsx`_
 
-- [ ] 8.1.2 Update settings navigation text
+- [x] 8.1.2 Update settings navigation text
   - In single mode: Use "Settings" label
   - In multi mode: Use "Workspace Settings" label
   - _Requirements: 12.4_
@@ -415,7 +415,7 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
   - _Location: `src/components/shared/sidebar/__tests__/workspace-mode.property.test.tsx`_
 
 ### Task 8.2: Update workspace creation buttons
-- [ ] 8.2.1 Conditionally hide "Create workspace" buttons
+- [x] 8.2.1 Conditionally hide "Create workspace" buttons
   - Hide in single-workspace mode throughout UI
   - Show in multi-workspace mode
   - _Requirements: 12.2, 13.2_

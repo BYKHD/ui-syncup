@@ -22,6 +22,7 @@ import {
 import { useTeams, useSwitchTeam } from "@/features/teams";
 import { TeamAvatar } from "./sidebar-team-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isSingleWorkspaceMode } from "@/config/workspace";
 
 // ============================================================================
 // TEAM SWITCHER DESIGN CONSTANTS
@@ -38,6 +39,11 @@ const TEAM_SWITCHER_DESIGN = {
 const VISIBLE_TEAM_LIMIT = 5;
 
 export function TeamSwitcher() {
+  // Hide workspace switcher in single-workspace mode (Requirement 12.1)
+  if (isSingleWorkspaceMode()) {
+    return null;
+  }
+
   const router = useRouter();
   const { isMobile, state } = useSidebar();
   const { data: teamsData, isLoading } = useTeams();

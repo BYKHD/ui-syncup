@@ -8,18 +8,13 @@ export function SetupScreen() {
       <div className="w-full max-w-4xl space-y-8">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-            Welcome to Kiro
+            Welcome to UI Syncup
           </h1>
           <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
             Let&apos;s get your new instance configured and ready for your team.
           </p>
         </div>
         <SetupWizard />
-        <div className="flex justify-center">
-            <p className="text-sm text-muted-foreground">
-                Need help? <a href="https://docs.kiro.app" className="underline hover:text-primary">View documentation</a>
-            </p>
-        </div>
       </div>
     </div>
   );
