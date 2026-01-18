@@ -139,6 +139,16 @@ export async function proxy(request: NextRequest) {
     });
   }
   
+  // Check FORCE_SETUP environment variable (Requirement 10.9)
+  // When set to 'true', redirect protected routes to /setup to allow re-running the wizard
+  if (process.env.FORCE_SETUP === 'true') {
+    if (isProtectedRoute(pathname)) {
+      logger.info(`Redirecting to /setup - FORCE_SETUP enabled`, { pathname });
+      const setupUrl = new URL('/setup', request.nextUrl.origin);
+      return NextResponse.redirect(setupUrl);
+    }
+  }
+  
   // Check if this route should bypass setup check
   if (!shouldBypassSetupCheck(pathname)) {
     // Only check setup status for protected routes to minimize API calls

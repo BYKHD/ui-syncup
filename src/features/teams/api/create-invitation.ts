@@ -4,6 +4,7 @@ import { invitationSchema, type CreateInvitationInput } from './types';
 
 const createInvitationResponseSchema = z.object({
   invitation: invitationSchema,
+  invitationUrl: z.string().url(),
 });
 
 export type CreateInvitationResponse = z.infer<typeof createInvitationResponseSchema>;

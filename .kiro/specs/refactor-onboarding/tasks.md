@@ -430,52 +430,52 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
 ## Phase 9: Graceful Degradation
 
 ### Task 9.1: Update invitation UI for email fallback
-- [ ] 9.1.1 Add "Copy Link" button to invitation modal
+- [x] 9.1.1 Add "Copy Link" button to invitation modal
   - Check if email service is configured
   - Show "Copy Invitation Link" button if not
   - Show "Send Email" button if configured
   - _Requirements: 9.1_
-  - _Location: `src/features/team-settings/components/invite-member-dialog.tsx`_
+  - _Location: `src/features/team-settings/components/team-invitations-list.tsx`_
 
 ### Task 9.2: Add admin settings banner
-- [ ] 9.2.1 Create service status banner component
+- [x] 9.2.1 Create service status banner component
   - Display when optional services not configured
   - Show degraded functionality for each service
   - Link to documentation for configuration
   - _Requirements: 9.4_
   - _Location: `src/components/shared/service-status-banner.tsx`_
 
-- [ ] 9.2.2 Add banner to admin layouts
-  - Include in workspace settings and admin pages
+- [x] 9.2.2 Add banner to admin layouts
+  - Include in team settings screen (for owner/admin users)
   - _Requirements: 9.4_
-  - _Location: `src/app/(protected)/(workspace)/workspace/settings/layout.tsx`_
+  - _Location: `src/features/team-settings/screens/team-settings-screen.tsx`_
 
 ---
 
 ## Phase 10: Post-Setup Admin Settings
 
 ### Task 10.1: Create instance settings UI
-- [ ] 10.1.1 Add instance settings page to admin section
+- [x] 10.1.1 Add instance settings page to admin section
   - Display current instance configuration
   - Allow editing instance name, public URL, and default member role
   - Display service status (read-only)
   - Display workspace mode (read-only)
   - Display email verification status with warning if disabled
   - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 12.8, 15.3_
-  - _Location: `src/app/(protected)/(workspace)/workspace/settings/(section)/instance/page.tsx`_
+  - _Location: `src/app/(protected)/(team)/team/settings/(section)/instance/page.tsx`_
 
-- [ ] 10.1.2 Add instance settings navigation item
+- [x] 10.1.2 Add instance settings navigation item
   - Add to workspace settings navigation (admin only)
-  - _Location: `src/config/workspace-settings-nav.ts`_
+  - _Location: `src/config/team-settings-nav.ts`_
 
 ### Task 10.2: Create audit logging for admin actions
-- [ ] 10.2.1 Create audit log utility
+- [x] 10.2.1 Create audit log utility
   - Implement `logAdminAction()` function with timestamp, userId, action, changes
   - Support structured logging format
   - _Requirements: 10.6_
   - _Location: `src/server/audit/audit-service.ts`_
 
-- [ ] 10.2.2 Add audit logging to admin operations
+- [x] 10.2.2 Add audit logging to admin operations
   - Log instance settings changes
   - Log role changes
   - Log member additions/removals
@@ -483,19 +483,19 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
   - _Location: Integration in relevant API routes_
 
 ### Task 10.3: Create instance backup/restore functionality
-- [ ] 10.3.1 Create export settings API
+- [x] 10.3.1 Create export settings API
   - Export instance configuration as JSON
   - Exclude sensitive data (passwords, tokens)
   - _Requirements: 10.7_
   - _Location: `src/app/api/setup/export/route.ts`_
 
-- [ ] 10.3.2 Create import settings API
+- [x] 10.3.2 Create import settings API
   - Import instance configuration from JSON backup
   - Validate imported data structure
   - _Requirements: 10.8_
   - _Location: `src/app/api/setup/import/route.ts`_
 
-- [ ] 10.3.3 Add FORCE_SETUP support to proxy
+- [x] 10.3.3 Add FORCE_SETUP support to proxy
   - Check for FORCE_SETUP env var
   - Allow re-running setup wizard when set
   - Preserve existing data during re-setup

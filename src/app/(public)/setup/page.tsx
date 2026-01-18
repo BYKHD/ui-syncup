@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { SetupScreen } from '@/features/setup/screens/setup-screen';
 
 export const metadata: Metadata = {
-  title: 'Setup | Kiro',
+  title: 'Setup | UI Syncup',
   description: 'Initial setup wizard for Kiro instance.',
 };
 

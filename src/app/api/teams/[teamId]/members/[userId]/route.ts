@@ -13,6 +13,10 @@ import { updateMemberRoles, removeMember } from '@/server/teams/member-service';
 import { hasRole } from '@/server/auth/rbac';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
+import { logAdminAction, createChange, filterChanges } from '@/server/audit';
+import { db } from '@/lib/db';
+import { teamMembers } from '@/server/db/schema';
+import { eq, and } from 'drizzle-orm';
 
 /**
  * Zod schema for member role update
@@ -108,8 +112,37 @@ export async function PATCH(
       );
     }
     
+    // Get current member roles for audit log
+    const currentMember = await db.query.teamMembers.findFirst({
+      where: and(
+        eq(teamMembers.teamId, teamId),
+        eq(teamMembers.userId, userId)
+      ),
+    });
+
     // Update member roles
     const member = await updateMemberRoles(teamId, userId, validation.data, user.id);
+
+    // Audit log role changes
+    if (currentMember) {
+      const changes = filterChanges([
+        createChange('managementRole', currentMember.managementRole, member.managementRole),
+        createChange('operationalRole', currentMember.operationalRole, member.operationalRole),
+      ]);
+
+      if (changes.length > 0) {
+        logAdminAction('member.role.changed', {
+          userId: user.id,
+          userEmail: user.email,
+          resourceType: 'team',
+          resourceId: teamId,
+          metadata: {
+            targetUserId: userId,
+          },
+          changes,
+        });
+      }
+    }
     
     logger.info('api.teams.members.update.success', {
       requestId,
@@ -241,6 +274,17 @@ export async function DELETE(
     
     // Remove member
     await removeMember(teamId, userId, user.id);
+    
+    // Audit log removal
+    logAdminAction('member.removed', {
+      userId: user.id,
+      userEmail: user.email,
+      resourceType: 'team',
+      resourceId: teamId,
+      metadata: {
+        removedUserId: userId,
+      },
+    });
     
     logger.info('api.teams.members.remove.success', {
       requestId,

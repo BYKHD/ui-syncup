@@ -12,6 +12,7 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { createNotification, buildTargetUrl } from "@/server/notifications";
 import type { CreateInvitationInput, Invitation } from "./types";
+import { logAdminAction } from "@/server/audit";
 
 /**
  * Creates a new invitation
@@ -268,6 +269,18 @@ export async function acceptInvitation(token: string, userId: string): Promise<v
       teamId: invitation.teamId,
       metadata: {
         invitationId: invitation.id,
+      },
+    });
+
+    // Audit log invitation acceptance
+    logAdminAction('member.invitation.accepted', {
+      userId: userId,
+      resourceType: 'team',
+      resourceId: invitation.teamId,
+      metadata: {
+        invitationId: invitation.id,
+        managementRole: invitation.managementRole,
+        operationalRole: invitation.operationalRole,
       },
     });
   } catch (error) {
@@ -575,6 +588,19 @@ export async function acceptInvitationById(
       teamId: invitation.teamId,
       metadata: {
         invitationId: invitation.id,
+      },
+    });
+
+    // Audit log invitation acceptance
+    logAdminAction('member.invitation.accepted', {
+      userId: userId,
+      userEmail: userEmail,
+      resourceType: 'team',
+      resourceId: invitation.teamId,
+      metadata: {
+        invitationId: invitation.id,
+        managementRole: invitation.managementRole,
+        operationalRole: invitation.operationalRole,
       },
     });
 

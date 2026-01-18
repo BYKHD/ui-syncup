@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MoreHorizontal, Mail, RefreshCw, X, Plus } from "lucide-react";
+import { MoreHorizontal, Mail, RefreshCw, X, Plus, Copy, Link } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,7 @@ import {
   useCancelInvitation,
 } from "@/features/teams";
 import type { Invitation } from "@/features/teams/api";
+import { useServiceHealth } from "@/features/setup";
 import { SettingsCard } from "./settings-card";
 import { LoadingButton } from "./loading-states";
 
@@ -85,10 +86,12 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
   const { mutate: createInvitation, isPending: isCreating } = useCreateInvitation();
   const { mutate: resendInvitation, isPending: isResending } = useResendInvitation();
   const { mutate: cancelInvitation, isPending: isCanceling } = useCancelInvitation();
+  const { data: serviceHealth } = useServiceHealth();
 
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [invitationToCancel, setInvitationToCancel] = useState<Invitation | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [isCopyingLink, setIsCopyingLink] = useState(false);
 
   const [formData, setFormData] = useState<InviteMemberFormData>({
     email: "",
@@ -101,6 +104,9 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
   const pendingInvitationsCount = invitations.filter(
     (inv) => inv.status === "pending"
   ).length;
+
+  // Check if email service is configured
+  const isEmailConfigured = serviceHealth?.email.status === 'connected';
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -140,6 +146,42 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
         },
         onError: (error) => {
           toast.error(error.message || "Failed to send invitation");
+        },
+      }
+    );
+  };
+
+  const handleCopyInvitationLink = () => {
+    if (!validateForm()) return;
+
+    setIsCopyingLink(true);
+    createInvitation(
+      {
+        teamId,
+        input: {
+          email: formData.email,
+          operationalRole: formData.role,
+        },
+      },
+      {
+        onSuccess: (data) => {
+          // Copy the invitation URL to clipboard
+          navigator.clipboard.writeText(data.invitationUrl).then(
+            () => {
+              toast.success("Invitation link copied to clipboard!");
+              setIsInviteDialogOpen(false);
+              setFormData({ email: "", role: "WORKSPACE_MEMBER", message: "" });
+              setFormErrors({});
+            },
+            () => {
+              toast.error("Failed to copy link to clipboard");
+            }
+          );
+          setIsCopyingLink(false);
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to create invitation");
+          setIsCopyingLink(false);
         },
       }
     );
@@ -212,7 +254,10 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
                 <DialogHeader>
                   <DialogTitle>Invite Team Member</DialogTitle>
                   <DialogDescription>
-                    Send an invitation to join your team. They&apos;ll receive an email with instructions to accept.
+                    {isEmailConfigured 
+                      ? "Send an invitation to join your team. They'll receive an email with instructions to accept."
+                      : "Create an invitation link to share with your team member. They can use this link to join your team."
+                    }
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -264,19 +309,26 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
                     />
                   </div>
                 </div>
-                <DialogFooter>
+                <DialogFooter className="flex-col sm:flex-row gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setIsInviteDialogOpen(false)}
-                    disabled={isCreating}
+                    disabled={isCreating || isCopyingLink}
                   >
                     Cancel
                   </Button>
-                  <LoadingButton onClick={handleSendInvitation} isLoading={isCreating}>
-                    <Mail className="mr-2 h-4 w-4" />
-                    Send Invitation
-                  </LoadingButton>
+                  {isEmailConfigured ? (
+                    <LoadingButton onClick={handleSendInvitation} isLoading={isCreating}>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Send Invitation
+                    </LoadingButton>
+                  ) : (
+                    <LoadingButton onClick={handleCopyInvitationLink} isLoading={isCopyingLink}>
+                      <Link className="mr-2 h-4 w-4" />
+                      Copy Invitation Link
+                    </LoadingButton>
+                  )}
                 </DialogFooter>
               </DialogContent>
             </Dialog>

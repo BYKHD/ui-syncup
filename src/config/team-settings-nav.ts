@@ -1,5 +1,5 @@
 import type { TeamSettingsNavItem } from "@/components/shared/settings-sidebar";
-import { RiInfoCardLine, RiPuzzle2Line, RiTeamLine } from "@remixicon/react";
+import { RiInfoCardLine, RiPuzzle2Line, RiServerLine, RiTeamLine } from "@remixicon/react";
 
 /**
  * Team Settings Navigation Configuration
@@ -22,6 +22,12 @@ export const TEAM_SETTINGS_NAV: TeamSettingsNavItem[] = [
     description: "Manage team members and roles",
   },
   {
+    label: "Instance",
+    href: "/team/settings/instance",
+    icon: RiServerLine,
+    description: "Instance configuration (admin only)",
+  },
+  {
     label: "Integrations",
     href: "/team/settings/integrations",
     icon: RiPuzzle2Line,
@@ -29,4 +35,3 @@ export const TEAM_SETTINGS_NAV: TeamSettingsNavItem[] = [
     comingSoon: true,
   },
 ];
-

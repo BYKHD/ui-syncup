@@ -13,6 +13,7 @@ import { z } from "zod";
 import { saveInstanceConfig, getInstanceStatus } from "@/server/setup";
 import { getSession } from "@/server/auth/session";
 import { logger } from "@/lib/logger";
+import { logAdminAction, createChange, filterChanges } from "@/server/audit";
 
 /**
  * URL validation - accepts valid URLs or empty string
@@ -150,12 +151,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get current status for audit logging (before values)
+    const currentStatus = await getInstanceStatus();
+
     // Save instance configuration
     await saveInstanceConfig({
       instanceName: body.instanceName,
       publicUrl: body.publicUrl || undefined,
       defaultMemberRole: body.defaultMemberRole,
     });
+
+    // Audit log the configuration change
+    const changes = filterChanges([
+      createChange('instanceName', currentStatus.instanceName, body.instanceName),
+      createChange('publicUrl', currentStatus.publicUrl, body.publicUrl || null),
+      createChange('defaultMemberRole', currentStatus.defaultMemberRole, body.defaultMemberRole),
+    ]);
+
+    if (changes.length > 0) {
+      logAdminAction('instance.settings.updated', {
+        userId: session.id,
+        userEmail: session.email,
+        resourceType: 'instance',
+        changes,
+      });
+    }
 
     logger.info("setup.config.success", {
       requestId,

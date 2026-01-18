@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { teamInvitations } from '@/server/db/schema/team-invitations';
 import { eq, and, isNull } from 'drizzle-orm';
+import { logAdminAction } from '@/server/audit';
 
 /**
  * Zod schema for invitation creation
@@ -153,13 +154,17 @@ export async function POST(
     }
     
     // Create invitation
-    const { invitation } = await createInvitation({
+    const { invitation, token } = await createInvitation({
       teamId,
       email,
       managementRole: managementRole ?? null,
       operationalRole,
       invitedBy: user.id,
     });
+    
+    // Build invitation URL for copy-link fallback when email not configured
+    const { env } = await import('@/lib/env');
+    const invitationUrl = `${env.NEXT_PUBLIC_APP_URL}/join-team?token=${token}`;
     
     logger.info('api.teams.invitations.create.success', {
       requestId,
@@ -169,8 +174,22 @@ export async function POST(
       email,
     });
     
+    // Audit log invitation
+    logAdminAction('member.invited', {
+      userId: user.id,
+      userEmail: user.email,
+      resourceType: 'team',
+      resourceId: teamId,
+      metadata: {
+        invitedEmail: email,
+        managementRole: managementRole ?? null,
+        operationalRole,
+        invitationId: invitation.id,
+      },
+    });
+
     return NextResponse.json(
-      { invitation },
+      { invitation, invitationUrl },
       { status: 201 }
     );
     
