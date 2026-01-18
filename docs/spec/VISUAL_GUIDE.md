@@ -365,7 +365,7 @@ All Testable Properties
 ## File Structure
 
 ```
-.kiro/specs/
+.ai/specs/
 └── [feature-name]/
     ├── requirements.md
     │   ├── Introduction

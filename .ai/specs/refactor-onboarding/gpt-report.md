@@ -1,7 +1,7 @@
 # Refactor Onboarding - GPT Report
 
 ## Scope
-This report reviews the implemented files referenced by `.kiro/specs/refactor-onboarding/tasks.md` and assesses the end-to-end onboarding and setup UX for the self-hosted flow. Focus areas:
+This report reviews the implemented files referenced by `.ai/specs/refactor-onboarding/tasks.md` and assesses the end-to-end onboarding and setup UX for the self-hosted flow. Focus areas:
 
 - Setup wizard UI, hooks, and API contracts
 - Proxy routing and setup gating

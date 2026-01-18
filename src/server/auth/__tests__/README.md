@@ -353,8 +353,8 @@ When modifying authentication logic:
 
 ## Related Documentation
 
-- [Authentication Design](../.kiro/specs/authentication-system/design.md)
-- [Authentication Requirements](../.kiro/specs/authentication-system/requirements.md)
+- [Authentication Design](../.ai/specs/authentication-system/design.md)
+- [Authentication Requirements](../.ai/specs/authentication-system/requirements.md)
 - [Local Development Setup](../../../docs/LOCAL_DEVELOPMENT.md)
 - [Supabase Local Setup](../../../docs/SUPABASE_LOCAL_SETUP.md)
 

@@ -111,7 +111,7 @@ Generate EARS-compliant requirements with INCOSE quality validation. Iterate unt
 
 ### AI Constraints
 
-- MUST create `.kiro/specs/{feature-name}/requirements.md`
+- MUST create `.ai/specs/{feature-name}/requirements.md`
 - MUST generate initial version WITHOUT asking clarifying questions first
 - MUST use userInput tool with reason 'spec-requirements-review'
 - MUST ask: "Do the requirements look good? If so, we can move on to the design."
@@ -201,7 +201,7 @@ Develop comprehensive technical design with formal correctness properties. Itera
 
 ### AI Constraints
 
-- MUST create `.kiro/specs/{feature-name}/design.md`
+- MUST create `.ai/specs/{feature-name}/design.md`
 - MUST identify areas where research is needed
 - MUST conduct research and build up context in conversation
 - SHOULD NOT create separate research files
@@ -353,7 +353,7 @@ Create actionable implementation plan with requirement traceability. Iterate unt
 
 ### AI Constraints
 
-- MUST create `.kiro/specs/{feature-name}/tasks.md`
+- MUST create `.ai/specs/{feature-name}/tasks.md`
 - MUST return to design if user indicates design changes needed
 - MUST return to requirements if user indicates additional requirements needed
 - MUST use these specific instructions:
@@ -1036,7 +1036,7 @@ Generate requirements for [feature description]
 
 The AI will automatically:
 1. Determine a feature name in kebab-case
-2. Create `.kiro/specs/{feature-name}/` directory
+2. Create `.ai/specs/{feature-name}/` directory
 3. Begin Phase 1: Requirements Gathering
 
 ### During the Workflow
@@ -1096,7 +1096,7 @@ Go back to requirements, we need to add [feature]
 ### After Workflow Completion
 
 **Starting Implementation:**
-1. Open `.kiro/specs/{feature-name}/tasks.md`
+1. Open `.ai/specs/{feature-name}/tasks.md`
 2. Click "Start task" next to a task item
 3. AI will implement the task following the specification
 
@@ -1322,9 +1322,9 @@ stateDiagram-v2
 
 | File | Location | Purpose |
 |------|----------|---------|
-| Requirements | `.kiro/specs/{feature}/requirements.md` | WHAT to build |
-| Design | `.kiro/specs/{feature}/design.md` | HOW to build it |
-| Tasks | `.kiro/specs/{feature}/tasks.md` | Implementation plan |
+| Requirements | `.ai/specs/{feature}/requirements.md` | WHAT to build |
+| Design | `.ai/specs/{feature}/design.md` | HOW to build it |
+| Tasks | `.ai/specs/{feature}/tasks.md` | Implementation plan |
 | Requirements Template | `docs/spec/templates/requirements-template.md` | Manual creation template |
 | Design Template | `docs/spec/templates/design-template.md` | Manual creation template |
 | Tasks Template | `docs/spec/templates/tasks-template.md` | Manual creation template |
@@ -1361,17 +1361,17 @@ stateDiagram-v2
 
 See these specs for complete examples:
 
-1. **Project Invitation** - `.kiro/specs/project-invitation/`
+1. **Project Invitation** - `.ai/specs/project-invitation/`
    - Complex RBAC requirements
    - Email integration
    - Multiple correctness properties
 
-2. **Social Login Integration** - `.kiro/specs/social-login-integration/`
+2. **Social Login Integration** - `.ai/specs/social-login-integration/`
    - Authentication flow
    - OAuth integration
    - Security properties
 
-3. **Issue Annotation Integration** - `.kiro/specs/issue-annotation-integration/`
+3. **Issue Annotation Integration** - `.ai/specs/issue-annotation-integration/`
    - UI-heavy feature
    - Visual feedback requirements
    - Component properties

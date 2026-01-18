@@ -874,8 +874,8 @@ bun build
 
 ### Related Documentation
 
-- [Authentication System Design](./.kiro/specs/authentication-system/design.md) - Auth architecture and implementation
-- [Authentication Requirements](./.kiro/specs/authentication-system/requirements.md) - Auth requirements and acceptance criteria
+- [Authentication System Design](./.ai/specs/authentication-system/design.md) - Auth architecture and implementation
+- [Authentication Requirements](./.ai/specs/authentication-system/requirements.md) - Auth requirements and acceptance criteria
 - [Deployment Guide](./DEPLOYMENT.md) - Production deployment procedures
 - [Local Development](./LOCAL_DEVELOPMENT.md) - Local environment setup
 - [Database Setup](./DRIZZLE_ZOD_POSTGRESQL_INSTRUCTION.md) - Database configuration

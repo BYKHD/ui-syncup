@@ -1112,7 +1112,7 @@ await ensureOperationalRole(userId, teamId, 'TEAM_EDITOR');
 
 - [Authentication System](./SECURITY.md) - User authentication and session management
 - [Resource Limits & Quotas](./RESOURCE_LIMITS.md) - Resource usage and limits
-- [Product Overview](./.kiro/steering/product.md) - Product features and user roles
+- [Product Overview](./.ai/steering/product.md) - Product features and user roles
 - [API Documentation](./API.md) - API endpoints and authentication
 
 ---
@@ -1122,7 +1122,7 @@ await ensureOperationalRole(userId, teamId, 'TEAM_EDITOR');
 For questions or issues with RBAC:
 
 1. Check this documentation first
-2. Review the [Product Overview](./.kiro/steering/product.md) for role definitions
+2. Review the [Product Overview](./.ai/steering/product.md) for role definitions
 3. Check logs for `rbac.*` events
 4. Review the source code in `src/config/roles.ts` and `src/server/auth/rbac.ts`
 

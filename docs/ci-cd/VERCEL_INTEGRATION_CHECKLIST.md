@@ -281,5 +281,5 @@ Once all checks are complete, sign off on the verification:
 - [Vercel Git Integration Docs](https://vercel.com/docs/deployments/git)
 - [Vercel Environment Variables Docs](https://vercel.com/docs/projects/environment-variables)
 - [GitHub Actions Docs](https://docs.github.com/en/actions)
-- Project Design Document: `.kiro/specs/github-actions-cicd/design.md`
-- Project Requirements: `.kiro/specs/github-actions-cicd/requirements.md`
+- Project Design Document: `.ai/specs/github-actions-cicd/design.md`
+- Project Requirements: `.ai/specs/github-actions-cicd/requirements.md`

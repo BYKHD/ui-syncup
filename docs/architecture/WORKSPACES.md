@@ -275,4 +275,4 @@ Accessible via workspace dropdown or settings navigation:
 
 - [RBAC Documentation](./RBAC.md) - Role-based access control
 - [Resource Limits](./RESOURCE_LIMITS.md) - Quotas and limits
-- [Onboarding Specification](/.kiro/specs/refactor-onboarding/requirements.md) - Setup wizard details
+- [Onboarding Specification](/.ai/specs/refactor-onboarding/requirements.md) - Setup wizard details

@@ -297,5 +297,5 @@ When authentication features change:
 
 - [Playwright Documentation](https://playwright.dev/)
 - [Playwright Best Practices](https://playwright.dev/docs/best-practices)
-- [Authentication System Design](../../.kiro/specs/authentication-system/design.md)
-- [Authentication System Requirements](../../.kiro/specs/authentication-system/requirements.md)
+- [Authentication System Design](../../.ai/specs/authentication-system/design.md)
+- [Authentication System Requirements](../../.ai/specs/authentication-system/requirements.md)

@@ -294,7 +294,7 @@ This task list implements the removal of all monetization and billing logic from
 ### Task 6.2: Update product documentation
 **Validates: Requirement 3**
 
-- [x] Open `.kiro/steering/product.md` (if exists)
+- [x] Open `.ai/steering/product.md` (if exists)
 - [x] Remove plan/pricing references
 - [x] Update to reflect open-source, self-hosted model
 - [x] Emphasize instance configuration via environment variables

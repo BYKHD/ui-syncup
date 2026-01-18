@@ -158,7 +158,7 @@ fc.assert(
 
 All specifications live in:
 ```
-.kiro/specs/[feature-name]/
+.ai/specs/[feature-name]/
 ├── requirements.md
 ├── design.md
 └── tasks.md
@@ -170,10 +170,10 @@ All specifications live in:
 
 | Feature | Location | Highlights |
 |---------|----------|------------|
-| Project Invitation | `.kiro/specs/project-invitation/` | RBAC, email integration |
-| Social Login | `.kiro/specs/social-login-integration/` | OAuth, security properties |
-| Issue Annotation | `.kiro/specs/issue-annotation-integration/` | UI-heavy, visual feedback |
-| Notifications | `.kiro/specs/notifications/` | Real-time, event-driven |
+| Project Invitation | `.ai/specs/project-invitation/` | RBAC, email integration |
+| Social Login | `.ai/specs/social-login-integration/` | OAuth, security properties |
+| Issue Annotation | `.ai/specs/issue-annotation-integration/` | UI-heavy, visual feedback |
+| Notifications | `.ai/specs/notifications/` | Real-time, event-driven |
 
 ## Common Patterns
 
@@ -224,11 +224,11 @@ The AI will guide you through:
 
 ### Option 2: Manual Creation
 
-1. Copy `templates/requirements-template.md` to `.kiro/specs/[feature]/requirements.md`
+1. Copy `templates/requirements-template.md` to `.ai/specs/[feature]/requirements.md`
 2. Fill in user stories and acceptance criteria
-3. Copy `templates/design-template.md` to `.kiro/specs/[feature]/design.md`
+3. Copy `templates/design-template.md` to `.ai/specs/[feature]/design.md`
 4. Create architecture and correctness properties
-5. Copy `templates/tasks-template.md` to `.kiro/specs/[feature]/tasks.md`
+5. Copy `templates/tasks-template.md` to `.ai/specs/[feature]/tasks.md`
 6. Break down into implementation tasks
 
 ## Best Practices
@@ -264,7 +264,7 @@ The AI will guide you through:
 
 - Review [AI_SPECIFICATION_WORKFLOW.md](./AI_SPECIFICATION_WORKFLOW.md) for detailed workflow
 - Check [PRODUCT_DEVELOPMENT_GUIDE.md](./PRODUCT_DEVELOPMENT_GUIDE.md) for full SDLC
-- Look at existing specs in `.kiro/specs/` for examples
+- Look at existing specs in `.ai/specs/` for examples
 - Ask the AI for clarification or examples
 
 ---

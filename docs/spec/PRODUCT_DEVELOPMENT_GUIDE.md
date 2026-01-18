@@ -110,7 +110,7 @@ Before implementing, explore the codebase to understand existing patterns:
 
 | Check | Files to Review |
 |-------|-----------------|
-| **Similar features** | `.kiro/specs/[similar-feature]/` |
+| **Similar features** | `.ai/specs/[similar-feature]/` |
 | **Existing patterns** | `src/features/[domain]/` for component/hook patterns |
 | **Database conventions** | `src/server/db/schema/` for naming, relations |
 | **Service patterns** | `src/server/[domain]/` for error handling, logging |
@@ -195,9 +195,9 @@ The AI will guide you through three phases:
 **See:** [AI Specification Workflow](./AI_SPECIFICATION_WORKFLOW.md)
 
 **Deliverables:**
-- `.kiro/specs/[feature-name]/requirements.md`
-- `.kiro/specs/[feature-name]/design.md`
-- `.kiro/specs/[feature-name]/tasks.md`
+- `.ai/specs/[feature-name]/requirements.md`
+- `.ai/specs/[feature-name]/design.md`
+- `.ai/specs/[feature-name]/tasks.md`
 
 ---
 
@@ -432,7 +432,7 @@ See [`docs/testing/TESTING.md`](./testing/TESTING.md) for detailed testing guide
 
 ## Specification Documents
 
-All feature specifications live in `.kiro/specs/[feature-name]/` with three mandatory files:
+All feature specifications live in `.ai/specs/[feature-name]/` with three mandatory files:
 
 | File | Purpose | Template |
 |------|---------|----------|
@@ -603,9 +603,9 @@ Add a **Change Log** section at the bottom of each spec file:
 
 | Type | Location Pattern |
 |------|------------------|
-| Requirements | `.kiro/specs/[feature]/requirements.md` |
-| Design | `.kiro/specs/[feature]/design.md` |
-| Tasks | `.kiro/specs/[feature]/tasks.md` |
+| Requirements | `.ai/specs/[feature]/requirements.md` |
+| Design | `.ai/specs/[feature]/design.md` |
+| Tasks | `.ai/specs/[feature]/tasks.md` |
 
 ---
 
@@ -617,9 +617,9 @@ Copy this template when starting a new feature:
 # [Feature Name] Development Checklist
 
 ## Phase 1: Specification
-- [ ] Create `.kiro/specs/[feature]/requirements.md`
-- [ ] Create `.kiro/specs/[feature]/design.md`
-- [ ] Create `.kiro/specs/[feature]/tasks.md`
+- [ ] Create `.ai/specs/[feature]/requirements.md`
+- [ ] Create `.ai/specs/[feature]/design.md`
+- [ ] Create `.ai/specs/[feature]/tasks.md`
 - [ ] Review and approve specifications
 
 ## Phase 2: Backend Foundation
@@ -673,9 +673,9 @@ Copy this template when starting a new feature:
 
 | Document | Purpose |
 |----------|---------|
-| [product.md](../.kiro/steering/product.md) | Product overview, role system |
-| [structure.md](../.kiro/steering/structure.md) | Codebase structure, layer contracts, naming conventions |
-| [tech.md](../.kiro/steering/tech.md) | Tech stack, commands, architecture patterns |
+| [product.md](../.ai/steering/product.md) | Product overview, role system |
+| [structure.md](../.ai/steering/structure.md) | Codebase structure, layer contracts, naming conventions |
+| [tech.md](../.ai/steering/tech.md) | Tech stack, commands, architecture patterns |
 
 ### Development Docs
 
@@ -689,10 +689,10 @@ Copy this template when starting a new feature:
 
 | Feature | Location |
 |---------|----------|
-| Project Invitation | [.kiro/specs/project-invitation/](../.kiro/specs/project-invitation/) |
-| Social Login | [.kiro/specs/social-login-integration/](../.kiro/specs/social-login-integration/) |
-| Issue Annotation | [.kiro/specs/issue-annotation-integration/](../.kiro/specs/issue-annotation-integration/) |
+| Project Invitation | [.ai/specs/project-invitation/](../.ai/specs/project-invitation/) |
+| Social Login | [.ai/specs/social-login-integration/](../.ai/specs/social-login-integration/) |
+| Issue Annotation | [.ai/specs/issue-annotation-integration/](../.ai/specs/issue-annotation-integration/) |
 
 ---
 
-**Questions?** Review existing feature specs in `.kiro/specs/` for real-world examples.
+**Questions?** Review existing feature specs in `.ai/specs/` for real-world examples.

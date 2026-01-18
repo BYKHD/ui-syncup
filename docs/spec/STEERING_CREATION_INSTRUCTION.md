@@ -1,6 +1,6 @@
 # Steering File Creation Instructions
 
-This document provides comprehensive guidelines for creating effective steering files in the `.kiro/steering/` directory. Steering files provide context, standards, and instructions that guide AI assistance throughout the project.
+This document provides comprehensive guidelines for creating effective steering files in the `.ai/steering/` directory. Steering files provide context, standards, and instructions that guide AI assistance throughout the project.
 
 > **Source**: This document is derived from the system instructions that guide AI behavior when working with steering files. It captures the exact patterns and principles used by the AI to understand and apply steering guidance.
 
@@ -23,14 +23,14 @@ From the AI's perspective, steering files are:
 ### Workspace vs Global Rules
 
 **Critical Hierarchy:**
-- Workspace-level steering files (`.kiro/steering/*.md`) take precedence over global-level rules
+- Workspace-level steering files (`.ai/steering/*.md`) take precedence over global-level rules
 - When conflicts exist, workspace rules override global rules
 - This allows project-specific customization while maintaining general best practices
 
 ## Location & Structure
 
 ```
-.kiro/
+.ai/
 └── steering/
     ├── tech.md              # Technology stack & dependencies
     ├── structure.md         # Project organization & architecture
@@ -668,9 +668,9 @@ Before committing a steering file:
 - [ ] Tone is knowledgeable but not instructive
 - [ ] No hyperbole or excessive punctuation
 
-## Kiro-Specific Features to Consider
+## AI-Specific Features to Consider
 
-When creating steering files, be aware of Kiro's capabilities:
+When creating steering files, be aware of AI's capabilities:
 
 ### Autopilot vs Supervised Mode
 - **Autopilot**: AI can modify files autonomously
@@ -704,7 +704,7 @@ When you save a file, the test hook automatically:
 2. Reports failures
 3. Suggests fixes
 
-Configure in: Agent Hooks panel or .kiro/hooks/
+Configure in: Agent Hooks panel or .ai/hooks/
 ```
 
 ### Model Context Protocol (MCP)
@@ -717,7 +717,7 @@ Use Supabase MCP tools for database work:
 - `mcp_supabase_local_list_tables` - List tables
 - `mcp_supabase_local_apply_migration` - Apply migrations
 
-Config: .kiro/settings/mcp.json
+Config: .ai/settings/mcp.json
 ```
 
 ## Example: Creating a New Steering File
@@ -805,7 +805,7 @@ USING (auth.uid() = user_id);
 ### Specification Workflow
 For creating structured feature specifications (requirements, design, tasks), see:
 - **`docs/spec/AI_SPECIFICATION_WORKFLOW.md`** - Complete specification-driven development workflow
-- **`.kiro/specs/`** - Example specifications for reference
+- **`.ai/specs/`** - Example specifications for reference
 
 **Key Differences:**
 - **Steering files** provide ongoing context and standards for all AI interactions
@@ -840,8 +840,8 @@ Remember: Steering files are living documents. Update them as your project evolv
 ---
 
 **See Also:**
-- `.kiro/steering/tech.md` - Current tech stack steering file
-- `.kiro/steering/structure.md` - Current structure steering file
-- `.kiro/steering/product.md` - Current product steering file
-- `.kiro/steering/AGENTS.md` - Current development patterns
+- `.ai/steering/tech.md` - Current tech stack steering file
+- `.ai/steering/structure.md` - Current structure steering file
+- `.ai/steering/product.md` - Current product steering file
+- `.ai/steering/AGENTS.md` - Current development patterns
 - `docs/spec/AI_SPECIFICATION_WORKFLOW.md` - Feature specification workflow

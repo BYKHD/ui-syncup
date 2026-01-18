@@ -562,7 +562,7 @@ describe('annotation-drag-stability', () => {
 
 ## Directory Structure
 
-Following [structure.md](../../../../.kiro/steering/structure.md):
+Following [structure.md](../../../../.ai/steering/structure.md):
 
 ```
 src/features/annotations/
@@ -664,11 +664,11 @@ const handlePointerUp = () => {
 - [ANNOTATION_SAVE_ARCHITECTURE.md](./ANNOTATION_SAVE_ARCHITECTURE.md) — Save flow diagrams
 - [BOX_ANNOTATION_GUIDE.md](./BOX_ANNOTATION_GUIDE.md) — Box drag/resize implementation
 - [STALE_CLOSURE_FIX.md](./STALE_CLOSURE_FIX.md) — React closure pitfalls
-- [structure.md](../../../../.kiro/steering/structure.md) — Project structure
-- [tech.md](../../../../.kiro/steering/tech.md) — Tech stack
+- [structure.md](../../../../.ai/steering/structure.md) — Project structure
+- [tech.md](../../../../.ai/steering/tech.md) — Tech stack
 
 ---
 
 **Document Status**: ✅ Adapted for UI SyncUp  
 **Last Updated**: 2024-12-17  
-**Follows**: Feature-first architecture per [structure.md](../../../../.kiro/steering/structure.md)
+**Follows**: Feature-first architecture per [structure.md](../../../../.ai/steering/structure.md)

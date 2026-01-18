@@ -302,9 +302,9 @@ For detailed setup instructions, see `docs/ENVIRONMENT_CONFIG.md`.
 For comprehensive architecture and scaffolding guidelines, see:
 
 - [AGENTS.md](./AGENTS.md) - Complete project scaffolding guide
-- [.kiro/steering/product.md](./.kiro/steering/product.md) - Product overview
-- [.kiro/steering/structure.md](./.kiro/steering/structure.md) - Project structure
-- [.kiro/steering/tech.md](./.kiro/steering/tech.md) - Tech stack details
+- [.ai/steering/product.md](./.ai/steering/product.md) - Product overview
+- [.ai/steering/structure.md](./.ai/steering/structure.md) - Project structure
+- [.ai/steering/tech.md](./.ai/steering/tech.md) - Tech stack details
 
 ## Contributing
 
