@@ -293,7 +293,7 @@ This implementation plan refactors the onboarding flow to support a "Pattern A+"
 ## Phase 5: Proxy & Routing Logic
 
 ### Task 5.1: Update proxy for instance detection
-- [ ] 5.1.1 Add setup redirect logic to proxy
+- [x] 5.1.1 Add setup redirect logic to proxy
   - Check instance status on protected routes
   - Redirect to `/setup` if setup not complete
   - Allow `/setup` routes to proceed regardless
