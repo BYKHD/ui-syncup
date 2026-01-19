@@ -92,7 +92,7 @@ export interface SelectOption<T> {
 }
 
 /**
- * Ask user to select from a list of options
+ * Ask user to select from a list of options using arrow keys
  *
  * @param message - Question to ask
  * @param choices - Array of options with name and value
@@ -111,31 +111,18 @@ export async function select<T>(
     return choices[0].value;
   }
 
-  const rl = createReadline();
+  // Use @inquirer/prompts for arrow key navigation
+  const { select: inquirerSelect } = await import("@inquirer/prompts");
 
-  try {
-    console.log(message);
-    console.log();
+  const result = await inquirerSelect({
+    message,
+    choices: choices.map((choice) => ({
+      name: choice.name,
+      value: choice.value,
+    })),
+  });
 
-    choices.forEach((choice, index) => {
-      console.log(`  ${index + 1}) ${choice.name}`);
-    });
-
-    console.log();
-
-    while (true) {
-      const answer = await question(rl, `Enter selection (1-${choices.length}): `);
-      const num = parseInt(answer.trim(), 10);
-
-      if (!isNaN(num) && num >= 1 && num <= choices.length) {
-        return choices[num - 1].value;
-      }
-
-      error(`Please enter a number between 1 and ${choices.length}`);
-    }
-  } finally {
-    rl.close();
-  }
+  return result as T;
 }
 
 // ============================================================================

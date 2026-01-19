@@ -22,6 +22,8 @@ import {
   removeContainers,
   removeVolumes,
   removeImages,
+  // Supabase
+  stopSupabase,
   // Filesystem
   deleteDirectory,
   deleteFile,
@@ -166,9 +168,26 @@ async function runPurge(options: PurgeOptions): Promise<void> {
   const warnings: string[] = [];
 
   // ========================================================================
-  // Step 5: Stop All Docker Containers (Requirement 5.5)
+  // Step 5: Stop Supabase Services First
   // ========================================================================
   if (dockerRunning) {
+    spinner.start("Stopping Supabase services...");
+
+    const supabaseStopResult = await stopSupabase();
+
+    if (supabaseStopResult.success) {
+      spinner.succeed("Supabase services stopped");
+    } else {
+      spinner.fail("Failed to stop Supabase (may not be running)");
+      // Continue anyway - containers will be removed next
+      if (supabaseStopResult.error && verbose) {
+        debug(supabaseStopResult.error.message);
+      }
+    }
+
+    // ======================================================================
+    // Step 6: Stop All Docker Containers (Requirement 5.5)
+    // ======================================================================
     spinner.start("Stopping Docker containers...");
 
     const stopResult = await removeContainers();
