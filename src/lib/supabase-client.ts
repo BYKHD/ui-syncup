@@ -15,22 +15,22 @@ let supabaseClient: SupabaseClient | null = null;
 /**
  * Get or create the Supabase browser client singleton
  *
- * Uses environment variables (accessible in browser via Next.js):
- * - SUPABASE_URL
- * - SUPABASE_ANON_KEY
+ * Uses NEXT_PUBLIC_ prefixed environment variables (accessible in browser via Next.js):
+ * - NEXT_PUBLIC_SUPABASE_URL
+ * - NEXT_PUBLIC_SUPABASE_ANON_KEY
  */
 export function getSupabaseClient(): SupabaseClient {
   if (supabaseClient) {
     return supabaseClient;
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
       "Missing Supabase environment variables. " +
-        "Set SUPABASE_URL and SUPABASE_ANON_KEY in your .env.local file."
+        "Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file."
     );
   }
 
@@ -50,8 +50,9 @@ export function getSupabaseClient(): SupabaseClient {
  * Useful for conditional rendering of realtime features
  */
 export function isSupabaseConfigured(): boolean {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   return Boolean(supabaseUrl && supabaseAnonKey);
 }
+

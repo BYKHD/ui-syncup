@@ -1,8 +1,34 @@
 import { z } from "zod"
 
+function emptyToUndefined(value: unknown): unknown {
+  if (typeof value !== "string") {
+    return value
+  }
+
+  const trimmed = value.trim()
+  return trimmed === "" ? undefined : trimmed
+}
+
+function optionalString() {
+  return z.preprocess(emptyToUndefined, z.string().min(1).optional())
+}
+
+function optionalUrl() {
+  return z.preprocess(emptyToUndefined, z.string().url().optional())
+}
+
+function optionalEmail() {
+  return z.preprocess(emptyToUndefined, z.string().email().optional())
+}
+
 /**
  * Environment variable schema with comprehensive validation
  * Validates all required configuration for Vercel deployment and external services
+ * 
+ * In development mode, OAuth and email services are optional to enable:
+ * - Quick fresh starts without external service credentials
+ * - Email/password only authentication
+ * - Console output for emails instead of actual sending
  */
 const envSchema = z.object({
   // Node.js Environment
@@ -30,119 +56,95 @@ const envSchema = z.object({
     .min(1)
     .optional()
     .describe("Direct PostgreSQL connection string (for migrations)"),
-  SUPABASE_URL: z
-    .string()
-    .url()
-    .describe("Supabase project URL"),
-  SUPABASE_ANON_KEY: z
-    .string()
-    .min(1)
-    .describe("Supabase anonymous/public key"),
-  SUPABASE_SERVICE_ROLE_KEY: z
-    .string()
-    .min(1)
-    .describe("Supabase service role key (server-side only)"),
+  // SUPABASE_URL is optional - local dev uses NEXT_PUBLIC_SUPABASE_URL
+  SUPABASE_URL: optionalUrl().describe(
+    "Supabase project URL (optional in dev, uses NEXT_PUBLIC_SUPABASE_URL)"
+  ),
+  // NEXT_PUBLIC_SUPABASE_URL for client-side access
+  NEXT_PUBLIC_SUPABASE_URL: optionalUrl().describe(
+    "Supabase public URL for client-side"
+  ),
+  // SUPABASE_ANON_KEY optional - local uses NEXT_PUBLIC_SUPABASE_ANON_KEY
+  SUPABASE_ANON_KEY: optionalString().describe(
+    "Supabase anonymous/public key"
+  ),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: optionalString().describe(
+    "Supabase public anon key for client-side"
+  ),
+  SUPABASE_SERVICE_ROLE_KEY: optionalString().describe(
+    "Supabase service role key (server-side only)"
+  ),
 
   // Storage (Cloudflare R2 - Production)
   // These are optional in development when using local MinIO via STORAGE_* variables
-  R2_ACCOUNT_ID: z
-    .string()
-    .optional()
-    .describe("Cloudflare R2 account ID (production only)"),
-  R2_ACCESS_KEY_ID: z
-    .string()
-    .optional()
-    .describe("Cloudflare R2 access key ID (production only)"),
-  R2_SECRET_ACCESS_KEY: z
-    .string()
-    .optional()
-    .describe("Cloudflare R2 secret access key (production only)"),
-  R2_BUCKET_NAME: z
-    .string()
-    .optional()
-    .describe("Cloudflare R2 bucket name (production only)"),
+  R2_ACCOUNT_ID: optionalString().describe(
+    "Cloudflare R2 account ID (production only)"
+  ),
+  R2_ACCESS_KEY_ID: optionalString().describe(
+    "Cloudflare R2 access key ID (production only)"
+  ),
+  R2_SECRET_ACCESS_KEY: optionalString().describe(
+    "Cloudflare R2 secret access key (production only)"
+  ),
+  R2_BUCKET_NAME: optionalString().describe(
+    "Cloudflare R2 bucket name (production only)"
+  ),
   R2_PUBLIC_URL: z
-    .string()
-    .optional()
+    .preprocess(emptyToUndefined, z.string().url().optional())
     .refine((val) => !val || val.startsWith("http"), {
-       message: "Must be a valid URL if provided"
+      message: "Must be a valid URL if provided",
     })
     .describe("Cloudflare R2 public URL for assets (production only)"),
 
   // Storage (Unified S3-compatible - MinIO local / R2 production)
   // Shared connection settings
-  STORAGE_ENDPOINT: z
-    .string()
-    .optional()
-    .describe("S3-compatible storage endpoint URL"),
-  STORAGE_REGION: z
-    .string()
-    .optional()
-    .describe("Storage region"),
-  STORAGE_ACCESS_KEY_ID: z
-    .string()
-    .optional()
-    .describe("Storage access key ID"),
-  STORAGE_SECRET_ACCESS_KEY: z
-    .string()
-    .optional()
-    .describe("Storage secret access key"),
+  STORAGE_ENDPOINT: optionalUrl().describe(
+    "S3-compatible storage endpoint URL"
+  ),
+  STORAGE_REGION: optionalString().describe("Storage region"),
+  STORAGE_ACCESS_KEY_ID: optionalString().describe("Storage access key ID"),
+  STORAGE_SECRET_ACCESS_KEY: optionalString().describe(
+    "Storage secret access key"
+  ),
   // Attachments bucket (issue attachments - requires auth)
-  STORAGE_ATTACHMENTS_BUCKET: z
-    .string()
-    .optional()
-    .describe("Attachments bucket name"),
-  STORAGE_ATTACHMENTS_PUBLIC_URL: z
-    .string()
-    .optional()
-    .describe("Public URL for attachments bucket"),
+  STORAGE_ATTACHMENTS_BUCKET: optionalString().describe(
+    "Attachments bucket name"
+  ),
+  STORAGE_ATTACHMENTS_PUBLIC_URL: optionalUrl().describe(
+    "Public URL for attachments bucket"
+  ),
   // Media bucket (avatars, team logos - public read)
-  STORAGE_MEDIA_BUCKET: z
-    .string()
-    .optional()
-    .describe("Media bucket name"),
-  STORAGE_MEDIA_PUBLIC_URL: z
-    .string()
-    .optional()
-    .describe("Public URL for media bucket"),
+  STORAGE_MEDIA_BUCKET: optionalString().describe("Media bucket name"),
+  STORAGE_MEDIA_PUBLIC_URL: optionalUrl().describe(
+    "Public URL for media bucket"
+  ),
 
   // Authentication (Google OAuth)
-  GOOGLE_CLIENT_ID: z
-    .string()
-    .min(1)
-    .describe("Google OAuth client ID"),
-  GOOGLE_CLIENT_SECRET: z
-    .string()
-    .min(1)
-    .describe("Google OAuth client secret"),
-  GOOGLE_REDIRECT_URI: z
-    .string()
-    .url()
-    .describe("Google OAuth redirect URI"),
+  // Optional in development - enables email/password only mode
+  GOOGLE_CLIENT_ID: optionalString().describe(
+    "Google OAuth client ID (optional in dev)"
+  ),
+  GOOGLE_CLIENT_SECRET: optionalString().describe(
+    "Google OAuth client secret (optional in dev)"
+  ),
+  GOOGLE_REDIRECT_URI: optionalUrl().describe(
+    "Google OAuth redirect URI (optional in dev)"
+  ),
 
   // Authentication (Microsoft OAuth - optional, enables Microsoft sign-in when configured)
-  MICROSOFT_CLIENT_ID: z
-    .string()
-    .optional()
-    .describe("Microsoft OAuth client ID"),
-  MICROSOFT_CLIENT_SECRET: z
-    .string()
-    .optional()
-    .describe("Microsoft OAuth client secret"),
-  MICROSOFT_TENANT_ID: z
-    .string()
-    .optional()
-    .describe("Microsoft tenant ID (defaults to 'common' for multi-tenant)"),
+  MICROSOFT_CLIENT_ID: optionalString().describe("Microsoft OAuth client ID"),
+  MICROSOFT_CLIENT_SECRET: optionalString().describe(
+    "Microsoft OAuth client secret"
+  ),
+  MICROSOFT_TENANT_ID: optionalString().describe(
+    "Microsoft tenant ID (defaults to 'common' for multi-tenant)"
+  ),
 
   // Authentication (Atlassian OAuth - optional, enables Atlassian sign-in when configured)
-  ATLASSIAN_CLIENT_ID: z
-    .string()
-    .optional()
-    .describe("Atlassian OAuth client ID"),
-  ATLASSIAN_CLIENT_SECRET: z
-    .string()
-    .optional()
-    .describe("Atlassian OAuth client secret"),
+  ATLASSIAN_CLIENT_ID: optionalString().describe("Atlassian OAuth client ID"),
+  ATLASSIAN_CLIENT_SECRET: optionalString().describe(
+    "Atlassian OAuth client secret"
+  ),
 
   // better-auth
   BETTER_AUTH_SECRET: z
@@ -168,14 +170,13 @@ const envSchema = z.object({
     ),
 
   // Email (Resend)
-  RESEND_API_KEY: z
-    .string()
-    .min(1)
-    .describe("Resend API key"),
-  RESEND_FROM_EMAIL: z
-    .string()
-    .email()
-    .describe("Default sender email address (e.g., noreply@ui-syncup.com)"),
+  // Optional in development - falls back to console logging
+  RESEND_API_KEY: optionalString().describe(
+    "Resend API key (optional in dev - uses console fallback)"
+  ),
+  RESEND_FROM_EMAIL: optionalEmail().describe(
+    "Default sender email address (optional in dev)"
+  ),
 
   // Feature Flags (Optional)
   NEXT_PUBLIC_ENABLE_ANALYTICS: z
@@ -212,6 +213,124 @@ const envSchema = z.object({
     .string()
     .optional()
     .describe("Git commit message"),
+}).superRefine((data, ctx) => {
+  const isProdLike =
+    data.NODE_ENV === "production" ||
+    data.VERCEL_ENV === "production" ||
+    data.VERCEL_ENV === "preview"
+
+  if (isProdLike) {
+    if (!data.RESEND_API_KEY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["RESEND_API_KEY"],
+        message: "Required in production.",
+      })
+    }
+
+    if (!data.RESEND_FROM_EMAIL) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["RESEND_FROM_EMAIL"],
+        message: "Required in production.",
+      })
+    }
+  }
+
+  const hasGoogle = Boolean(
+    data.GOOGLE_CLIENT_ID ||
+      data.GOOGLE_CLIENT_SECRET ||
+      data.GOOGLE_REDIRECT_URI
+  )
+
+  if (hasGoogle) {
+    if (!data.GOOGLE_CLIENT_ID) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["GOOGLE_CLIENT_ID"],
+        message: "Required when configuring Google OAuth.",
+      })
+    }
+
+    if (!data.GOOGLE_CLIENT_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["GOOGLE_CLIENT_SECRET"],
+        message: "Required when configuring Google OAuth.",
+      })
+    }
+
+    if (!data.GOOGLE_REDIRECT_URI) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["GOOGLE_REDIRECT_URI"],
+        message: "Required when configuring Google OAuth.",
+      })
+    }
+  }
+
+  const hasMicrosoft = Boolean(
+    data.MICROSOFT_CLIENT_ID || data.MICROSOFT_CLIENT_SECRET
+  )
+
+  if (hasMicrosoft) {
+    if (!data.MICROSOFT_CLIENT_ID) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["MICROSOFT_CLIENT_ID"],
+        message: "Required when configuring Microsoft OAuth.",
+      })
+    }
+
+    if (!data.MICROSOFT_CLIENT_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["MICROSOFT_CLIENT_SECRET"],
+        message: "Required when configuring Microsoft OAuth.",
+      })
+    }
+  }
+
+  const hasAtlassian = Boolean(
+    data.ATLASSIAN_CLIENT_ID || data.ATLASSIAN_CLIENT_SECRET
+  )
+
+  if (hasAtlassian) {
+    if (!data.ATLASSIAN_CLIENT_ID) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["ATLASSIAN_CLIENT_ID"],
+        message: "Required when configuring Atlassian OAuth.",
+      })
+    }
+
+    if (!data.ATLASSIAN_CLIENT_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["ATLASSIAN_CLIENT_SECRET"],
+        message: "Required when configuring Atlassian OAuth.",
+      })
+    }
+  }
+
+  const hasResend = Boolean(data.RESEND_API_KEY || data.RESEND_FROM_EMAIL)
+  if (hasResend) {
+    if (!data.RESEND_API_KEY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["RESEND_API_KEY"],
+        message: "Required when configuring Resend.",
+      })
+    }
+
+    if (!data.RESEND_FROM_EMAIL) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["RESEND_FROM_EMAIL"],
+        message: "Required when configuring Resend.",
+      })
+    }
+  }
 })
 
 export type Env = z.infer<typeof envSchema>

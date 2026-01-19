@@ -55,18 +55,26 @@ function buildCallbackUri(provider: string): string {
  * Google OAuth Configuration
  * Reads credentials from environment variables and constructs redirect URI
  * based on the current environment's app URL
+ * 
+ * In development, Google OAuth is optional - if not configured, the app
+ * will run in email/password only mode
  */
 function createGoogleOAuthConfig(): OAuthProvider {
+  const clientId = env.GOOGLE_CLIENT_ID ?? ""
+  const clientSecret = env.GOOGLE_CLIENT_SECRET ?? ""
+  const redirectUri = env.GOOGLE_REDIRECT_URI ?? ""
+  const enabled = Boolean(clientId && clientSecret && redirectUri)
+
   return {
-    clientId: env.GOOGLE_CLIENT_ID,
-    clientSecret: env.GOOGLE_CLIENT_SECRET,
-    redirectUri: env.GOOGLE_REDIRECT_URI,
+    clientId,
+    clientSecret,
+    redirectUri,
     scope: [
       "openid",
       "https://www.googleapis.com/auth/userinfo.email",
       "https://www.googleapis.com/auth/userinfo.profile",
     ],
-    enabled: true, // Google is always enabled (required vars)
+    enabled,
   }
 }
 
