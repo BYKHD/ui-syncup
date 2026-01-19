@@ -248,11 +248,19 @@ async function runUp(options: UpOptions): Promise<void> {
   newLine();
 
   // Get service URLs
-  const services = await getSupabaseStatus();
-  
+  const status = await getSupabaseStatus();
+
+  if (!status.ok && verbose) {
+    warning(`Failed to read Supabase status: ${status.error}`);
+  }
+
   const appUrl = `http://localhost:${DEFAULT_PORTS.app}`;
-  const studioUrl = services.find(s => s.name === "studio")?.url || `http://localhost:${DEFAULT_PORTS.studio}`;
-  const apiUrl = services.find(s => s.name === "api")?.url || `http://localhost:${DEFAULT_PORTS.api}`;
+  const studioUrl =
+    status.services.find((s) => s.name === "studio")?.url ||
+    `http://localhost:${DEFAULT_PORTS.studio}`;
+  const apiUrl =
+    status.services.find((s) => s.name === "api")?.url ||
+    `http://localhost:${DEFAULT_PORTS.api}`;
 
   // Display admin credentials if created
   if (adminCredentials) {

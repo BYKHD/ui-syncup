@@ -83,11 +83,18 @@ export async function resetSupabase(): Promise<CommandResult> {
 /**
  * Get Supabase local stack status
  */
-export async function getSupabaseStatus(): Promise<ServiceStatus[]> {
+export interface SupabaseStatusResult {
+  ok: boolean;
+  services: ServiceStatus[];
+  error?: string;
+}
+
+export async function getSupabaseStatus(): Promise<SupabaseStatusResult> {
   const projectRoot = findProjectRoot();
   if (!projectRoot) {
-    logError(PROJECT_ROOT_ERROR);
-    return [];
+    const message = PROJECT_ROOT_ERROR;
+    logError(message);
+    return { ok: false, services: [], error: message };
   }
 
   const result = spawnSync("supabase", ["status", "--output", "json"], {
@@ -97,7 +104,11 @@ export async function getSupabaseStatus(): Promise<ServiceStatus[]> {
   });
 
   if (result.status !== 0 || !result.stdout) {
-    return [];
+    const message =
+      result.stderr?.trim() ||
+      result.error?.message ||
+      "Failed to read Supabase status";
+    return { ok: false, services: [], error: message };
   }
 
   try {
@@ -129,9 +140,9 @@ export async function getSupabaseStatus(): Promise<ServiceStatus[]> {
       });
     }
 
-    return services;
+    return { ok: true, services };
   } catch {
-    return [];
+    return { ok: false, services: [], error: "Failed to parse Supabase status output" };
   }
 }
 
@@ -531,6 +542,9 @@ async function runSupabaseCommand(
  */
 export async function getLocalDatabaseUrl(): Promise<string | null> {
   const status = await getSupabaseStatus();
-  const postgres = status.find((s) => s.name === "postgres");
+  if (!status.ok) {
+    return null;
+  }
+  const postgres = status.services.find((s) => s.name === "postgres");
   return postgres?.url || null;
 }

@@ -11,7 +11,11 @@ export { initCommand } from "./init";
 // Up Command
 export { upCommand } from "./up";
 
+// Down Command
+export { downCommand } from "./down";
+
+// Reset Command
+export { resetCommand } from "./reset";
+
 // Other commands will be added here:
-// export { downCommand } from './down';
-// export { resetCommand } from './reset';
 // export { purgeCommand } from './purge';

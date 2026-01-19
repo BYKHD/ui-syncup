@@ -189,8 +189,8 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
 
 ---
 
-- [ ] 8. Implement `down` command
-  - [ ] 8.1 Implement down command logic
+- [x] 8. Implement `down` command
+  - [x] 8.1 Implement down command logic
     - Create `cli/commands/down.ts` with downCommand
     - Stop Supabase services
     - Stop Docker containers (preserve volumes)
@@ -199,15 +199,15 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
     - _Requirements: 3.1-3.5_
     - _Location: `cli/commands/down.ts`_
 
-  - [ ] 8.2 Wire down command to CLI entry point
+  - [x] 8.2 Wire down command to CLI entry point
     - Import and register downCommand in `cli/index.ts`
     - _Requirements: 6.1_
     - _Location: `cli/index.ts`_
 
 ---
 
-- [ ] 9. Implement `reset` command
-  - [ ] 9.1 Implement reset command logic
+- [x] 9. Implement `reset` command
+  - [x] 9.1 Implement reset command logic
     - Create `cli/commands/reset.ts` with resetCommand
     - Prompt for confirmation (no --force flag)
     - Stop all services
@@ -219,7 +219,7 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
     - _Requirements: 4.1-4.11_
     - _Location: `cli/commands/reset.ts`_
 
-  - [ ] 9.2 Wire reset command to CLI entry point
+  - [x] 9.2 Wire reset command to CLI entry point
     - Import and register resetCommand in `cli/index.ts`
     - _Requirements: 6.1_
     - _Location: `cli/index.ts`_

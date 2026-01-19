@@ -141,6 +141,7 @@ export {
   stopSupabase,
   resetSupabase,
   getSupabaseStatus,
+  type SupabaseStatusResult,
   waitForDatabase,
   runMigrations,
   seedDatabase,
