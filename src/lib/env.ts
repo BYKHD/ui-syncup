@@ -238,9 +238,7 @@ const envSchema = z.object({
   }
 
   const hasGoogle = Boolean(
-    data.GOOGLE_CLIENT_ID ||
-      data.GOOGLE_CLIENT_SECRET ||
-      data.GOOGLE_REDIRECT_URI
+    data.GOOGLE_CLIENT_ID || data.GOOGLE_CLIENT_SECRET
   )
 
   if (hasGoogle) {

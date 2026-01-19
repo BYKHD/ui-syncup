@@ -38,6 +38,19 @@ describe("Environment Variable Validation", () => {
     await expect(import("../env")).resolves.toBeDefined()
   })
 
+  it("should allow Google redirect without OAuth credentials", async () => {
+    // @ts-expect-error - NODE_ENV is read-only in types but writable at runtime in test
+    process.env.NODE_ENV = "test"
+    process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000"
+    process.env.NEXT_PUBLIC_API_URL = "http://localhost:3000/api"
+    process.env.DATABASE_URL = "postgresql://user:pass@localhost:5432/db"
+    process.env.GOOGLE_REDIRECT_URI = "http://localhost:3000/callback"
+    process.env.BETTER_AUTH_SECRET = "test-secret-key-with-32-characters-min"
+    process.env.BETTER_AUTH_URL = "http://localhost:3000"
+
+    await expect(import("../env")).resolves.toBeDefined()
+  })
+
   it("should provide helpful error messages for missing variables", async () => {
     // Clear all environment variables
     process.env = { NODE_ENV: "test" }

@@ -1,42 +1,28 @@
 ---
 name: reviewing-code
-description: Performs comprehensive code reviews, analysis, and grading of the project's codebase based on project guidelines. Use when the user asks to review, analyze, audit, or check code.
+description: Review, analyze, audit, or grade code for correctness, security, performance, and standards compliance. Use when the user asks to review/analyze/audit/check/grade code, diffs, PRs, or files and wants actionable feedback.
 ---
 
 # Code Review & Analysis
 
-## When to use this skill
-- User asks to "review" a file, PR, or code block.
-- User asks to "analyze" code for issues.
-- User asks to "grade" current implementation.
-- User asks to "audit" for performance or security.
-- User asks for "feedback" on code.
-
 ## Workflow
-1.  **Context Discovery**:
-    - Identify the target file(s) for review.
-    - Read project standards in `.ai/steering/tech.md`, `.ai/steering/structure.md`, and `.ai/steering/product.md`.
-2.  **Analysis**:
-    - Validate against **Tech Stack** (e.g., correct libraries, no banned frameworks).
-    - Validate against **Structure** (e.g., file location, naming conventions).
-    - Analyze for **Correctness** (bugs, logic errors).
-    - Analyze for **Performance** (bottlenecks, inefficient cycles).
-    - Analyze for **Security** (input validation, auth boundaries).
-3.  **Report Generation**:
-    - **Grade**: Assign a letter grade (A-F) with a brief justification.
-    - **Critical Issues**: List blocking problems (bugs, security, policy violations).
-    - **Suggestions**: List non-critical improvements (style, optimization).
-    - **Fixes**: Provide actionable code snippets for recommended fixes.
+1. Identify review scope (files, diff, PR, or snippet); ask clarifying questions if unclear.
+2. Read project standards: `AGENTS.md` and `.ai/steering/tech.md`, `.ai/steering/structure.md`, `.ai/steering/product.md` if present.
+3. Review for correctness, security, performance, architecture/layering, and standards compliance; prioritize regressions and policy violations.
+4. Check tests and edge cases; note missing coverage or risky assumptions.
+5. Report findings ordered by severity with file/line references and actionable fixes when feasible.
 
-## Instructions
-- **Adhere to Steering**: The standards in `.ai/steering/` are the absolute source of truth. If code violates `tech.md`, it is a critical issue.
-- **Be Objective**: Grade based on:
-    - A: Perfect adherence, optimized, secure.
-    - C: Functional but violates some standards or has minor perfs issues.
-    - F: Broken, security risk, or major architectural violation.
-- **Specific Feedback**: Do not be vague. Cite line numbers and specific violations.
-- **Performance Focus**: Look for N+1 queries, large bundle imports, and unoptimized loops.
+## Output Format
+- Findings: `Critical`, `High`, `Medium`, `Low` with file/line references and rationale.
+- Tests: call out gaps or recommend specific tests when needed.
+- Summary: brief overall assessment; provide a letter grade only if explicitly requested.
+
+## Notes
+- Treat steering docs as source of truth; violations are critical issues.
+- Prefer minimal, actionable fixes; avoid style nits unless they affect behavior or standards.
 
 ## Resources
 - [Tech Stack Standards](../../../.ai/steering/tech.md)
 - [Project Structure](../../../.ai/steering/structure.md)
+- [Product Requirements](../../../.ai/steering/product.md)
+- [Agent Instructions](../../../AGENTS.md)
