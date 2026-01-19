@@ -82,6 +82,7 @@ function getClientIP(request: NextRequest): string {
  * 
  * Success response (201):
  * {
+ *   "success": true,
  *   "userId": "uuid",
  *   "email": "admin@example.com",
  *   "message": "Admin account created successfully"
@@ -196,6 +197,7 @@ export async function POST(request: NextRequest) {
     // Set session cookie
     const response = NextResponse.json(
       {
+        success: true,
         userId: result.userId,
         email: body.email,
         message: "Admin account created successfully",

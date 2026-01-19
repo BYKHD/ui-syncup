@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PasswordStrengthIndicator } from '@/features/auth/components/password-strength-indicator';
+import { ApiError } from '@/lib/api-client';
 import {
   AdminAccountRequestSchema,
   type AdminAccountRequestDTO,
@@ -15,6 +16,38 @@ import type { UseSetupWizardReturn } from '../hooks';
 
 interface AdminAccountStepProps {
   wizard: UseSetupWizardReturn;
+}
+
+type SetupApiErrorPayload = {
+  error?: {
+    code?: string;
+    message?: string;
+  };
+};
+
+function isAdminConflictError(error: unknown): boolean {
+  if (!(error instanceof ApiError)) return false;
+  if (error.status !== 409) return false;
+  const payload = error.payload as SetupApiErrorPayload | null;
+  const code = payload?.error?.code;
+  return code === 'ADMIN_ALREADY_EXISTS' || code === 'SETUP_ALREADY_COMPLETE';
+}
+
+function getAdminErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    const payload = error.payload as SetupApiErrorPayload | null;
+    return (
+      payload?.error?.message ||
+      error.message ||
+      'Failed to create admin account'
+    );
+  }
+
+  if (error instanceof Error) {
+    return error.message || 'Failed to create admin account';
+  }
+
+  return 'Failed to create admin account';
 }
 
 export function AdminAccountStep({ wizard }: AdminAccountStepProps) {
@@ -40,8 +73,17 @@ export function AdminAccountStep({ wizard }: AdminAccountStepProps) {
         wizard.markStepComplete('admin-account');
         wizard.goToNextStep();
       },
+      onError: (err) => {
+        if (isAdminConflictError(err)) {
+          wizard.setAdminData({ email: data.email, name: data.displayName });
+          wizard.markStepComplete('admin-account');
+          wizard.goToNextStep();
+        }
+      },
     });
   };
+
+  const errorMessage = error ? getAdminErrorMessage(error) : null;
 
   return (
     <div className="space-y-6">
@@ -52,10 +94,10 @@ export function AdminAccountStep({ wizard }: AdminAccountStepProps) {
         </p>
       </div>
 
-      {error && (
+      {errorMessage && (
         <Alert variant="destructive">
           <AlertDescription>
-            {error.message || 'Failed to create admin account'}
+            {errorMessage}
           </AlertDescription>
         </Alert>
       )}

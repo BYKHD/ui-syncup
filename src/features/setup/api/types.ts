@@ -64,7 +64,8 @@ export const AdminAccountRequestSchema = z
 export const AdminAccountResponseSchema = z.object({
   success: z.boolean(),
   userId: z.string().optional(),
-  error: z.string().optional(),
+  email: z.string().email().optional(),
+  message: z.string().optional(),
 });
 
 // Instance Config Schemas
