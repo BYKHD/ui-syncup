@@ -11,6 +11,7 @@
 import { Command } from "commander";
 import { join, basename } from "path";
 import { copyFileSync, existsSync, chmodSync } from "fs";
+import * as dotenv from "dotenv";
 
 import {
   // Config
@@ -24,6 +25,7 @@ import {
   deleteFile,
   deleteDirectory,
   createBackup,
+  readFile,
   // UI
   success,
   warning,
@@ -284,6 +286,7 @@ async function runInit(options: InitOptions): Promise<void> {
     // ========================================================================
     newLine();
     displaySummary(mode, trackedFiles, projectRoot);
+    displayOptionalServiceWarnings(getOptionalServiceWarnings(mode, envPath));
 
   } catch (err) {
     await rollbackInit(trackedFiles, verbose);
@@ -381,6 +384,63 @@ async function generateEnvFile(
   return copyTemplate(templateName, destPath, variables, { backup: false });
 }
 
+function getOptionalServiceWarnings(mode: SetupMode, envPath: string): string[] {
+  if (mode !== "local") {
+    return [];
+  }
+
+  const envFile = readFile(envPath);
+  if (!envFile) {
+    return [
+      "Unable to read .env.local to check optional services. Confirm the file exists.",
+    ];
+  }
+
+  const env = dotenv.parse(envFile);
+  const warnings: string[] = [];
+
+  const hasResend = Boolean(env.RESEND_API_KEY || env.RESEND_FROM_EMAIL);
+  if (!hasResend) {
+    warnings.push(
+      "Email not configured (console fallback active). Set RESEND_API_KEY and RESEND_FROM_EMAIL to send emails."
+    );
+  } else if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) {
+    warnings.push(
+      "Email is partially configured. Set both RESEND_API_KEY and RESEND_FROM_EMAIL."
+    );
+  }
+
+  const hasGoogle = Boolean(env.GOOGLE_CLIENT_ID || env.GOOGLE_CLIENT_SECRET);
+  if (!hasGoogle) {
+    warnings.push(
+      "Google OAuth disabled. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI to enable."
+    );
+  } else if (
+    !env.GOOGLE_CLIENT_ID ||
+    !env.GOOGLE_CLIENT_SECRET ||
+    !env.GOOGLE_REDIRECT_URI
+  ) {
+    warnings.push(
+      "Google OAuth is partially configured. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI."
+    );
+  }
+
+  const hasMicrosoft = Boolean(
+    env.MICROSOFT_CLIENT_ID || env.MICROSOFT_CLIENT_SECRET
+  );
+  if (!hasMicrosoft) {
+    warnings.push(
+      "Microsoft OAuth disabled. Set MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET to enable."
+    );
+  } else if (!env.MICROSOFT_CLIENT_ID || !env.MICROSOFT_CLIENT_SECRET) {
+    warnings.push(
+      "Microsoft OAuth is partially configured. Set MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET."
+    );
+  }
+
+  return warnings;
+}
+
 function displaySummary(mode: SetupMode, trackedFiles: TrackedFile[], projectRoot: string): void {
   const filesList = trackedFiles
     .filter((f) => !f.isDirectory) // Only show files, not directories
@@ -419,6 +479,16 @@ ${dirsList}`;
 ${nextSteps}`;
 
   box("✅ Initialization Complete", summaryContent);
+}
+
+function displayOptionalServiceWarnings(warningsList: string[]): void {
+  if (warningsList.length === 0) {
+    return;
+  }
+
+  newLine();
+  warning("Optional services not configured:");
+  warningsList.forEach((item) => log(`  • ${item}`));
 }
 
 async function rollbackInit(trackedFiles: TrackedFile[], verbose: boolean): Promise<void> {

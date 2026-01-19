@@ -419,6 +419,7 @@ export async function seedAdminUser(
   }
 
   const password = generateSecurePassword(16);
+  const normalizedEmail = email.toLowerCase().trim();
 
   const client = postgres(dbUrl, { max: 1 });
 
@@ -429,7 +430,7 @@ export async function seedAdminUser(
 
     // Check if user exists
     const existing = await client`
-      SELECT id FROM users WHERE email = ${email}
+      SELECT id FROM users WHERE email = ${normalizedEmail}
     `;
 
     let userId: string | undefined;
@@ -439,26 +440,46 @@ export async function seedAdminUser(
       // Update existing user's password
       await client`
         UPDATE users 
-        SET password_hash = ${passwordHash}, updated_at = NOW()
-        WHERE email = ${email}
+        SET password_hash = ${passwordHash}, email_verified = true, updated_at = NOW()
+        WHERE email = ${normalizedEmail}
       `;
-      debug(`Updated password for existing admin user: ${email}`);
+      debug(`Updated password for existing admin user: ${normalizedEmail}`);
     } else {
       // Create new admin user
       const inserted = await client`
         INSERT INTO users (email, name, email_verified, password_hash)
-        VALUES (${email}, 'Admin', true, ${passwordHash})
+        VALUES (${normalizedEmail}, 'Admin', true, ${passwordHash})
         RETURNING id
       `;
       userId = inserted[0]?.id as string | undefined;
-      debug(`Created new admin user: ${email}`);
+      debug(`Created new admin user: ${normalizedEmail}`);
     }
 
     if (!userId) {
       throw new Error("Failed to resolve admin user id");
     }
 
-    return { id: userId, email, password };
+    const existingAccount = await client`
+      SELECT id
+      FROM account
+      WHERE user_id = ${userId} AND provider_id = 'credential'
+      LIMIT 1
+    `;
+
+    if (existingAccount.length > 0) {
+      await client`
+        UPDATE account
+        SET password = ${passwordHash}, updated_at = NOW()
+        WHERE id = ${existingAccount[0]?.id}
+      `;
+    } else {
+      await client`
+        INSERT INTO account (user_id, account_id, provider_id, password)
+        VALUES (${userId}, ${userId}, 'credential', ${passwordHash})
+      `;
+    }
+
+    return { id: userId, email: normalizedEmail, password };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     warning(`Failed to seed admin user: ${message}`);
