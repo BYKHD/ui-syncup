@@ -77,6 +77,24 @@ bun run supabase:status # Check status and connection details
 bun run validate-env   # Validate environment variables
 ```
 
+### CLI (Self-Hosting)
+
+Use the CLI to initialize and manage the local stack:
+
+```bash
+# Help and usage
+bun run cli -- --help
+
+# Initialize (prompts for local or production)
+bun run cli:init
+
+# Stack lifecycle
+bun run cli -- up
+bun run cli -- down
+bun run cli -- reset
+bun run cli -- purge
+```
+
 ## Project Structure
 
 ### Architecture Principles

@@ -13,6 +13,8 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "clean": "rm -rf .next node_modules",
+    "cli": "bun run cli/index.ts",
+    "cli:init": "bun run cli/index.ts init",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "playwright test",

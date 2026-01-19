@@ -277,7 +277,7 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
 
 ---
 
-- [ ] 12. Checkpoint - Full CLI verification
+- [x] 12. Checkpoint - Full CLI verification
   - Run `bun run typecheck` to verify all types
   - Run `bun run lint` to verify code style
   - Test full lifecycle in tmp directory:
@@ -293,8 +293,8 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
 
 ---
 
-- [ ] 13. Add CLI script to package.json
-  - [ ] 13.1 Add npm scripts for CLI
+- [x] 13. Add CLI script to package.json
+  - [x] 13.1 Add npm scripts for CLI
     - Add `"cli": "bun run cli/index.ts"` script
     - Add `"cli:init": "bun run cli/index.ts init"` convenience script
     - Update README with CLI usage instructions
