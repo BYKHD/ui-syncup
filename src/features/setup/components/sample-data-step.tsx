@@ -65,7 +65,7 @@ export function SampleDataStep({ wizard }: SampleDataStepProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight">Finalize Setup</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-balance">Finalize Setup</h2>
         <p className="text-muted-foreground">
           You&apos;re almost done. Choose if you want to populate your workspace with sample data.
         </p>
@@ -106,7 +106,9 @@ export function SampleDataStep({ wizard }: SampleDataStepProps) {
           Back
         </Button>
         <Button onClick={handleComplete} disabled={isPending}>
-          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isPending && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" />
+          )}
           Complete Setup
         </Button>
       </div>

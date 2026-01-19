@@ -22,7 +22,7 @@ export function SetupProgress({ currentStep, className }: SetupProgressProps) {
       </div>
       <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
         <div
-          className="h-full bg-primary transition-all duration-500 ease-in-out rounded-full"
+          className="h-full bg-primary transition-[width] duration-500 ease-in-out rounded-full motion-reduce:transition-none"
           style={{ width: `${percentage}%` }}
         />
       </div>

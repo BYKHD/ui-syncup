@@ -88,7 +88,7 @@ export function AdminAccountStep({ wizard }: AdminAccountStepProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight">Create Admin Account</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-balance">Create Admin Account</h2>
         <p className="text-muted-foreground">
           Set up the initial administrator account for your instance.
         </p>
@@ -105,7 +105,12 @@ export function AdminAccountStep({ wizard }: AdminAccountStepProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="displayName">Display Name</Label>
-          <Input id="displayName" placeholder="John Doe" {...form.register('displayName')} />
+          <Input
+            id="displayName"
+            autoComplete="off"
+            placeholder={'John Doe\u2026'}
+            {...form.register('displayName')}
+          />
           {form.formState.errors.displayName && (
             <p className="text-sm font-medium text-destructive">
               {form.formState.errors.displayName.message}
@@ -115,7 +120,15 @@ export function AdminAccountStep({ wizard }: AdminAccountStepProps) {
 
         <div className="space-y-2">
           <Label htmlFor="email">Email Address</Label>
-          <Input id="email" type="email" placeholder="admin@example.com" {...form.register('email')} />
+          <Input
+            id="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            spellCheck={false}
+            placeholder={'admin@example.com\u2026'}
+            {...form.register('email')}
+          />
           <p className="text-sm text-muted-foreground">
             You will use this email to log in.
           </p>
@@ -128,7 +141,12 @@ export function AdminAccountStep({ wizard }: AdminAccountStepProps) {
 
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" {...form.register('password')} />
+          <Input
+            id="password"
+            type="password"
+            autoComplete="new-password"
+            {...form.register('password')}
+          />
           <PasswordStrengthIndicator password={password} showFeedback />
           {form.formState.errors.password && (
             <p className="text-sm font-medium text-destructive">
@@ -139,7 +157,12 @@ export function AdminAccountStep({ wizard }: AdminAccountStepProps) {
 
         <div className="space-y-2">
           <Label htmlFor="confirmPassword">Confirm Password</Label>
-          <Input id="confirmPassword" type="password" {...form.register('confirmPassword')} />
+          <Input
+            id="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            {...form.register('confirmPassword')}
+          />
           {form.formState.errors.confirmPassword && (
             <p className="text-sm font-medium text-destructive">
               {form.formState.errors.confirmPassword.message}
@@ -157,7 +180,9 @@ export function AdminAccountStep({ wizard }: AdminAccountStepProps) {
             Back
           </Button>
           <Button type="submit" disabled={isPending}>
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" />
+            )}
             Create Account
           </Button>
         </div>

@@ -50,7 +50,7 @@ export function FirstWorkspaceStep({ wizard }: FirstWorkspaceStepProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight">Create First Workspace</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-balance">Create First Workspace</h2>
         <p className="text-muted-foreground">
           {isMultiWorkspaceMode
             ? 'Create the initial workspace where your team will collaborate.'
@@ -69,7 +69,12 @@ export function FirstWorkspaceStep({ wizard }: FirstWorkspaceStepProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="workspaceName">Workspace Name</Label>
-          <Input id="workspaceName" placeholder="Engineering Team" {...form.register('workspaceName')} />
+          <Input
+            id="workspaceName"
+            autoComplete="off"
+            placeholder={'Engineering Team\u2026'}
+            {...form.register('workspaceName')}
+          />
           <p className="text-sm text-muted-foreground">
             This will be the display name of your first workspace.
           </p>
@@ -90,7 +95,9 @@ export function FirstWorkspaceStep({ wizard }: FirstWorkspaceStepProps) {
             Back
           </Button>
           <Button type="submit" disabled={isPending}>
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" />
+            )}
             Create Workspace
           </Button>
         </div>

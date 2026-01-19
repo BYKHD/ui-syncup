@@ -43,7 +43,7 @@ export function InstanceConfigStep({ wizard }: InstanceConfigStepProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight">Instance Configuration</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-balance">Instance Configuration</h2>
         <p className="text-muted-foreground">
           Configure general settings for your instance.
         </p>
@@ -60,7 +60,12 @@ export function InstanceConfigStep({ wizard }: InstanceConfigStepProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="instanceName">Instance Name</Label>
-          <Input id="instanceName" placeholder="My Company" {...form.register('instanceName')} />
+          <Input
+            id="instanceName"
+            autoComplete="off"
+            placeholder={'My Company\u2026'}
+            {...form.register('instanceName')}
+          />
           <p className="text-sm text-muted-foreground">
             The name displayed in emails and the dashboard header.
           </p>
@@ -73,7 +78,14 @@ export function InstanceConfigStep({ wizard }: InstanceConfigStepProps) {
 
         <div className="space-y-2">
           <Label htmlFor="publicUrl">Public URL</Label>
-          <Input id="publicUrl" placeholder="https://app.example.com" {...form.register('publicUrl')} />
+          <Input
+            id="publicUrl"
+            type="url"
+            inputMode="url"
+            autoComplete="off"
+            placeholder={'https://app.example.com\u2026'}
+            {...form.register('publicUrl')}
+          />
           <p className="text-sm text-muted-foreground">
             The base URL used for generating links in emails.
           </p>
@@ -94,7 +106,9 @@ export function InstanceConfigStep({ wizard }: InstanceConfigStepProps) {
             Back
           </Button>
           <Button type="submit" disabled={isPending}>
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" />
+            )}
             Save Configuration
           </Button>
         </div>

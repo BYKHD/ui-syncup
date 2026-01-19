@@ -91,8 +91,8 @@ export function SetupWizard() {
       case 'complete': // Should have redirected by now
         return (
           <div className="flex flex-col items-center justify-center p-8 space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Redirecting...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-primary motion-reduce:animate-none" />
+            <p className="text-muted-foreground">{'Redirecting\u2026'}</p>
           </div>
         );
       default:
@@ -107,8 +107,8 @@ export function SetupWizard() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center p-8 space-y-4">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-muted-foreground">Checking setup status...</p>
+              <Loader2 className="h-8 w-8 animate-spin text-primary motion-reduce:animate-none" />
+              <p className="text-muted-foreground">{'Checking setup status\u2026'}</p>
             </div>
           </CardContent>
         </Card>

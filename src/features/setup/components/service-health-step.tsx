@@ -32,7 +32,7 @@ export function ServiceHealthStep({ wizard }: ServiceHealthStepProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight">System Health Check</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-balance">System Health Check</h2>
         <p className="text-muted-foreground">
           Verifying connectivity to required and optional services.
         </p>
@@ -51,7 +51,7 @@ export function ServiceHealthStep({ wizard }: ServiceHealthStepProps) {
       <div className="grid gap-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground motion-reduce:animate-none" />
           </div>
         ) : health ? (
           <>
@@ -137,7 +137,12 @@ export function ServiceHealthStep({ wizard }: ServiceHealthStepProps) {
 
       <div className="flex justify-end gap-4 pt-4">
         <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
-          <RefreshCw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
+          <RefreshCw
+            className={cn(
+              "mr-2 h-4 w-4 motion-reduce:animate-none",
+              isLoading && "animate-spin"
+            )}
+          />
           Recheck Status
         </Button>
         <Button
@@ -147,7 +152,7 @@ export function ServiceHealthStep({ wizard }: ServiceHealthStepProps) {
           }}
           disabled={!canProceed || isLoading}
         >
-          {hasWarnings ? 'Continue Anyway' : 'Continue'}
+          Continue to Create Admin Account
         </Button>
       </div>
     </div>
