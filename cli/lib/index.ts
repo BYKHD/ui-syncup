@@ -161,9 +161,5 @@ export {
   waitForDatabase,
   runMigrations,
   seedDatabase,
-  seedAdminUser,
-  adminExists,
   getLocalDatabaseUrl,
-  type AdminUserResult,
-  type AdminExistsResult,
 } from "./supabase";

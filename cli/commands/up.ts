@@ -2,7 +2,7 @@
  * Up Command
  *
  * Starts the local development stack including Supabase, runs database
- * migrations, and seeds an admin user if needed.
+ * migrations.
  *
  * @module cli/commands/up
  * @see Requirements: 2.1-2.11 (Stack Startup)
@@ -23,8 +23,6 @@ import {
   getSupabaseStatus,
   waitForDatabase,
   runMigrations,
-  seedAdminUser,
-  adminExists,
   // UI
   success,
   warning,
@@ -48,10 +46,7 @@ import {
 interface UpOptions {
   verbose?: boolean;
   skipMigrations?: boolean;
-  skipSeed?: boolean;
 }
-
-const DEFAULT_ADMIN_EMAIL = "admin@ui-syncup.local";
 
 // ============================================================================
 // Command Definition
@@ -60,7 +55,6 @@ const DEFAULT_ADMIN_EMAIL = "admin@ui-syncup.local";
 export const upCommand = new Command("up")
   .description("Start the local development stack")
   .option("--skip-migrations", "Skip running database migrations", false)
-  .option("--skip-seed", "Skip seeding admin user", false)
   .action(async (options: UpOptions, command: Command) => {
     // Get global options from parent program
     const globalOpts = command.optsWithGlobals();
@@ -75,7 +69,6 @@ export const upCommand = new Command("up")
 async function runUp(options: UpOptions): Promise<void> {
   const verbose = options.verbose ?? false;
   const skipMigrations = options.skipMigrations ?? false;
-  const skipSeed = options.skipSeed ?? false;
 
   // ========================================================================
   // Step 0: Find Project Root
@@ -205,45 +198,7 @@ async function runUp(options: UpOptions): Promise<void> {
   }
 
   // ========================================================================
-  // Step 6: Seed Admin User
-  // ========================================================================
-  let adminCredentials: { email: string; password: string } | null = null;
-
-  if (!skipSeed) {
-    spinner.start("Checking for admin user...");
-
-    const adminCheck = await adminExists();
-
-    if (!adminCheck.ok) {
-      spinner.fail("Failed to check for admin user");
-      error(adminCheck.error || "Unknown error checking admin user");
-      process.exit(ExitCode.ExternalError);
-    }
-
-    if (adminCheck.exists) {
-      spinner.succeed("Admin user already exists");
-    } else {
-      spinner.update("Creating admin user...");
-
-      const adminResult = await seedAdminUser(DEFAULT_ADMIN_EMAIL);
-
-      if (adminResult) {
-        adminCredentials = {
-          email: adminResult.email,
-          password: adminResult.password,
-        };
-        spinner.succeed("Admin user created");
-      } else {
-        spinner.fail("Failed to create admin user");
-        warning("You may need to create an admin user manually.");
-      }
-    }
-  } else {
-    info("Skipping admin seed (--skip-seed)");
-  }
-
-  // ========================================================================
-  // Step 7: Display Status
+  // Step 6: Display Status
   // ========================================================================
   newLine();
 
@@ -262,12 +217,6 @@ async function runUp(options: UpOptions): Promise<void> {
     status.services.find((s) => s.name === "api")?.url ||
     `http://localhost:${DEFAULT_PORTS.api}`;
 
-  // Display admin credentials if created
-  if (adminCredentials) {
-    displayAdminCredentials(adminCredentials);
-    newLine();
-  }
-
   // Display service URLs
   displayServiceUrls(appUrl, studioUrl, apiUrl);
 
@@ -281,15 +230,6 @@ async function runUp(options: UpOptions): Promise<void> {
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
-function displayAdminCredentials(credentials: { email: string; password: string }): void {
-  const content = `Email:    ${credentials.email}
-Password: ${credentials.password}
-
-⚠️  Save these credentials - they won't be shown again!`;
-
-  box("🔐 Admin Credentials", content);
-}
 
 function displayServiceUrls(appUrl: string, studioUrl: string, apiUrl: string): void {
   const content = `App:      ${appUrl}
