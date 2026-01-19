@@ -18,6 +18,22 @@ export type {
 
 export { ExitCode } from "./types";
 
+// Error Handling
+export {
+  CLIError,
+  ValidationError,
+  ExternalError,
+  UserAbortError,
+  formatError,
+  getRecoverySuggestion,
+  getExitCode,
+  formatPartialFailure,
+  levenshteinDistance,
+  findClosestCommand,
+  type FormatErrorOptions,
+  type OperationStatus,
+} from "./errors";
+
 // Constants
 export {
   VERSION,

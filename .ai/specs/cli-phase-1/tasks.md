@@ -231,8 +231,8 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
 
 ---
 
-- [ ] 10. Implement `purge` command
-  - [ ] 10.1 Implement purge command logic
+- [x] 10. Implement `purge` command
+  - [x] 10.1 Implement purge command logic
     - Create `cli/commands/purge.ts` with purgeCommand
     - Block if production environment detected
     - Display warning about irreversibility
@@ -248,15 +248,15 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
     - _Requirements: 5.1-5.12_
     - _Location: `cli/commands/purge.ts`_
 
-  - [ ] 10.2 Wire purge command to CLI entry point
+  - [x] 10.2 Wire purge command to CLI entry point
     - Import and register purgeCommand in `cli/index.ts`
     - _Requirements: 6.1_
     - _Location: `cli/index.ts`_
 
 ---
 
-- [ ] 11. Implement error handling and help
-  - [ ] 11.1 Add global error handler
+- [x] 11. Implement error handling and help
+  - [x] 11.1 Add global error handler
     - Wrap command execution in try/catch
     - Format errors without stack traces (unless --verbose)
     - Display recovery suggestions where applicable
@@ -264,7 +264,7 @@ This implementation plan converts the CLI Phase 1 design into discrete, incremen
     - _Requirements: 7.1-7.6_
     - _Location: `cli/index.ts`, `cli/lib/errors.ts`_
 
-  - [ ] 11.2 Implement unknown command handler
+  - [x] 11.2 Implement unknown command handler
     - Display error for unknown commands
     - Show list of available commands
     - _Requirements: 6.4_

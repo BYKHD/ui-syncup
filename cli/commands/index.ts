@@ -17,5 +17,5 @@ export { downCommand } from "./down";
 // Reset Command
 export { resetCommand } from "./reset";
 
-// Other commands will be added here:
-// export { purgeCommand } from './purge';
+// Purge Command
+export { purgeCommand } from "./purge";
