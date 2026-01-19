@@ -81,18 +81,30 @@ bun run validate-env   # Validate environment variables
 
 Use the CLI to initialize and manage the local stack:
 
+**Option 1: Direct Execution**
+
 ```bash
-# Help and usage
-bun run cli -- --help
+bun ./cli/index.ts --help     # Help and usage
+bun ./cli/index.ts init       # Initialize (prompts for local or production)
+bun ./cli/index.ts up         # Start services
+bun ./cli/index.ts down       # Stop services
+bun ./cli/index.ts reset      # Reset data (preserves config)
+bun ./cli/index.ts purge      # Full cleanup
+```
 
-# Initialize (prompts for local or production)
-bun run cli:init
+**Option 2: Linked Binary**
 
-# Stack lifecycle
-bun run cli -- up
-bun run cli -- down
-bun run cli -- reset
-bun run cli -- purge
+```bash
+# Link once to create global command
+bun link
+
+# Then use directly
+ui-syncup --help
+ui-syncup init
+ui-syncup up
+ui-syncup down
+ui-syncup reset
+ui-syncup purge
 ```
 
 ## Project Structure
