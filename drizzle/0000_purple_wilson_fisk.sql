@@ -357,4 +357,4 @@ CREATE INDEX "idx_notifications_recipient_unread" ON "notifications" USING btree
 CREATE INDEX "idx_notifications_entity" ON "notifications" USING btree ("entity_type","entity_id");--> statement-breakpoint
 CREATE INDEX "idx_notifications_grouping" ON "notifications" USING btree ("recipient_id","type","entity_type","entity_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_notifications_dedup" ON "notifications" USING btree ("recipient_id","actor_id","type","entity_type","entity_id","created_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "instance_settings_singleton" ON "instance_settings" USING btree (TRUE);
+CREATE UNIQUE INDEX "instance_settings_singleton" ON "instance_settings" USING btree ((TRUE));

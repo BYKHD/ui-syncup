@@ -35,7 +35,7 @@ export const instanceSettings = pgTable("instance_settings", {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 }, (_table) => ({
   // Singleton constraint: ensures only one row can exist
-  singletonIdx: uniqueIndex("instance_settings_singleton").on(sql`TRUE`),
+  singletonIdx: uniqueIndex("instance_settings_singleton").on(sql`(TRUE)`),
 }));
 
 /**

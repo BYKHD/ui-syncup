@@ -2941,7 +2941,7 @@
           "name": "instance_settings_singleton",
           "columns": [
             {
-              "expression": "TRUE",
+              "expression": "(TRUE)",
               "asc": true,
               "isExpression": true,
               "nulls": "last"
