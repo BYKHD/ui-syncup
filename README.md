@@ -34,15 +34,23 @@ A visual feedback and issue tracking platform for design-to-development collabor
 
 ### Installation
 
-1. Clone the repository
-2. Install dependencies: `bun install`
-3. Set up environment variables: `cp .env.example .env.local`
-4. Validate environment config: `bun run validate-env`
-5. Start local Supabase: `bun run supabase:start`
-6. Run database migrations: `bun run db:migrate`
-7. Seed database (optional): `bun run db:seed`
-8. Start development server: `bun dev`
-9. Open [http://localhost:3000](http://localhost:3000) in your browser
+```bash
+# 1. Clone and install
+git clone https://github.com/BYKHD/ui-syncup.git
+cd ui-syncup
+bun install
+
+# 2. Initialize project (creates .env files and configs)
+bun ./cli/index.ts init
+
+# 3. Start all services (Supabase, migrations, admin user)
+bun ./cli/index.ts up
+
+# 4. Start development server
+bun dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Development Commands
 

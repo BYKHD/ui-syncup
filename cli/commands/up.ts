@@ -274,7 +274,8 @@ async function runUp(options: UpOptions): Promise<void> {
   newLine();
   success("Development stack is ready!");
   newLine();
-  info(`Start the app: ${appUrl}`);
+  info("Next step: Run 'bun dev' to start the development server");
+  info(`Then open: ${appUrl}`);
 }
 
 // ============================================================================
