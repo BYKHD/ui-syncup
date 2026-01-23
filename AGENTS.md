@@ -274,6 +274,57 @@ features/issues/
 - **Barrels**: `index.ts` at the feature root to expose only the public surface
 - **Aliases**: `@/src/*` for absolute imports
 
+### Barrel File Best Practices
+
+Barrel files (`index.ts`) improve import ergonomics but can cause tree-shaking issues and circular dependencies if misused.
+
+**✅ DO: Use explicit named exports**
+```ts
+// features/auth/index.ts - GOOD
+export { AuthCard } from "./components/auth-card";
+export { useSession } from "./hooks/use-session";
+export type { Session, User } from "./types";
+```
+
+**❌ DON'T: Use wildcard re-exports**
+```ts
+// features/auth/index.ts - AVOID
+export * from "./components";
+export * from "./hooks";
+export * from "./types";
+```
+
+**Why explicit exports matter:**
+1. **Better tree-shaking**: Bundlers can statically analyze which exports are used
+2. **Clearer API surface**: The barrel documents the public interface
+3. **Easier debugging**: Circular dependencies are traceable to specific exports
+4. **Faster dev server**: Next.js doesn't parse unused modules
+
+**Next.js optimization:**
+The project configures `optimizePackageImports` in `next.config.ts` for automatic tree-shaking of common libraries:
+
+```ts
+// next.config.ts
+experimental: {
+  optimizePackageImports: [
+    "lucide-react",
+    "date-fns",
+    "@radix-ui/react-icons",
+    "lodash-es",
+    "framer-motion",
+  ],
+},
+```
+
+**When to use barrels:**
+- Feature roots (`features/issues/index.ts`) - define public API
+- Shared component folders (`components/shared/sidebar/index.ts`)
+
+**When to avoid barrels:**
+- Internal sub-folders with many files (import directly instead)
+- When you're consistently hitting circular dependency errors
+
+
 ---
 
 ## 8) Testing & Tooling
