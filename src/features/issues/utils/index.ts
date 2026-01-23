@@ -2,4 +2,13 @@
  * ISSUE UTILS BARREL EXPORTS
  */
 
-export * from './filter-issues';
+export {
+  filterBySearch,
+  filterByStatus,
+  filterByType,
+  filterByPriority,
+  sortIssues,
+  filterAndSortIssues,
+  DEFAULT_FILTERS,
+} from './filter-issues';
+export type { IssueFilters } from './filter-issues';

@@ -5,6 +5,17 @@ import type { NextConfig } from "next"
 import "./src/lib/env"
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Enable automatic tree-shaking for common libraries
+    // This helps reduce bundle size by only including used exports
+    optimizePackageImports: [
+      "lucide-react",
+      "date-fns",
+      "@radix-ui/react-icons",
+      "lodash-es",
+      "framer-motion",
+    ],
+  },
   async headers() {
     // Get environment-specific origins for CORS
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
