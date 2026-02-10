@@ -21,8 +21,14 @@ import {
   isSupabaseInstalled,
   startSupabase,
   getSupabaseStatus,
+  resolveLocalDirectUrl,
   waitForDatabase,
   runMigrations,
+  // Storage
+  hasStorageComposeFile,
+  startStorageService,
+  waitForStorage,
+  getStorageStatus,
   // UI
   success,
   warning,
@@ -36,6 +42,7 @@ import {
   // Constants
   DEFAULT_PORTS,
   DATABASE_TIMEOUT_MS,
+  STORAGE_TIMEOUT_MS,
   ExitCode,
 } from "../lib/index";
 
@@ -137,6 +144,13 @@ async function runUp(options: UpOptions): Promise<void> {
   
   spinner.succeed("Supabase CLI available");
 
+  const directUrl = resolveLocalDirectUrl(projectRoot);
+  if (!directUrl) {
+    error("DIRECT_URL is not configured for local development.");
+    error("Run 'ui-syncup init' to generate .env.local, then retry.");
+    process.exit(ExitCode.ValidationError);
+  }
+
   // ========================================================================
   // Step 3: Start Supabase
   // ========================================================================
@@ -198,7 +212,44 @@ async function runUp(options: UpOptions): Promise<void> {
   }
 
   // ========================================================================
-  // Step 6: Display Status
+  // Step 6: Start Storage Service (MinIO)
+  // ========================================================================
+  let storageStarted = false;
+
+  if (hasStorageComposeFile()) {
+    spinner.start("Starting MinIO storage service...");
+
+    const storageResult = await startStorageService();
+
+    if (!storageResult.success) {
+      spinner.fail("Failed to start storage service");
+      warning(storageResult.message || "Unknown error starting storage");
+      if (storageResult.error && verbose) {
+        debug(storageResult.error.message);
+      }
+      warning("Storage-dependent features (uploads, media) will be unavailable.");
+    } else {
+      // Wait for storage to be healthy
+      spinner.start("Waiting for storage service to be ready...");
+
+      const storageReady = await waitForStorage(STORAGE_TIMEOUT_MS);
+
+      if (!storageReady) {
+        spinner.fail("Storage service did not become ready");
+        warning(`Timed out after ${STORAGE_TIMEOUT_MS / 1000} seconds.`);
+        warning("Storage-dependent features (uploads, media) may be unavailable.");
+      } else {
+        storageStarted = true;
+        spinner.succeed("Storage service is ready");
+      }
+    }
+  } else {
+    info("No storage compose file found. Skipping MinIO startup.");
+    info("To enable local storage, ensure docker-compose.minio.yml exists.");
+  }
+
+  // ========================================================================
+  // Step 7: Display Status
   // ========================================================================
   newLine();
 
@@ -217,11 +268,20 @@ async function runUp(options: UpOptions): Promise<void> {
     status.services.find((s) => s.name === "api")?.url ||
     `http://localhost:${DEFAULT_PORTS.api}`;
 
+  const storageStatus = getStorageStatus();
+
   // Display service URLs
-  displayServiceUrls(appUrl, studioUrl, apiUrl);
+  displayServiceUrls(appUrl, studioUrl, apiUrl, storageStatus.running ? storageStatus : undefined);
 
   newLine();
-  success("Development stack is ready!");
+  if (storageStarted) {
+    success("Development stack is ready! (core + storage)");
+  } else {
+    success("Development stack is ready! (core services only)");
+    if (!hasStorageComposeFile()) {
+      info("Storage service not configured — uploads/media features unavailable.");
+    }
+  }
   newLine();
   info("Next step: Run 'bun dev' to start the development server");
   info(`Then open: ${appUrl}`);
@@ -231,10 +291,22 @@ async function runUp(options: UpOptions): Promise<void> {
 // Helper Functions
 // ============================================================================
 
-function displayServiceUrls(appUrl: string, studioUrl: string, apiUrl: string): void {
-  const content = `App:      ${appUrl}
+import type { StorageStatusResult } from "../lib/index";
+
+function displayServiceUrls(
+  appUrl: string,
+  studioUrl: string,
+  apiUrl: string,
+  storage?: StorageStatusResult
+): void {
+  let content = `App:      ${appUrl}
 Studio:   ${studioUrl}
 API:      ${apiUrl}`;
+
+  if (storage) {
+    content += `\nStorage:  ${storage.apiUrl}
+Console:  ${storage.consoleUrl}`;
+  }
 
   box("🌐 Service URLs", content);
 }

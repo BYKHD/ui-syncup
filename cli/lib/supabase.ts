@@ -11,6 +11,7 @@ import { spawnSync, spawn } from "child_process";
 import postgres from "postgres";
 import * as dotenv from "dotenv";
 import { join } from "path";
+import { existsSync, readFileSync } from "fs";
 
 import type { CommandResult, ServiceStatus } from "./types";
 import { DATABASE_TIMEOUT_MS } from "./constants";
@@ -169,12 +170,10 @@ export async function waitForDatabase(
   const startTime = Date.now();
   let lastError: Error | null = null;
 
-  // Load environment for database URL
-  dotenv.config({ path: join(projectRoot, ".env.local") });
-  const dbUrl = process.env.DIRECT_URL;
+  const dbUrl = resolveLocalDirectUrl(projectRoot);
 
   if (!dbUrl) {
-    warning("DIRECT_URL not set, cannot check database readiness");
+    warning("DIRECT_URL is not configured in .env.local and no fallback was provided");
     return false;
   }
 
@@ -208,6 +207,32 @@ export async function waitForDatabase(
 
   warning(`Database not ready after ${timeoutMs}ms: ${lastError?.message}`);
   return false;
+}
+
+/**
+ * Resolve DIRECT_URL for local CLI operations.
+ *
+ * Precedence:
+ * 1) DIRECT_URL from .env.local
+ * 2) Existing process.env.DIRECT_URL
+ */
+export function resolveLocalDirectUrl(projectRoot: string): string | null {
+  const envPath = join(projectRoot, ".env.local");
+
+  if (existsSync(envPath)) {
+    try {
+      const parsed = dotenv.parse(readFileSync(envPath, "utf-8"));
+      const fromFile = parsed.DIRECT_URL?.trim();
+      if (fromFile) {
+        return fromFile;
+      }
+    } catch {
+      // Fall back to process env when .env.local cannot be parsed.
+    }
+  }
+
+  const fromEnv = process.env.DIRECT_URL?.trim();
+  return fromEnv ? fromEnv : null;
 }
 
 /**
@@ -245,7 +270,7 @@ export async function runMigrations(): Promise<CommandResult> {
       if (code === 0) {
         resolve({
           success: true,
-          message: "Migrations completed successfully",
+          message: stdout.trim() || "Migrations completed successfully",
         });
       } else {
         resolve({
@@ -301,7 +326,7 @@ export async function seedDatabase(): Promise<CommandResult> {
       if (code === 0) {
         resolve({
           success: true,
-          message: "Database seeded successfully",
+          message: stdout.trim() || "Database seeded successfully",
         });
       } else {
         resolve({

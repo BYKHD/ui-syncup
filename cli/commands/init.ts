@@ -60,6 +60,7 @@ import {
 
 interface InitOptions {
   verbose?: boolean;
+  mode?: SetupMode;
 }
 
 /** Tracks file state for safe rollback */
@@ -80,11 +81,13 @@ const SECURE_ENV_PERMISSIONS = 0o600;
 
 export const initCommand = new Command("init")
   .description("Initialize a new UI SyncUp project with environment files and configuration")
+  .option("-m, --mode <mode>", "Setup mode (local or production)")
   .action(async (_options: InitOptions, command: Command) => {
     // Get global options from parent program
     const globalOpts = command.optsWithGlobals();
     const verbose = globalOpts.verbose ?? false;
-    await runInit({ verbose });
+    const mode = _options.mode;
+    await runInit({ verbose, mode });
   });
 
 // ============================================================================
@@ -161,7 +164,10 @@ async function runInit(options: InitOptions): Promise<void> {
     // ========================================================================
     // Step 3: Select Setup Mode
     // ========================================================================
-    const mode = await selectSetupMode();
+    // ========================================================================
+    // Step 3: Select Setup Mode
+    // ========================================================================
+    const mode = await selectSetupMode(options.mode);
 
     newLine();
 
@@ -349,12 +355,23 @@ function displayEnvironmentStatus(env: EnvironmentCheckResult): void {
   }
 }
 
-async function selectSetupMode(): Promise<SetupMode> {
+async function selectSetupMode(explicitMode?: SetupMode): Promise<SetupMode> {
+  // 1. Explicit CLI flag wins (interactive or not)
+  if (explicitMode) {
+    if (explicitMode !== "local" && explicitMode !== "production") {
+      throw new Error(`Invalid mode: ${explicitMode}. Must be 'local' or 'production'.`);
+    }
+    return explicitMode;
+  }
+
+  // 2. Non-interactive defaults to local (safe default)
   if (isNonInteractive()) {
     info("[Non-interactive] Using default mode: local");
+    info("To create a production build non-interactively, use: ui-syncup init --mode production");
     return "local";
   }
 
+  // 3. Interactive prompt
   return select<SetupMode>("Select setup mode:", [
     {
       name: "Local Development (Supabase CLI + Docker)",

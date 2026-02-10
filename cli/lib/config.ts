@@ -11,6 +11,7 @@ import { spawnSync } from "child_process";
 import { existsSync, readFileSync } from "fs";
 import { createServer } from "net";
 import { join } from "path";
+import * as dotenv from "dotenv";
 
 import type { EnvironmentCheck } from "./types";
 import { REQUIRED_PORTS, STORAGE_DIRS } from "./constants";
@@ -78,37 +79,72 @@ export function isCI(): boolean {
  * Used to block destructive operations like purge
  */
 export function isProductionEnvironment(): boolean {
-  // Explicit production override
-  if (process.env.UI_SYNCUP_PRODUCTION === "true" || process.env.UI_SYNCUP_PRODUCTION === "1") {
-    return true;
-  }
-
-  // Explicit CLI flag to force production detection
+  // 1. Explicit CLI flag to force production detection (highest precedence)
   if (process.argv.includes("--i-am-in-production")) {
     return true;
   }
 
-  // Check NODE_ENV
-  if (process.env.NODE_ENV === "production") {
-    return true;
-  }
-
-  // Check Vercel environment
-  if (process.env.VERCEL_ENV === "production") {
-    return true;
-  }
-
-  // Check for production database URL patterns
-  const dbUrl = process.env.DATABASE_URL || "";
+  // 2. Check loaded process.env
   if (
-    dbUrl.includes("supabase.co") ||
-    dbUrl.includes("neon.tech") ||
-    dbUrl.includes("railway.app")
+    process.env.UI_SYNCUP_PRODUCTION === "true" ||
+    process.env.UI_SYNCUP_PRODUCTION === "1" ||
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL_ENV === "production"
   ) {
     return true;
   }
 
+  // 3. Inspect project .env files directly
+  // This catches cases where env vars aren't loaded into the shell yet
+  const projectRoot = process.cwd();
+  const envFiles = [".env.production", ".env.local"];
+
+  for (const file of envFiles) {
+    const filePath = join(projectRoot, file);
+    if (existsSync(filePath)) {
+      try {
+        const content = readFileSync(filePath, "utf-8");
+        const parsed = dotenv.parse(content);
+
+        if (
+          parsed.UI_SYNCUP_PRODUCTION === "true" ||
+          parsed.UI_SYNCUP_PRODUCTION === "1" ||
+          parsed.NODE_ENV === "production"
+        ) {
+          return true;
+        }
+
+        // Check for production database URL patterns
+        const dbUrl = parsed.DATABASE_URL || "";
+        if (isProductionDatabaseUrl(dbUrl)) {
+          return true;
+        }
+      } catch {
+        // Ignore parsing errors, proceed to next check
+      }
+    }
+  }
+
+  // 4. Check loaded DATABASE_URL from process.env
+  if (isProductionDatabaseUrl(process.env.DATABASE_URL || "")) {
+    return true;
+  }
+
   return false;
+}
+
+/**
+ * Check if a database URL looks like a production hosted instance
+ */
+function isProductionDatabaseUrl(url: string): boolean {
+  if (!url) return false;
+  return (
+    url.includes("supabase.co") ||
+    url.includes("neon.tech") ||
+    url.includes("railway.app") ||
+    url.includes("aws.") ||
+    url.includes(".rds.")
+  );
 }
 
 /**
@@ -295,7 +331,7 @@ export function isPortAvailable(port: number): Promise<boolean> {
 /**
  * Check if current directory is a UI SyncUp project
  */
-export function isUIisUIProject(): boolean {
+export function isUISyncUpProject(): boolean {
   return findProjectRoot() !== null;
 }
 

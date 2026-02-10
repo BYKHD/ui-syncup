@@ -2,12 +2,11 @@
 
 This directory contains template files used by the `init` command to generate environment and configuration files.
 
-## Files (to be added in Task 5)
+## Files
 
-- `env.local.template` - Local development environment template
+- `env.local.template` - Local development environment template (MinIO S3-compatible storage)
 - `env.production.template` - Production environment template
 - `docker-compose.override.template.yml` - Docker Compose customization template
-- `config.template.json` - Project configuration template
 
 ## Template Syntax
 

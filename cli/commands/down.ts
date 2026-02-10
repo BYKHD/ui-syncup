@@ -16,6 +16,10 @@ import {
   // Supabase
   stopSupabase,
   getSupabaseStatus,
+  // Storage
+  hasStorageComposeFile,
+  stopStorageService,
+  isStorageServiceRunning,
   // UI
   success,
   warning,
@@ -100,8 +104,9 @@ async function runDown(options: DownOptions): Promise<void> {
   }
 
   const servicesRunning = status.services.length > 0;
+  const storageRunning = hasStorageComposeFile() && isStorageServiceRunning();
 
-  if (!servicesRunning && status.ok) {
+  if (!servicesRunning && !storageRunning && status.ok) {
     spinner.succeed("No services are currently running");
     newLine();
     info("Nothing to stop. Run 'ui-syncup up' to start the development stack.");
@@ -111,35 +116,79 @@ async function runDown(options: DownOptions): Promise<void> {
   if (verbose) {
     debug(`Found ${status.services.length} running service(s)`);
     status.services.forEach((s) => debug(`  - ${s.name}: ${s.status}`));
+    debug(`MinIO storage running: ${storageRunning}`);
   }
 
-  spinner.succeed(`Found ${status.services.length} running service(s)`);
+  const runningServiceCount = status.services.length + (storageRunning ? 1 : 0);
+  spinner.succeed(`Found ${runningServiceCount} running service(s)`);
 
   // ========================================================================
   // Step 3: Stop Supabase Services
   // ========================================================================
-  spinner.start("Stopping Supabase services...");
+  let stopFailed = false;
 
-  const stopResult = await stopSupabase();
+  if (servicesRunning || !status.ok) {
+    spinner.start("Stopping Supabase services...");
 
-  if (!stopResult.success) {
-    spinner.fail("Failed to stop Supabase services");
-    error(stopResult.message || "Unknown error stopping Supabase");
+    const stopResult = await stopSupabase();
 
-    if (stopResult.error && verbose) {
-      debug(stopResult.error.message);
+    if (!stopResult.success) {
+      stopFailed = true;
+      spinner.fail("Failed to stop Supabase services");
+      error(stopResult.message || "Unknown error stopping Supabase");
+
+      if (stopResult.error && verbose) {
+        debug(stopResult.error.message);
+      }
+
+      // Continue even if there's an error - try to stop remaining services
+      warning("Some services may still be running.");
+      warning("Try running 'supabase stop' manually to clean up.");
+    } else {
+      spinner.succeed("Supabase services stopped");
     }
-
-    // Continue even if there's an error - try to stop remaining services
-    warning("Some services may still be running.");
-    warning("Try running 'supabase stop' manually to clean up.");
-  } else {
-    spinner.succeed("Supabase services stopped");
+  } else if (verbose) {
+    info("Supabase services already stopped.");
   }
 
   // ========================================================================
-  // Step 4: Display Confirmation
+  // Step 4: Stop Storage Service (MinIO)
   // ========================================================================
+  let storageStopFailed = false;
+
+  if (storageRunning) {
+    spinner.start("Stopping MinIO storage service...");
+
+    const storageResult = await stopStorageService();
+
+    if (!storageResult.success) {
+      storageStopFailed = true;
+      spinner.fail("Failed to stop storage service");
+      warning(storageResult.message || "Unknown error stopping storage");
+
+      if (storageResult.error && verbose) {
+        debug(storageResult.error.message);
+      }
+    } else {
+      spinner.succeed("Storage service stopped");
+    }
+  }
+
+  // ========================================================================
+  // Step 5: Display Confirmation
+  // ========================================================================
+  if (stopFailed || storageStopFailed) {
+    newLine();
+    warning("Development stack stop completed with errors.");
+    if (stopFailed) {
+      info("Run 'supabase stop' manually and verify with 'supabase status'.");
+    }
+    if (storageStopFailed) {
+      info("Run 'docker compose -f docker-compose.minio.yml down' to stop storage manually.");
+    }
+    process.exit(ExitCode.ExternalError);
+  }
+
   newLine();
   success("Development stack stopped successfully!");
   newLine();

@@ -19,11 +19,14 @@ import {
   // Docker
   isDockerInstalled,
   isDockerRunning,
-  removeContainers,
-  removeVolumes,
-  removeImages,
+  cleanupProjectContainers,
+  cleanupProjectVolumes,
+  cleanupProjectImages,
   // Supabase
   resetSupabase,
+  // Storage
+  hasStorageComposeFile,
+  purgeStorageService,
   // Filesystem
   deleteDirectory,
   deleteFile,
@@ -186,29 +189,33 @@ async function runPurge(options: PurgeOptions): Promise<void> {
     }
 
     // ======================================================================
-    // Step 6: Stop All Docker Containers (Requirement 5.5)
+    // Step 6: Clean Up Orphaned Docker Containers
     // ======================================================================
-    spinner.start("Stopping Docker containers...");
+    spinner.start("Cleaning up Docker containers...");
 
-    const stopResult = await removeContainers();
+    const stopResult = await cleanupProjectContainers();
 
     if (!stopResult.success) {
-      spinner.fail("Failed to stop containers");
-      errors.push(stopResult.message || "Unknown error stopping containers");
+      spinner.fail("Failed to clean up containers");
+      errors.push(stopResult.message || "Unknown error cleaning up containers");
 
       if (stopResult.error && verbose) {
         debug(stopResult.error.message);
       }
     } else {
-      spinner.succeed("Docker containers stopped and removed");
+      if (stopResult.message?.includes("No project containers found")) {
+        spinner.succeed("No orphaned Docker containers found");
+      } else {
+        spinner.succeed("Docker containers removed");
+      }
     }
 
     // ======================================================================
-    // Step 6: Remove Docker Volumes (Requirement 5.6)
+    // Step 6b: Remove Docker Volumes
     // ======================================================================
     spinner.start("Removing Docker volumes...");
 
-    const volumeResult = await removeVolumes();
+    const volumeResult = await cleanupProjectVolumes();
 
     if (!volumeResult.success) {
       spinner.fail("Failed to remove volumes");
@@ -218,15 +225,19 @@ async function runPurge(options: PurgeOptions): Promise<void> {
         debug(volumeResult.error.message);
       }
     } else {
-      spinner.succeed("Docker volumes removed");
+      if (volumeResult.message?.includes("No project volumes found")) {
+        spinner.succeed("No orphaned Docker volumes found");
+      } else {
+        spinner.succeed("Docker volumes removed");
+      }
     }
 
     // ======================================================================
-    // Step 7: Remove Docker Images (Requirement 5.7)
+    // Step 7: Remove Docker Images
     // ======================================================================
     spinner.start("Removing Docker images...");
 
-    const imageResult = await removeImages();
+    const imageResult = await cleanupProjectImages();
 
     if (!imageResult.success) {
       spinner.fail("Failed to remove images");
@@ -236,7 +247,11 @@ async function runPurge(options: PurgeOptions): Promise<void> {
         debug(imageResult.error.message);
       }
     } else {
-      spinner.succeed("Docker images removed");
+      if (imageResult.message?.includes("No project images found")) {
+        spinner.succeed("No orphaned Docker images found");
+      } else {
+        spinner.succeed("Docker images removed");
+      }
     }
   } else {
     if (!dockerInstalled) {
@@ -245,6 +260,26 @@ async function runPurge(options: PurgeOptions): Promise<void> {
     } else {
       info("Skipping Docker cleanup (Docker not running)");
       warnings.push("Docker cleanup skipped - Docker not running");
+    }
+  }
+
+  // ========================================================================
+  // Step 7.5: Purge MinIO Storage Service
+  // ========================================================================
+  if (hasStorageComposeFile() && dockerRunning) {
+    spinner.start("Purging MinIO storage service...");
+
+    const storagePurgeResult = await purgeStorageService();
+
+    if (!storagePurgeResult.success) {
+      spinner.fail("Failed to purge storage service");
+      errors.push(storagePurgeResult.message || "Unknown error purging storage");
+
+      if (storagePurgeResult.error && verbose) {
+        debug(storagePurgeResult.error.message);
+      }
+    } else {
+      spinner.succeed("Storage service purged (containers, volumes, images)");
     }
   }
 

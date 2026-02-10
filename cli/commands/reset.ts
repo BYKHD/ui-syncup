@@ -21,9 +21,13 @@ import {
   resetSupabase,
   isSupabaseInstalled,
   // Docker
-  removeContainers,
+  cleanupProjectContainers,
   isDockerInstalled,
   isDockerRunning,
+  // Storage
+  hasStorageComposeFile,
+  isStorageServiceRunning,
+  stopStorageService,
   // Filesystem
   clearDirectory,
   ensureDirectory,
@@ -242,25 +246,49 @@ async function runReset(options: ResetOptions): Promise<void> {
   }
 
   // ========================================================================
-  // Step 7: Remove Docker Containers (Keep Volumes)
+  // Step 7: Stop MinIO Storage Service
   // ========================================================================
-  spinner.start("Removing Docker containers...");
+  if (hasStorageComposeFile() && isStorageServiceRunning()) {
+    spinner.start("Stopping MinIO storage service...");
 
-  const containerResult = await removeContainers();
+    const storageStopResult = await stopStorageService();
+
+    if (!storageStopResult.success) {
+      spinner.fail("Failed to stop storage service");
+      errors.push(storageStopResult.message || "Unknown error stopping storage");
+
+      if (storageStopResult.error && verbose) {
+        debug(storageStopResult.error.message);
+      }
+    } else {
+      spinner.succeed("Storage service stopped");
+    }
+  }
+
+  // ========================================================================
+  // Step 8: Clean Up Orphaned Docker Containers (Keep Volumes)
+  // ========================================================================
+  spinner.start("Cleaning up orphaned Docker containers...");
+
+  const containerResult = await cleanupProjectContainers();
 
   if (!containerResult.success) {
-    spinner.fail("Failed to remove Docker containers");
-    errors.push(containerResult.message || "Unknown error removing containers");
+    spinner.fail("Failed to clean up Docker containers");
+    errors.push(containerResult.message || "Unknown error cleaning up containers");
 
     if (containerResult.error && verbose) {
       debug(containerResult.error.message);
     }
   } else {
-    spinner.succeed("Docker containers removed");
+    if (containerResult.message?.includes("No project containers found")) {
+      spinner.succeed("No orphaned Docker containers found");
+    } else {
+      spinner.succeed("Docker containers cleaned up");
+    }
   }
 
   // ========================================================================
-  // Step 8: Display Completion Message
+  // Step 9: Display Completion Message
   // ========================================================================
   newLine();
 

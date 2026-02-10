@@ -8,12 +8,21 @@
  */
 
 import { spawnSync, spawn, type ChildProcess } from "child_process";
+import { existsSync } from "fs";
+import { join } from "path";
 import type { CommandResult, ServiceStatus } from "./types";
 import { findProjectRoot } from "./config";
 import { debug, error as logError } from "./ui";
 
 const PROJECT_ROOT_ERROR =
   "Not in a UI SyncUp project. Run from project root or a subdirectory.";
+
+const DEFAULT_COMPOSE_FILES = [
+  "docker-compose.yml",
+  "docker-compose.yaml",
+  "compose.yml",
+  "compose.yaml",
+] as const;
 
 // ============================================================================
 // Docker Detection
@@ -154,6 +163,180 @@ export async function fullCleanup(
 }
 
 // ============================================================================
+// Label-Based Cleanup (No Compose File Required)
+// ============================================================================
+
+/**
+ * Remove Docker containers by project label using direct `docker` commands.
+ * This does not require a root compose file to exist.
+ *
+ * @param projectName - Compose project name label to filter by
+ */
+export async function cleanupProjectContainers(
+  projectName: string = "ui-syncup"
+): Promise<CommandResult> {
+  debug(`Cleaning up containers for project label: ${projectName}`);
+
+  // Find containers by compose project label
+  const listResult = spawnSync(
+    "docker",
+    ["ps", "-aq", "--filter", `label=com.docker.compose.project=${projectName}`],
+    { encoding: "utf-8", timeout: 10000, stdio: ["pipe", "pipe", "pipe"] }
+  );
+
+  if (listResult.status !== 0) {
+    return {
+      success: false,
+      message: listResult.stderr?.trim() || "Failed to list project containers",
+      error: new Error(listResult.stderr?.trim() || "docker ps failed"),
+    };
+  }
+
+  const containerIds = (listResult.stdout?.trim() || "")
+    .split("\n")
+    .filter(Boolean);
+
+  if (containerIds.length === 0) {
+    return {
+      success: true,
+      message: "No project containers found to remove.",
+    };
+  }
+
+  // Force remove all matched containers
+  const removeResult = spawnSync(
+    "docker",
+    ["rm", "-f", ...containerIds],
+    { encoding: "utf-8", timeout: 30000, stdio: ["pipe", "pipe", "pipe"] }
+  );
+
+  if (removeResult.status !== 0) {
+    return {
+      success: false,
+      message: removeResult.stderr?.trim() || "Failed to remove containers",
+      error: new Error(removeResult.stderr?.trim() || "docker rm failed"),
+    };
+  }
+
+  return {
+    success: true,
+    message: `Removed ${containerIds.length} container(s) for project "${projectName}".`,
+  };
+}
+
+/**
+ * Remove Docker volumes by project label using direct `docker` commands.
+ * This does not require a root compose file to exist.
+ *
+ * @param projectName - Compose project name label to filter by
+ */
+export async function cleanupProjectVolumes(
+  projectName: string = "ui-syncup"
+): Promise<CommandResult> {
+  debug(`Cleaning up volumes for project label: ${projectName}`);
+
+  const listResult = spawnSync(
+    "docker",
+    ["volume", "ls", "-q", "--filter", `label=com.docker.compose.project=${projectName}`],
+    { encoding: "utf-8", timeout: 10000, stdio: ["pipe", "pipe", "pipe"] }
+  );
+
+  if (listResult.status !== 0) {
+    return {
+      success: false,
+      message: listResult.stderr?.trim() || "Failed to list project volumes",
+      error: new Error(listResult.stderr?.trim() || "docker volume ls failed"),
+    };
+  }
+
+  const volumeNames = (listResult.stdout?.trim() || "")
+    .split("\n")
+    .filter(Boolean);
+
+  if (volumeNames.length === 0) {
+    return {
+      success: true,
+      message: "No project volumes found to remove.",
+    };
+  }
+
+  const removeResult = spawnSync(
+    "docker",
+    ["volume", "rm", "-f", ...volumeNames],
+    { encoding: "utf-8", timeout: 30000, stdio: ["pipe", "pipe", "pipe"] }
+  );
+
+  if (removeResult.status !== 0) {
+    return {
+      success: false,
+      message: removeResult.stderr?.trim() || "Failed to remove volumes",
+      error: new Error(removeResult.stderr?.trim() || "docker volume rm failed"),
+    };
+  }
+
+  return {
+    success: true,
+    message: `Removed ${volumeNames.length} volume(s) for project "${projectName}".`,
+  };
+}
+
+/**
+ * Remove Docker images by project label using direct `docker` commands.
+ * This does not require a root compose file to exist.
+ *
+ * @param projectName - Compose project name label to filter by
+ */
+export async function cleanupProjectImages(
+  projectName: string = "ui-syncup"
+): Promise<CommandResult> {
+  debug(`Cleaning up images for project label: ${projectName}`);
+
+  const listResult = spawnSync(
+    "docker",
+    ["image", "ls", "-q", "--filter", `label=com.docker.compose.project=${projectName}`],
+    { encoding: "utf-8", timeout: 10000, stdio: ["pipe", "pipe", "pipe"] }
+  );
+
+  if (listResult.status !== 0) {
+    return {
+      success: false,
+      message: listResult.stderr?.trim() || "Failed to list project images",
+      error: new Error(listResult.stderr?.trim() || "docker image ls failed"),
+    };
+  }
+
+  const imageIds = (listResult.stdout?.trim() || "")
+    .split("\n")
+    .filter(Boolean);
+
+  if (imageIds.length === 0) {
+    return {
+      success: true,
+      message: "No project images found to remove.",
+    };
+  }
+
+  const removeResult = spawnSync(
+    "docker",
+    ["rmi", "-f", ...imageIds],
+    { encoding: "utf-8", timeout: 30000, stdio: ["pipe", "pipe", "pipe"] }
+  );
+
+  if (removeResult.status !== 0) {
+    return {
+      success: false,
+      message: removeResult.stderr?.trim() || "Failed to remove images",
+      error: new Error(removeResult.stderr?.trim() || "docker rmi failed"),
+    };
+  }
+
+  return {
+    success: true,
+    message: `Removed ${imageIds.length} image(s) for project "${projectName}".`,
+  };
+}
+
+// ============================================================================
 // Service Status
 // ============================================================================
 
@@ -288,6 +471,14 @@ async function runDockerCommand(
     };
   }
 
+  if (isImplicitComposeCommand(args) && !hasDefaultComposeFile(projectRoot)) {
+    return {
+      success: true,
+      message:
+        "No default Docker Compose file found in project root. Skipping Docker Compose command.",
+    };
+  }
+
   return new Promise((resolve) => {
     const child = spawn("docker", args, {
       stdio: ["pipe", "pipe", "pipe"],
@@ -328,6 +519,18 @@ async function runDockerCommand(
       });
     });
   });
+}
+
+function isImplicitComposeCommand(args: string[]): boolean {
+  if (args[0] !== "compose") {
+    return false;
+  }
+
+  return !args.includes("-f") && !args.includes("--file");
+}
+
+function hasDefaultComposeFile(projectRoot: string): boolean {
+  return DEFAULT_COMPOSE_FILES.some((file) => existsSync(join(projectRoot, file)));
 }
 
 /**

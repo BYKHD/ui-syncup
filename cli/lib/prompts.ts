@@ -19,8 +19,11 @@ import { error, info } from "./ui";
  * Check if running in non-interactive mode (CI environment)
  */
 export function isNonInteractive(): boolean {
-  // Only treat as non-interactive when explicitly in CI.
-  return process.env.CI === "true" || process.env.CI === "1";
+  const inCI = process.env.CI === "true" || process.env.CI === "1";
+  const hasTTYInput = process.stdin.isTTY === true;
+  const hasTTYOutput = process.stdout.isTTY === true;
+
+  return inCI || !hasTTYInput || !hasTTYOutput;
 }
 
 /**

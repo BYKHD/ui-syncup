@@ -70,6 +70,9 @@ export const CURRENT_SCHEMA_VERSION = "1.0.0";
 /** Docker Compose override file */
 export const DOCKER_COMPOSE_OVERRIDE = "docker-compose.override.yml";
 
+/** Docker Compose file for MinIO storage service */
+export const DOCKER_COMPOSE_MINIO = "docker-compose.minio.yml";
+
 // ============================================================================
 // Default Ports
 // ============================================================================
@@ -84,6 +87,10 @@ export const DEFAULT_PORTS = {
   db: 54322,
   /** Supabase Studio UI port */
   studio: 54323,
+  /** MinIO S3-compatible API port */
+  minioApi: 9000,
+  /** MinIO web console port */
+  minioConsole: 9001,
 } as const;
 
 /** All ports that need to be available for the local stack */
@@ -92,7 +99,33 @@ export const REQUIRED_PORTS = [
   DEFAULT_PORTS.api,
   DEFAULT_PORTS.db,
   DEFAULT_PORTS.studio,
+  DEFAULT_PORTS.minioApi,
+  DEFAULT_PORTS.minioConsole,
 ] as const;
+
+// ============================================================================
+// Storage Configuration
+// ============================================================================
+
+/** MinIO local storage service configuration */
+export const MINIO_CONFIG = {
+  /** Docker container name */
+  containerName: "ui-syncup-minio",
+  /** Docker Compose project name */
+  projectName: "ui-syncup-minio",
+  /** Default root user */
+  rootUser: "minioadmin",
+  /** Default root password */
+  rootPassword: "minioadmin",
+  /** Default bucket names */
+  buckets: {
+    attachments: "ui-syncup-attachments",
+    media: "ui-syncup-media",
+  },
+} as const;
+
+/** Timeout for storage readiness check (ms) */
+export const STORAGE_TIMEOUT_MS = 30_000;
 
 // ============================================================================
 // Timeouts and Retries
