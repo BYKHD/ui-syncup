@@ -19,18 +19,12 @@ import { CONFIG_FILENAME, CURRENT_SCHEMA_VERSION } from "./constants";
 // Zod Schema for Configuration
 // ============================================================================
 
-/** Schema for ports configuration */
-const PortsSchema = z.object({
-  app: z.number().int().min(1).max(65535).optional(),
-  db: z.number().int().min(1).max(65535).optional(),
-  studio: z.number().int().min(1).max(65535).optional(),
-});
-
-/** Schema for defaults configuration */
+/**
+ * Schema for defaults configuration.
+ * V1 scope: only `mode` is active. Additional keys reserved for future versions.
+ */
 const DefaultsSchema = z.object({
   mode: z.enum(["local", "production"]).optional(),
-  ports: PortsSchema.optional(),
-  verbose: z.boolean().optional(),
 });
 
 /** Full configuration schema */
@@ -186,7 +180,6 @@ export function createDefaultConfig(): ProjectConfig {
     version: CURRENT_SCHEMA_VERSION,
     defaults: {
       mode: "local",
-      verbose: false,
     },
   };
 }
@@ -240,75 +233,4 @@ function compareVersions(a: string, b: string): number {
   return 0;
 }
 
-// ============================================================================
-// Merge Configuration with Precedence
-// ============================================================================
 
-/**
- * Merge configurations with proper precedence:
- * CLI flags > Environment variables > Config file > Built-in defaults
- *
- * @param cliOptions - Options from command line
- * @param fileConfig - Configuration from file
- * @returns Merged configuration
- */
-export function mergeConfigs(
-  cliOptions: Partial<ProjectConfig["defaults"]>,
-  fileConfig: ProjectConfig | null
-): ProjectConfig["defaults"] {
-  const defaults = createDefaultConfig().defaults || {};
-  const fileDefaults = fileConfig?.defaults || {};
-  const envDefaults = getEnvDefaults();
-
-  return {
-    ...defaults,
-    ...fileDefaults,
-    ...envDefaults,
-    ...cliOptions,
-  };
-}
-
-function getEnvDefaults(): ProjectConfig["defaults"] {
-  const mode = parseMode(process.env.UI_SYNCUP_MODE);
-  const verbose = parseBoolean(process.env.UI_SYNCUP_VERBOSE);
-  const app = parsePort(process.env.UI_SYNCUP_PORT_APP);
-  const db = parsePort(process.env.UI_SYNCUP_PORT_DB);
-  const studio = parsePort(process.env.UI_SYNCUP_PORT_STUDIO);
-
-  const ports =
-    app !== undefined || db !== undefined || studio !== undefined
-      ? { app, db, studio }
-      : undefined;
-
-  return {
-    ...(mode ? { mode } : {}),
-    ...(verbose !== undefined ? { verbose } : {}),
-    ...(ports ? { ports } : {}),
-  };
-}
-
-function parseMode(value: string | undefined): "local" | "production" | undefined {
-  if (!value) return undefined;
-  const normalized = value.toLowerCase();
-  if (normalized === "local" || normalized === "production") {
-    return normalized as "local" | "production";
-  }
-  return undefined;
-}
-
-function parseBoolean(value: string | undefined): boolean | undefined {
-  if (!value) return undefined;
-  const normalized = value.toLowerCase();
-  if (normalized === "true" || normalized === "1") return true;
-  if (normalized === "false" || normalized === "0") return false;
-  return undefined;
-}
-
-function parsePort(value: string | undefined): number | undefined {
-  if (!value) return undefined;
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
-    return undefined;
-  }
-  return parsed;
-}

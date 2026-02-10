@@ -29,6 +29,8 @@ import {
   startStorageService,
   waitForStorage,
   getStorageStatus,
+  // Project Config
+  loadProjectConfig,
   // UI
   success,
   warning,
@@ -91,6 +93,16 @@ async function runUp(options: UpOptions): Promise<void> {
 
   if (verbose) {
     debug(`Project root: ${projectRoot}`);
+  }
+
+  // Load project configuration
+  const projectConfig = loadProjectConfig(projectRoot);
+  if (verbose) {
+    if (projectConfig) {
+      debug(`Config loaded: mode=${projectConfig.defaults?.mode ?? "not set"}, version=${projectConfig.version}`);
+    } else {
+      debug("No project config found. Run 'ui-syncup init' to create one.");
+    }
   }
 
   // ========================================================================

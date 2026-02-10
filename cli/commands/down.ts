@@ -20,6 +20,8 @@ import {
   hasStorageComposeFile,
   stopStorageService,
   isStorageServiceRunning,
+  // Project Config
+  loadProjectConfig,
   // UI
   success,
   warning,
@@ -75,6 +77,16 @@ async function runDown(options: DownOptions): Promise<void> {
 
   if (verbose) {
     debug(`Project root: ${projectRoot}`);
+  }
+
+  // Load project configuration
+  const projectConfig = loadProjectConfig(projectRoot);
+  if (verbose) {
+    if (projectConfig) {
+      debug(`Config loaded: mode=${projectConfig.defaults?.mode ?? "not set"}, version=${projectConfig.version}`);
+    } else {
+      debug("No project config found. Run 'ui-syncup init' to create one.");
+    }
   }
 
   // ========================================================================

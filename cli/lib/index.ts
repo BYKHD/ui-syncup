@@ -111,7 +111,6 @@ export {
   createDefaultConfig,
   validateConfig,
   migrateConfig,
-  mergeConfigs,
   type ValidationResult,
 } from "./project-config";
 

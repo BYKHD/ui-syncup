@@ -99,6 +99,17 @@ CI=1 bun ./cli/index.ts init --mode production
 
 This creates a production scaffold (`.env.production`) that must be populated with real values before deployment.
 
+### Config File Scope (`ui-syncup.config.json`)
+
+The generated config file tracks **minimal metadata** in V1:
+
+| Key | Purpose |
+|-----|---------|
+| `version` | Schema version for future migrations |
+| `defaults.mode` | Records the setup mode chosen during `init` (`local` or `production`) |
+
+Additional config keys (custom ports, verbose defaults, etc.) are reserved for future CLI versions.
+
 ---
 
 ## `ui-syncup up`

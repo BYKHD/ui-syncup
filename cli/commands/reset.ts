@@ -33,6 +33,8 @@ import {
   ensureDirectory,
   // Prompts
   confirm,
+  // Project Config
+  loadProjectConfig,
   // UI
   success,
   warning,
@@ -89,6 +91,16 @@ async function runReset(options: ResetOptions): Promise<void> {
 
   if (verbose) {
     debug(`Project root: ${projectRoot}`);
+  }
+
+  // Load project configuration
+  const projectConfig = loadProjectConfig(projectRoot);
+  if (verbose) {
+    if (projectConfig) {
+      debug(`Config loaded: mode=${projectConfig.defaults?.mode ?? "not set"}, version=${projectConfig.version}`);
+    } else {
+      debug("No project config found. Run 'ui-syncup init' to create one.");
+    }
   }
 
   // ========================================================================

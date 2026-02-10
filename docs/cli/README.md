@@ -47,7 +47,7 @@ bun ./cli/index.ts init --mode production   # Non-interactive production setup
 3. Creates `.env.local` or `.env.production` with safe defaults
 4. Creates storage directories (`storage/uploads`, `storage/avatars`)
 5. Generates `docker-compose.override.yml`
-6. Creates `ui-syncup.config.json`
+6. Creates `ui-syncup.config.json` (tracks `version` and `defaults.mode` only in V1)
 
 ### Features
 

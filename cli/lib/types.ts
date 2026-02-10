@@ -95,7 +95,11 @@ export interface GlobalOptions {
 // Configuration Types
 // ============================================================================
 
-/** Project configuration file schema (ui-syncup.config.json) */
+/** Project configuration file schema (ui-syncup.config.json)
+ *
+ * V1 scope: Only `version` and `defaults.mode` are active.
+ * Additional config keys (ports, verbose) are reserved for future versions.
+ */
 export interface ProjectConfig {
   /** Schema version for migration support */
   version: string;
@@ -103,17 +107,6 @@ export interface ProjectConfig {
   defaults?: {
     /** Default setup mode */
     mode?: SetupMode;
-    /** Custom port configuration */
-    ports?: {
-      /** Application port (default: 3000) */
-      app?: number;
-      /** Database port (default: 54322) */
-      db?: number;
-      /** Supabase Studio port (default: 54323) */
-      studio?: number;
-    };
-    /** Enable verbose output by default */
-    verbose?: boolean;
   };
 }
 

@@ -14,8 +14,8 @@ The current `cli/` implementation is close for local developer bootstrap, but **
 | Local Storage Bootstrap | Standardized on MinIO (S3-compatible) | P0 | Storage contract enforced, bootstrap gap closed |
 | Production Env Bootstrap | Aligned with runtime schema, automatable | P0 | Template aligned, non-interactive mode added |
 | Destructive Safety Guards | Hardened (inspects local env files) | P1 | Production detection enhanced |
-| Config Contract (`ui-syncup.config.json`) | Generated but mostly unused | P1 | Scoping decision pending |
-| Test Coverage | Minimal command-level validation | P1 | Docker cleanup tests added, command-level tests pending |
+| Config Contract (`ui-syncup.config.json`) | V1 scope active (`version`, `defaults.mode`) | P1 | DEC-002 Option A implemented |
+| Test Coverage | All V1 commands covered | P1 | Docker cleanup + command integration tests complete |
 | Naming/Docs Hygiene | Cleaned (`isUISyncUpProject`, docs refreshed) | P2 | Typos fixed, template README refreshed |
 
 ---
@@ -48,8 +48,9 @@ Use this section to resolve each `[NEED TO CLEARIFY]` item quickly.
 - [ ] **C**: Fully implement config-driven behavior now (mode/ports/verbosity precedence).
   - Impact: Richest CLI configuration for V1.
   - Tradeoff: Larger scope and higher regression risk before launch.
-- Approval: `[ ] A` `[ ] B` `[ ] C`
+- Approval: `[x] A` `[ ] B` `[ ] C`
 - Recommended: **A**
+- **Status: IMPLEMENTED** — Config scope reduced to `version` + `defaults.mode`. Dead code removed (`ports`, `verbose`, `mergeConfigs`, env-var parsers). `loadProjectConfig` wired into all runtime commands (`up`, `down`, `reset`, `purge`) with verbose-mode logging.
 
 ---
 
@@ -153,35 +154,35 @@ Use this section to resolve each `[NEED TO CLEARIFY]` item quickly.
    - Depends on: Production Env Template Alignment
    - Notes / Recommended option: **Implemented** — `isProductionEnvironment` now inspects disk content of env files, not just shell env.
 
-7. [ ] **FIX-007 – Add Integration Tests for Command Workflows (Priority: P1)**
+7. [x] **FIX-007 – Add Integration Tests for Command Workflows (Priority: P1)**
    - Problem: Existing tests only cover helper functions, not command behavior, exit codes, or workflow sequencing.
    - Where: `cli/lib/__tests__/` (current scope), `cli/commands/*.ts` (untested workflows).
    - Why it blocks: Regression risk is high for operational lifecycle commands.
    - Owner: Engineering
    - Action steps:
-     1. Add CLI integration tests for `init/up/down/reset/purge` using process and FS mocks.
-     2. Cover both success and controlled failure paths.
-     3. Add tests for documentation-critical outputs (next steps, warnings).
+     1. ~~Add CLI integration tests for `init/up/down/reset/purge` using process and FS mocks.~~ **DONE — 55 tests across 5 test files in `cli/commands/__tests__/`.**
+     2. ~~Cover both success and controlled failure paths.~~ **DONE — Each command has happy-path and multiple failure-path tests.**
+     3. ~~Add tests for documentation-critical outputs (next steps, warnings).~~ **DONE — Assertions on completion messages, next-step guidance, safety warnings, and exit codes.**
    - Acceptance criteria:
-     - All V1 commands have at least one happy path and one failure path test.
-     - Exit codes are asserted for key scenarios.
+     - ~~All V1 commands have at least one happy path and one failure path test.~~ ✅
+     - ~~Exit codes are asserted for key scenarios.~~ ✅
    - Depends on: Cleanup Determinism, Production Env Alignment, Non-interactive Bootstrap
-   - Notes / Recommended option: Prioritize reset/purge and init first due destructive/setup impact.
+   - Notes / Recommended option: **Implemented** — 55 integration tests covering `init` (10), `up` (14), `down` (8), `reset` (11), `purge` (12). Tests validate exit codes, safety guards, documentation-critical outputs, and continue-on-error behavior.
 
-8. [ ] **FIX-008 – Either Wire `ui-syncup.config.json` Into Runtime or Reduce Scope (Priority: P1)**
+8. [x] **FIX-008 – Either Wire `ui-syncup.config.json` Into Runtime or Reduce Scope (Priority: P1)**
    - Problem: Config file is generated but largely not consumed (defaults/ports/mode/verbose contract is mostly inert).
    - Where: `cli/commands/init.ts` > config creation; `cli/lib/project-config.ts` > merge/load utilities; `cli/commands/*` > no config usage.
    - Why it blocks: Creates false expectations and operator confusion about configurable behavior.
    - Owner: Product
    - Action steps:
-     1. Decide whether config is active in V1 or reserved for V2. [NEED TO CLEARIFY]
-     2. If V1 active, wire into command option resolution.
-     3. If V2, simplify generated file and docs to only meaningful fields.
+     1. ~~Decide whether config is active in V1 or reserved for V2.~~ **DONE — DEC-002 Option A approved: minimal active config.**
+     2. ~~If V1 active, wire into command option resolution.~~ **DONE — `loadProjectConfig` wired into `up`, `down`, `reset`, `purge` with verbose logging.**
+     3. ~~If V2, simplify generated file and docs to only meaningful fields.~~ **DONE — Removed `ports`, `verbose` from schema; removed `mergeConfigs`, `getEnvDefaults`, env-var parsers.**
    - Acceptance criteria:
-     - Every documented config key affects behavior or is removed from V1 docs.
-     - No dead config contract remains.
+     - ~~Every documented config key affects behavior or is removed from V1 docs.~~ ✅
+     - ~~No dead config contract remains.~~ ✅
    - Depends on: CLI Docs Reconciliation
-   - Notes / Recommended option: Keep minimal config in V1 (`version`, maybe `defaults.mode`) to reduce drift.
+   - Notes / Recommended option: **Implemented** — V1 config scope reduced to `version` + `defaults.mode`. Dead infrastructure removed. All runtime commands now load and log config. Docs and CLI_GUIDE updated with config scope table.
 
 9. [x] **FIX-009 – Close Local Storage Bootstrap Gap in `up` Flow (Priority: P1)**
    - Problem: `up` starts Supabase only; storage service prerequisites are not started/validated for attachment/media use cases.
@@ -241,7 +242,7 @@ Use this section to resolve each `[NEED TO CLEARIFY]` item quickly.
 - [x] `.env.production` template passes runtime schema validation when populated. **DONE — Bundle B**
 - [x] `reset` and `purge` are deterministic in the supported local setup(s). **DONE — Label-based Docker cleanup.**
 - [x] CLI docs exactly match `ui-syncup --help` command surface. **DONE — Bundle C**
-- [ ] Integration tests exist for all shipped V1 commands.
+- [x] Integration tests exist for all shipped V1 commands. **DONE — 55 tests across all 5 commands.**
 
 ### No-Go Conditions
 
@@ -274,7 +275,7 @@ Use this section to resolve each `[NEED TO CLEARIFY]` item quickly.
    - Reset/purge deterministic cleanup
    - Reason: High-risk destructive behavior deserves focused review and rollback strategy.
 
-2. **Standalone S2 – Test Harness Expansion**
+2. **Standalone S2 – Test Harness Expansion** ✅
    - Integration tests for command workflows
    - Reason: Broad test additions can be parallelized once behavior contracts from Bundles A/B and S1 are stable.
 
