@@ -14,6 +14,8 @@ export type {
   ServiceStatus,
   GlobalOptions,
   ProjectConfig,
+  ProjectConfigLoadResult,
+  ProjectConfigLoadStatus,
 } from "./types";
 
 export { ExitCode } from "./types";
@@ -106,6 +108,7 @@ export {
 
 // Project Config Service
 export {
+  loadProjectConfigWithStatus,
   loadProjectConfig,
   saveProjectConfig,
   createDefaultConfig,

@@ -78,7 +78,7 @@ export function isCI(): boolean {
  * Check if running in production environment
  * Used to block destructive operations like purge
  */
-export function isProductionEnvironment(): boolean {
+export function isProductionEnvironment(projectRoot?: string): boolean {
   // 1. Explicit CLI flag to force production detection (highest precedence)
   if (process.argv.includes("--i-am-in-production")) {
     return true;
@@ -96,11 +96,11 @@ export function isProductionEnvironment(): boolean {
 
   // 3. Inspect project .env files directly
   // This catches cases where env vars aren't loaded into the shell yet
-  const projectRoot = process.cwd();
+  const envRoot = projectRoot ?? findProjectRoot() ?? process.cwd();
   const envFiles = [".env.production", ".env.local"];
 
   for (const file of envFiles) {
-    const filePath = join(projectRoot, file);
+    const filePath = join(envRoot, file);
     if (existsSync(filePath)) {
       try {
         const content = readFileSync(filePath, "utf-8");

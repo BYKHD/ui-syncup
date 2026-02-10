@@ -110,6 +110,23 @@ export interface ProjectConfig {
   };
 }
 
+/** Status returned when loading project configuration from disk */
+export type ProjectConfigLoadStatus =
+  | "ok"
+  | "missing"
+  | "invalid"
+  | "newer_schema"
+  | "io_error";
+
+/** Structured result for project config loading */
+export interface ProjectConfigLoadResult {
+  status: ProjectConfigLoadStatus;
+  config?: ProjectConfig;
+  error?: string;
+  foundVersion?: string;
+  currentVersion?: string;
+}
+
 // ============================================================================
 // Error Types
 // ============================================================================

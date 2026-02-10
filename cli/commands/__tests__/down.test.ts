@@ -21,6 +21,7 @@ const mockGetSupabaseStatus = vi.hoisted(() => vi.fn());
 const mockHasStorageComposeFile = vi.hoisted(() => vi.fn());
 const mockStopStorageService = vi.hoisted(() => vi.fn());
 const mockIsStorageServiceRunning = vi.hoisted(() => vi.fn());
+const mockLoadProjectConfigWithStatus = vi.hoisted(() => vi.fn());
 
 // UI mocks
 const mockSuccess = vi.hoisted(() => vi.fn());
@@ -41,7 +42,7 @@ vi.mock("../../lib/index", () => ({
   stopStorageService: mockStopStorageService,
   isStorageServiceRunning: mockIsStorageServiceRunning,
   // Project Config
-  loadProjectConfig: vi.fn(() => null),
+  loadProjectConfigWithStatus: mockLoadProjectConfigWithStatus,
   success: mockSuccess,
   warning: mockWarning,
   error: mockError,
@@ -61,6 +62,15 @@ class ExitError extends Error {
   constructor(public code: number | undefined) {
     super(`process.exit(${code})`);
   }
+}
+
+function normalizeExitCode(code?: string | number | null): number {
+  if (typeof code === "number") return code;
+  if (typeof code === "string") {
+    const parsed = Number.parseInt(code, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
 }
 
 const mockSpinner = {
@@ -84,6 +94,7 @@ function setupDefaultMocks() {
   mockStopSupabase.mockResolvedValue({ success: true });
   mockHasStorageComposeFile.mockReturnValue(false);
   mockIsStorageServiceRunning.mockReturnValue(false);
+  mockLoadProjectConfigWithStatus.mockReturnValue({ status: "missing" });
 }
 
 // ---------------------------------------------------------------------------
@@ -97,12 +108,15 @@ import { downCommand } from "../down";
 // ---------------------------------------------------------------------------
 
 describe("down command", () => {
-  let exitSpy: ReturnType<typeof vi.spyOn>;
+  let exitSpy = vi.spyOn(process, "exit").mockImplementation((code) => {
+    throw new ExitError(normalizeExitCode(code));
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
+    exitSpy.mockRestore();
     exitSpy = vi.spyOn(process, "exit").mockImplementation((code) => {
-      throw new ExitError(code ?? 0);
+      throw new ExitError(normalizeExitCode(code));
     });
     setupDefaultMocks();
   });
@@ -182,6 +196,22 @@ describe("down command", () => {
       expect(exitSpy).toHaveBeenCalledWith(2);
       expect(mockError).toHaveBeenCalledWith(
         expect.stringContaining("production environment")
+      );
+    });
+
+    it("exits with ValidationError when project config is incompatible", async () => {
+      mockLoadProjectConfigWithStatus.mockReturnValue({
+        status: "invalid",
+        error: "Invalid configuration in ui-syncup.config.json: defaults.mode: Invalid enum value",
+      });
+
+      await expect(
+        downCommand.parseAsync([], { from: "user" })
+      ).rejects.toThrow(ExitError);
+
+      expect(exitSpy).toHaveBeenCalledWith(2);
+      expect(mockError).toHaveBeenCalledWith(
+        expect.stringContaining("Invalid configuration")
       );
     });
 

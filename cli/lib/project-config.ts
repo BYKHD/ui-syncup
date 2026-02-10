@@ -12,7 +12,11 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { z } from "zod";
 
-import type { ProjectConfig, FileOperationResult } from "./types";
+import type {
+  ProjectConfig,
+  FileOperationResult,
+  ProjectConfigLoadResult,
+} from "./types";
 import { CONFIG_FILENAME, CURRENT_SCHEMA_VERSION } from "./constants";
 
 // ============================================================================
@@ -79,13 +83,13 @@ export function validateConfig(config: unknown): ValidationResult {
  * Load project configuration from disk
  *
  * @param projectRoot - Path to project root directory
- * @returns Configuration if found and valid, null otherwise
+ * @returns Structured load result with status and optional config
  */
-export function loadProjectConfig(projectRoot: string): ProjectConfig | null {
+export function loadProjectConfigWithStatus(projectRoot: string): ProjectConfigLoadResult {
   const configPath = join(projectRoot, CONFIG_FILENAME);
 
   if (!existsSync(configPath)) {
-    return null;
+    return { status: "missing" };
   }
 
   try {
@@ -94,31 +98,74 @@ export function loadProjectConfig(projectRoot: string): ProjectConfig | null {
 
     const validation = validateConfig(parsed);
     if (!validation.valid) {
-      console.error(`Invalid configuration in ${CONFIG_FILENAME}:`);
-      validation.errors?.forEach((err) => console.error(`  - ${err}`));
-      return null;
+      return {
+        status: "invalid",
+        error: `Invalid configuration in ${CONFIG_FILENAME}: ${validation.errors?.join(
+          ", "
+        )}`,
+      };
     }
 
     // Block configs created by a newer CLI version
-    if (compareVersions(parsed.version, CURRENT_SCHEMA_VERSION) > 0) {
-      console.error(
-        `Config schema ${parsed.version} is newer than this CLI (${CURRENT_SCHEMA_VERSION}).`
-      );
-      console.error("Please update the CLI to continue.");
-      return null;
+    const config = validation.config!;
+    if (compareVersions(config.version, CURRENT_SCHEMA_VERSION) > 0) {
+      return {
+        status: "newer_schema",
+        error: `Config schema ${config.version} is newer than this CLI (${CURRENT_SCHEMA_VERSION}).`,
+        foundVersion: config.version,
+        currentVersion: CURRENT_SCHEMA_VERSION,
+      };
     }
 
     // Check if migration is needed
-    if (parsed.version !== CURRENT_SCHEMA_VERSION) {
-      return migrateConfig(parsed);
+    if (config.version !== CURRENT_SCHEMA_VERSION) {
+      const migrated = migrateConfig(config);
+      const migratedValidation = validateConfig(migrated);
+
+      if (!migratedValidation.valid) {
+        return {
+          status: "invalid",
+          error: `Migrated configuration is invalid: ${migratedValidation.errors?.join(
+            ", "
+          )}`,
+        };
+      }
+
+      return {
+        status: "ok",
+        config: migratedValidation.config!,
+      };
     }
 
-    return validation.config!;
+    return {
+      status: "ok",
+      config,
+    };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`Failed to load ${CONFIG_FILENAME}: ${message}`);
-    return null;
+    return {
+      status: "io_error",
+      error: `Failed to load ${CONFIG_FILENAME}: ${message}`,
+    };
   }
+}
+
+/**
+ * Backward-compatible helper that returns only parsed config.
+ * For runtime-safe handling, prefer `loadProjectConfigWithStatus`.
+ */
+export function loadProjectConfig(projectRoot: string): ProjectConfig | null {
+  const result = loadProjectConfigWithStatus(projectRoot);
+
+  if (result.status === "ok") {
+    return result.config ?? null;
+  }
+
+  if (result.status !== "missing" && result.error) {
+    console.error(result.error);
+  }
+
+  return null;
 }
 
 /**
@@ -146,7 +193,8 @@ export async function saveProjectConfig(
   }
 
   try {
-    const content = JSON.stringify(config, null, 2);
+    const sanitizedConfig = validation.config!;
+    const content = JSON.stringify(sanitizedConfig, null, 2);
     const exists = existsSync(configPath);
 
     writeFileSync(configPath, content + "\n", "utf-8");
@@ -232,5 +280,4 @@ function compareVersions(a: string, b: string): number {
 
   return 0;
 }
-
 

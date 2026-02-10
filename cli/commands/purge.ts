@@ -33,7 +33,7 @@ import {
   // Prompts
   confirmPhrase,
   // Project Config
-  loadProjectConfig,
+  loadProjectConfigWithStatus,
   // UI
   success,
   warning,
@@ -97,19 +97,26 @@ async function runPurge(options: PurgeOptions): Promise<void> {
   }
 
   // Load project configuration
-  const projectConfig = loadProjectConfig(projectRoot);
-  if (verbose) {
-    if (projectConfig) {
-      debug(`Config loaded: mode=${projectConfig.defaults?.mode ?? "not set"}, version=${projectConfig.version}`);
-    } else {
-      debug("No project config found. Run 'ui-syncup init' to create one.");
+  const configLoadResult = loadProjectConfigWithStatus(projectRoot);
+  if (configLoadResult.status === "ok" && verbose) {
+    const projectConfig = configLoadResult.config;
+    debug(
+      `Config loaded: mode=${projectConfig?.defaults?.mode ?? "not set"}, version=${projectConfig?.version ?? "unknown"}`
+    );
+  } else if (configLoadResult.status === "missing" && verbose) {
+    debug("No project config found. Run 'ui-syncup init' to create one.");
+  } else if (configLoadResult.status !== "missing") {
+    error(configLoadResult.error || "Failed to load project configuration.");
+    if (configLoadResult.status === "newer_schema") {
+      error("Please update the CLI to continue.");
     }
+    process.exit(ExitCode.ValidationError);
   }
 
   // ========================================================================
   // Step 1: Safety Check - Block in Production (Requirement 5.4)
   // ========================================================================
-  if (isProductionEnvironment()) {
+  if (isProductionEnvironment(projectRoot)) {
     newLine();
     error("🚫 Factory purge is BLOCKED in production environments.");
     newLine();

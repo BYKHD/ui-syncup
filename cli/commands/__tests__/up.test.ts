@@ -28,6 +28,7 @@ const mockHasStorageComposeFile = vi.hoisted(() => vi.fn());
 const mockStartStorageService = vi.hoisted(() => vi.fn());
 const mockWaitForStorage = vi.hoisted(() => vi.fn());
 const mockGetStorageStatus = vi.hoisted(() => vi.fn());
+const mockLoadProjectConfigWithStatus = vi.hoisted(() => vi.fn());
 
 // UI mocks
 const mockSuccess = vi.hoisted(() => vi.fn());
@@ -60,7 +61,7 @@ vi.mock("../../lib/index", () => ({
   waitForStorage: mockWaitForStorage,
   getStorageStatus: mockGetStorageStatus,
   // Project Config
-  loadProjectConfig: vi.fn(() => null),
+  loadProjectConfigWithStatus: mockLoadProjectConfigWithStatus,
   // UI
   success: mockSuccess,
   warning: mockWarning,
@@ -86,6 +87,15 @@ class ExitError extends Error {
   constructor(public code: number | undefined) {
     super(`process.exit(${code})`);
   }
+}
+
+function normalizeExitCode(code?: string | number | null): number {
+  if (typeof code === "number") return code;
+  if (typeof code === "string") {
+    const parsed = Number.parseInt(code, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
 }
 
 const mockSpinner = {
@@ -115,6 +125,7 @@ function setupDefaultMocks() {
   mockRunMigrations.mockResolvedValue({ success: true });
   mockHasStorageComposeFile.mockReturnValue(false);
   mockGetStorageStatus.mockReturnValue({ running: false });
+  mockLoadProjectConfigWithStatus.mockReturnValue({ status: "missing" });
 }
 
 // ---------------------------------------------------------------------------
@@ -128,12 +139,15 @@ import { upCommand } from "../up";
 // ---------------------------------------------------------------------------
 
 describe("up command", () => {
-  let exitSpy: ReturnType<typeof vi.spyOn>;
+  let exitSpy = vi.spyOn(process, "exit").mockImplementation((code) => {
+    throw new ExitError(normalizeExitCode(code));
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
+    exitSpy.mockRestore();
     exitSpy = vi.spyOn(process, "exit").mockImplementation((code) => {
-      throw new ExitError(code ?? 0);
+      throw new ExitError(normalizeExitCode(code));
     });
     // Reset Commander's stored option values to prevent state leaks between tests
     upCommand.setOptionValue("skipMigrations", false);
@@ -229,6 +243,22 @@ describe("up command", () => {
       expect(exitSpy).toHaveBeenCalledWith(2);
       expect(mockError).toHaveBeenCalledWith(
         expect.stringContaining("production environment")
+      );
+    });
+
+    it("exits with ValidationError when project config is newer than CLI schema", async () => {
+      mockLoadProjectConfigWithStatus.mockReturnValue({
+        status: "newer_schema",
+        error: "Config schema 2.0.0 is newer than this CLI (1.0.0).",
+      });
+
+      await expect(
+        upCommand.parseAsync([], { from: "user" })
+      ).rejects.toThrow(ExitError);
+
+      expect(exitSpy).toHaveBeenCalledWith(2);
+      expect(mockError).toHaveBeenCalledWith(
+        expect.stringContaining("newer than this CLI")
       );
     });
 

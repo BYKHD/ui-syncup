@@ -101,6 +101,15 @@ class ExitError extends Error {
   }
 }
 
+function normalizeExitCode(code?: string | number | null): number {
+  if (typeof code === "number") return code;
+  if (typeof code === "string") {
+    const parsed = Number.parseInt(code, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+}
+
 const mockSpinner = {
   start: vi.fn(),
   stop: vi.fn(),
@@ -143,12 +152,15 @@ import { initCommand } from "../init";
 // ---------------------------------------------------------------------------
 
 describe("init command", () => {
-  let exitSpy: ReturnType<typeof vi.spyOn>;
+  let exitSpy = vi.spyOn(process, "exit").mockImplementation((code) => {
+    throw new ExitError(normalizeExitCode(code));
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
+    exitSpy.mockRestore();
     exitSpy = vi.spyOn(process, "exit").mockImplementation((code) => {
-      throw new ExitError(code ?? 0);
+      throw new ExitError(normalizeExitCode(code));
     });
     setupDefaultMocks();
   });

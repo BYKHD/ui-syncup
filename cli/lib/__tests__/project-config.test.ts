@@ -39,6 +39,7 @@ vi.mock("fs", () => ({
 import {
   createDefaultConfig,
   validateConfig,
+  loadProjectConfigWithStatus,
   loadProjectConfig,
   saveProjectConfig,
 } from "../project-config";
@@ -141,6 +142,30 @@ describe("project-config (V1 scope)", () => {
   // loadProjectConfig
   // =========================================================================
 
+  describe("loadProjectConfigWithStatus", () => {
+    it("returns missing status when config file does not exist", () => {
+      mockExistsSync.mockReturnValue(false);
+
+      const result = loadProjectConfigWithStatus(PROJECT_ROOT);
+      expect(result).toEqual({ status: "missing" });
+    });
+
+    it("returns newer_schema when config version is higher than current CLI", () => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFileSync.mockReturnValue(
+        JSON.stringify({
+          version: "2.0.0",
+          defaults: { mode: "local" },
+        })
+      );
+
+      const result = loadProjectConfigWithStatus(PROJECT_ROOT);
+      expect(result.status).toBe("newer_schema");
+      expect(result.foundVersion).toBe("2.0.0");
+      expect(result.currentVersion).toBe("1.0.0");
+    });
+  });
+
   describe("loadProjectConfig", () => {
     it("returns null when config file does not exist", () => {
       mockExistsSync.mockReturnValue(false);
@@ -203,6 +228,24 @@ describe("project-config (V1 scope)", () => {
       expect(parsed.defaults).not.toHaveProperty("ports");
       expect(parsed.defaults).not.toHaveProperty("verbose");
       expect(parsed.defaults).toHaveProperty("mode", "local");
+    });
+
+    it("strips unknown keys before writing", async () => {
+      const config = {
+        version: "1.0.0",
+        defaults: { mode: "local" },
+        extra: "should-not-be-written",
+      } as unknown as ReturnType<typeof createDefaultConfig>;
+
+      mockMkdirSync.mockReturnValue(undefined);
+      mockWriteFileSync.mockReturnValue(undefined);
+
+      await saveProjectConfig(PROJECT_ROOT, config);
+
+      const writtenJson = mockWriteFileSync.mock.calls[0][1] as string;
+      const parsed = JSON.parse(writtenJson);
+
+      expect(parsed).not.toHaveProperty("extra");
     });
   });
 });

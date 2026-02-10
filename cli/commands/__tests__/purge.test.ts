@@ -27,6 +27,7 @@ const mockPurgeStorageService = vi.hoisted(() => vi.fn());
 const mockDeleteDirectory = vi.hoisted(() => vi.fn());
 const mockDeleteFile = vi.hoisted(() => vi.fn());
 const mockConfirmPhrase = vi.hoisted(() => vi.fn());
+const mockLoadProjectConfigWithStatus = vi.hoisted(() => vi.fn());
 
 // UI mocks
 const mockSuccess = vi.hoisted(() => vi.fn());
@@ -53,7 +54,7 @@ vi.mock("../../lib/index", () => ({
   deleteFile: mockDeleteFile,
   confirmPhrase: mockConfirmPhrase,
   // Project Config
-  loadProjectConfig: vi.fn(() => null),
+  loadProjectConfigWithStatus: mockLoadProjectConfigWithStatus,
   success: mockSuccess,
   warning: mockWarning,
   error: mockError,
@@ -78,6 +79,15 @@ class ExitError extends Error {
   constructor(public code: number | undefined) {
     super(`process.exit(${code})`);
   }
+}
+
+function normalizeExitCode(code?: string | number | null): number {
+  if (typeof code === "number") return code;
+  if (typeof code === "string") {
+    const parsed = Number.parseInt(code, 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
 }
 
 const mockSpinner = {
@@ -110,6 +120,7 @@ function setupDefaultMocks() {
   mockDeleteDirectory.mockResolvedValue({ success: true });
   mockDeleteFile.mockResolvedValue({ success: true });
   mockHasStorageComposeFile.mockReturnValue(false);
+  mockLoadProjectConfigWithStatus.mockReturnValue({ status: "missing" });
 }
 
 // ---------------------------------------------------------------------------
@@ -123,12 +134,15 @@ import { purgeCommand } from "../purge";
 // ---------------------------------------------------------------------------
 
 describe("purge command", () => {
-  let exitSpy: ReturnType<typeof vi.spyOn>;
+  let exitSpy = vi.spyOn(process, "exit").mockImplementation((code) => {
+    throw new ExitError(normalizeExitCode(code));
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
+    exitSpy.mockRestore();
     exitSpy = vi.spyOn(process, "exit").mockImplementation((code) => {
-      throw new ExitError(code ?? 0);
+      throw new ExitError(normalizeExitCode(code));
     });
     setupDefaultMocks();
   });
@@ -221,6 +235,22 @@ describe("purge command", () => {
       expect(exitSpy).toHaveBeenCalledWith(2);
       expect(mockError).toHaveBeenCalledWith(
         expect.stringContaining("BLOCKED")
+      );
+    });
+
+    it("exits with ValidationError when config schema is newer than CLI", async () => {
+      mockLoadProjectConfigWithStatus.mockReturnValue({
+        status: "newer_schema",
+        error: "Config schema 2.0.0 is newer than this CLI (1.0.0).",
+      });
+
+      await expect(
+        purgeCommand.parseAsync([], { from: "user" })
+      ).rejects.toThrow(ExitError);
+
+      expect(exitSpy).toHaveBeenCalledWith(2);
+      expect(mockError).toHaveBeenCalledWith(
+        expect.stringContaining("newer than this CLI")
       );
     });
 
