@@ -110,11 +110,13 @@ export {
 export {
   loadProjectConfigWithStatus,
   loadProjectConfig,
+  handleProjectConfigLoadResult,
   saveProjectConfig,
   createDefaultConfig,
   validateConfig,
   migrateConfig,
   type ValidationResult,
+  type ProjectConfigLoadLogger,
 } from "./project-config";
 
 // Filesystem Service

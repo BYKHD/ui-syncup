@@ -208,6 +208,18 @@ describe("purge command", () => {
         expect.stringContaining("Skipping Docker cleanup")
       );
     });
+
+    it("continues when project config loads successfully without verbose mode", async () => {
+      mockLoadProjectConfigWithStatus.mockReturnValue({
+        status: "ok",
+        config: { version: "1.0.0", defaults: { mode: "local" } },
+      });
+
+      await purgeCommand.parseAsync([], { from: "user" });
+
+      expect(exitSpy).not.toHaveBeenCalled();
+      expect(mockCleanupProjectContainers).toHaveBeenCalled();
+    });
   });
 
   // =========================================================================

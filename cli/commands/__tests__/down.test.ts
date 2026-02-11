@@ -169,6 +169,18 @@ describe("down command", () => {
         expect.stringContaining("ui-syncup up")
       );
     });
+
+    it("continues when project config loads successfully without verbose mode", async () => {
+      mockLoadProjectConfigWithStatus.mockReturnValue({
+        status: "ok",
+        config: { version: "1.0.0", defaults: { mode: "local" } },
+      });
+
+      await downCommand.parseAsync([], { from: "user" });
+
+      expect(exitSpy).not.toHaveBeenCalled();
+      expect(mockStopSupabase).toHaveBeenCalled();
+    });
   });
 
   // =========================================================================

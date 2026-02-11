@@ -48,6 +48,13 @@ export interface ValidationResult {
   config?: ProjectConfig;
 }
 
+/** Logging hooks for project config load handling */
+export interface ProjectConfigLoadLogger {
+  verbose?: boolean;
+  debug: (message: string) => void;
+  error: (message: string) => void;
+}
+
 /**
  * Validate a configuration object
  *
@@ -73,6 +80,51 @@ export function validateConfig(config: unknown): ValidationResult {
     valid: false,
     errors,
   };
+}
+
+/**
+ * Handle a project-config load result with consistent logging semantics.
+ *
+ * @param configLoadResult - Structured project config load result
+ * @param logger - Logging handlers used by command modules
+ * @returns True when command execution can continue; false when caller should exit
+ */
+export function handleProjectConfigLoadResult(
+  configLoadResult: ProjectConfigLoadResult,
+  logger: ProjectConfigLoadLogger
+): boolean {
+  const verbose = logger.verbose ?? false;
+
+  if (configLoadResult.status === "ok") {
+    if (verbose) {
+      const projectConfig = configLoadResult.config;
+      logger.debug(
+        `Config loaded: mode=${projectConfig?.defaults?.mode ?? "not set"}, version=${projectConfig?.version ?? "unknown"}`
+      );
+    }
+    return true;
+  }
+
+  if (configLoadResult.status === "missing") {
+    if (verbose) {
+      logger.debug("No project config found. Run 'ui-syncup init' to create one.");
+    }
+    return true;
+  }
+
+  if (configLoadResult.error) {
+    logger.error(configLoadResult.error);
+  } else {
+    logger.error(
+      `Failed to load project configuration (status: ${configLoadResult.status}).`
+    );
+  }
+
+  if (configLoadResult.status === "newer_schema") {
+    logger.error("Please update the CLI to continue.");
+  }
+
+  return false;
 }
 
 // ============================================================================
@@ -280,4 +332,3 @@ function compareVersions(a: string, b: string): number {
 
   return 0;
 }
-

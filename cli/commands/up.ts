@@ -9,6 +9,7 @@
  */
 
 import { Command } from "commander";
+import { handleProjectConfigLoadResult } from "../lib/project-config";
 
 import {
   // Config
@@ -97,18 +98,7 @@ async function runUp(options: UpOptions): Promise<void> {
 
   // Load project configuration
   const configLoadResult = loadProjectConfigWithStatus(projectRoot);
-  if (configLoadResult.status === "ok" && verbose) {
-    const projectConfig = configLoadResult.config;
-    debug(
-      `Config loaded: mode=${projectConfig?.defaults?.mode ?? "not set"}, version=${projectConfig?.version ?? "unknown"}`
-    );
-  } else if (configLoadResult.status === "missing" && verbose) {
-    debug("No project config found. Run 'ui-syncup init' to create one.");
-  } else if (configLoadResult.status !== "missing") {
-    error(configLoadResult.error || "Failed to load project configuration.");
-    if (configLoadResult.status === "newer_schema") {
-      error("Please update the CLI to continue.");
-    }
+  if (!handleProjectConfigLoadResult(configLoadResult, { verbose, debug, error })) {
     process.exit(ExitCode.ValidationError);
   }
 

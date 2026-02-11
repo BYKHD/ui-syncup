@@ -216,6 +216,18 @@ describe("up command", () => {
         expect.stringContaining("bun dev")
       );
     });
+
+    it("continues when project config loads successfully without verbose mode", async () => {
+      mockLoadProjectConfigWithStatus.mockReturnValue({
+        status: "ok",
+        config: { version: "1.0.0", defaults: { mode: "local" } },
+      });
+
+      await upCommand.parseAsync([], { from: "user" });
+
+      expect(exitSpy).not.toHaveBeenCalled();
+      expect(mockStartSupabase).toHaveBeenCalled();
+    });
   });
 
   // =========================================================================
@@ -259,6 +271,21 @@ describe("up command", () => {
       expect(exitSpy).toHaveBeenCalledWith(2);
       expect(mockError).toHaveBeenCalledWith(
         expect.stringContaining("newer than this CLI")
+      );
+    });
+
+    it("includes config load status when project config fails without an error message", async () => {
+      mockLoadProjectConfigWithStatus.mockReturnValue({
+        status: "io_error",
+      });
+
+      await expect(
+        upCommand.parseAsync([], { from: "user" })
+      ).rejects.toThrow(ExitError);
+
+      expect(exitSpy).toHaveBeenCalledWith(2);
+      expect(mockError).toHaveBeenCalledWith(
+        expect.stringContaining("status: io_error")
       );
     });
 

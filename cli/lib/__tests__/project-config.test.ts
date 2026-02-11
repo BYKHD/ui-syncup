@@ -41,6 +41,7 @@ import {
   validateConfig,
   loadProjectConfigWithStatus,
   loadProjectConfig,
+  handleProjectConfigLoadResult,
   saveProjectConfig,
 } from "../project-config";
 
@@ -192,6 +193,97 @@ describe("project-config (V1 scope)", () => {
 
       const result = loadProjectConfig(PROJECT_ROOT);
       expect(result).toBeNull();
+    });
+  });
+
+  // =========================================================================
+  // handleProjectConfigLoadResult
+  // =========================================================================
+
+  describe("handleProjectConfigLoadResult", () => {
+    it("returns true for ok status without emitting logs when verbose is false", () => {
+      const debug = vi.fn();
+      const error = vi.fn();
+
+      const result = handleProjectConfigLoadResult(
+        {
+          status: "ok",
+          config: { version: "1.0.0", defaults: { mode: "local" } },
+        },
+        { verbose: false, debug, error }
+      );
+
+      expect(result).toBe(true);
+      expect(debug).not.toHaveBeenCalled();
+      expect(error).not.toHaveBeenCalled();
+    });
+
+    it("returns true for missing status and emits debug only in verbose mode", () => {
+      const debug = vi.fn();
+      const error = vi.fn();
+
+      const result = handleProjectConfigLoadResult(
+        { status: "missing" },
+        { verbose: true, debug, error }
+      );
+
+      expect(result).toBe(true);
+      expect(debug).toHaveBeenCalledWith(
+        "No project config found. Run 'ui-syncup init' to create one."
+      );
+      expect(error).not.toHaveBeenCalled();
+    });
+
+    it("returns false and emits the explicit error for invalid status", () => {
+      const debug = vi.fn();
+      const error = vi.fn();
+
+      const result = handleProjectConfigLoadResult(
+        {
+          status: "invalid",
+          error: "Invalid configuration in ui-syncup.config.json: version: Required",
+        },
+        { verbose: false, debug, error }
+      );
+
+      expect(result).toBe(false);
+      expect(error).toHaveBeenCalledWith(
+        expect.stringContaining("Invalid configuration")
+      );
+    });
+
+    it("returns false and emits fallback status text when error is missing", () => {
+      const debug = vi.fn();
+      const error = vi.fn();
+
+      const result = handleProjectConfigLoadResult(
+        { status: "io_error" },
+        { verbose: false, debug, error }
+      );
+
+      expect(result).toBe(false);
+      expect(error).toHaveBeenCalledWith(
+        "Failed to load project configuration (status: io_error)."
+      );
+    });
+
+    it("returns false and emits upgrade guidance for newer schema", () => {
+      const debug = vi.fn();
+      const error = vi.fn();
+
+      const result = handleProjectConfigLoadResult(
+        {
+          status: "newer_schema",
+          error: "Config schema 2.0.0 is newer than this CLI (1.0.0).",
+        },
+        { verbose: false, debug, error }
+      );
+
+      expect(result).toBe(false);
+      expect(error).toHaveBeenCalledWith(
+        "Config schema 2.0.0 is newer than this CLI (1.0.0)."
+      );
+      expect(error).toHaveBeenCalledWith("Please update the CLI to continue.");
     });
   });
 
