@@ -178,6 +178,36 @@ const envSchema = z.object({
     "Default sender email address (optional in dev)"
   ),
 
+  // Email (SMTP - Generic fallback for self-hosted deployments)
+  // When SMTP_HOST is set, all fields below are required.
+  // Use instead of Resend for on-premise mail servers (Mailcow, Postfix, AWS SES, etc.)
+  SMTP_HOST: optionalString().describe(
+    "SMTP server hostname (e.g., mail.example.com)"
+  ),
+  SMTP_PORT: z
+    .preprocess(
+      emptyToUndefined,
+      z.coerce.number().int().min(1).max(65535).optional()
+    )
+    .describe("SMTP server port (e.g., 587 for STARTTLS, 465 for TLS, 25 for plain)"),
+  SMTP_USER: optionalString().describe(
+    "SMTP authentication username"
+  ),
+  SMTP_PASSWORD: optionalString().describe(
+    "SMTP authentication password (never logged)"
+  ),
+  SMTP_FROM_EMAIL: optionalEmail().describe(
+    "Default sender address for the SMTP provider"
+  ),
+  SMTP_SECURE: z
+    .preprocess(
+      emptyToUndefined,
+      z.enum(["true", "false"]).optional()
+    )
+    .describe(
+      "Force TLS (\"true\" for port 465, auto-detected otherwise)"
+    ),
+
   // Feature Flags (Optional)
   NEXT_PUBLIC_ENABLE_ANALYTICS: z
     .string()
@@ -219,20 +249,25 @@ const envSchema = z.object({
     data.VERCEL_ENV === "production" ||
     data.VERCEL_ENV === "preview"
 
+  // -----------------------------------------------------------------------
+  // Production: must have Resend OR a complete SMTP configuration
+  // -----------------------------------------------------------------------
   if (isProdLike) {
-    if (!data.RESEND_API_KEY) {
+    const hasResend = Boolean(data.RESEND_API_KEY && data.RESEND_FROM_EMAIL)
+    const hasSmtp = Boolean(
+      data.SMTP_HOST &&
+      data.SMTP_PORT &&
+      data.SMTP_USER &&
+      data.SMTP_PASSWORD &&
+      data.SMTP_FROM_EMAIL
+    )
+
+    if (!hasResend && !hasSmtp) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["RESEND_API_KEY"],
-        message: "Required in production.",
-      })
-    }
-
-    if (!data.RESEND_FROM_EMAIL) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["RESEND_FROM_EMAIL"],
-        message: "Required in production.",
+        message:
+          "Required in production. Configure either Resend (RESEND_API_KEY + RESEND_FROM_EMAIL) or SMTP (SMTP_HOST + SMTP_PORT + SMTP_USER + SMTP_PASSWORD + SMTP_FROM_EMAIL).",
       })
     }
   }
@@ -327,6 +362,29 @@ const envSchema = z.object({
         path: ["RESEND_FROM_EMAIL"],
         message: "Required when configuring Resend.",
       })
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // SMTP group validation: if SMTP_HOST is set, all fields are required
+  // (prevents partial SMTP configuration that would silently fail at runtime)
+  // -----------------------------------------------------------------------
+  if (data.SMTP_HOST) {
+    const smtpFields = [
+      { key: "SMTP_PORT",       value: data.SMTP_PORT },
+      { key: "SMTP_USER",       value: data.SMTP_USER },
+      { key: "SMTP_PASSWORD",   value: data.SMTP_PASSWORD },
+      { key: "SMTP_FROM_EMAIL", value: data.SMTP_FROM_EMAIL },
+    ] as const
+
+    for (const field of smtpFields) {
+      if (!field.value) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field.key],
+          message: "Required when SMTP_HOST is configured.",
+        })
+      }
     }
   }
 })

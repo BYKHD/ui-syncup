@@ -413,18 +413,22 @@ function getOptionalServiceWarnings(mode: SetupMode, envPath: string): string[] 
     ];
   }
 
-  const env = dotenv.parse(envFile);
-  const warnings: string[] = [];
+  const env = dotenv.parse(envFile)
+  const warnings: string[] = []
 
-  const hasResend = Boolean(env.RESEND_API_KEY || env.RESEND_FROM_EMAIL);
-  if (!hasResend) {
+  // Email: consider configured if Resend OR SMTP_HOST is set
+  const hasResendFullyConfigured = Boolean(env.RESEND_API_KEY && env.RESEND_FROM_EMAIL)
+  const hasResendPartiallyConfigured = Boolean(env.RESEND_API_KEY || env.RESEND_FROM_EMAIL)
+  const hasSmtp = Boolean(env.SMTP_HOST)
+
+  if (!hasResendFullyConfigured && !hasSmtp) {
     warnings.push(
-      "Email not configured (console fallback active). Set RESEND_API_KEY and RESEND_FROM_EMAIL to send emails."
-    );
-  } else if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) {
+      "Email not configured (console fallback active). Set RESEND_API_KEY + RESEND_FROM_EMAIL, or set SMTP_* variables to send emails."
+    )
+  } else if (hasResendPartiallyConfigured && !hasResendFullyConfigured) {
     warnings.push(
       "Email is partially configured. Set both RESEND_API_KEY and RESEND_FROM_EMAIL."
-    );
+    )
   }
 
   const hasGoogle = Boolean(env.GOOGLE_CLIENT_ID || env.GOOGLE_CLIENT_SECRET);

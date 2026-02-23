@@ -4,10 +4,19 @@ import { env } from "./env"
 
 /**
  * Check if email service is configured
- * When not configured, emails fall back to console logging
+ * Returns true when either Resend or SMTP is fully configured.
+ * When neither is configured, emails fall back to console logging.
  */
 export function isEmailConfigured(): boolean {
-  return Boolean(env.RESEND_API_KEY && env.RESEND_FROM_EMAIL)
+  const hasResend = Boolean(env.RESEND_API_KEY && env.RESEND_FROM_EMAIL)
+  const hasSmtp = Boolean(
+    env.SMTP_HOST &&
+    env.SMTP_PORT &&
+    env.SMTP_USER &&
+    env.SMTP_PASSWORD &&
+    env.SMTP_FROM_EMAIL
+  )
+  return hasResend || hasSmtp
 }
 
 /**
