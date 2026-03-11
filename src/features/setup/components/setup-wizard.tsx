@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useSetupWizard, useInstanceStatus } from '../hooks';
 import { SetupProgress } from './setup-progress';
 import { ServiceHealthStep } from './service-health-step';
@@ -104,11 +105,19 @@ export function SetupWizard() {
   if (isLoading) {
     return (
       <div className="w-full max-w-2xl mx-auto">
-        <Card>
+        <Card className="border-border/50 shadow-sm">
           <CardContent className="pt-6">
-            <div className="flex flex-col items-center justify-center p-8 space-y-4">
-              <Loader2 className="h-8 w-8 animate-spin text-primary motion-reduce:animate-none" />
-              <p className="text-muted-foreground">{'Checking setup status\u2026'}</p>
+            <div className="flex flex-col items-center justify-center p-12 space-y-6">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+              >
+                <Loader2 className="h-10 w-10 text-primary" />
+              </motion.div>
+              <div className="space-y-2 text-center animate-pulse">
+                <p className="text-lg font-medium">Checking setup status</p>
+                <p className="text-sm text-muted-foreground">Please wait while we verify your environment&hellip;</p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -137,8 +146,20 @@ export function SetupWizard() {
   return (
     <div className="w-full max-w-2xl mx-auto space-y-8">
       <SetupProgress currentStep={wizard.currentStep} />
-      <Card>
-        <CardContent className="pt-6">{renderStep()}</CardContent>
+      <Card className="border-border/50 shadow-md backdrop-blur-sm bg-card/95">
+        <CardContent className="pt-6 p-0 sm:p-6 overflow-hidden min-h-[450px]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={wizard.currentStep}
+              initial={{ opacity: 0, x: 15 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -15 }}
+              transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            >
+              {renderStep()}
+            </motion.div>
+          </AnimatePresence>
+        </CardContent>
       </Card>
     </div>
   );

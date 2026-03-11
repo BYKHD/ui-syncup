@@ -1,3 +1,4 @@
+import { motion } from 'motion/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -57,8 +58,20 @@ export function InstanceConfigStep({ wizard }: InstanceConfigStepProps) {
         </Alert>
       )}
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
+      <motion.form 
+        onSubmit={form.handleSubmit(onSubmit)} 
+        className="space-y-4"
+        initial="hidden"
+        animate="show"
+        variants={{
+          hidden: { opacity: 0 },
+          show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.05 }
+          }
+        }}
+      >
+        <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }} className="space-y-2">
           <Label htmlFor="instanceName">Instance Name</Label>
           <Input
             id="instanceName"
@@ -74,9 +87,9 @@ export function InstanceConfigStep({ wizard }: InstanceConfigStepProps) {
               {form.formState.errors.instanceName.message}
             </p>
           )}
-        </div>
+        </motion.div>
 
-        <div className="space-y-2">
+        <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }} className="space-y-2">
           <Label htmlFor="publicUrl">Public URL</Label>
           <Input
             id="publicUrl"
@@ -94,9 +107,9 @@ export function InstanceConfigStep({ wizard }: InstanceConfigStepProps) {
               {form.formState.errors.publicUrl.message}
             </p>
           )}
-        </div>
+        </motion.div>
 
-        <div className="flex justify-between pt-4">
+        <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }} className="flex justify-between pt-4">
           <Button
             type="button"
             variant="ghost"
@@ -111,8 +124,8 @@ export function InstanceConfigStep({ wizard }: InstanceConfigStepProps) {
             )}
             Save Configuration
           </Button>
-        </div>
-      </form>
+        </motion.div>
+      </motion.form>
     </div>
   );
 }

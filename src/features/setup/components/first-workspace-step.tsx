@@ -1,3 +1,4 @@
+import { motion } from 'motion/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -66,8 +67,20 @@ export function FirstWorkspaceStep({ wizard }: FirstWorkspaceStepProps) {
         </Alert>
       )}
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
+      <motion.form 
+        onSubmit={form.handleSubmit(onSubmit)} 
+        className="space-y-4"
+        initial="hidden"
+        animate="show"
+        variants={{
+          hidden: { opacity: 0 },
+          show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.05 }
+          }
+        }}
+      >
+        <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }} className="space-y-2">
           <Label htmlFor="workspaceName">Workspace Name</Label>
           <Input
             id="workspaceName"
@@ -83,9 +96,9 @@ export function FirstWorkspaceStep({ wizard }: FirstWorkspaceStepProps) {
               {form.formState.errors.workspaceName.message}
             </p>
           )}
-        </div>
+        </motion.div>
 
-        <div className="flex justify-between pt-4">
+        <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }} className="flex justify-between pt-4">
           <Button
             type="button"
             variant="ghost"
@@ -100,8 +113,8 @@ export function FirstWorkspaceStep({ wizard }: FirstWorkspaceStepProps) {
             )}
             Create Workspace
           </Button>
-        </div>
-      </form>
+        </motion.div>
+      </motion.form>
     </div>
   );
 }

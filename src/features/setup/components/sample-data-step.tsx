@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -80,38 +81,51 @@ export function SampleDataStep({ wizard }: SampleDataStepProps) {
         </Alert>
       )}
 
-      <div className="flex items-center space-x-4 rounded-md border p-4">
-        <Switch
-          id="sample-data"
-          checked={includeSampleData}
-          onCheckedChange={setIncludeSampleData}
-        />
-        <div className="flex-1 space-y-1">
-          <Label htmlFor="sample-data" className="font-medium">
-            Include Sample Data
-          </Label>
-          <p className="text-sm text-muted-foreground">
-            Add example projects, tasks, and users to help you explore the platform.
-          </p>
-        </div>
-      </div>
+      <motion.div 
+        className="space-y-6"
+        initial="hidden"
+        animate="show"
+        variants={{
+          hidden: { opacity: 0 },
+          show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.05 }
+          }
+        }}
+      >
+        <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }} className="flex items-center space-x-4 rounded-md border border-border/50 p-4 bg-muted/30 shadow-sm transition-colors hover:bg-muted/50">
+          <Switch
+            id="sample-data"
+            checked={includeSampleData}
+            onCheckedChange={setIncludeSampleData}
+          />
+          <div className="flex-1 space-y-1">
+            <Label htmlFor="sample-data" className="font-medium cursor-pointer">
+              Include Sample Data
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Add example projects, tasks, and users to help you explore the platform.
+            </p>
+          </div>
+        </motion.div>
 
-      <div className="flex justify-between pt-4">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={wizard.goToPreviousStep}
-          disabled={isPending}
-        >
-          Back
-        </Button>
-        <Button onClick={handleComplete} disabled={isPending}>
-          {isPending && (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" />
-          )}
-          Complete Setup
-        </Button>
-      </div>
+        <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }} className="flex justify-between pt-4">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={wizard.goToPreviousStep}
+            disabled={isPending}
+          >
+            Back
+          </Button>
+          <Button onClick={handleComplete} disabled={isPending}>
+            {isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" />
+            )}
+            Complete Setup
+          </Button>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

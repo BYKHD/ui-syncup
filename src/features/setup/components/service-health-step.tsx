@@ -1,3 +1,4 @@
+import { motion } from 'motion/react';
 import { AlertCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -54,9 +55,21 @@ export function ServiceHealthStep({ wizard }: ServiceHealthStepProps) {
             <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground motion-reduce:animate-none" />
           </div>
         ) : health ? (
-          <>
+          <motion.div 
+            className="grid gap-4"
+            initial="hidden"
+            animate="show"
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: { staggerChildren: 0.1 }
+              }
+            }}
+          >
             {/* Database (Required) */}
-            <Card className={health.database.status !== 'connected' ? 'border-destructive' : ''}>
+            <motion.div variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
+              <Card className={cn("hover:border-primary/30 transition-colors duration-300", health.database.status !== 'connected' ? 'border-destructive' : '')}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-base font-medium">Database</CardTitle>
                 <ServiceStatusBadge status={health.database.status} />
@@ -70,9 +83,11 @@ export function ServiceHealthStep({ wizard }: ServiceHealthStepProps) {
                 )}
               </CardContent>
             </Card>
+            </motion.div>
 
             {/* Email (Optional) */}
-            <Card>
+            <motion.div variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
+            <Card className="hover:border-primary/30 transition-colors duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-base font-medium">Email Service</CardTitle>
                 <ServiceStatusBadge status={health.email.status} />
@@ -87,9 +102,11 @@ export function ServiceHealthStep({ wizard }: ServiceHealthStepProps) {
                 )}
               </CardContent>
             </Card>
+            </motion.div>
 
             {/* Storage (Optional) */}
-            <Card>
+            <motion.div variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
+            <Card className="hover:border-primary/30 transition-colors duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-base font-medium">Object Storage</CardTitle>
                 <ServiceStatusBadge status={health.storage.status} />
@@ -104,9 +121,11 @@ export function ServiceHealthStep({ wizard }: ServiceHealthStepProps) {
                 )}
               </CardContent>
             </Card>
+            </motion.div>
 
             {/* Redis (Optional) */}
-            <Card>
+            <motion.div variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
+            <Card className="hover:border-primary/30 transition-colors duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-base font-medium">Redis Cache</CardTitle>
                 <ServiceStatusBadge status={health.redis.status} />
@@ -121,7 +140,8 @@ export function ServiceHealthStep({ wizard }: ServiceHealthStepProps) {
                 )}
               </CardContent>
             </Card>
-          </>
+            </motion.div>
+          </motion.div>
         ) : null}
       </div>
 
