@@ -5,6 +5,7 @@ import type { NextConfig } from "next"
 import "./src/lib/env"
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   experimental: {
     // Enable automatic tree-shaking for common libraries
     // This helps reduce bundle size by only including used exports

@@ -132,16 +132,24 @@ export async function select<T>(
 // Input
 // ============================================================================
 
+/** Options for text input prompt */
+export interface InputOptions {
+  /** Validation function — return true to accept, or an error string to reject */
+  validate?: (value: string) => string | true;
+}
+
 /**
  * Ask for text input
  *
  * @param message - Prompt message
  * @param defaultValue - Default value if user presses Enter
+ * @param options - Additional options (e.g. validate)
  * @returns User's input string
  */
 export async function input(
   message: string,
-  defaultValue?: string
+  defaultValue?: string,
+  options?: InputOptions
 ): Promise<string> {
   if (isNonInteractive()) {
     if (defaultValue !== undefined) {
@@ -155,13 +163,24 @@ export async function input(
 
   try {
     const hint = defaultValue ? ` (${defaultValue})` : "";
-    const answer = await question(rl, `${message}${hint}: `);
 
-    if (answer.trim() === "" && defaultValue !== undefined) {
-      return defaultValue;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const answer = await question(rl, `${message}${hint}: `);
+      const value = answer.trim() === "" && defaultValue !== undefined
+        ? defaultValue
+        : answer.trim();
+
+      if (options?.validate) {
+        const result = options.validate(value);
+        if (result !== true) {
+          error(result);
+          continue;
+        }
+      }
+
+      return value;
     }
-
-    return answer.trim();
   } finally {
     rl.close();
   }

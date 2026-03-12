@@ -19,6 +19,52 @@ export interface CommandResult {
 /** Setup mode selection for init command */
 export type SetupMode = "local" | "production";
 
+/** Storage provider selection for production wizard */
+export type StorageProvider = "r2" | "s3" | "minio";
+
+/** Email provider selection for production wizard */
+export type EmailProvider = "resend" | "smtp" | "skip";
+
+/** Production configuration collected from interactive wizard */
+export interface ProductionConfig {
+  /** Public-facing application URL (e.g. https://app.example.com) */
+  appUrl: string;
+  /** PostgreSQL connection string */
+  databaseUrl: string;
+  /** Direct database connection string (bypasses connection pooler) */
+  directUrl: string;
+  /** Auto-generated auth secret */
+  authSecret: string;
+  /** Storage provider choice */
+  storageProvider: StorageProvider;
+  /** S3-compatible endpoint URL */
+  storageEndpoint: string;
+  /** Storage region */
+  storageRegion: string;
+  /** Storage access key ID */
+  storageAccessKeyId: string;
+  /** Storage secret access key */
+  storageSecretAccessKey: string;
+  /** Email provider choice */
+  emailProvider: EmailProvider;
+  /** Resend API key (when emailProvider is 'resend') */
+  resendApiKey?: string;
+  /** Resend from email (when emailProvider is 'resend') */
+  resendFromEmail?: string;
+  /** SMTP host (when emailProvider is 'smtp') */
+  smtpHost?: string;
+  /** SMTP port (when emailProvider is 'smtp') */
+  smtpPort?: string;
+  /** SMTP user (when emailProvider is 'smtp') */
+  smtpUser?: string;
+  /** SMTP password (when emailProvider is 'smtp') */
+  smtpPassword?: string;
+  /** SMTP from email (when emailProvider is 'smtp') */
+  smtpFromEmail?: string;
+  /** Whether to generate a Dockerfile */
+  generateDockerfile: boolean;
+}
+
 // ============================================================================
 // Environment Detection Types
 // ============================================================================

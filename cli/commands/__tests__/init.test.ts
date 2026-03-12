@@ -25,10 +25,12 @@ const mockSaveProjectConfig = vi.hoisted(() => vi.fn());
 const mockCreateDefaultConfig = vi.hoisted(() => vi.fn());
 const mockConfirm = vi.hoisted(() => vi.fn());
 const mockSelect = vi.hoisted(() => vi.fn());
+const mockInput = vi.hoisted(() => vi.fn());
 const mockCreateBackup = vi.hoisted(() => vi.fn());
 const mockDeleteFile = vi.hoisted(() => vi.fn());
 const mockDeleteDirectory = vi.hoisted(() => vi.fn());
 const mockReadFile = vi.hoisted(() => vi.fn());
+const mockWriteFile = vi.hoisted(() => vi.fn());
 
 // UI mocks
 const mockSuccess = vi.hoisted(() => vi.fn());
@@ -54,6 +56,7 @@ vi.mock("../../lib/index", () => ({
   deleteDirectory: mockDeleteDirectory,
   createBackup: mockCreateBackup,
   readFile: mockReadFile,
+  writeFile: mockWriteFile,
   // UI
   success: mockSuccess,
   warning: mockWarning,
@@ -67,6 +70,7 @@ vi.mock("../../lib/index", () => ({
   // Prompts
   confirm: mockConfirm,
   select: mockSelect,
+  input: mockInput,
   isNonInteractive: mockIsNonInteractive,
   // Project Config
   saveProjectConfig: mockSaveProjectConfig,
@@ -77,6 +81,18 @@ vi.mock("../../lib/index", () => ({
   DOCKER_COMPOSE_OVERRIDE: "docker-compose.override.yml",
   CONFIG_FILENAME: "ui-syncup.config.json",
   DEFAULT_PORTS: { app: 3000, db: 54322, studio: 54323, api: 54321 },
+  DOCKERFILE_NAME: "Dockerfile",
+  DOCKERIGNORE_NAME: ".dockerignore",
+  STORAGE_PROVIDERS: [
+    { name: "Cloudflare R2 (S3-compatible)", value: "r2" },
+    { name: "AWS S3", value: "s3" },
+    { name: "MinIO (self-hosted S3-compatible)", value: "minio" },
+  ],
+  EMAIL_PROVIDERS: [
+    { name: "Resend (cloud email API)", value: "resend" },
+    { name: "SMTP (self-hosted mail server)", value: "smtp" },
+    { name: "Skip (console logging fallback)", value: "skip" },
+  ],
   ExitCode: { Success: 0, UserAbort: 1, ValidationError: 2, ExternalError: 3, InternalError: 4 },
 }));
 
@@ -139,6 +155,10 @@ function setupDefaultMocks() {
   mockSaveProjectConfig.mockResolvedValue({ success: true, path: "/mock/project/ui-syncup.config.json", action: "created" });
   mockCreateDefaultConfig.mockReturnValue({ version: "1.0.0", defaults: { mode: "local" } });
   mockReadFile.mockReturnValue("");
+  mockWriteFile.mockResolvedValue({ success: true, path: "/mock/project/.env.production", action: "created" });
+  // Production wizard mocks — input returns sensible defaults in sequence
+  mockInput.mockResolvedValue("https://app.example.com");
+  mockConfirm.mockResolvedValue(true);
 }
 
 // ---------------------------------------------------------------------------
@@ -163,6 +183,9 @@ describe("init command", () => {
       throw new ExitError(normalizeExitCode(code));
     });
     setupDefaultMocks();
+    // Reset Commander options to prevent state leaking between tests
+    initCommand.setOptionValue("mode", undefined);
+    initCommand.setOptionValue("skipDockerfile", false);
   });
 
   // =========================================================================
@@ -215,6 +238,21 @@ describe("init command", () => {
         path: "/mock/project/.env.production",
         action: "created",
       });
+      // Mock production wizard inputs
+      mockInput
+        .mockResolvedValueOnce("https://app.example.com")   // appUrl
+        .mockResolvedValueOnce("postgresql://user:pass@host:5432/db") // databaseUrl
+        .mockResolvedValueOnce("postgresql://user:pass@host:5432/db") // directUrl
+        .mockResolvedValueOnce("https://s3.amazonaws.com")  // storageEndpoint
+        .mockResolvedValueOnce("us-east-1")                 // storageRegion
+        .mockResolvedValueOnce("AKID")                      // storageAccessKeyId
+        .mockResolvedValueOnce("secret")                    // storageSecretAccessKey
+        .mockResolvedValueOnce("re_test_key")               // resendApiKey
+        .mockResolvedValueOnce("test@example.com");          // resendFromEmail
+      mockSelect
+        .mockResolvedValueOnce("s3")         // storageProvider
+        .mockResolvedValueOnce("resend");    // emailProvider
+      mockConfirm.mockResolvedValue(true);   // generateDockerfile
 
       await initCommand.parseAsync(["--mode", "production"], { from: "user" });
 

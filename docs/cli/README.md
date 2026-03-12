@@ -5,20 +5,25 @@ Command-line tool for managing self-hosted UI SyncUp instances.
 ## Installation
 
 ```bash
-git clone https://github.com/your-org/ui-syncup.git
+git clone https://github.com/BYKHD/ui-syncup.git
 cd ui-syncup
 bun install
+```
+
+Or via the install script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/BYKHD/ui-syncup/main/install.sh | bash
 ```
 
 ## Usage
 
 ```bash
-# From project root
+# Canonical invocation (also works with npx, pnpm dlx)
 bunx ui-syncup <command>
-
-# Or run directly
-bun ./cli/index.ts <command>
 ```
+
+> **For contributors:** `bun ./cli/index.ts <command>` also works during development.
 
 ## Available Commands
 
@@ -35,19 +40,24 @@ bun ./cli/index.ts <command>
 Initializes a UI SyncUp project with safe defaults.
 
 ```bash
-bun ./cli/index.ts init
-bun ./cli/index.ts init --verbose
-bun ./cli/index.ts init --mode production   # Non-interactive production setup
+bunx ui-syncup init
+bunx ui-syncup init --verbose
+bunx ui-syncup init --mode production       # Interactive production wizard
+bunx ui-syncup init --mode production --skip-dockerfile
 ```
 
 ### What it does
 
 1. Detects system requirements (Bun, Docker, Supabase CLI, ports)
 2. Prompts for setup mode (local or production) — or use `--mode` flag
-3. Creates `.env.local` or `.env.production` with safe defaults
-4. Creates storage directories (`storage/uploads`, `storage/avatars`)
-5. Generates `docker-compose.override.yml`
-6. Creates `ui-syncup.config.json` (tracks `version` and `defaults.mode` only in V1)
+3. **Local mode:** Creates `.env.local` with safe defaults and storage directories
+4. **Production mode:** Runs an interactive wizard to configure:
+   - Application URL
+   - PostgreSQL database connection
+   - S3-compatible storage (Cloudflare R2, AWS S3, or MinIO)
+   - Email provider (Resend, SMTP, or skip)
+   - Generates `Dockerfile` and `.dockerignore` for self-hosted deployment
+5. Creates `ui-syncup.config.json`
 
 ### Features
 
@@ -61,8 +71,8 @@ bun ./cli/index.ts init --mode production   # Non-interactive production setup
 Starts the local development stack.
 
 ```bash
-bun ./cli/index.ts up
-bun ./cli/index.ts up --verbose
+bunx ui-syncup up
+bunx ui-syncup up --verbose
 ```
 
 ### What it does
@@ -77,8 +87,8 @@ bun ./cli/index.ts up --verbose
 Stops all local services.
 
 ```bash
-bun ./cli/index.ts down
-bun ./cli/index.ts down --verbose
+bunx ui-syncup down
+bunx ui-syncup down --verbose
 ```
 
 Stops Supabase services and MinIO storage.
@@ -88,7 +98,7 @@ Stops Supabase services and MinIO storage.
 Safely wipes local environment data while preserving configuration.
 
 ```bash
-bun ./cli/index.ts reset
+bunx ui-syncup reset
 ```
 
 - Requires manual confirmation
@@ -100,7 +110,7 @@ bun ./cli/index.ts reset
 Aggressive factory reset for development only.
 
 ```bash
-bun ./cli/index.ts purge
+bunx ui-syncup purge
 ```
 
 - Requires typed confirmation phrase
@@ -123,7 +133,7 @@ cli/
 ├── index.ts              # Entry point & command registration
 ├── commands/
 │   ├── index.ts           # Command barrel exports
-│   ├── init.ts            # Init command
+│   ├── init.ts            # Init command (local + production wizard)
 │   ├── up.ts              # Up command
 │   ├── down.ts            # Down command
 │   ├── reset.ts           # Reset command
@@ -145,7 +155,9 @@ cli/
 └── templates/
     ├── env.local.template
     ├── env.production.template
-    └── docker-compose.override.template.yml
+    ├── docker-compose.override.template.yml
+    ├── Dockerfile.template
+    └── dockerignore.template
 ```
 
 ## Development
@@ -154,6 +166,6 @@ cli/
 # Type check
 bun run typecheck
 
-# Run CLI directly
+# Run CLI directly (contributors only)
 bun ./cli/index.ts --help
 ```

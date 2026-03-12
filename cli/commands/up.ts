@@ -147,7 +147,7 @@ async function runUp(options: UpOptions): Promise<void> {
   if (!supabaseInstalled) {
     spinner.fail("Supabase CLI is not installed");
     error("Supabase CLI is required for local development.");
-    error("Install: npm install -g supabase");
+    error("Install: https://supabase.com/docs/guides/cli/getting-started");
     process.exit(ExitCode.ValidationError);
   }
   

@@ -9,6 +9,9 @@
 export type {
   CommandResult,
   SetupMode,
+  StorageProvider,
+  EmailProvider,
+  ProductionConfig,
   EnvironmentCheck,
   FileOperationResult,
   ServiceStatus,
@@ -45,6 +48,10 @@ export {
   CURRENT_SCHEMA_VERSION,
   DOCKER_COMPOSE_OVERRIDE,
   DOCKER_COMPOSE_MINIO,
+  DOCKERFILE_NAME,
+  DOCKERIGNORE_NAME,
+  STORAGE_PROVIDERS,
+  EMAIL_PROVIDERS,
   DEFAULT_PORTS,
   REQUIRED_PORTS,
   DATABASE_TIMEOUT_MS,
@@ -81,6 +88,7 @@ export {
   confirmPhrase,
   isNonInteractive,
   type SelectOption,
+  type InputOptions,
 } from "./prompts";
 
 // Config Service

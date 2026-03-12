@@ -32,7 +32,19 @@ A visual feedback and issue tracking platform for design-to-development collabor
 - Bun package manager
 - Supabase CLI for local development
 
-### Installation
+### Quick Installation
+
+The fastest way to install UI-Syncup is using our installation script:
+
+```bash
+# Install the latest version (main branch)
+curl -fsSL https://raw.githubusercontent.com/BYKHD/ui-syncup/main/install.sh | bash
+
+# Install a specific version (using a GitHub release tag or branch)
+curl -fsSL https://raw.githubusercontent.com/BYKHD/ui-syncup/main/install.sh | bash -s -- 4.0.0-beta
+```
+
+### Manual Installation
 
 ```bash
 # 1. Clone and install
@@ -354,4 +366,4 @@ For comprehensive architecture and scaffolding guidelines, see:
 
 ## License
 
-[Add your license here]
+[MIT](./LICENSE)

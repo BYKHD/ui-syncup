@@ -20,16 +20,18 @@ This document describes the **UI SyncUp CLI** designed to support self‑hosting
 ## Installation
 
 ```bash
-git clone https://github.com/your-org/ui-syncup.git
+git clone https://github.com/BYKHD/ui-syncup.git
 cd ui-syncup
 bun install
 ```
 
-Run via Bunx:
+Run via Bunx (canonical):
 
 ```bash
 bunx ui-syncup <command>
 ```
+
+Also compatible with `npx ui-syncup` and `pnpm dlx ui-syncup`.
 
 ---
 
@@ -52,15 +54,17 @@ Initializes the project for self‑hosting with **safe defaults**.
 
 ### Usage
 ```bash
-ui-syncup init
-ui-syncup init --verbose
-ui-syncup init --mode production    # Non-interactive production setup
+bunx ui-syncup init
+bunx ui-syncup init --verbose
+bunx ui-syncup init --mode production    # Interactive production wizard
+bunx ui-syncup init --mode production --skip-dockerfile
 ```
 
 ### Options
 | Option | Description |
 |--------|-------------|
 | `--mode <local\|production>` | Skip mode prompt; select setup mode directly |
+| `--skip-dockerfile` | Skip Dockerfile generation in production mode |
 | `--verbose` | Enable debug output |
 
 ### Flow
@@ -71,13 +75,36 @@ ui-syncup init --mode production    # Non-interactive production setup
 - Generates required files and folders
 
 ### Files Created
+
+**Local mode:**
 ```
-.env.local (or .env.production)
+.env.local
 docker-compose.override.yml
-/storage/uploads
-/storage/avatars
+storage/uploads
+storage/avatars
 ui-syncup.config.json
 ```
+
+**Production mode:**
+```
+.env.production
+docker-compose.override.yml
+ui-syncup.config.json
+Dockerfile          (unless --skip-dockerfile)
+.dockerignore       (unless --skip-dockerfile)
+```
+
+### Production Wizard Flow
+
+When using `--mode production`, the CLI provides a 5-step interactive wizard:
+
+1. **Application URL** — Public-facing URL (e.g. `https://app.example.com`)
+2. **Database** — PostgreSQL connection string (pooled + direct)
+3. **Storage** — S3-compatible provider (Cloudflare R2 / AWS S3 / MinIO)
+4. **Email** — Provider choice (Resend / SMTP / Skip)
+5. **Deployment** — Generate Dockerfile for self-hosted deployment
+
+All values are written directly into `.env.production` — no placeholders to manually edit.
 
 ### Example Default Config (Local)
 ```env
@@ -94,7 +121,7 @@ No external credentials required at this stage.
 For automated production bootstrap without prompts:
 
 ```bash
-CI=1 bun ./cli/index.ts init --mode production
+CI=1 bunx ui-syncup init --mode production
 ```
 
 This creates a production scaffold (`.env.production`) that must be populated with real values before deployment.

@@ -26,6 +26,7 @@ import {
   deleteDirectory,
   createBackup,
   readFile,
+  writeFile,
   // UI
   success,
   warning,
@@ -39,6 +40,7 @@ import {
   // Prompts
   confirm,
   select,
+  input,
   isNonInteractive,
   // Project Config
   saveProjectConfig,
@@ -49,9 +51,16 @@ import {
   DOCKER_COMPOSE_OVERRIDE,
   CONFIG_FILENAME,
   DEFAULT_PORTS,
+  DOCKERFILE_NAME,
+  DOCKERIGNORE_NAME,
+  STORAGE_PROVIDERS,
+  EMAIL_PROVIDERS,
   // Types
   type SetupMode,
   type FileOperationResult,
+  type ProductionConfig,
+  type StorageProvider,
+  type EmailProvider,
 } from "../lib/index";
 
 // ============================================================================
@@ -61,6 +70,7 @@ import {
 interface InitOptions {
   verbose?: boolean;
   mode?: SetupMode;
+  skipDockerfile?: boolean;
 }
 
 /** Tracks file state for safe rollback */
@@ -82,12 +92,14 @@ const SECURE_ENV_PERMISSIONS = 0o600;
 export const initCommand = new Command("init")
   .description("Initialize a new UI SyncUp project with environment files and configuration")
   .option("-m, --mode <mode>", "Setup mode (local or production)")
+  .option("--skip-dockerfile", "Skip Dockerfile generation in production mode", false)
   .action(async (_options: InitOptions, command: Command) => {
     // Get global options from parent program
     const globalOpts = command.optsWithGlobals();
     const verbose = globalOpts.verbose ?? false;
     const mode = _options.mode;
-    await runInit({ verbose, mode });
+    const skipDockerfile = _options.skipDockerfile ?? false;
+    await runInit({ verbose, mode, skipDockerfile });
   });
 
 // ============================================================================
@@ -151,7 +163,7 @@ async function runInit(options: InitOptions): Promise<void> {
 
     if (!envCheck.supabaseInstalled) {
       warning("Supabase CLI is not installed. You'll need it for local development.");
-      warning("Install: npm install -g supabase");
+      warning("Install: https://supabase.com/docs/guides/cli/getting-started");
     }
 
     if (!envCheck.portsAvailable && envCheck.unavailablePorts?.length) {
@@ -178,12 +190,31 @@ async function runInit(options: InitOptions): Promise<void> {
     const envPath = join(projectRoot, envFile);
     const configPath = join(projectRoot, CONFIG_FILENAME);
     const overridePath = join(projectRoot, DOCKER_COMPOSE_OVERRIDE);
+    const dockerfilePath = join(projectRoot, DOCKERFILE_NAME);
+    const dockerignorePath = join(projectRoot, DOCKERIGNORE_NAME);
 
+    // ========================================================================
+    // Step 3b: Production Wizard (collect config interactively)
+    // ========================================================================
+    let productionConfig: ProductionConfig | undefined;
+    if (mode === "production") {
+      productionConfig = await collectProductionConfig(options);
+    }
+
+    // ========================================================================
+    // Step 4: Check for Existing Files and Confirm Overwrite
+    // ========================================================================
     const filesToCheck = [
       { path: envPath, name: envFile },
       { path: configPath, name: CONFIG_FILENAME },
       { path: overridePath, name: DOCKER_COMPOSE_OVERRIDE },
     ];
+
+    // Add Dockerfile to the check list for production mode
+    if (mode === "production" && productionConfig?.generateDockerfile) {
+      filesToCheck.push({ path: dockerfilePath, name: DOCKERFILE_NAME });
+      filesToCheck.push({ path: dockerignorePath, name: DOCKERIGNORE_NAME });
+    }
 
     const existingFiles = filesToCheck.filter((f) => fileExists(f.path));
 
@@ -230,7 +261,9 @@ async function runInit(options: InitOptions): Promise<void> {
 
     try {
       // Generate environment file
-      const envResult = await generateEnvFile(mode, envPath);
+      const envResult = mode === "production" && productionConfig
+        ? await generateProductionEnvFile(productionConfig, envPath)
+        : await generateEnvFile(mode, envPath);
       if (envResult.success) {
         // Only add to tracked if it wasn't already tracked (new file)
         if (!trackedFiles.some((f) => f.path === envPath)) {
@@ -279,6 +312,37 @@ async function runInit(options: InitOptions): Promise<void> {
         }
       } else {
         throw new Error(`Failed to create ${CONFIG_FILENAME}: ${configResult.error}`);
+      }
+
+      // Generate Dockerfile and .dockerignore (production mode only)
+      if (mode === "production" && productionConfig?.generateDockerfile) {
+        const dockerfileResult = await copyTemplate(
+          "Dockerfile.template",
+          dockerfilePath,
+          {},
+          { backup: false }
+        );
+        if (dockerfileResult.success) {
+          if (!trackedFiles.some((f) => f.path === dockerfilePath)) {
+            trackedFiles.push({ path: dockerfileResult.path, isDirectory: false, existedBefore: false });
+          }
+        } else {
+          throw new Error(`Failed to create Dockerfile: ${dockerfileResult.error}`);
+        }
+
+        const dockerignoreResult = await copyTemplate(
+          "dockerignore.template",
+          dockerignorePath,
+          {},
+          { backup: false }
+        );
+        if (dockerignoreResult.success) {
+          if (!trackedFiles.some((f) => f.path === dockerignorePath)) {
+            trackedFiles.push({ path: dockerignoreResult.path, isDirectory: false, existedBefore: false });
+          }
+        } else {
+          throw new Error(`Failed to create .dockerignore: ${dockerignoreResult.error}`);
+        }
       }
 
       genSpinner.succeed("Project files generated successfully!");
@@ -391,14 +455,210 @@ async function generateEnvFile(
   const templateName =
     mode === "local" ? "env.local.template" : "env.production.template";
 
-  // Generate a secure random secret for BETTER_AUTH_SECRET
+  // Generate secure random secrets
   const authSecret = generateRandomSecret(32);
+  // Generate unique MinIO credentials per install (avoids shared default credentials)
+  const minioPassword = generateRandomSecret(16);
 
   const variables: Record<string, string> = {
     BETTER_AUTH_SECRET: authSecret,
+    MINIO_ROOT_USER: "minioadmin",
+    MINIO_ROOT_PASSWORD: minioPassword,
   };
 
   return copyTemplate(templateName, destPath, variables, { backup: false });
+}
+
+/**
+ * Generate a production .env file from wizard-collected config
+ */
+async function generateProductionEnvFile(
+  config: ProductionConfig,
+  destPath: string
+): Promise<FileOperationResult> {
+  const variables: Record<string, string> = {
+    APP_URL: config.appUrl,
+    DATABASE_URL: config.databaseUrl,
+    DIRECT_URL: config.directUrl,
+    BETTER_AUTH_SECRET: config.authSecret,
+    STORAGE_ENDPOINT: config.storageEndpoint,
+    STORAGE_REGION: config.storageRegion,
+    STORAGE_ACCESS_KEY_ID: config.storageAccessKeyId,
+    STORAGE_SECRET_ACCESS_KEY: config.storageSecretAccessKey,
+  };
+
+  // Add email config
+  if (config.emailProvider === "resend" && config.resendApiKey && config.resendFromEmail) {
+    variables.RESEND_API_KEY = config.resendApiKey;
+    variables.RESEND_FROM_EMAIL = config.resendFromEmail;
+  } else if (config.emailProvider === "smtp") {
+    if (config.smtpHost) variables.SMTP_HOST = config.smtpHost;
+    if (config.smtpPort) variables.SMTP_PORT = config.smtpPort;
+    if (config.smtpUser) variables.SMTP_USER = config.smtpUser;
+    if (config.smtpPassword) variables.SMTP_PASSWORD = config.smtpPassword;
+    if (config.smtpFromEmail) variables.SMTP_FROM_EMAIL = config.smtpFromEmail;
+  }
+
+  return copyTemplate("env.production.template", destPath, variables, { backup: false });
+}
+
+// ============================================================================
+// Production Wizard
+// ============================================================================
+
+/**
+ * Collect production configuration via an interactive step-by-step wizard.
+ * In non-interactive mode, uses defaults where possible and throws for required fields.
+ */
+async function collectProductionConfig(options: InitOptions): Promise<ProductionConfig> {
+  const skipDockerfile = options.skipDockerfile ?? false;
+  const authSecret = generateRandomSecret(32);
+
+  log("📋 Production Configuration Wizard");
+  log("   Fill in your production service details below.");
+  newLine();
+
+  // --- Step 1: App URL ---
+  info("Step 1/5: Application URL");
+  const appUrl = await input(
+    "Public application URL",
+    "https://app.example.com",
+    {
+      validate: (v) =>
+        v.startsWith("http://") || v.startsWith("https://")
+          ? true
+          : "URL must start with http:// or https://",
+    }
+  );
+  newLine();
+
+  // --- Step 2: Database ---
+  info("Step 2/5: Database (PostgreSQL)");
+  const databaseUrl = await input(
+    "Database connection URL (pooled)",
+    undefined,
+    {
+      validate: (v) =>
+        v.startsWith("postgresql://") || v.startsWith("postgres://")
+          ? true
+          : "Must be a PostgreSQL connection string (postgresql://...)",
+    }
+  );
+  const directUrl = await input(
+    "Direct database URL (bypasses pooler, often same)",
+    databaseUrl
+  );
+  newLine();
+
+  // --- Step 3: Storage ---
+  info("Step 3/5: Object Storage (S3-compatible)");
+  const storageProvider = await select<StorageProvider>(
+    "Storage provider:",
+    STORAGE_PROVIDERS
+  );
+
+  const storageDefaults = getStorageDefaults(storageProvider);
+  const storageEndpoint = await input("Storage endpoint URL", storageDefaults.endpoint);
+  const storageRegion = await input("Storage region", storageDefaults.region);
+  const storageAccessKeyId = await input("Access key ID", undefined, {
+    validate: (v) => v.length > 0 ? true : "Access key ID is required",
+  });
+  const storageSecretAccessKey = await input("Secret access key", undefined, {
+    validate: (v) => v.length > 0 ? true : "Secret access key is required",
+  });
+  newLine();
+
+  // --- Step 4: Email ---
+  info("Step 4/5: Email Service");
+  const emailProvider = await select<EmailProvider>(
+    "Email provider:",
+    EMAIL_PROVIDERS
+  );
+
+  let resendApiKey: string | undefined;
+  let resendFromEmail: string | undefined;
+  let smtpHost: string | undefined;
+  let smtpPort: string | undefined;
+  let smtpUser: string | undefined;
+  let smtpPassword: string | undefined;
+  let smtpFromEmail: string | undefined;
+
+  if (emailProvider === "resend") {
+    resendApiKey = await input("Resend API key", undefined, {
+      validate: (v) => v.startsWith("re_") ? true : "Resend API key should start with 're_'",
+    });
+    resendFromEmail = await input("From email address", undefined, {
+      validate: (v) => v.includes("@") ? true : "Must be a valid email address",
+    });
+  } else if (emailProvider === "smtp") {
+    smtpHost = await input("SMTP host", undefined, {
+      validate: (v) => v.length > 0 ? true : "SMTP host is required",
+    });
+    smtpPort = await input("SMTP port", "587");
+    smtpUser = await input("SMTP username");
+    smtpPassword = await input("SMTP password");
+    smtpFromEmail = await input("From email address", undefined, {
+      validate: (v) => v.includes("@") ? true : "Must be a valid email address",
+    });
+  } else {
+    info("Skipping email — emails will be logged to console.");
+  }
+  newLine();
+
+  // --- Step 5: Dockerfile ---
+  info("Step 5/5: Deployment");
+  let generateDockerfile = !skipDockerfile;
+  if (!skipDockerfile && !isNonInteractive()) {
+    generateDockerfile = await confirm(
+      "Generate a Dockerfile for self-hosted deployment?",
+      true
+    );
+  }
+  newLine();
+
+  // --- Show auth secret ---
+  success(`Auth secret generated: ${authSecret.substring(0, 8)}...`);
+
+  return {
+    appUrl,
+    databaseUrl,
+    directUrl,
+    authSecret,
+    storageProvider,
+    storageEndpoint,
+    storageRegion,
+    storageAccessKeyId,
+    storageSecretAccessKey,
+    emailProvider,
+    resendApiKey,
+    resendFromEmail,
+    smtpHost,
+    smtpPort,
+    smtpUser,
+    smtpPassword,
+    smtpFromEmail,
+    generateDockerfile,
+  };
+}
+
+function getStorageDefaults(provider: StorageProvider): { endpoint: string; region: string } {
+  switch (provider) {
+    case "r2":
+      return {
+        endpoint: "https://<ACCOUNT_ID>.r2.cloudflarestorage.com",
+        region: "auto",
+      };
+    case "s3":
+      return {
+        endpoint: "https://s3.amazonaws.com",
+        region: "us-east-1",
+      };
+    case "minio":
+      return {
+        endpoint: "https://minio.example.com",
+        region: "us-east-1",
+      };
+  }
 }
 
 function getOptionalServiceWarnings(mode: SetupMode, envPath: string): string[] {
@@ -476,12 +736,14 @@ function displaySummary(mode: SetupMode, trackedFiles: TrackedFile[], projectRoo
   const nextSteps = mode === "local"
     ? `Next steps:
   1. Start Docker Desktop (if not running)
-  2. Run: ui-syncup up
-  3. Open http://localhost:${DEFAULT_PORTS.app}`
+  2. Run: bunx ui-syncup up
+  3. Run: bun dev
+  4. Open http://localhost:${DEFAULT_PORTS.app}`
     : `Next steps:
-  1. Edit ${ENV_FILES.production} with your credentials
-  2. Configure your database and storage
-  3. Deploy to your hosting provider`;
+  1. Review ${ENV_FILES.production} — confirm all values are correct
+  2. Build: docker build -t ui-syncup .
+  3. Run:   docker run -p 3000:3000 --env-file .env.production ui-syncup
+  4. Or deploy to your hosting provider (Dokploy, Coolify, AWS, etc.)`;
 
   let summaryContent = `Mode: ${mode === "local" ? "Local Development" : "Production"}
 
@@ -489,15 +751,10 @@ Files:
 ${filesList}`;
 
   if (dirsList) {
-    summaryContent += `
-
-Directories:
-${dirsList}`;
+    summaryContent += `\n\nDirectories:\n${dirsList}`;
   }
 
-  summaryContent += `
-
-${nextSteps}`;
+  summaryContent += `\n\n${nextSteps}`;
 
   box("✅ Initialization Complete", summaryContent);
 }

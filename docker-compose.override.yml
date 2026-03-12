@@ -18,16 +18,22 @@
 version: "3.8"
 
 services:
-  # Example: Customize the app service
-  # app:
-  #   environment:
-  #     - DEBUG=true
-  #   volumes:
-  #     - ./custom-config:/app/config
+  # Application service – SMTP environment variable pass-through
+  # Uncomment and populate SMTP_* variables in your .env.local to route
+  # emails through a self-hosted mail server instead of Resend.
+  app:
+    environment:
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
+      - SMTP_SECURE=${SMTP_SECURE:-}
 
   # Example: Add a local mail server for testing
-  # mailhog:
-  #   image: mailhog/mailhog
+  # mailpit:
+  #   image: axllent/mailpit:latest
   #   ports:
-  #     - "1025:1025"
-  #     - "8025:8025"
+  #     - "1025:1025"  # SMTP
+  #     - "8025:8025"  # Web UI (http://localhost:8025)
+
