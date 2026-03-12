@@ -1,0 +1,89 @@
+.DS_Store
+.env*
+!.env.example
+!.env.development
+!.env.production
+!.env.test
+.npm
+.parcel-cache
+.pnp.*
+.pnpm-debug.log*
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+.temp
+.vscode-test
+.yarn/*
+.yarn-integrity
+.yarn/cache
+.yarn/install-state.gz
+.yarn/unplugged
+.yarn/versions
+
+# OS & misc
+logs
+*.log
+*.pem
+npm-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Node / package manager
+/node_modules/
+/.pnp
+/.nyc_output
+/.next
+/out
+
+# Build / distribution
+/build
+/dist
+
+# Coverage
+/coverage
+*.lcov
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Framework caches & build outputs
+# Next.js
+/.next
+# Nuxt
+.nuxt
+# Gatsby
+.cache/
+# Vite/parcel
+.parcel-cache
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Editor / tooling
+.eslintcache
+.stylelintcache
+.node_repl_history
+
+# Misc tooling
+lib-cov
+.grunt
+bower_components/
+.lock-wscript
+build/Release
+jspm_packages/
+web_modules/
+
+# Databases / local
+.dynamodb/
+.data/
+.data/*.db
+
+# Deployment
+.vercel
+
+# Other
+.tern-port
+.DS_Store

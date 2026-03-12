@@ -1,0 +1,184 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  migrate-preview:
+    name: Migrate Preview Database
+    # Only run this job when pushing to `develop`
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: Preview
+
+    # Prevent two preview migrations from running at the same time
+    concurrency:
+      group: db-migrate-preview
+      cancel-in-progress: false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      
+      - name: Install dependencies
+        run: bun install
+      
+      - name: Verify environment secrets
+        run: |
+          if [ -z "${{ secrets.DEV_DIRECT_URL }}" ]; then
+            echo "::error::DEV_DIRECT_URL secret is not configured. Please add it to the Preview environment."
+            echo "Go to: Settings → Environments → Preview → Add secret"
+            exit 1
+          fi
+          echo "✓ DEV_DIRECT_URL secret is configured"
+      
+      
+      - name: Run database migrations
+        id: migrate
+        run: |
+          echo "Starting database migration for Preview environment..."
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "---"
+          bun run db:migrate 2>&1 | tee migration-output.txt
+          MIGRATION_EXIT_CODE=${PIPESTATUS[0]}
+          if [ $MIGRATION_EXIT_CODE -ne 0 ]; then
+            echo "::error::Migration failed with exit code $MIGRATION_EXIT_CODE"
+            echo "::error::Review the migration output above for details"
+            echo "---"
+            echo "MIGRATION FAILED - Deployment will be halted"
+            exit $MIGRATION_EXIT_CODE
+          fi
+          echo "---"
+          echo "✓ Migration completed successfully"
+        env:
+          DIRECT_URL: ${{ secrets.DEV_DIRECT_URL }}
+      
+      - name: Migration success summary
+        if: success()
+        run: |
+          echo "## Preview Migration Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** Preview (Dev Database)" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Migration failure summary
+        if: failure()
+        run: |
+          echo "## Preview Migration Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ❌ Failed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** Preview (Dev Database)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Troubleshooting" >> $GITHUB_STEP_SUMMARY
+          echo "1. Check the migration output above for SQL errors" >> $GITHUB_STEP_SUMMARY
+          echo "2. Verify DEV_DIRECT_URL secret is correctly configured" >> $GITHUB_STEP_SUMMARY
+          echo "3. Ensure migration files have valid SQL syntax" >> $GITHUB_STEP_SUMMARY
+          echo "4. Check database connectivity and credentials" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "::error::Migration failed - deployment blocked"
+
+      - name: Upload migration logs
+        if: always() # even if previous step fails
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-migration-logs-${{ github.sha }}
+          path: migration-output.txt
+
+  migrate-production:
+    name: Migrate Production Database
+    # Only run this job when pushing to `main`
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: Production
+    
+    # Prevent overlapping prod migrations
+    concurrency:
+      group: db-migrate-production
+      cancel-in-progress: false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      
+      - name: Install dependencies
+        run: bun install
+      
+      - name: Verify environment secrets
+        run: |
+          if [ -z "${{ secrets.PROD_DIRECT_URL }}" ]; then
+            echo "::error::PROD_DIRECT_URL secret is not configured. Please add it to the Production environment."
+            echo "Go to: Settings → Environments → Production → Add secret"
+            exit 1
+          fi
+          echo "✓ PROD_DIRECT_URL secret is configured"
+      
+      
+      - name: Run database migrations
+        id: migrate
+        run: |
+          echo "Starting database migration for Production environment..."
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "---"
+          bun run db:migrate 2>&1 | tee migration-output.txt
+          MIGRATION_EXIT_CODE=${PIPESTATUS[0]}
+          if [ $MIGRATION_EXIT_CODE -ne 0 ]; then
+            echo "::error::Migration failed with exit code $MIGRATION_EXIT_CODE"
+            echo "::error::Review the migration output above for details"
+            echo "---"
+            echo "MIGRATION FAILED - Deployment will be halted"
+            exit $MIGRATION_EXIT_CODE
+          fi
+          echo "---"
+          echo "✓ Migration completed successfully"
+        env:
+          DIRECT_URL: ${{ secrets.PROD_DIRECT_URL }}
+      
+      - name: Migration success summary
+        if: success()
+        run: |
+          echo "## Production Migration Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** Production" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Migration failure summary
+        if: failure()
+        run: |
+          echo "## Production Migration Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ❌ Failed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** Production" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Troubleshooting" >> $GITHUB_STEP_SUMMARY
+          echo "1. Check the migration output above for SQL errors" >> $GITHUB_STEP_SUMMARY
+          echo "2. Verify PROD_DIRECT_URL secret is correctly configured" >> $GITHUB_STEP_SUMMARY
+          echo "3. Ensure migration files have valid SQL syntax" >> $GITHUB_STEP_SUMMARY
+          echo "4. Check database connectivity and credentials" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "::error::Migration failed - deployment blocked"
+
+      - name: Upload migration logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-migration-logs-${{ github.sha }}
+          path: migration-output.txt

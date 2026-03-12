@@ -1,0 +1,109 @@
+import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import { renderHook, act } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { useOnboarding } from "../use-onboarding";
+
+GlobalRegistrator.register();
+
+// Mock dependencies
+const mockPush = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}));
+
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+// We need to access the mocked toast to assert on it
+import { toast } from "sonner";
+const mockToast = toast as unknown as { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
+
+const mockCreateTeam = vi.fn();
+const mockUseTeams = vi.fn();
+
+vi.mock("@/features/teams", () => ({
+  useCreateTeam: () => ({
+    mutate: mockCreateTeam,
+    isPending: false,
+  }),
+  useTeams: () => mockUseTeams(),
+}));
+
+describe("useOnboarding", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseTeams.mockReturnValue({ data: { teams: [] }, isLoading: false });
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({}),
+      })
+    ) as any;
+  });
+
+  it("should initialize with create mode when no token is provided", () => {
+    const { result } = renderHook(() => useOnboarding(null, "My Team"));
+    expect(result.current.mode).toBe("create");
+    expect(result.current.form.getValues("teamName")).toBe("My Team");
+  });
+
+  it("should initialize with accept mode when token is provided", () => {
+    const { result } = renderHook(() => useOnboarding("token123", "My Team"));
+    expect(result.current.mode).toBe("accept");
+  });
+
+  it("should call createTeam when handleCreateTeam is submitted", async () => {
+    const { result } = renderHook(() => useOnboarding(null, "New Team"));
+
+    await act(async () => {
+      await result.current.handleCreateTeam({
+        preventDefault: vi.fn(),
+      } as any);
+    });
+
+    expect(mockCreateTeam).toHaveBeenCalledWith(
+      { name: "New Team", description: "" },
+      expect.any(Object)
+    );
+  });
+
+
+  it("should redirect to projects on successful team creation", async () => {
+    mockCreateTeam.mockImplementation((data, options) => {
+      options.onSuccess({ team: { id: "1", name: "New Team" } });
+    });
+
+    const { result } = renderHook(() => useOnboarding(null, "New Team"));
+
+    await act(async () => {
+      await result.current.handleCreateTeam({
+        preventDefault: vi.fn(),
+      } as any);
+    });
+
+    expect(mockToast.success).toHaveBeenCalledWith("Team created successfully");
+    expect(mockPush).toHaveBeenCalledWith("/projects");
+  });
+
+  it("should set error on team creation failure", async () => {
+    mockCreateTeam.mockImplementation((data, options) => {
+      options.onError(new Error("Creation failed"));
+    });
+
+    const { result } = renderHook(() => useOnboarding(null, "New Team"));
+
+    await act(async () => {
+      await result.current.handleCreateTeam({
+        preventDefault: vi.fn(),
+      } as any);
+    });
+
+    expect(result.current.error).toBe("Creation failed");
+  });
+});

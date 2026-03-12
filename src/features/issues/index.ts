@@ -1,0 +1,65 @@
+// ============================================================================
+// ISSUE FEATURE BARREL EXPORTS
+// Public API surface for the issues feature
+// ============================================================================
+
+// Screens (main entry points)
+export { default as IssueDetailsScreen } from './screens/issue-details-screen';
+export { default as IssueShareScreen } from './screens/issue-share-screen';
+export { EnhancedResponsiveIssueLayoutSkeleton } from './screens/issue-details-skeletons';
+
+// List Components
+export { default as IssuesList } from './components/issues-list';
+export { IssuesCreateDialog } from './components/issues-create-dialog';
+export { IssuesListFilter } from './components/issues-list-filter';
+
+// Detail Components (for composition)
+export { default as ResponsiveIssueLayout } from './components/responsive-issue-layout';
+export { default as IssueDetailsPanel } from './components/issue-details-panel';
+export { default as IssueAttachmentsView } from './components/optimized-attachment-view';
+
+// Hooks
+export {
+  useIssueDetails,
+  useIssueActivities,
+  useIssueUpdate,
+  useIssueDelete,
+  useIssueFilters,
+  useProjectIssues,
+  useCreateIssue,
+} from './hooks';
+export type { IssueFilters } from './utils';
+
+// Types
+export type {
+  IssueDetailData,
+  IssueSummary,
+  IssueAttachment,
+  IssuePermissions,
+  ActivityEntry,
+  ActivityType,
+  IssuePriority,
+  IssueType,
+  IssueStatus,
+} from './types';
+
+// Re-export Issue type from mocks for convenience (deprecated)
+export type { Issue } from '@/mocks/issue.fixtures';
+
+// API (for advanced use cases)
+export {
+  getIssueDetails,
+  getIssueActivities,
+  updateIssue,
+  deleteIssue,
+  getProjectIssues,
+  createIssue,
+  uploadAttachment,
+} from './api';
+
+// Preload utilities (for performance optimization)
+export {
+  preloadIssueDetailComponents,
+  preloadIssueLayout,
+} from './components/preload';
+
