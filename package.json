@@ -1,6 +1,6 @@
 {
   "name": "ui-syncup",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "private": true,
   "bin": {
     "ui-syncup": "./cli/index.ts"

@@ -34,15 +34,42 @@ A visual feedback and issue tracking platform for design-to-development collabor
 
 ### Quick Installation
 
-The fastest way to install UI-Syncup is using our installation script:
+The fastest way to install UI SyncUp is using the installation script:
 
 ```bash
-# Install the latest version (main branch)
+# Install the latest release
 curl -fsSL https://raw.githubusercontent.com/BYKHD/ui-syncup/main/install.sh | bash
 
-# Install a specific version (using a GitHub release tag or branch)
-curl -fsSL https://raw.githubusercontent.com/BYKHD/ui-syncup/main/install.sh | bash -s -- 4.0.0-beta
+# Install a specific version
+curl -fsSL https://raw.githubusercontent.com/BYKHD/ui-syncup/main/install.sh | bash -s -- v0.2.2
+
+# Install into the current (empty) directory
+curl -fsSL https://raw.githubusercontent.com/BYKHD/ui-syncup/main/install.sh | bash -s -- --here
+
+# CI / non-interactive (skips prompts)
+curl -fsSL https://raw.githubusercontent.com/BYKHD/ui-syncup/main/install.sh | CI=1 bash
 ```
+
+**Available flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--here` | Clone into the current directory (must be empty) |
+| `--upgrade` | Pull latest changes in an existing `ui-syncup/` directory |
+| `--install-bun` | Auto-install bun if not present |
+| `--skip-bun` | Skip bun check (manage bun yourself) |
+| `--non-interactive` | Skip `bunx ui-syncup init` — run it manually later |
+| `--log-file <path>` | Save all installer output to a log file |
+| `--help` | Print full usage information |
+
+**Environment variables:**
+
+| Variable | Description |
+|----------|-------------|
+| `UI_SYNCUP_REPO` | Override the repository URL (for forks, must use `https://`) |
+| `CI` | Any non-empty value enables non-interactive mode |
+
+> **Requires Docker** — Supabase (used by `bunx ui-syncup up`) needs Docker running on your machine.
 
 ### Manual Installation
 
