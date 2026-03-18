@@ -110,6 +110,17 @@ src/
 │
 └── types/                        # Global TypeScript types
 
+cli/                              # CLI package (published independently to npm)
+│   ├── index.ts                  # Entry point — shebang #!/usr/bin/env node
+│   ├── commands/                 # Subcommands: init, up, down, reset, purge
+│   ├── lib/                      # Shared CLI utilities (ui, prompts, docker, supabase…)
+│   ├── templates/                # Config templates copied by `ui-syncup init`
+│   ├── package.json              # Standalone npm package manifest (NOT private)
+│   ├── tsup.config.ts            # Build config: bundles cli/ → dist/index.js
+│   ├── .npmignore                # Excludes TS source and tests from npm tarball
+│   └── dist/                     # GENERATED — compiled CJS bundle (gitignored)
+│       └── index.js              # What npm users actually run
+│
 docs/                             # Architecture documentation
 tests/                            # Test files
 drizzle/                          # Database migrations

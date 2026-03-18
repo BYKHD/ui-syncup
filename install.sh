@@ -307,9 +307,15 @@ EOF
 
   if $USE_HERE; then
     INSTALL_DIR="."
-    # POSIX-portable non-empty check (avoids ls -A BSD/GNU differences)
-    if [ -n "$(find . -maxdepth 1 ! -name . | head -1)" ]; then
+    # Allow known-safe VCS/editor/OS entries that don't conflict with the install.
+    # Pattern mirrors create-next-app / create-vite conventions.
+    local SAFE_PATTERN
+    SAFE_PATTERN='^\./(\.(git|hg|svn|gitignore|gitattributes|gitkeep|npmrc|editorconfig|env\.example|travis\.yml)|LICENSE|Thumbs\.db)$'
+    local UNSAFE
+    UNSAFE=$(find . -maxdepth 1 ! -name . | grep -Ev "$SAFE_PATTERN" | head -1 || true)
+    if [ -n "$UNSAFE" ]; then
       echo -e "${RED}❌ Current directory is not empty. Run this from an empty directory.${NC}" >&2
+      echo "    (VCS dirs like .git and editor configs are ignored by this check)" >&2
       exit 1
     fi
     echo -e "${BLUE}📦 Cloning into current directory (version: ${BOLD}$VERSION${NC}${BLUE})...${NC}"
@@ -331,7 +337,19 @@ EOF
     CLEANUP_DIR="$INSTALL_DIR"
   fi
 
-  if ! git clone --branch "$VERSION" "$REPO_URL" "$INSTALL_DIR"; then
+  # When --here is used and a .git dir already exists (e.g. from `git init`),
+  # git clone refuses to run. Fall back to fetch + checkout, which is the
+  # standard approach used by scaffolding tools (create-next-app, degit, etc.).
+  if $USE_HERE && [ -d ".git" ]; then
+    echo -e "${BLUE}🔀 Existing .git detected — fetching $VERSION into current directory...${NC}"
+    git remote add origin "$REPO_URL" 2>/dev/null \
+      || git remote set-url origin "$REPO_URL"
+    if ! git fetch --depth=1 origin "$VERSION"; then
+      echo -e "${RED}❌ Failed to fetch version '$VERSION'. Make sure the tag or branch exists.${NC}" >&2
+      exit 1
+    fi
+    git checkout --detach FETCH_HEAD
+  elif ! git clone --branch "$VERSION" "$REPO_URL" "$INSTALL_DIR"; then
     echo -e "${RED}❌ Failed to clone version '$VERSION'. Make sure the tag or branch exists.${NC}" >&2
     exit 1
   fi

@@ -413,10 +413,14 @@ export async function copyTemplate(
  * Find the path to a template file
  */
 function findTemplatePath(templateName: string): string | null {
-  // Templates are in cli/templates/ relative to project root
+  // Templates are in cli/templates/ relative to project root.
+  // We try multiple paths because __dirname differs between environments:
+  //   - Dev (source):  __dirname = .../cli/lib/  → up 2 → root/cli/templates/
+  //   - Bundled (npm): __dirname = .../dist/      → up 1 → root/templates/
   const possiblePaths = [
-    join(process.cwd(), "cli", "templates", templateName),
-    join(dirname(dirname(__dirname)), "cli", "templates", templateName),
+    join(__dirname, "..", "templates", templateName),               // bundled: dist/ → ../templates/
+    join(process.cwd(), "cli", "templates", templateName),         // cwd fallback
+    join(dirname(dirname(__dirname)), "cli", "templates", templateName), // dev source layout
   ];
 
   for (const path of possiblePaths) {

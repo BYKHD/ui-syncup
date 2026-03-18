@@ -5,7 +5,7 @@
  * @module cli/lib/constants
  */
 
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -14,17 +14,26 @@ import { fileURLToPath } from "url";
 // ============================================================================
 
 /**
- * Read version from package.json at runtime
- * Falls back to "0.0.0" if package.json cannot be read
+ * Read version from package.json at runtime.
+ * We try multiple relative paths because the file location changes
+ * depending on the environment:
+ *   - Dev (source at cli/lib/constants.ts): go up 2 dirs to reach project root
+ *   - Bundled (dist/index.js):              go up 1 dir to reach package root
  */
 function getVersion(): string {
   try {
-    // Get the directory of the current module
     const currentDir = dirname(fileURLToPath(import.meta.url));
-    // Navigate up to project root (cli/lib -> cli -> project root)
-    const packagePath = join(currentDir, "..", "..", "package.json");
-    const packageJson = JSON.parse(readFileSync(packagePath, "utf-8"));
-    return packageJson.version || "0.0.0";
+    const candidates = [
+      join(currentDir, "..", "package.json"),      // bundled: dist/ → ../package.json
+      join(currentDir, "..", "..", "package.json"), // dev: cli/lib/ → ../../package.json
+    ];
+    for (const packagePath of candidates) {
+      if (existsSync(packagePath)) {
+        const pkg = JSON.parse(readFileSync(packagePath, "utf-8"));
+        if (pkg.name === "ui-syncup" && pkg.version) return pkg.version;
+      }
+    }
+    return "0.0.0";
   } catch {
     return "0.0.0";
   }
