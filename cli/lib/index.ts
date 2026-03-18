@@ -9,6 +9,7 @@
 export type {
   CommandResult,
   SetupMode,
+  DeploymentMethod,
   StorageProvider,
   EmailProvider,
   ProductionConfig,
@@ -48,6 +49,7 @@ export {
   CURRENT_SCHEMA_VERSION,
   DOCKER_COMPOSE_OVERRIDE,
   DOCKER_COMPOSE_MINIO,
+  DOCKER_COMPOSE_PRODUCTION,
   DOCKERFILE_NAME,
   DOCKERIGNORE_NAME,
   STORAGE_PROVIDERS,
@@ -98,8 +100,8 @@ export {
   isProductionEnvironment,
   detectEnvironment,
   isPortAvailable,
-  isUISyncUpProject,
-  findProjectRoot,
+  hasConfigFile,
+  findConfigFile,
   type Config,
 } from "./config";
 

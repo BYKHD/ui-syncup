@@ -96,7 +96,7 @@ export function isProductionEnvironment(projectRoot?: string): boolean {
 
   // 3. Inspect project .env files directly
   // This catches cases where env vars aren't loaded into the shell yet
-  const envRoot = projectRoot ?? findProjectRoot() ?? process.cwd();
+  const envRoot = projectRoot ?? process.cwd();
   const envFiles = [".env.production", ".env.local"];
 
   for (const file of envFiles) {
@@ -329,33 +329,22 @@ export function isPortAvailable(port: number): Promise<boolean> {
 // ============================================================================
 
 /**
- * Check if current directory is a UI SyncUp project
+ * Check if current directory has a UI SyncUp config file
  */
-export function isUISyncUpProject(): boolean {
-  return findProjectRoot() !== null;
+export function hasConfigFile(): boolean {
+  return findConfigFile() !== null;
 }
 
 /**
- * Find project root by looking for package.json
+ * Find the UI SyncUp project directory by looking for ui-syncup.config.json
+ * in the current working directory only (no upward walk).
+ *
+ * Returns cwd if the config file is present, null otherwise.
  */
-export function findProjectRoot(): string | null {
-  let dir = process.cwd();
-
-  while (dir !== "/") {
-    if (existsSync(join(dir, "package.json"))) {
-      // Check if it's a ui-syncup project
-      try {
-        const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf-8"));
-        if (pkg.name === "ui-syncup") {
-          return dir;
-        }
-      } catch {
-        // Continue searching
-      }
-    }
-
-    dir = join(dir, "..");
+export function findConfigFile(): string | null {
+  const cwd = process.cwd();
+  if (existsSync(join(cwd, "ui-syncup.config.json"))) {
+    return cwd;
   }
-
   return null;
 }

@@ -11,11 +11,7 @@ import { spawnSync, spawn, type ChildProcess } from "child_process";
 import { existsSync } from "fs";
 import { join } from "path";
 import type { CommandResult, ServiceStatus } from "./types";
-import { findProjectRoot } from "./config";
 import { debug, error as logError } from "./ui";
-
-const PROJECT_ROOT_ERROR =
-  "Not in a UI SyncUp project. Run from project root or a subdirectory.";
 
 const DEFAULT_COMPOSE_FILES = [
   "docker-compose.yml",
@@ -348,19 +344,14 @@ export async function cleanupProjectImages(
 export async function getServiceStatus(
   projectName: string = "ui-syncup"
 ): Promise<ServiceStatus[]> {
-  const projectRoot = findProjectRoot();
-  if (!projectRoot) {
-    logError(PROJECT_ROOT_ERROR);
-    return [];
-  }
-
+  const cwd = process.cwd();
   const result = spawnSync(
     "docker",
     ["compose", "-p", projectName, "ps", "--format", "json"],
     {
       encoding: "utf-8",
       timeout: 10000,
-      cwd: projectRoot,
+      cwd,
     }
   );
 
@@ -461,17 +452,9 @@ async function runDockerCommand(
 ): Promise<CommandResult> {
   debug(`${description} (docker ${args.join(" ")})`);
 
-  const projectRoot = findProjectRoot();
-  if (!projectRoot) {
-    logError(PROJECT_ROOT_ERROR);
-    return {
-      success: false,
-      message: PROJECT_ROOT_ERROR,
-      error: new Error(PROJECT_ROOT_ERROR),
-    };
-  }
+  const cwd = process.cwd();
 
-  if (isImplicitComposeCommand(args) && !hasDefaultComposeFile(projectRoot)) {
+  if (isImplicitComposeCommand(args) && !hasDefaultComposeFile(cwd)) {
     return {
       success: true,
       message:
@@ -482,7 +465,7 @@ async function runDockerCommand(
   return new Promise((resolve) => {
     const child = spawn("docker", args, {
       stdio: ["pipe", "pipe", "pipe"],
-      cwd: projectRoot,
+      cwd,
     });
 
     let stdout = "";
@@ -543,15 +526,9 @@ export function runDockerCommandStream(
   args: string[],
   onOutput?: (line: string, isError: boolean) => void
 ): ChildProcess {
-  const projectRoot = findProjectRoot();
-  if (!projectRoot) {
-    logError(PROJECT_ROOT_ERROR);
-    throw new Error(PROJECT_ROOT_ERROR);
-  }
-
   const child = spawn("docker", args, {
     stdio: ["pipe", "pipe", "pipe"],
-    cwd: projectRoot,
+    cwd: process.cwd(),
   });
 
   if (onOutput) {

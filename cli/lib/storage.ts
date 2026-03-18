@@ -18,7 +18,6 @@ import {
   MINIO_CONFIG,
   STORAGE_TIMEOUT_MS,
 } from "./constants";
-import { findProjectRoot } from "./config";
 import { debug, error as logError } from "./ui";
 
 // ============================================================================
@@ -45,9 +44,7 @@ export interface StorageStatusResult {
  * Check if the MinIO compose file exists in the project
  */
 export function hasStorageComposeFile(): boolean {
-  const projectRoot = findProjectRoot();
-  if (!projectRoot) return false;
-  return existsSync(join(projectRoot, DOCKER_COMPOSE_MINIO));
+  return existsSync(join(process.cwd(), DOCKER_COMPOSE_MINIO));
 }
 
 /**
@@ -101,16 +98,9 @@ export function getStorageStatus(): StorageStatusResult {
  * Start the MinIO storage service via docker-compose
  */
 export async function startStorageService(): Promise<CommandResult> {
-  const projectRoot = findProjectRoot();
-  if (!projectRoot) {
-    return {
-      success: false,
-      message: "Not in a UI SyncUp project directory.",
-      error: new Error("Project root not found"),
-    };
-  }
+  const projectRoot = process.cwd();
 
-  const composeFile = join(projectRoot, DOCKER_COMPOSE_MINIO);
+const composeFile = join(projectRoot, DOCKER_COMPOSE_MINIO);
   if (!existsSync(composeFile)) {
     return {
       success: false,
@@ -178,16 +168,9 @@ export async function startStorageService(): Promise<CommandResult> {
  * Stop the MinIO storage service
  */
 export async function stopStorageService(): Promise<CommandResult> {
-  const projectRoot = findProjectRoot();
-  if (!projectRoot) {
-    return {
-      success: false,
-      message: "Not in a UI SyncUp project directory.",
-      error: new Error("Project root not found"),
-    };
-  }
+  const projectRoot = process.cwd();
 
-  if (!hasStorageComposeFile()) {
+if (!hasStorageComposeFile()) {
     return {
       success: true,
       message: "No storage compose file found, nothing to stop.",
@@ -246,16 +229,9 @@ export async function stopStorageService(): Promise<CommandResult> {
  * Remove MinIO containers, volumes and images (for purge)
  */
 export async function purgeStorageService(): Promise<CommandResult> {
-  const projectRoot = findProjectRoot();
-  if (!projectRoot) {
-    return {
-      success: false,
-      message: "Not in a UI SyncUp project directory.",
-      error: new Error("Project root not found"),
-    };
-  }
+  const projectRoot = process.cwd();
 
-  if (!hasStorageComposeFile()) {
+if (!hasStorageComposeFile()) {
     return {
       success: true,
       message: "No storage compose file found, nothing to purge.",

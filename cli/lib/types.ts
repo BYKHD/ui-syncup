@@ -19,6 +19,9 @@ export interface CommandResult {
 /** Setup mode selection for init command */
 export type SetupMode = "local" | "production";
 
+/** Deployment method for production init */
+export type DeploymentMethod = "allinone" | "external" | "dockerfile";
+
 /** Storage provider selection for production wizard */
 export type StorageProvider = "r2" | "s3" | "minio";
 
@@ -27,26 +30,43 @@ export type EmailProvider = "resend" | "smtp" | "skip";
 
 /** Production configuration collected from interactive wizard */
 export interface ProductionConfig {
+  /** How the user wants to deploy */
+  deploymentMethod: DeploymentMethod;
   /** Public-facing application URL (e.g. https://app.example.com) */
   appUrl: string;
-  /** PostgreSQL connection string */
-  databaseUrl: string;
-  /** Direct database connection string (bypasses connection pooler) */
-  directUrl: string;
   /** Auto-generated auth secret */
   authSecret: string;
-  /** Storage provider choice */
-  storageProvider: StorageProvider;
-  /** S3-compatible endpoint URL */
-  storageEndpoint: string;
-  /** Storage region */
-  storageRegion: string;
-  /** Storage access key ID */
-  storageAccessKeyId: string;
-  /** Storage secret access key */
-  storageSecretAccessKey: string;
   /** Email provider choice */
   emailProvider: EmailProvider;
+
+  // ── External / Dockerfile fields (not required for all-in-one) ──
+
+  /** PostgreSQL connection string (external/dockerfile only) */
+  databaseUrl?: string;
+  /** Direct database connection string (external/dockerfile only) */
+  directUrl?: string;
+  /** Storage provider choice (external/dockerfile only) */
+  storageProvider?: StorageProvider;
+  /** S3-compatible endpoint URL (external/dockerfile only) */
+  storageEndpoint?: string;
+  /** Storage region (external/dockerfile only) */
+  storageRegion?: string;
+  /** Storage access key ID (external/dockerfile only) */
+  storageAccessKeyId?: string;
+  /** Storage secret access key (external/dockerfile only) */
+  storageSecretAccessKey?: string;
+
+  // ── All-in-one auto-generated credentials ──
+
+  /** Auto-generated PostgreSQL password (all-in-one only) */
+  postgresPassword?: string;
+  /** Auto-generated MinIO root user (all-in-one only) */
+  minioRootUser?: string;
+  /** Auto-generated MinIO root password (all-in-one only) */
+  minioRootPassword?: string;
+
+  // ── Email credentials ──
+
   /** Resend API key (when emailProvider is 'resend') */
   resendApiKey?: string;
   /** Resend from email (when emailProvider is 'resend') */
@@ -61,8 +81,6 @@ export interface ProductionConfig {
   smtpPassword?: string;
   /** SMTP from email (when emailProvider is 'smtp') */
   smtpFromEmail?: string;
-  /** Whether to generate a Dockerfile */
-  generateDockerfile: boolean;
 }
 
 // ============================================================================

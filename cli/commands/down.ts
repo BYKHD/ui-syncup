@@ -12,8 +12,11 @@ import { handleProjectConfigLoadResult } from "../lib/project-config";
 
 import {
   // Config
-  findProjectRoot,
-  isProductionEnvironment,
+  findConfigFile,
+  // Docker
+  stopServices,
+  isDockerInstalled,
+  isDockerRunning,
   // Supabase
   stopSupabase,
   getSupabaseStatus,
@@ -65,14 +68,13 @@ async function runDown(options: DownOptions): Promise<void> {
   const verbose = options.verbose ?? false;
 
   // ========================================================================
-  // Step 0: Find Project Root
+  // Step 0: Find Project Config
   // ========================================================================
-  const projectRoot = findProjectRoot();
+  const projectRoot = findConfigFile();
 
   if (!projectRoot) {
-    error("Not in a UI SyncUp project directory.");
-    error("Please run this command from the root of a UI SyncUp project.");
-    error("(A valid project must have a package.json with name 'ui-syncup')");
+    error("No ui-syncup.config.json found in current directory.");
+    error("Run 'bunx ui-syncup init' first to initialize a project here.");
     process.exit(ExitCode.ValidationError);
   }
 
@@ -86,17 +88,18 @@ async function runDown(options: DownOptions): Promise<void> {
     process.exit(ExitCode.ValidationError);
   }
 
+  const projectMode = configLoadResult.config?.defaults?.mode ?? "local";
+
   // ========================================================================
-  // Step 1: Safety Check - Block in Production
+  // Branch: Production mode → docker compose down
   // ========================================================================
-  if (isProductionEnvironment(projectRoot)) {
-    error("Cannot run 'down' command in production environment.");
-    error("This command is only for local development.");
-    process.exit(ExitCode.ValidationError);
+  if (projectMode === "production") {
+    await runProductionDown(verbose);
+    return;
   }
 
   // ========================================================================
-  // Step 2: Check if Services Are Running
+  // Step 2: Check if Services Are Running (local mode)
   // ========================================================================
   newLine();
   log("🛑 Stopping UI SyncUp development stack");
@@ -203,4 +206,49 @@ async function runDown(options: DownOptions): Promise<void> {
   newLine();
   info("Data volumes have been preserved.");
   info("Run 'ui-syncup up' to restart the development stack.");
+}
+
+// ============================================================================
+// Production Down (docker compose)
+// ============================================================================
+
+async function runProductionDown(verbose: boolean): Promise<void> {
+  newLine();
+  log("🛑 Stopping UI SyncUp production stack");
+  newLine();
+
+  const spinner = createSpinner();
+
+  spinner.start("Checking Docker...");
+  const dockerInstalled = await isDockerInstalled();
+  if (!dockerInstalled) {
+    spinner.fail("Docker is not installed");
+    error("Docker is required. Install Docker: https://docs.docker.com/get-docker/");
+    process.exit(ExitCode.ValidationError);
+  }
+  const dockerRunning = await isDockerRunning();
+  if (!dockerRunning) {
+    spinner.fail("Docker is not running");
+    error("Please start Docker and try again.");
+    process.exit(ExitCode.ExternalError);
+  }
+  spinner.succeed("Docker is running");
+
+  spinner.start("Stopping services...");
+  const stopResult = await stopServices();
+  if (!stopResult.success) {
+    spinner.fail("Failed to stop services");
+    error(stopResult.message || "Unknown error stopping services");
+    if (stopResult.error && verbose) {
+      debug(stopResult.error.message);
+    }
+    process.exit(ExitCode.ExternalError);
+  }
+  spinner.succeed("Production stack stopped");
+
+  newLine();
+  success("UI SyncUp stopped.");
+  newLine();
+  info("Data volumes have been preserved.");
+  info("Run 'bunx ui-syncup up' to restart.");
 }

@@ -14,7 +14,7 @@ import { handleProjectConfigLoadResult } from "../lib/project-config";
 
 import {
   // Config
-  findProjectRoot,
+  findConfigFile,
   isProductionEnvironment,
   // Supabase
   stopSupabase,
@@ -79,14 +79,13 @@ async function runReset(options: ResetOptions): Promise<void> {
   const verbose = options.verbose ?? false;
 
   // ========================================================================
-  // Step 0: Find Project Root
+  // Step 0: Find Project Config
   // ========================================================================
-  const projectRoot = findProjectRoot();
+  const projectRoot = findConfigFile();
 
   if (!projectRoot) {
-    error("Not in a UI SyncUp project directory.");
-    error("Please run this command from the root of a UI SyncUp project.");
-    error("(A valid project must have a package.json with name 'ui-syncup')");
+    error("No ui-syncup.config.json found in current directory.");
+    error("Run 'bunx ui-syncup init' first to initialize a project here.");
     process.exit(ExitCode.ValidationError);
   }
 

@@ -15,7 +15,7 @@ import { handleProjectConfigLoadResult } from "../lib/project-config";
 
 import {
   // Config
-  findProjectRoot,
+  findConfigFile,
   isProductionEnvironment,
   // Docker
   isDockerInstalled,
@@ -49,8 +49,11 @@ import {
   STORAGE_DIRS,
   ENV_FILES,
   DOCKER_COMPOSE_OVERRIDE,
+  DOCKER_COMPOSE_PRODUCTION,
   PURGE_CONFIRMATION_PHRASE,
   CONFIG_FILENAME,
+  DOCKERFILE_NAME,
+  DOCKERIGNORE_NAME,
 } from "../lib/index";
 
 // ============================================================================
@@ -82,14 +85,13 @@ async function runPurge(options: PurgeOptions): Promise<void> {
   const verbose = options.verbose ?? false;
 
   // ========================================================================
-  // Step 0: Find Project Root
+  // Step 0: Find Project Config
   // ========================================================================
-  const projectRoot = findProjectRoot();
+  const projectRoot = findConfigFile();
 
   if (!projectRoot) {
-    error("Not in a UI SyncUp project directory.");
-    error("Please run this command from the root of a UI SyncUp project.");
-    error("(A valid project must have a package.json with name 'ui-syncup')");
+    error("No ui-syncup.config.json found in current directory.");
+    error("Run 'bunx ui-syncup init' first to initialize a project here.");
     process.exit(ExitCode.ValidationError);
   }
 
@@ -154,10 +156,10 @@ async function runPurge(options: PurgeOptions): Promise<void> {
   log("  • All Docker images (local builds)");
   log("  • All storage directories (uploads, avatars)");
   log("  • Environment files (.env.local, .env.production)");
-  log("  • Docker Compose override file");
+  log("  • Docker Compose / Dockerfile deployment files");
   log("  • Project configuration file (ui-syncup.config.json)");
   newLine();
-  info("After purge, run 'ui-syncup init' to start fresh.");
+  info("After purge, run 'bunx ui-syncup init' to start fresh.");
   newLine();
 
   // ========================================================================
@@ -361,6 +363,22 @@ async function runPurge(options: PurgeOptions): Promise<void> {
   }
 
   // ========================================================================
+  // Step 10b: Delete production deployment files (docker-compose.yml / Dockerfile)
+  // ========================================================================
+  const productionFilesToDelete = [
+    join(projectRoot, DOCKER_COMPOSE_PRODUCTION),
+    join(projectRoot, DOCKERFILE_NAME),
+    join(projectRoot, DOCKERIGNORE_NAME),
+  ];
+
+  for (const filePath of productionFilesToDelete) {
+    const result = await deleteFile(filePath);
+    if (!result.success && result.error && verbose) {
+      debug(`Skipped (not found): ${filePath}`);
+    }
+  }
+
+  // ========================================================================
   // Step 11: Delete Project Configuration File
   // ========================================================================
   spinner.start("Deleting project configuration...");
@@ -396,7 +414,7 @@ async function runPurge(options: PurgeOptions): Promise<void> {
     }
     newLine();
     info("Most resources have been cleaned up.");
-    info("Run 'ui-syncup init' to start fresh.");
+    info("Run 'bunx ui-syncup init' to start fresh.");
     if (errors.length > 0) {
       process.exit(ExitCode.ExternalError);
     }
@@ -407,6 +425,6 @@ async function runPurge(options: PurgeOptions): Promise<void> {
     info("The project is now in a clean state.");
     newLine();
     log("To start fresh, run:");
-    log("  ui-syncup init");
+    log("  bunx ui-syncup init");
   }
 }

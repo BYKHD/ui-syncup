@@ -15,11 +15,7 @@ import { existsSync, readFileSync } from "fs";
 
 import type { CommandResult, ServiceStatus } from "./types";
 import { DATABASE_TIMEOUT_MS } from "./constants";
-import { findProjectRoot } from "./config";
 import { debug, warning, error as logError } from "./ui";
-
-const PROJECT_ROOT_ERROR =
-  "Not in a UI SyncUp project. Run from project root or a subdirectory.";
 
 // ============================================================================
 // Supabase CLI Detection
@@ -90,12 +86,7 @@ export interface SupabaseStatusResult {
 }
 
 export async function getSupabaseStatus(): Promise<SupabaseStatusResult> {
-  const projectRoot = findProjectRoot();
-  if (!projectRoot) {
-    const message = PROJECT_ROOT_ERROR;
-    logError(message);
-    return { ok: false, services: [], error: message };
-  }
+  const projectRoot = process.cwd();
 
   const result = spawnSync("supabase", ["status", "--output", "json"], {
     encoding: "utf-8",
@@ -161,12 +152,7 @@ export async function waitForDatabase(
   timeoutMs: number = DATABASE_TIMEOUT_MS,
   pollIntervalMs: number = 2000
 ): Promise<boolean> {
-  const projectRoot = findProjectRoot();
-  if (!projectRoot) {
-    logError(PROJECT_ROOT_ERROR);
-    return false;
-  }
-
+  const projectRoot = process.cwd();
   const startTime = Date.now();
   let lastError: Error | null = null;
 
@@ -236,23 +222,30 @@ export function resolveLocalDirectUrl(projectRoot: string): string | null {
 }
 
 /**
- * Run database migrations using the existing migrate script
+ * Run database migrations.
+ *
+ * Uses the project's custom `scripts/migrate.ts` when present (Drizzle ORM
+ * workflow), otherwise falls back to `supabase db push --include-all` for
+ * standalone CLI installations that don't ship that script.
  */
 export async function runMigrations(): Promise<CommandResult> {
-  const projectRoot = findProjectRoot();
-  if (!projectRoot) {
-    logError(PROJECT_ROOT_ERROR);
-    return {
-      success: false,
-      message: PROJECT_ROOT_ERROR,
-      error: new Error(PROJECT_ROOT_ERROR),
-    };
+  const projectRoot = process.cwd();
+  const migrateScript = join(projectRoot, "scripts/migrate.ts");
+
+  if (existsSync(migrateScript)) {
+    return spawnMigration(["bun", "run", "scripts/migrate.ts"], projectRoot);
   }
 
+  return spawnMigration(["supabase", "db", "push", "--include-all"], projectRoot);
+}
+
+function spawnMigration(cmd: string[], cwd: string): Promise<CommandResult> {
+  const [bin, ...args] = cmd;
+
   return new Promise((resolve) => {
-    const child = spawn("bun", ["run", "scripts/migrate.ts"], {
+    const child = spawn(bin, args, {
       stdio: ["pipe", "pipe", "pipe"],
-      cwd: projectRoot,
+      cwd,
     });
 
     let stdout = "";
@@ -295,15 +288,7 @@ export async function runMigrations(): Promise<CommandResult> {
  * Seed database with demo data
  */
 export async function seedDatabase(): Promise<CommandResult> {
-  const projectRoot = findProjectRoot();
-  if (!projectRoot) {
-    logError(PROJECT_ROOT_ERROR);
-    return {
-      success: false,
-      message: PROJECT_ROOT_ERROR,
-      error: new Error(PROJECT_ROOT_ERROR),
-    };
-  }
+  const projectRoot = process.cwd();
 
   return new Promise((resolve) => {
     const child = spawn("bun", ["run", "scripts/seed.ts"], {
@@ -360,15 +345,7 @@ async function runSupabaseCommand(
 ): Promise<CommandResult> {
   debug(`${description} (supabase ${args.join(" ")})`);
 
-  const projectRoot = findProjectRoot();
-  if (!projectRoot) {
-    logError(PROJECT_ROOT_ERROR);
-    return {
-      success: false,
-      message: PROJECT_ROOT_ERROR,
-      error: new Error(PROJECT_ROOT_ERROR),
-    };
-  }
+  const projectRoot = process.cwd();
 
   return new Promise((resolve) => {
     const child = spawn("supabase", args, {

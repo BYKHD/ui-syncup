@@ -82,7 +82,10 @@ export const DOCKER_COMPOSE_OVERRIDE = "docker-compose.override.yml";
 /** Docker Compose file for MinIO storage service */
 export const DOCKER_COMPOSE_MINIO = "docker-compose.minio.yml";
 
-/** Dockerfile generated for production self-hosting */
+/** Docker Compose file generated for production self-hosting (all-in-one and external modes) */
+export const DOCKER_COMPOSE_PRODUCTION = "docker-compose.yml";
+
+/** Dockerfile generated for production self-hosting (dockerfile deployment method) */
 export const DOCKERFILE_NAME = "Dockerfile";
 
 /** Docker ignore file generated alongside Dockerfile */

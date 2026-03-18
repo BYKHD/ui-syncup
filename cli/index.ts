@@ -23,7 +23,7 @@ import {
   info,
   newLine,
 } from "./lib/index";
-import { initCommand, upCommand, downCommand, resetCommand, purgeCommand } from "./commands/index";
+import { initCommand, upCommand, downCommand, resetCommand, purgeCommand, updateCommand } from "./commands/index";
 
 // ============================================================================
 // Program Setup
@@ -45,6 +45,7 @@ program.addCommand(upCommand);
 program.addCommand(downCommand);
 program.addCommand(resetCommand);
 program.addCommand(purgeCommand);
+program.addCommand(updateCommand);
 
 
 // ============================================================================

@@ -13,11 +13,13 @@ import { handleProjectConfigLoadResult } from "../lib/project-config";
 
 import {
   // Config
-  findProjectRoot,
-  isProductionEnvironment,
+  findConfigFile,
   // Docker
   isDockerInstalled,
   isDockerRunning,
+  pullImages,
+  startServices,
+  stopServices,
   // Supabase
   isSupabaseInstalled,
   startSupabase,
@@ -81,14 +83,13 @@ async function runUp(options: UpOptions): Promise<void> {
   const skipMigrations = options.skipMigrations ?? false;
 
   // ========================================================================
-  // Step 0: Find Project Root
+  // Step 0: Find Project Config
   // ========================================================================
-  const projectRoot = findProjectRoot();
+  const projectRoot = findConfigFile();
 
   if (!projectRoot) {
-    error("Not in a UI SyncUp project directory.");
-    error("Please run this command from the root of a UI SyncUp project.");
-    error("(A valid project must have a package.json with name 'ui-syncup')");
+    error("No ui-syncup.config.json found in current directory.");
+    error("Run 'bunx ui-syncup init' first to initialize a project here.");
     process.exit(ExitCode.ValidationError);
   }
 
@@ -102,17 +103,18 @@ async function runUp(options: UpOptions): Promise<void> {
     process.exit(ExitCode.ValidationError);
   }
 
+  const projectMode = configLoadResult.config?.defaults?.mode ?? "local";
+
   // ========================================================================
-  // Step 1: Safety Check - Block in Production
+  // Branch: Production mode → docker compose
   // ========================================================================
-  if (isProductionEnvironment(projectRoot)) {
-    error("Cannot run 'up' command in production environment.");
-    error("This command is only for local development.");
-    process.exit(ExitCode.ValidationError);
+  if (projectMode === "production") {
+    await runProductionUp(verbose);
+    return;
   }
 
   // ========================================================================
-  // Step 2: Check Prerequisites
+  // Step 2: Check Prerequisites (local mode)
   // ========================================================================
   newLine();
   log("🚀 Starting UI SyncUp development stack");
@@ -294,6 +296,58 @@ async function runUp(options: UpOptions): Promise<void> {
   newLine();
   info("Next step: Run 'bun dev' to start the development server");
   info(`Then open: ${appUrl}`);
+}
+
+// ============================================================================
+// Production Up (docker compose)
+// ============================================================================
+
+async function runProductionUp(verbose: boolean): Promise<void> {
+  newLine();
+  log("🚀 Starting UI SyncUp production stack");
+  newLine();
+
+  const spinner = createSpinner();
+
+  // Check Docker
+  spinner.start("Checking Docker...");
+  const dockerInstalled = await isDockerInstalled();
+  if (!dockerInstalled) {
+    spinner.fail("Docker is not installed");
+    error("Docker is required. Install Docker: https://docs.docker.com/get-docker/");
+    process.exit(ExitCode.ValidationError);
+  }
+  const dockerRunning = await isDockerRunning();
+  if (!dockerRunning) {
+    spinner.fail("Docker is not running");
+    error("Please start Docker and try again.");
+    process.exit(ExitCode.ExternalError);
+  }
+  spinner.succeed("Docker is running");
+
+  // Pull latest images
+  spinner.start("Pulling latest images...");
+  const pullResult = await pullImages();
+  if (!pullResult.success && verbose) {
+    debug(pullResult.message || "Pull failed");
+  }
+  spinner.succeed("Images up to date");
+
+  // Start services
+  spinner.start("Starting services...");
+  const startResult = await startServices();
+  if (!startResult.success) {
+    spinner.fail("Failed to start services");
+    error(startResult.message || "Unknown error starting services");
+    process.exit(ExitCode.ExternalError);
+  }
+  spinner.succeed("Production stack started");
+
+  newLine();
+  success("UI SyncUp is running!");
+  newLine();
+  info("To stop: bunx ui-syncup down");
+  info("To update: bunx ui-syncup update");
 }
 
 // ============================================================================

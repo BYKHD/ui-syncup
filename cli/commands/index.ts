@@ -19,3 +19,6 @@ export { resetCommand } from "./reset";
 
 // Purge Command
 export { purgeCommand } from "./purge";
+
+// Update Command
+export { updateCommand } from "./update";
