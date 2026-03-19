@@ -33,9 +33,9 @@
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
-    "minio:start": "docker compose -f docker-compose.minio.yml up -d",
-    "minio:stop": "docker compose -f docker-compose.minio.yml down",
-    "minio:status": "docker compose -f docker-compose.minio.yml ps",
+    "minio:start": "docker compose -f docker/compose.dev-minio.yml up -d",
+    "minio:stop": "docker compose -f docker/compose.dev-minio.yml down",
+    "minio:status": "docker compose -f docker/compose.dev-minio.yml ps",
     "verify:vercel": "bun run scripts/verify-vercel-integration.ts",
     "validate:migration-system": "bun run scripts/validate-migration-system.ts",
     "admin:reset-password": "bun run scripts/admin-reset-password.ts"
