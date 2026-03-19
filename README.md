@@ -1,7 +1,8 @@
 # UI-Syncup
 
-[![Deploy](https://github.com/BYKHD/ui-syncup/actions/workflows/deploy.yml/badge.svg)](https://github.com/BYKHD/ui-syncup/actions/workflows/deploy.yml)
-[![CI Quality Checks](https://github.com/BYKHD/ui-syncup/actions/workflows/ci.yml/badge.svg)](https://github.com/BYKHD/ui-syncup/actions/workflows/ci.yml)
+[![CI](https://github.com/BYKHD/ui-syncup/actions/workflows/ci.yml/badge.svg)](https://github.com/BYKHD/ui-syncup/actions/workflows/ci.yml)
+[![Docker Hub](https://img.shields.io/docker/v/bykhd/ui-syncup?label=Docker%20Hub)](https://hub.docker.com/r/bykhd/ui-syncup)
+[![GHCR](https://img.shields.io/badge/GHCR-ghcr.io%2Fbykhd%2Fui--syncup-blue)](https://ghcr.io/bykhd/ui-syncup)
 
 A visual feedback and issue tracking platform for design-to-development collaboration. UI-Syncup enables designers, QA engineers, and developers to annotate UI mockups, create issues from visual feedback, and track them through a structured workflow from creation to resolution.
 
@@ -28,64 +29,35 @@ A visual feedback and issue tracking platform for design-to-development collabor
 
 ### Prerequisites
 
-- Node 20 LTS (see [.nvmrc](.nvmrc))
-- Bun package manager
-- Supabase CLI for local development
+**Self-hosting:** Docker (compose v2+)
 
-### Quick Installation
+**Development:** Node 20 LTS + Bun (see [.nvmrc](.nvmrc))
 
-The fastest way to install UI SyncUp is using the installation script:
+### Quick Installation (Self-Hosting)
+
+The fastest way to deploy UI SyncUp is the one-command installer — no Bun or Node required, just Docker:
 
 ```bash
-# Install the latest release
 curl -fsSL https://raw.githubusercontent.com/BYKHD/ui-syncup/main/install.sh | bash
-
-# Install a specific version
-curl -fsSL https://raw.githubusercontent.com/BYKHD/ui-syncup/main/install.sh | bash -s -- v0.2.2
-
-# Install into the current (empty) directory
-curl -fsSL https://raw.githubusercontent.com/BYKHD/ui-syncup/main/install.sh | bash -s -- --here
-
-# CI / non-interactive (skips prompts)
-curl -fsSL https://raw.githubusercontent.com/BYKHD/ui-syncup/main/install.sh | CI=1 bash
 ```
 
-**Available flags:**
+The wizard will ask four questions (database, cache, storage, email) and start the stack automatically.
 
-| Flag | Description |
-|------|-------------|
-| `--here` | Clone into the current directory (must be empty) |
-| `--upgrade` | Pull latest changes in an existing `ui-syncup/` directory |
-| `--install-bun` | Auto-install bun if not present |
-| `--skip-bun` | Skip bun check (manage bun yourself) |
-| `--non-interactive` | Skip `bunx ui-syncup init` — run it manually later |
-| `--log-file <path>` | Save all installer output to a log file |
-| `--help` | Print full usage information |
+> **Requires Docker** — Docker Engine 24+ with Compose v2 must be installed and running.
 
-**Environment variables:**
-
-| Variable | Description |
-|----------|-------------|
-| `UI_SYNCUP_REPO` | Override the repository URL (for forks, must use `https://`) |
-| `CI` | Any non-empty value enables non-interactive mode |
-
-> **Requires Docker** — Supabase (used by `bunx ui-syncup up`) needs Docker running on your machine.
-
-### Manual Installation
+### Local Development Setup
 
 ```bash
-# 1. Clone and install
+# 1. Clone and install dependencies
 git clone https://github.com/BYKHD/ui-syncup.git
 cd ui-syncup
 bun install
 
-# 2. Initialize project (creates .env files and configs)
-bun ./cli/index.ts init
+# 2. Configure environment
+cp .env.example .env.local
+# Edit .env.local with your database / auth / storage credentials
 
-# 3. Start all services (Supabase, migrations, admin user)
-bun ./cli/index.ts up
-
-# 4. Start development server
+# 3. Start development server
 bun dev
 ```
 
@@ -126,33 +98,30 @@ bun run validate-env   # Validate environment variables
 
 ### CLI (Self-Hosting)
 
-Use the CLI to initialize and manage the local stack:
-
-**Option 1: Direct Execution**
+The `ui-syncup` npm package provides three commands for managing a self-hosted deployment. No Bun required — runs on Node 20+.
 
 ```bash
-bun ./cli/index.ts --help     # Help and usage
-bun ./cli/index.ts init       # Initialize (prompts for local or production)
-bun ./cli/index.ts up         # Start services
-bun ./cli/index.ts down       # Stop services
-bun ./cli/index.ts reset      # Reset data (preserves config)
-bun ./cli/index.ts purge      # Full cleanup
+# One-time setup wizard (Docker-native, downloads compose.yml + configures .env)
+npx ui-syncup init
+
+# Pull latest image and restart
+npx ui-syncup upgrade
+
+# Diagnose your deployment (Docker, env vars, /api/health, disk space)
+npx ui-syncup doctor
 ```
 
-**Option 2: Linked Binary**
+Or install globally:
 
 ```bash
-# Link once to create global command
-bun link
+npm install -g ui-syncup
 
-# Then use directly
-ui-syncup --help
 ui-syncup init
-ui-syncup up
-ui-syncup down
-ui-syncup reset
-ui-syncup purge
+ui-syncup upgrade
+ui-syncup doctor
 ```
+
+See [docs/cli/CLI_GUIDE.md](docs/cli/CLI_GUIDE.md) for full reference.
 
 ## Project Structure
 
@@ -330,12 +299,11 @@ bun run supabase:status
 
 Copy `.env.example` to `.env.local` and configure:
 
-- **Database**: Supabase PostgreSQL connection (local: port 54322)
-- **Authentication**: better-auth secrets and session config
-- **Storage**: Cloudflare R2 credentials (S3-compatible)
-- **Email**: Resend API key
-- **Redis**: ioredis connection for rate limiting
-- **External APIs**: Any third-party service keys
+- **Database**: PostgreSQL connection string (`DATABASE_URL` / `DIRECT_URL`)
+- **Authentication**: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`
+- **Storage**: S3-compatible credentials (AWS S3, Cloudflare R2, or bundled MinIO)
+- **Email**: Resend API key or SMTP credentials
+- **Redis**: `REDIS_URL` for rate limiting (bundled Redis or external)
 
 Validate your configuration:
 
