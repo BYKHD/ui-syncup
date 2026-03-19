@@ -38,12 +38,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Build and push multi-arch image
         uses: docker/build-push-action@v6
         with:
@@ -55,10 +49,6 @@ jobs:
             ghcr.io/bykhd/ui-syncup:${{ steps.version.outputs.tag }}
             ghcr.io/bykhd/ui-syncup:${{ steps.version.outputs.minor }}
             ghcr.io/bykhd/ui-syncup:${{ steps.version.outputs.major }}
-            bykhd/ui-syncup:latest
-            bykhd/ui-syncup:${{ steps.version.outputs.tag }}
-            bykhd/ui-syncup:${{ steps.version.outputs.minor }}
-            bykhd/ui-syncup:${{ steps.version.outputs.major }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
