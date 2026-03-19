@@ -22,6 +22,8 @@ The previous plan (`cli/refactor-installation` branch) had a full CLI that was r
 | 5 | Health endpoint | Update existing `GET /api/health` to return `{ status, version, timestamp }` |
 | 6 | Versioning | `semantic-release` with conventional commits (`feat:`, `fix:`, `chore:`, etc.) |
 | 7 | CI typecheck command | `bun run typecheck` (confirmed: `tsc --noEmit` in root `package.json`) |
+| 8 | Default compose profile strategy | No profiles = no bundled services; all infrastructure is opt-in via `--profile` flags. Default stack = `app` container only (fully external mode). |
+| 9 | Bundled service profiles | `--profile db` → postgres · `--profile cache` → redis · `--profile storage` → minio + minio-init. All three profiles active = all-in-one bundle. |
 
 ---
 
@@ -53,8 +55,9 @@ All variables sourced from existing `.env.example`. Self-hosted compose uses Pos
 ### Required
 | Variable | Description |
 |----------|-------------|
-| `DATABASE_URL` | PostgreSQL pooled connection (points to `postgres` service) |
-| `DIRECT_URL` | PostgreSQL non-pooled (for Prisma migrations) |
+| `DATABASE_URL` | PostgreSQL pooled connection — points to `postgres` service (bundled) or external host (Supabase, Neon, etc.) |
+| `DIRECT_URL` | PostgreSQL non-pooled (for Prisma migrations) — same options as `DATABASE_URL` |
+| `REDIS_URL` | Redis connection string — points to `redis` service (bundled) or external host (Upstash, Redis Cloud, etc.) |
 | `BETTER_AUTH_SECRET` | Random string ≥ 32 chars |
 | `BETTER_AUTH_URL` | Public URL of the app (e.g. `https://syncup.example.com`) |
 | `NEXT_PUBLIC_APP_URL` | Same as above |
@@ -133,12 +136,25 @@ docker compose up -d
 **Services:**
 ```yaml
 services:
-  app:        # ghcr.io/bykhd/ui-syncup or bykhd/ui-syncup image
-  postgres:   # postgres:15-alpine, named volume, health check
-  redis:      # redis:7-alpine, named volume, health check
-  minio:      # minio/minio (profiles: ["storage"]) — optional
-  minio-init: # minio/mc (profiles: ["storage"]) — creates buckets
+  app:        # ghcr.io/bykhd/ui-syncup or bykhd/ui-syncup image — always starts, no profile
+  postgres:   # postgres:15-alpine, named volume, health check — profiles: ["db"]
+  redis:      # redis:7-alpine, named volume, health check — profiles: ["cache"]
+  minio:      # minio/minio — profiles: ["storage"]
+  minio-init: # minio/mc — profiles: ["storage"] — creates buckets on first run
 ```
+
+**Service Profile Matrix:**
+
+| Profile flags | Containers started | Use case |
+|---|---|---|
+| _(none)_ | `app` only | Fully external — Supabase + Upstash + S3 + Resend |
+| `--profile db` | `app` + `postgres` | Bundled DB, external cache/storage |
+| `--profile cache` | `app` + `redis` | Bundled cache, external DB/storage |
+| `--profile storage` | `app` + `minio` + `minio-init` | Bundled storage, external DB/cache |
+| `--profile db --profile cache` | `app` + `postgres` + `redis` | Bundled DB + cache, external storage |
+| `--profile db --profile cache --profile storage` | all services | All-in-one bundle (heaviest) |
+
+> **Default is fully external.** Users opt into bundled services by activating profiles. This ensures the compose file is never heavier than needed.
 
 **`app` container entrypoint (auto-migration):**
 The `app` service SHALL use a startup wrapper that runs DB migrations before starting the application server — matching the Penpot pattern:
@@ -154,17 +170,22 @@ services:
       redis:
         condition: service_healthy
 ```
+`depends_on` entries for `postgres` and `redis` are only relevant when those profiles are active. When running fully external (no profiles), the `app` service has no `depends_on` constraints and starts immediately — health checks for external services are the user's responsibility.
+
 This means migrations run automatically on every `docker compose up -d` — no manual migration step is required after install or upgrade.
 
 > **Migration failure behaviour:** If `bun run db:migrate` exits non-zero, the container exits immediately (before the app server starts). `docker compose up -d` will report the container as unhealthy/exited and the old version keeps running if it was already up. The full migration error is viewable via `docker compose logs app`.
 
 **Acceptance criteria (EARS):**
-- WHEN a user runs `docker compose -f docker/compose.yml up -d`, THEN `app`, `postgres`, and `redis` services SHALL reach `healthy` status within 60 seconds
-- WHEN `minio` profile is activated, THEN `ui-syncup-attachments` and `ui-syncup-media` buckets SHALL be created automatically
-- WHEN `app` container starts, THEN it SHALL only start AFTER `postgres` and `redis` pass their health checks (`depends_on: condition: service_healthy`)
-- WHEN the `app` container starts, THEN `bun run db:migrate` SHALL run and complete successfully BEFORE the Next.js server begins accepting requests
+- WHEN a user runs `docker compose -f docker/compose.yml up -d` with no profiles, THEN only the `app` service SHALL start — `postgres`, `redis`, and `minio` SHALL NOT be created
+- WHEN a user runs `docker compose -f docker/compose.yml --profile db --profile cache --profile storage up -d`, THEN all services SHALL reach `healthy` status within 60 seconds
+- WHEN `--profile db` is active, THEN `app` SHALL only start AFTER `postgres` passes its health check (`depends_on: condition: service_healthy`)
+- WHEN `--profile cache` is active, THEN `app` SHALL only start AFTER `redis` passes its health check
+- WHEN no db/cache profiles are active, THEN `app` SHALL start immediately with no `depends_on` constraints — external service availability is the user's responsibility
+- WHEN `minio` profile is activated, THEN `ui-syncup-attachments` and `ui-syncup-media` buckets SHALL be created automatically by `minio-init`
+- WHEN the `app` container starts, THEN `bun run db:migrate` SHALL run and complete successfully BEFORE the Next.js server begins accepting requests (regardless of whether DB is bundled or external)
 - WHEN `bun run db:migrate` exits non-zero, THEN the `app` container SHALL exit immediately, the migration error SHALL be visible via `docker compose logs app`, and any previously running containers SHALL remain untouched
-- WHEN a self-hoster runs the stack, THEN NO Supabase cloud endpoint SHALL be required
+- WHEN a self-hoster runs the stack with no profiles, THEN NO bundled infrastructure SHALL be required — all services may be external
 
 **Pattern reference:** Supabase `docker/docker-compose.yml` (health checks, named volumes, restart: always, explicit env var mapping from `.env`)
 
@@ -236,9 +257,40 @@ cli/
 1. Check Docker is installed and running
 2. Download `docker/compose.yml` from latest release tag
 3. Download `.env.example` as `.env`
-4. Interactively prompt for required vars: `BETTER_AUTH_SECRET` (auto-generate), `NEXT_PUBLIC_APP_URL`, DB credentials, storage choice (MinIO/external S3), email choice (Resend/SMTP/skip)
+4. Interactively prompt for required vars and service backends (see wizard flow below)
 5. Write completed `.env` file with secure permissions (0600)
-6. Run `docker compose up -d`
+6. Run `docker compose up -d` with the constructed `--profile` flags
+
+**`init` wizard flow (Step 4 detail):**
+
+Prompts are presented in this order. Each answer sets env vars AND determines which `--profile` flags are passed to `docker compose up -d` in Step 6.
+
+```
+? What is the public URL of your app? (e.g. https://syncup.example.com)
+  → sets BETTER_AUTH_URL, NEXT_PUBLIC_APP_URL, NEXT_PUBLIC_API_URL
+
+? BETTER_AUTH_SECRET — auto-generate a secure 64-char hex string? [Y/n]
+  → sets BETTER_AUTH_SECRET via crypto.randomBytes(32).toString('hex')
+
+? Database backend
+  ❯ Bundled PostgreSQL (recommended)     → adds --profile db, sets DATABASE_URL/DIRECT_URL to postgres service
+    External (Supabase / Neon / other)   → prompts for connection strings, no --profile db
+
+? Cache backend
+  ❯ Bundled Redis (recommended)          → adds --profile cache, sets REDIS_URL=redis://redis:6379
+    External (Upstash / Redis Cloud)     → prompts for REDIS_URL, no --profile cache
+
+? Storage backend
+  ❯ Bundled MinIO (recommended)          → adds --profile storage, sets STORAGE_ENDPOINT + MINIO_* vars
+    External S3 (AWS / R2 / Backblaze)  → prompts for STORAGE_* vars, no --profile storage
+
+? Email provider
+  ❯ Resend                               → prompts for RESEND_API_KEY + RESEND_FROM_EMAIL
+    SMTP (self-hosted)                   → prompts for SMTP_HOST/PORT/USER/PASSWORD/FROM_EMAIL/SECURE
+    Skip for now                         → leaves email vars empty
+```
+
+Profile flags are constructed from wizard answers and stored in memory. The final `docker compose up -d` call in Step 6 appends them: e.g. `docker compose -f compose.yml --profile db --profile cache up -d`.
 
 **`upgrade` command behavior:**
 1. `docker compose pull`
@@ -253,12 +305,16 @@ cli/
 4. Check disk space ≥ 2GB
 
 **Acceptance criteria (EARS):**
-- WHEN a user runs `npx ui-syncup init` on a fresh server with Docker installed, THEN the stack SHALL start without manual file editing for a basic MinIO + SMTP configuration
+- WHEN a user runs `npx ui-syncup init` and selects all bundled services, THEN the stack SHALL start without manual file editing and SHALL pass `docker compose logs app` showing successful migrations
+- WHEN a user runs `npx ui-syncup init` and selects all external services, THEN `docker compose up -d` SHALL be called with NO `--profile` flags and ONLY the `app` container SHALL start
+- WHEN the wizard collects service selections, THEN the constructed `--profile` flags SHALL exactly match the selected bundled services and NO others
 - WHEN `ui-syncup doctor` detects a missing required env var, THEN it SHALL name the variable and link to `https://github.com/BYKHD/ui-syncup/blob/main/.env.example`
 - WHEN `ui-syncup upgrade` runs, THEN it SHALL NOT delete user data volumes
 - WHEN `ui-syncup upgrade` completes, THEN migrations SHALL have been applied automatically via the `app` container entrypoint — no separate migration step is required
 - WHEN the `app` container entrypoint migration exits non-zero after an upgrade, THEN the container SHALL exit immediately, `docker compose logs app` SHALL show the full migration error, and any still-running containers SHALL remain untouched
 - IF `BETTER_AUTH_SECRET` is not set in `.env`, THEN `init` SHALL auto-generate a cryptographically secure 64-char hex string
+- WHEN `init` is re-run on an existing install, THEN `.env` SHALL NOT be overwritten — only missing vars SHALL be printed
+- WHEN the user selects "External" for database, THEN `init` SHALL validate that `DATABASE_URL` and `DIRECT_URL` are reachable before writing `.env` (connection test with timeout)
 
 ---
 
@@ -282,14 +338,21 @@ Change from "clone repo + run CLI" to "download compose + walk through setup":
 # New flow:
 # 1. Download docker/compose.yml
 # 2. Download .env.example as .env
-# 3. Prompt for essential vars
-# 4. docker compose up -d
+# 3. Prompt for essential vars + service backend choices (same 4-question matrix as CLI wizard)
+# 4. Construct COMPOSE_PROFILES from answers (e.g. "db,cache,storage")
+# 5. docker compose up -d (with --profile flags matching selections)
 ```
+
+`install.sh` mirrors the `init` wizard question flow for parity. Users who prefer `curl | bash` over `npx` get identical service-selection behaviour. The constructed profile flags are written to `.env` as `COMPOSE_PROFILES=db,cache` so that a subsequent `docker compose up -d` (without the script) respects the same profile choices automatically.
+
+**Path B note (Coolify / Dokploy):** Users on PaaS platforms do NOT use `install.sh` or the CLI. They configure profiles and env vars through the platform's UI directly. The compose file's profile gates work identically — the platform passes `--profile` flags or sets `COMPOSE_PROFILES` in its environment config.
 
 **Acceptance criteria (EARS):**
 - WHEN `install.sh` is run a second time on an existing install, THEN it SHALL NOT overwrite an existing `.env` file
 - WHEN `install.sh` is run on a system without Docker, THEN it SHALL print install instructions and exit with code 1
 - WHEN `install.sh` completes successfully, THEN the app SHALL be reachable at the configured URL
+- WHEN a user selects all external services, THEN `install.sh` SHALL call `docker compose up -d` with no `--profile` flags and SHALL set `COMPOSE_PROFILES=` (empty) in `.env`
+- WHEN `COMPOSE_PROFILES` is set in `.env`, THEN a bare `docker compose up -d` (no explicit flags) SHALL activate the same profiles on subsequent runs
 
 ---
 
@@ -395,22 +458,43 @@ Version is read from `package.json` at build time via direct import: `import pkg
 | `ui-syncup` npm name already taken | Fallback name: `@bykhd/ui-syncup` (scoped). Must check before publishing. |
 | `.env` exists when `init` is re-run | Skip overwrite, print diff of missing vars only |
 | `db:migrate` exits non-zero on container start | The `app` container exits immediately before the server starts; `docker compose logs app` shows the full error; running containers are NOT stopped — user re-runs `docker compose up -d` after fixing the issue |
-| postgres health check times out in compose | `app` service will not start; user sees clear depends_on failure message |
+| postgres health check times out in compose | `app` service will not start (when `--profile db` active); user sees clear depends_on failure message |
 | CI `bun run test` fails | Block PR merge; no release can be triggered |
+| User selects external DB but supplies invalid `DATABASE_URL` | `init` runs a connection test before writing `.env`; prints error and re-prompts. `install.sh` prints error and exits with code 1 |
+| User activates `--profile db` but `DATABASE_URL` points to external host | Bundled postgres starts but app connects elsewhere — `doctor` warns if `DATABASE_URL` host does not match `postgres` service name when `--profile db` is detected |
+| User switches from bundled to external DB after data exists | Not handled by CLI — user must migrate data manually; `doctor` warns if postgres volume exists but `--profile db` is not active |
+| External Redis (Upstash) unreachable at startup | App starts (no `depends_on` constraint for external services) but auth/session features fail at runtime; `doctor` surfaces this via `REDIS_URL` ping check |
+| `COMPOSE_PROFILES` not set and no `--profile` flags | Only `app` starts — correct fully-external behaviour; no error |
 
 ---
 
 ## Verification Checklist
 
-1. `npx ui-syncup init` — completes setup on a fresh Ubuntu 22.04 server with Docker installed
-2. `curl -fsSL .../install.sh | bash` — starts full stack end-to-end
-3. `docker compose -f docker/compose.yml up -d` — all services healthy within 60s; migrations run automatically before server starts
-4. `docker compose logs app` — shows `bun run db:migrate` completing successfully before Next.js starts accepting requests
-5. `curl http://localhost:3000/api/health` → `{ "status": "ok", "version": "...", "timestamp": "..." }`
-6. GitHub Actions CI — passes on a test PR (lint + typecheck + test + docker smoke)
-7. Release workflow — on tag push: Docker image appears on both GHCR and Docker Hub with correct arch tags
-8. `docker pull bykhd/ui-syncup` — succeeds and pulls `linux/arm64` on M-series Mac
-9. `npm info ui-syncup` — shows latest published version
-10. `ui-syncup doctor` — reports all services healthy on a running stack
-11. `semantic-release --dry-run` — correctly identifies version bump from commit log
-12. Migration failure test — intentionally break a migration; verify `app` container exits before server starts and `docker compose logs app` shows the error
+**Core stack**
+1. `npx ui-syncup init` (all bundled) — completes setup on a fresh Ubuntu 22.04 server; all 3 profiles active; stack healthy within 60s
+2. `npx ui-syncup init` (all external) — no `--profile` flags passed; only `app` container starts; `DATABASE_URL`/`REDIS_URL`/`STORAGE_*` point to external services
+3. `curl -fsSL .../install.sh | bash` — same 4-question wizard; full stack end-to-end
+4. `docker compose -f docker/compose.yml up -d` (no flags) — ONLY `app` starts; postgres/redis/minio containers are NOT created
+5. `docker compose -f docker/compose.yml --profile db --profile cache --profile storage up -d` — all services healthy within 60s
+6. `docker compose logs app` — shows `bun run db:migrate` completing successfully before Next.js starts accepting requests
+
+**Profile matrix spot-checks**
+7. `--profile db` only — `app` + `postgres` start; `redis` and `minio` do NOT start; app uses `REDIS_URL` from env for external cache
+8. `--profile storage` only — `app` + `minio` + `minio-init` start; postgres and redis do NOT start
+9. `COMPOSE_PROFILES=db,cache` set in `.env`, bare `docker compose up -d` — activates db + cache profiles automatically; minio does NOT start
+
+**Health & tooling**
+10. `curl http://localhost:3000/api/health` → `{ "status": "ok", "version": "...", "timestamp": "..." }`
+11. `ui-syncup doctor` — reports all configured services healthy; flags missing env vars by name with link to `.env.example`
+12. `ui-syncup doctor` (external Redis unreachable) — reports ping failure with `REDIS_URL` value shown (masked)
+
+**CI/CD**
+13. GitHub Actions CI — passes on a test PR (lint + typecheck + test + docker smoke)
+14. Release workflow — on tag push: Docker image appears on both GHCR and Docker Hub with correct arch tags
+15. `docker pull bykhd/ui-syncup` — succeeds and pulls `linux/arm64` on M-series Mac
+16. `npm info ui-syncup` — shows latest published version
+17. `semantic-release --dry-run` — correctly identifies version bump from commit log
+
+**Failure modes**
+18. Migration failure test — intentionally break a migration; verify `app` container exits before server starts and `docker compose logs app` shows the error
+19. External DB connection test — supply invalid `DATABASE_URL` in `init`; verify wizard re-prompts before writing `.env`

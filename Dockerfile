@@ -34,9 +34,9 @@ ENV NODE_ENV=production
 RUN bun run build
 
 # ---------------------------------------------------------------------------
-# Stage 3: Production runtime (minimal image)
+# Stage 3: Production runtime (oven/bun for migration support)
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS runner
+FROM oven/bun:1-alpine AS runner
 
 WORKDIR /app
 
@@ -48,12 +48,26 @@ ENV PORT=3000
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
+# Copy Next.js standalone output
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy migration assets needed by the compose entrypoint: bun run db:migrate
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/bun.lock* ./
+COPY --from=builder /app/scripts/migrate.ts ./scripts/migrate.ts
+COPY --from=builder /app/drizzle ./drizzle
+
+# Install production deps (drizzle-orm, postgres, dotenv needed by migration)
+RUN bun install --production --frozen-lockfile
+
+RUN chown -R nextjs:nodejs /app/drizzle /app/scripts /app/package.json
 
 USER nextjs
 
 EXPOSE 3000
 
+# Default CMD for standalone runs without compose.
+# The compose entrypoint overrides this with: sh -c "bun run db:migrate && node server.js"
 CMD ["node", "server.js"]
