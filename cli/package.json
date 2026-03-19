@@ -1,6 +1,6 @@
 {
   "name": "ui-syncup",
-  "version": "0.3.0",
+  "version": "0.3.7",
   "description": "Self-host UI SyncUp with a single command",
   "bin": {
     "ui-syncup": "./dist/index.js"

@@ -1,7 +1,6 @@
 # UI-Syncup
 
 [![CI](https://github.com/BYKHD/ui-syncup/actions/workflows/ci.yml/badge.svg)](https://github.com/BYKHD/ui-syncup/actions/workflows/ci.yml)
-[![Docker Hub](https://img.shields.io/docker/v/bykhd/ui-syncup?label=Docker%20Hub)](https://hub.docker.com/r/bykhd/ui-syncup)
 [![GHCR](https://img.shields.io/badge/GHCR-ghcr.io%2Fbykhd%2Fui--syncup-blue)](https://ghcr.io/bykhd/ui-syncup)
 
 A visual feedback and issue tracking platform for design-to-development collaboration. UI-Syncup enables designers, QA engineers, and developers to annotate UI mockups, create issues from visual feedback, and track them through a structured workflow from creation to resolution.
