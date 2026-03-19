@@ -4,6 +4,8 @@ import { select, input, confirm } from '@inquirer/prompts'
 import { ui } from '../lib/ui.js'
 import { generateSecret, writeEnv, parseEnv } from '../lib/env.js'
 import { isDockerRunning, runCompose } from '../lib/docker.js'
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { version } = require('../../package.json') as { version: string }
 
 const COMPOSE_URL =
   'https://raw.githubusercontent.com/BYKHD/ui-syncup/main/docker/compose.yml'
@@ -11,7 +13,8 @@ const ENV_EXAMPLE_URL =
   'https://raw.githubusercontent.com/BYKHD/ui-syncup/main/.env.example'
 
 export async function initCommand(): Promise<void> {
-  ui.header('UI SyncUp — Setup Wizard')
+  ui.banner(version)
+  ui.header('Setup Wizard 🪄')
 
   // Step 1: Check Docker
   ui.step(1, 6, 'Checking Docker...')

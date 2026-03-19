@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { version } = require('./package.json') as { version: string }
 import { Command } from 'commander'
 import { initCommand } from './src/commands/init.js'
 import { startCommand } from './src/commands/start.js'
@@ -18,7 +20,7 @@ const DEFAULT_COMPOSE = 'compose.yml'
 const program = new Command()
   .name('ui-syncup')
   .description('Self-host UI SyncUp with a single command')
-  .version('0.3.0')
+  .version(version)
 
 program
   .command('init')

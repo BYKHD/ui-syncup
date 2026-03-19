@@ -1,6 +1,7 @@
 import { execSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
+import ora from 'ora'
 import { ui } from '../lib/ui.js'
 import { isDockerRunning } from '../lib/docker.js'
 import { parseEnv } from '../lib/env.js'
@@ -24,17 +25,17 @@ export async function backupCommand(composeFile: string, outputDir: string): Pro
 
   // PostgreSQL
   if (profiles.includes('db')) {
-    ui.info('Dumping PostgreSQL...')
+    const spinner = ora('Dumping PostgreSQL...').start()
     try {
       const dump = execSync(
         `docker compose -f ${composeFile} exec -T postgres pg_dumpall -U postgres`,
         { encoding: 'utf-8', maxBuffer: 256 * 1024 * 1024 }
       )
       writeFileSync(`${backupDir}/postgres.sql`, dump)
-      ui.success('PostgreSQL dump saved')
+      spinner.succeed('PostgreSQL dump saved')
       backedUp = true
     } catch {
-      ui.warn('PostgreSQL backup failed — is the db container running?')
+      spinner.fail('PostgreSQL backup failed — is the db container running?')
     }
   } else {
     ui.info('Skipping PostgreSQL (db profile not active)')
@@ -42,19 +43,19 @@ export async function backupCommand(composeFile: string, outputDir: string): Pro
 
   // MinIO — tar the Docker volume directly via alpine helper container
   if (profiles.includes('storage')) {
-    ui.info('Exporting MinIO volume...')
+    const spinner = ora('Exporting MinIO volume...').start()
     const result = spawnSync('docker', [
       'run', '--rm',
       '-v', 'ui-syncup_minio_data:/volume',
       '-v', `${backupDir}:/backup`,
       'alpine',
       'tar', 'czf', '/backup/minio_data.tar.gz', '-C', '/volume', '.',
-    ], { stdio: 'inherit' })
+    ], { stdio: 'pipe' })
     if (result.status === 0) {
-      ui.success('MinIO volume exported')
+      spinner.succeed('MinIO volume exported')
       backedUp = true
     } else {
-      ui.warn('MinIO backup failed — is the storage profile running?')
+      spinner.fail('MinIO backup failed — is the storage profile running?')
     }
   } else {
     ui.info('Skipping MinIO (storage profile not active)')
@@ -66,12 +67,12 @@ export async function backupCommand(composeFile: string, outputDir: string): Pro
     return
   }
 
-  // Create final archive
+  const archiving = ora('Archiving...').start()
   const archivePath = resolve(outputDir, `${label}.tar.gz`)
-  spawnSync('tar', ['-czf', archivePath, '-C', resolve(outputDir), label], { stdio: 'inherit' })
+  spawnSync('tar', ['-czf', archivePath, '-C', resolve(outputDir), label], { stdio: 'pipe' })
   rmSync(backupDir, { recursive: true })
+  archiving.succeed(`Backup saved → ${archivePath}`)
 
-  ui.success(`Backup saved → ${archivePath}`)
   console.log('')
   ui.info(`To restore: ui-syncup restore ${archivePath}`)
 }
