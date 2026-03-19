@@ -430,6 +430,10 @@ function formatValidationErrors(errors: z.ZodError): string {
  * Throws a detailed error if validation fails
  */
 function validateEnv(): Env {
+  if (process.env.SKIP_ENV_VALIDATION === "true") {
+    return process.env as unknown as Env
+  }
+
   const parsed = envSchema.safeParse(process.env)
 
   if (!parsed.success) {
