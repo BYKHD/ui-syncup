@@ -40,6 +40,7 @@ UI SyncUp is a visual feedback and issue tracking platform for design-to-develop
 **License**: MIT License - Free for personal and commercial use.
 
 **Self-Hosting**:
+- CLI published to npm: `npm install -g ui-syncup` or `bun add -g ui-syncup`
 - Docker Compose support for easy deployment
 - Requires PostgreSQL and Supabase (Self-hosted or Cloud)
 - Full data ownership and privacy

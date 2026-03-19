@@ -67,6 +67,38 @@
 - Tests use in-memory database by default (safe)
 - E2E tests (`bun run test:ui`) use local database
 
+## CLI Tooling (cli/ package)
+
+The `cli/` directory is a **standalone npm package** published separately from the Next.js app.
+
+- **tsup** - Bundles `cli/index.ts` and all imports into `cli/dist/index.js` (CJS, Node 20)
+- **commander** - CLI argument parsing. Listed as a runtime `dependency` (not bundled) because its dual ESM+CJS exports cause class-instance conflicts when bundled
+- All other CLI deps (`dotenv`, `postgres`, `zod`) are bundled — no runtime install needed
+
+**Key files:**
+- `cli/package.json` — npm package manifest; `"bin": { "ui-syncup": "dist/index.js" }`, `"files": ["dist", "templates"]`
+- `cli/tsup.config.ts` — `shims: true` (for `import.meta.url` → CJS), `external: ["commander"]`
+- `cli/.npmignore` — excludes TS source and `__tests__/` from the published tarball
+
+**Build & publish workflow:**
+```bash
+cd cli
+bun run build          # compiles → dist/index.js
+npm publish --dry-run  # preview tarball (auto-runs build via prepublishOnly)
+npm publish --access public
+```
+
+**Local testing:**
+```bash
+cd cli && npm link     # simulates global install
+ui-syncup --help
+npm unlink -g ui-syncup
+```
+
+**Template resolution after bundling:** `findTemplatePath()` in `cli/lib/filesystem.ts` checks `__dirname/../templates/` first (bundled layout) then falls back to the dev source layout.
+
+**Version resolution after bundling:** `getVersion()` in `cli/lib/constants.ts` searches candidate `package.json` paths ordered for the bundled layout (`dist/` → `../package.json`) before the dev layout.
+
 ## Dev Tools
 
 - **ESLint 9** - Linting
@@ -78,7 +110,7 @@
 ```bash
 # Development
 bun dev                 # Start dev server (http://localhost:3000)
-bun build              # Production build
+bun build              # Production build (Next.js app)
 bun start              # Start production server
 
 # Code Quality
@@ -104,6 +136,16 @@ bun run supabase:status # Check Supabase status and get connection details
 
 # Validation
 bun run validate-env   # Validate environment variables
+```
+
+## CLI Commands (run from cli/ directory)
+
+```bash
+cd cli
+bun run build          # Compile CLI → dist/index.js via tsup
+npm publish --dry-run  # Preview npm tarball without publishing
+npm publish --access public  # Publish to npm registry
+npm link               # Install CLI globally for local testing
 ```
 
 ## Path Aliases

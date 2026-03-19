@@ -53,6 +53,6 @@ Create specification artifacts for a feature using the AI Specification Workflow
 
 ## Output Expectations
 
-- Prefer using templates in `docs/spec/templates/` when present.
+- Prefer using templates in `references/templates/` when present.
 - Keep requirements, design, and tasks linked by explicit traceability.
 - If asked to update an existing spec, edit only the relevant phase files and preserve numbering and traceability.
