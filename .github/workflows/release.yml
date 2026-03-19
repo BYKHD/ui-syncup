@@ -70,7 +70,7 @@ jobs:
         run: npm install
       - name: Stamp CLI version from tag
         working-directory: ./cli
-        run: npm version ${{ steps.version.outputs.version }} --no-git-tag-version
+        run: npm pkg set version=${{ steps.version.outputs.version }}
       - name: Build CLI
         working-directory: ./cli
         run: npm run build
