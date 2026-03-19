@@ -42,6 +42,7 @@
     "dist",
     "coverage",
     "build",
-    ".next"
+    ".next",
+    "cli"
   ]
 }
