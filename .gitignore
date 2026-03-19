@@ -30,6 +30,8 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Node / package manager
 /node_modules/
+cli/node_modules/
+cli/dist/
 /.pnp
 /.nyc_output
 /.next
