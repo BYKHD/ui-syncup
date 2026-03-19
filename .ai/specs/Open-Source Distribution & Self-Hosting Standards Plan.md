@@ -65,8 +65,10 @@ All variables sourced from existing `.env.example`. Self-hosted compose uses Pos
 |----------|-------------------|
 | `STORAGE_ENDPOINT` | `http://minio:9000` |
 | `STORAGE_REGION` | `us-east-1` |
-| `STORAGE_ACCESS_KEY_ID` | Set in compose secrets |
-| `STORAGE_SECRET_ACCESS_KEY` | Set in compose secrets |
+| `MINIO_ROOT_USER` | Set in `.env` (e.g. `minioadmin`) — used by the `minio` service itself |
+| `MINIO_ROOT_PASSWORD` | Set in `.env` (min 8 chars) — used by the `minio` service itself |
+| `STORAGE_ACCESS_KEY_ID` | Set in `.env`; use the same value as `MINIO_ROOT_USER` |
+| `STORAGE_SECRET_ACCESS_KEY` | Set in `.env`; use the same value as `MINIO_ROOT_PASSWORD` |
 | `STORAGE_ATTACHMENTS_BUCKET` | `ui-syncup-attachments` |
 | `STORAGE_ATTACHMENTS_PUBLIC_URL` | `${NEXT_PUBLIC_APP_URL}/storage/attachments` |
 | `STORAGE_MEDIA_BUCKET` | `ui-syncup-media` |
@@ -138,10 +140,30 @@ services:
   minio-init: # minio/mc (profiles: ["storage"]) — creates buckets
 ```
 
+**`app` container entrypoint (auto-migration):**
+The `app` service SHALL use a startup wrapper that runs DB migrations before starting the application server — matching the Penpot pattern:
+```yaml
+# docker/compose.yml
+services:
+  app:
+    command: >
+      sh -c "bun run db:migrate && bun run start"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+```
+This means migrations run automatically on every `docker compose up -d` — no manual migration step is required after install or upgrade.
+
+> **Migration failure behaviour:** If `bun run db:migrate` exits non-zero, the container exits immediately (before the app server starts). `docker compose up -d` will report the container as unhealthy/exited and the old version keeps running if it was already up. The full migration error is viewable via `docker compose logs app`.
+
 **Acceptance criteria (EARS):**
 - WHEN a user runs `docker compose -f docker/compose.yml up -d`, THEN `app`, `postgres`, and `redis` services SHALL reach `healthy` status within 60 seconds
 - WHEN `minio` profile is activated, THEN `ui-syncup-attachments` and `ui-syncup-media` buckets SHALL be created automatically
 - WHEN `app` container starts, THEN it SHALL only start AFTER `postgres` and `redis` pass their health checks (`depends_on: condition: service_healthy`)
+- WHEN the `app` container starts, THEN `bun run db:migrate` SHALL run and complete successfully BEFORE the Next.js server begins accepting requests
+- WHEN `bun run db:migrate` exits non-zero, THEN the `app` container SHALL exit immediately, the migration error SHALL be visible via `docker compose logs app`, and any previously running containers SHALL remain untouched
 - WHEN a self-hoster runs the stack, THEN NO Supabase cloud endpoint SHALL be required
 
 **Pattern reference:** Supabase `docker/docker-compose.yml` (health checks, named volumes, restart: always, explicit env var mapping from `.env`)
@@ -221,7 +243,8 @@ cli/
 **`upgrade` command behavior:**
 1. `docker compose pull`
 2. `docker compose up -d --remove-orphans`
-3. Run DB migrations via `docker compose exec app bun run db:migrate`
+
+> Migrations are NOT run as a separate step here. They run automatically inside the `app` container entrypoint on startup (see Step 2). `upgrade` only needs to pull the new image and restart the stack.
 
 **`doctor` command behavior:**
 1. Check Docker daemon is running
@@ -231,8 +254,10 @@ cli/
 
 **Acceptance criteria (EARS):**
 - WHEN a user runs `npx ui-syncup init` on a fresh server with Docker installed, THEN the stack SHALL start without manual file editing for a basic MinIO + SMTP configuration
-- WHEN `ui-syncup doctor` detects a missing required env var, THEN it SHALL name the variable and link to the docs
+- WHEN `ui-syncup doctor` detects a missing required env var, THEN it SHALL name the variable and link to `https://github.com/BYKHD/ui-syncup/blob/main/.env.example`
 - WHEN `ui-syncup upgrade` runs, THEN it SHALL NOT delete user data volumes
+- WHEN `ui-syncup upgrade` completes, THEN migrations SHALL have been applied automatically via the `app` container entrypoint — no separate migration step is required
+- WHEN the `app` container entrypoint migration exits non-zero after an upgrade, THEN the container SHALL exit immediately, `docker compose logs app` SHALL show the full migration error, and any still-running containers SHALL remain untouched
 - IF `BETTER_AUTH_SECRET` is not set in `.env`, THEN `init` SHALL auto-generate a cryptographically secure 64-char hex string
 
 ---
@@ -270,7 +295,8 @@ Change from "clone repo + run CLI" to "download compose + walk through setup":
 
 #### Step 8: `CHANGELOG.md` + Semantic Release
 - Add `semantic-release` config (`.releaserc.json` or `package.json#release`)
-- Plugins: `@semantic-release/commit-analyzer`, `@semantic-release/release-notes-generator`, `@semantic-release/changelog`, `@semantic-release/git`, `@semantic-release/github`, `@semantic-release/npm`
+- Plugins: `@semantic-release/commit-analyzer`, `@semantic-release/release-notes-generator`, `@semantic-release/changelog`, `@semantic-release/git`, `@semantic-release/github`
+- **Note:** `@semantic-release/npm` is NOT used. CLI npm publishing is handled exclusively by the dedicated `publish-cli` job in `release.yml`, which runs from the `cli/` subdirectory. semantic-release only manages versioning, changelog, and the GitHub Release.
 - Commit convention: `feat:` → minor bump, `fix:` → patch bump, `feat!:` / `BREAKING CHANGE:` → major bump
 
 **Config snippet:**
@@ -301,7 +327,7 @@ File: `src/app/api/health/route.ts` (already exists — update only)
 { "status": "ok", "version": "0.2.4", "timestamp": "2026-03-19T12:00:00.000Z" }
 ```
 
-Version should be read from `package.json` at build time (Next.js `serverRuntimeConfig` or direct import).
+Version is read from `package.json` at build time via direct import: `import pkg from '../../../package.json'`. No `next.config.js` changes required; this works natively with the Next.js App Router.
 
 **Acceptance criteria (EARS):**
 - WHEN `GET /api/health` is called, THEN it SHALL respond with HTTP 200 and a JSON body containing `status`, `version`, and `timestamp` fields
@@ -368,6 +394,7 @@ Version should be read from `package.json` at build time (Next.js `serverRuntime
 | `linux/arm64` build fails in Buildx | Fail the release workflow; do not publish a partial multi-arch manifest |
 | `ui-syncup` npm name already taken | Fallback name: `@bykhd/ui-syncup` (scoped). Must check before publishing. |
 | `.env` exists when `init` is re-run | Skip overwrite, print diff of missing vars only |
+| `db:migrate` exits non-zero on container start | The `app` container exits immediately before the server starts; `docker compose logs app` shows the full error; running containers are NOT stopped — user re-runs `docker compose up -d` after fixing the issue |
 | postgres health check times out in compose | `app` service will not start; user sees clear depends_on failure message |
 | CI `bun run test` fails | Block PR merge; no release can be triggered |
 
@@ -377,11 +404,13 @@ Version should be read from `package.json` at build time (Next.js `serverRuntime
 
 1. `npx ui-syncup init` — completes setup on a fresh Ubuntu 22.04 server with Docker installed
 2. `curl -fsSL .../install.sh | bash` — starts full stack end-to-end
-3. `docker compose -f docker/compose.yml up -d` — all services healthy within 60s
-4. `curl http://localhost:3000/api/health` → `{ "status": "ok", "version": "...", "timestamp": "..." }`
-5. GitHub Actions CI — passes on a test PR (lint + typecheck + test + docker smoke)
-6. Release workflow — on tag push: Docker image appears on both GHCR and Docker Hub with correct arch tags
-7. `docker pull bykhd/ui-syncup` — succeeds and pulls `linux/arm64` on M-series Mac
-8. `npm info ui-syncup` — shows latest published version
-9. `ui-syncup doctor` — reports all services healthy on a running stack
-10. `semantic-release --dry-run` — correctly identifies version bump from commit log
+3. `docker compose -f docker/compose.yml up -d` — all services healthy within 60s; migrations run automatically before server starts
+4. `docker compose logs app` — shows `bun run db:migrate` completing successfully before Next.js starts accepting requests
+5. `curl http://localhost:3000/api/health` → `{ "status": "ok", "version": "...", "timestamp": "..." }`
+6. GitHub Actions CI — passes on a test PR (lint + typecheck + test + docker smoke)
+7. Release workflow — on tag push: Docker image appears on both GHCR and Docker Hub with correct arch tags
+8. `docker pull bykhd/ui-syncup` — succeeds and pulls `linux/arm64` on M-series Mac
+9. `npm info ui-syncup` — shows latest published version
+10. `ui-syncup doctor` — reports all services healthy on a running stack
+11. `semantic-release --dry-run` — correctly identifies version bump from commit log
+12. Migration failure test — intentionally break a migration; verify `app` container exits before server starts and `docker compose logs app` shows the error
