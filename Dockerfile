@@ -16,7 +16,7 @@ WORKDIR /app
 
 COPY package.json bun.lock* ./
 
-RUN bun install --frozen-lockfile --production=false
+RUN bun install --frozen-lockfile
 
 # ---------------------------------------------------------------------------
 # Stage 2: Build the application
