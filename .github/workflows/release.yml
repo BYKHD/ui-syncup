@@ -55,8 +55,7 @@ jobs:
   publish-cli:
     name: Publish CLI to npm
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
+    needs: build-and-push
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -65,26 +64,19 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - name: Extract semver from tag (strip v prefix)
         id: version
-        run: |
-          VERSION="${GITHUB_REF#refs/tags/v}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          if [[ "$VERSION" == *"-"* ]]; then
-            echo "tag=next" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=latest" >> "$GITHUB_OUTPUT"
-          fi
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
       - name: Install CLI dependencies
         working-directory: ./cli
-        run: npm ci
+        run: npm install
       - name: Stamp CLI version from tag
         working-directory: ./cli
-        run: npm pkg set version=${{ steps.version.outputs.version }}
+        run: npm version ${{ steps.version.outputs.version }} --no-git-tag-version
       - name: Build CLI
         working-directory: ./cli
         run: npm run build
       - name: Publish to npm
         working-directory: ./cli
-        run: npm publish --access public --provenance --tag ${{ steps.version.outputs.tag }}
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
