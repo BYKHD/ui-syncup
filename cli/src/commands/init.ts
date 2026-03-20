@@ -1,10 +1,9 @@
-import { existsSync, writeFileSync, unlinkSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import { select, input, confirm } from '@inquirer/prompts'
 import { ui } from '../lib/ui.js'
 import { generateSecret, writeEnv, parseEnv } from '../lib/env.js'
 import { isDockerRunning, runCompose } from '../lib/docker.js'
-import { buildStandaloneOverride } from '../lib/compose-override.js'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { version } = require('../../package.json') as { version: string }
 
@@ -58,20 +57,6 @@ export async function initCommand(): Promise<void> {
   envVars['BETTER_AUTH_URL'] = appUrl
   envVars['NEXT_PUBLIC_APP_URL'] = appUrl
   envVars['NEXT_PUBLIC_API_URL'] = `${appUrl}/api`
-
-  const deploymentMode = await select({
-    message: 'Deployment mode:',
-    choices: [
-      {
-        name: 'Standalone (direct IP / domain, no reverse proxy)',
-        value: 'standalone',
-      },
-      {
-        name: 'Behind reverse proxy (Dokploy / Coolify / Traefik / Caddy)',
-        value: 'proxy',
-      },
-    ],
-  })
 
   if (!envVars['BETTER_AUTH_SECRET']) {
     const autoSecret = await confirm({
@@ -192,24 +177,9 @@ export async function initCommand(): Promise<void> {
   writeEnv('.env', envVars)
   ui.success('.env written (permissions: 0600)')
 
-  // Write or remove compose.override.yml based on deployment mode.
-  // Docker Compose merges this file with compose.yml when both are passed via -f,
-  // adding host port publishing only when no reverse proxy is present.
-  const overrideFile = 'compose.override.yml'
-  if (deploymentMode === 'standalone') {
-    const port = envVars['PORT'] || '3000'
-    writeFileSync(overrideFile, buildStandaloneOverride(port))
-    ui.success(`Generated ${overrideFile} — port ${port} will be published to host`)
-  } else {
-    if (existsSync(overrideFile)) {
-      unlinkSync(overrideFile)
-      ui.info(`Removed ${overrideFile} — traffic routed via reverse proxy`)
-    }
-  }
-
   // Step 6: Start the stack
   ui.step(6, 6, 'Starting UI SyncUp...')
-  const result = runCompose('compose.yml', ['up', '-d'], profiles, false, overrideFile)
+  const result = runCompose('compose.yml', ['up', '-d'], profiles)
   if (!result.success) {
     ui.error('docker compose up failed — check logs with: docker compose logs app')
     process.exit(1)
