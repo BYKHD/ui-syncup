@@ -23,8 +23,8 @@ services:
   app:
     image: ghcr.io/bykhd/ui-syncup:latest
     restart: always
-    ports:
-      - "${PORT:-3000}:3000"
+    expose:
+      - "${PORT:-3000}"
     env_file:
       - path: .env
         required: false
@@ -35,7 +35,7 @@ services:
     command: >
       sh -c "bun run db:migrate && node server.js"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      test: [ "CMD", "wget", "-qO-", "http://localhost:3000/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -51,7 +51,7 @@ services:
   postgres:
     image: postgres:15-alpine
     restart: always
-    profiles: ["db"]
+    profiles: [ "db" ]
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-syncup}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
@@ -59,7 +59,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-syncup} -d ${POSTGRES_DB:-ui_syncup}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-syncup} -d ${POSTGRES_DB:-ui_syncup}" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -68,12 +68,12 @@ services:
   redis:
     image: redis:7-alpine
     restart: always
-    profiles: ["cache"]
+    profiles: [ "cache" ]
     command: redis-server --save 60 1 --loglevel warning
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -81,7 +81,7 @@ services:
   minio:
     image: minio/minio:latest
     restart: always
-    profiles: ["storage"]
+    profiles: [ "storage" ]
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -92,14 +92,14 @@ services:
       - minio_data:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: [ "CMD", "mc", "ready", "local" ]
       interval: 5s
       timeout: 5s
       retries: 5
 
   minio-init:
     image: minio/mc:latest
-    profiles: ["storage"]
+    profiles: [ "storage" ]
     depends_on:
       minio:
         condition: service_healthy
