@@ -2,61 +2,76 @@
 
 This project follows [Semantic Versioning](https://semver.org/) (MAJOR.MINOR.PATCH).
 
-## Quick Start
+## How to Release
 
-1. **Update Version**: Bump `APP_VERSION` in `src/config/version.ts`.
-2. **Update Changelog**: Add a new entry to `src/config/changelog.ts`.
-3. **Commit & Tag**: Follow the Git conventions below.
+The release pipeline is **fully tag-driven**. Pushing a git tag triggers all publishing automatically — Docker, npm, and GitHub Release.
+
+### Stable release
+
+```bash
+git tag v0.4.0
+git push origin v0.4.0
+```
+
+### Pre-release (alpha / beta / rc)
+
+```bash
+git tag v0.4.0-alpha-1
+git push origin v0.4.0-alpha-1
+```
+
+That's it. The workflow handles everything else.
+
+---
+
+## What the Workflow Does Automatically
+
+| Step | Stable (`v0.4.0`) | Pre-release (`v0.4.0-alpha-1`) |
+|---|---|---|
+| Docker tags pushed | `:latest`, `:v0.4.0`, `:v0.4`, `:v0` | `:v0.4.0-alpha-1` only |
+| npm dist-tag | `latest` | `alpha` (label extracted from tag) |
+| `cli/package.json` version | Stamped from tag automatically | Stamped from tag automatically |
+| GitHub Release | Stable | Marked as pre-release |
+
+You **never need to edit** `cli/package.json` manually — the CI stamps it before publishing.
+
+---
 
 ## Versioning Rules
 
-- **MAJOR** version when you make incompatible API changes.
-- **MINOR** version when you add functionality in a backward compatible manner.
-- **PATCH** version when you make backward compatible bug fixes.
+- **MAJOR** — incompatible API or breaking changes
+- **MINOR** — new backward-compatible functionality
+- **PATCH** — backward-compatible bug fixes
+- **Pre-release suffix** — append `-alpha-N`, `-beta-N`, or `-rc-N` for pre-releases
 
-## Git Tagging Conventions
+---
 
-We use git tags to mark release points in our history.
+## Manual Steps Before Tagging
 
-### Tag Format
-Tags effectively should match the version number with a `v` prefix.
+These files are not touched by CI and should be updated in a commit before tagging:
 
-- Format: `vX.Y.Z`
-- Example: `v1.0.0`, `v0.1.0`, `v1.2.3`
-
-### release Workflow
-
-1. Prepare the release commit:
-   ```bash
-   # Update files first
-   git add src/config/version.ts src/config/changelog.ts
-   git commit -m "chore(release): bump version to v0.1.1"
-   ```
-
-2. Create the tag:
-   ```bash
-   git tag -a v0.1.1 -m "Release v0.1.1"
-   ```
-
-3. Push changes and tags:
-   ```bash
-   git push origin main
-   git push origin v0.1.1
-   ```
-
-## Adding Changelog Entries
-
-Edit `src/config/changelog.ts` and add a new object to the `changelogData` array at the top (newest first).
+1. **`src/config/version.ts`** — bump `APP_VERSION`
+2. **`src/config/changelog.ts`** — add a new entry to `changelogData` (newest first)
 
 ```typescript
 {
-  version: '0.2.0',
-  date: '2025-01-15',
+  version: '0.4.0',
+  date: '2026-03-20',
   title: 'New Feature Release',
-  description: 'Added dark mode support.',
+  description: 'Short summary.',
   changes: [
-    { type: 'feature', text: 'Dark mode toggle added to settings.' },
-    { type: 'fix', text: 'Fixed login button alignment.' }
+    { type: 'feature', text: 'Added X.' },
+    { type: 'fix', text: 'Fixed Y.' }
   ]
 },
+```
+
+Then commit and tag:
+
+```bash
+git add src/config/version.ts src/config/changelog.ts
+git commit -m "chore(release): bump version to v0.4.0"
+git tag v0.4.0
+git push origin main
+git push origin v0.4.0
 ```
