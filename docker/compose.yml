@@ -25,6 +25,8 @@ services:
     restart: always
     expose:
       - "${PORT:-3000}"
+    networks:
+      - proxy
     env_file:
       - path: .env
         required: false
@@ -118,3 +120,8 @@ volumes:
   postgres_data:
   redis_data:
   minio_data:
+
+networks:
+  proxy:
+    name: ${TRAEFIK_NETWORK:-dokploy-network}
+    external: true
