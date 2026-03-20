@@ -23,8 +23,6 @@ services:
   app:
     image: ghcr.io/bykhd/ui-syncup:latest
     restart: always
-    ports:
-      - "${PORT:-3000}:${PORT:-3000}"
     expose:
       - "${PORT:-3000}"
     env_file:
@@ -42,14 +40,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 45s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=${TRAEFIK_NETWORK:-dokploy-network}"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-ui-syncup}.rule=Host(`${APP_HOST}`)"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-ui-syncup}.entrypoints=websecure"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-ui-syncup}.tls=true"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-ui-syncup}.tls.certresolver=letsencrypt"
-      - "traefik.http.services.${COMPOSE_PROJECT_NAME:-ui-syncup}.loadbalancer.server.port=${PORT:-3000}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -128,5 +118,3 @@ volumes:
   postgres_data:
   redis_data:
   minio_data:
-
-
