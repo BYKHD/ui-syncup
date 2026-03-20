@@ -201,15 +201,27 @@ export async function POST(request: NextRequest) {
       sampleDataCreated,
     });
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: true,
         workspaceId: body.workspaceId,
         sampleDataCreated,
+        redirectUrl: "/projects",
         message: "Setup completed successfully",
       },
       { status: 200 }
     );
+
+    // Cache setup completion in the browser so middleware takes the fast path
+    response.cookies.set("setup-complete", "1", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 365, // 1 year
+      path: "/",
+    });
+
+    return response;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
