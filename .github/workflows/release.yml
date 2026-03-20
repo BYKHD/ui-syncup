@@ -30,6 +30,11 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "major=${MAJOR}" >> "$GITHUB_OUTPUT"
           echo "minor=${MINOR}" >> "$GITHUB_OUTPUT"
+          if [[ "$TAG" == *"-"* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -38,24 +43,33 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Compute Docker tags
+        id: docker_tags
+        run: |
+          TAGS="ghcr.io/bykhd/ui-syncup:${{ steps.version.outputs.tag }}"
+          if [ "${{ steps.version.outputs.prerelease }}" = "false" ]; then
+            TAGS="ghcr.io/bykhd/ui-syncup:latest
+          ${TAGS}
+          ghcr.io/bykhd/ui-syncup:${{ steps.version.outputs.minor }}
+          ghcr.io/bykhd/ui-syncup:${{ steps.version.outputs.major }}"
+          fi
+          echo "tags<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$TAGS" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
       - name: Build and push multi-arch image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: |
-            ghcr.io/bykhd/ui-syncup:latest
-            ghcr.io/bykhd/ui-syncup:${{ steps.version.outputs.tag }}
-            ghcr.io/bykhd/ui-syncup:${{ steps.version.outputs.minor }}
-            ghcr.io/bykhd/ui-syncup:${{ steps.version.outputs.major }}
+          tags: ${{ steps.docker_tags.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   publish-cli:
     name: Publish CLI to npm
     runs-on: ubuntu-latest
-    needs: build-and-push
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -64,7 +78,14 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - name: Extract semver from tag (strip v prefix)
         id: version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          if [[ "${VERSION}" == *"-"* ]]; then
+            echo "npm_tag=$(echo "${VERSION}" | sed 's/[0-9.]*-\([a-z]*\).*/\1/')" >> "$GITHUB_OUTPUT"
+          else
+            echo "npm_tag=latest" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install CLI dependencies
         working-directory: ./cli
         run: npm install
@@ -76,7 +97,7 @@ jobs:
         run: npm run build
       - name: Publish to npm
         working-directory: ./cli
-        run: npm publish --access public
+        run: npm publish --access public --tag ${{ steps.version.outputs.npm_tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -94,3 +115,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          prerelease: ${{ contains(github.ref, '-') }}
