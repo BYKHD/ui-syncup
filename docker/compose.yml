@@ -17,7 +17,7 @@
 # Tip: Set COMPOSE_PROFILES=db,cache,storage in .env for bare `docker compose up -d`
 # ============================================================================
 
-name: ui-syncup
+name: ${COMPOSE_PROJECT_NAME:-ui-syncup}
 
 services:
   app:
