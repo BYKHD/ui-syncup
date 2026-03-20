@@ -23,6 +23,8 @@ services:
   app:
     image: ghcr.io/bykhd/ui-syncup:latest
     restart: always
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
     expose:
       - "${PORT:-3000}"
     env_file:
