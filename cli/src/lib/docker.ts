@@ -9,6 +9,24 @@ export function isDockerRunning(): boolean {
   }
 }
 
+export function volumeExists(volumeName: string): boolean {
+  try {
+    const result = execSync(`docker volume inspect ${volumeName}`, { stdio: 'pipe' })
+    return !!result
+  } catch {
+    return false
+  }
+}
+
+export function removeVolume(volumeName: string): boolean {
+  try {
+    execSync(`docker volume rm ${volumeName}`, { stdio: 'pipe' })
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function runCompose(
   composeFile: string,
   args: string[],

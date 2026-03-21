@@ -196,7 +196,7 @@ const envSchema = z.object({
   SMTP_PASSWORD: optionalString().describe(
     "SMTP authentication password (never logged)"
   ),
-  SMTP_FROM_EMAIL: optionalEmail().describe(
+  SMTP_FROM_EMAIL: optionalString().describe(
     "Default sender address for the SMTP provider"
   ),
   SMTP_SECURE: z
@@ -257,8 +257,6 @@ const envSchema = z.object({
     const hasSmtp = Boolean(
       data.SMTP_HOST &&
       data.SMTP_PORT &&
-      data.SMTP_USER &&
-      data.SMTP_PASSWORD &&
       data.SMTP_FROM_EMAIL
     )
 
@@ -370,14 +368,12 @@ const envSchema = z.object({
   // (prevents partial SMTP configuration that would silently fail at runtime)
   // -----------------------------------------------------------------------
   if (data.SMTP_HOST) {
-    const smtpFields = [
+    const requiredSmtpFields = [
       { key: "SMTP_PORT",       value: data.SMTP_PORT },
-      { key: "SMTP_USER",       value: data.SMTP_USER },
-      { key: "SMTP_PASSWORD",   value: data.SMTP_PASSWORD },
       { key: "SMTP_FROM_EMAIL", value: data.SMTP_FROM_EMAIL },
     ] as const
 
-    for (const field of smtpFields) {
+    for (const field of requiredSmtpFields) {
       if (!field.value) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -385,6 +381,25 @@ const envSchema = z.object({
           message: "Required when SMTP_HOST is configured.",
         })
       }
+    }
+
+    // SMTP_USER and SMTP_PASSWORD must either both be set or both be absent
+    // (anonymous SMTP is valid — e.g. Mailpit — so neither being set is fine)
+    const hasUser = Boolean(data.SMTP_USER)
+    const hasPassword = Boolean(data.SMTP_PASSWORD)
+    if (hasUser && !hasPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["SMTP_PASSWORD"],
+        message: "Required when SMTP_USER is set.",
+      })
+    }
+    if (hasPassword && !hasUser) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["SMTP_USER"],
+        message: "Required when SMTP_PASSWORD is set.",
+      })
     }
   }
 })
