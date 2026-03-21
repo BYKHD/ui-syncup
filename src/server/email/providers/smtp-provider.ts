@@ -8,7 +8,7 @@ export class SmtpProvider implements EmailProvider {
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    if (!env.SMTP_HOST || !env.SMTP_PORT || !env.SMTP_USER || !env.SMTP_PASSWORD || !env.SMTP_FROM_EMAIL) {
+    if (!env.SMTP_HOST || !env.SMTP_PORT || !env.SMTP_FROM_EMAIL) {
       throw new Error('Incomplete SMTP configuration');
     }
 
@@ -16,10 +16,9 @@ export class SmtpProvider implements EmailProvider {
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
       secure: env.SMTP_SECURE === 'true' || env.SMTP_PORT === 465,
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASSWORD,
-      },
+      ...(env.SMTP_USER && env.SMTP_PASSWORD
+        ? { auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } }
+        : {}),
       pool: true, // Use connection pooling
     });
   }

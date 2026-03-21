@@ -204,7 +204,7 @@ export async function initCommand(): Promise<void> {
     envVars['SMTP_PORT'] = '1025'
     envVars['SMTP_USER'] = ''
     envVars['SMTP_PASSWORD'] = ''
-    envVars['SMTP_FROM_EMAIL'] = 'noreply@localhost'
+    envVars['SMTP_FROM_EMAIL'] = 'noreply@localhost.com'
     envVars['SMTP_SECURE'] = 'false'
   }
 
