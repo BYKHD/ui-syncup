@@ -1,5 +1,5 @@
 {
-  "name": "ui-syncup",
+  "name": "ui-syncup-cli",
   "version": "0.3.8",
   "description": "Self-host UI SyncUp with a single command",
   "bin": {
