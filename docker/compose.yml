@@ -13,8 +13,9 @@
 #   --profile db       → postgres:15-alpine
 #   --profile cache    → redis:7-alpine
 #   --profile storage  → minio + minio-init (bucket creation)
+#   --profile mail     → mailpit (SMTP catcher + web UI at :8025)
 #
-# Tip: Set COMPOSE_PROFILES=db,cache,storage in .env for bare `docker compose up -d`
+# Tip: Set COMPOSE_PROFILES=db,cache,storage,mail in .env for bare `docker compose up -d`
 # ============================================================================
 
 name: ${COMPOSE_PROJECT_NAME:-ui-syncup}
@@ -23,8 +24,13 @@ services:
   app:
     image: ghcr.io/bykhd/ui-syncup:latest
     restart: always
-    expose:
-      - "${PORT:-3000}"
+    # By default, the app port is published directly to the host for standalone
+    # deployments (no reverse proxy). If you are using Traefik (or another
+    # reverse proxy), comment out `ports` and uncomment `expose` + `labels`.
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    # expose:
+    #   - "${PORT:-3000}"
     env_file:
       - path: .env
         required: false
@@ -40,14 +46,16 @@ services:
       timeout: 10s
       retries: 3
       start_period: 45s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=${TRAEFIK_NETWORK:-dokploy-network}"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-ui-syncup}.rule=Host(`${APP_HOST}`)"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-ui-syncup}.entrypoints=websecure"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-ui-syncup}.tls=true"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-ui-syncup}.tls.certresolver=letsencrypt"
-      - "traefik.http.services.${COMPOSE_PROJECT_NAME:-ui-syncup}.loadbalancer.server.port=${PORT:-3000}"
+    # Traefik labels — uncomment if you are using Traefik as a reverse proxy.
+    # Also switch `ports` to `expose` above when enabling these.
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.docker.network=${TRAEFIK_NETWORK:-dokploy-network}"
+    #   - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-ui-syncup}.rule=Host(`${APP_HOST}`)"
+    #   - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-ui-syncup}.entrypoints=websecure"
+    #   - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-ui-syncup}.tls=true"
+    #   - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-ui-syncup}.tls.certresolver=letsencrypt"
+    #   - "traefik.http.services.${COMPOSE_PROJECT_NAME:-ui-syncup}.loadbalancer.server.port=${PORT:-3000}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -121,6 +129,20 @@ services:
         mc anonymous set download myminio/${STORAGE_MEDIA_BUCKET:-ui-syncup-media};
         exit 0;
       "
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: always
+    profiles: [ "mail" ]
+    ports:
+      - "8025:8025"
+    expose:
+      - "1025"
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8025/" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 volumes:
   postgres_data:
