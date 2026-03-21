@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       logger.warn("setup.import.validation_error", {
         requestId,
-        errors: validation.error.errors,
+        errors: validation.error.issues,
       });
 
       return NextResponse.json(
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
           error: {
             code: "INVALID_FORMAT",
             message: "Invalid settings format",
-            details: validation.error.errors,
+            details: validation.error.issues,
           },
         },
         { status: 400 }

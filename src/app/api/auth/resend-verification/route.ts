@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
         errorCode: 'VALIDATION_ERROR',
         errorMessage: 'Invalid request data',
         metadata: {
-          errors: error.errors,
+          errors: error.issues,
         },
       });
 
@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
           error: {
             code: 'VALIDATION_ERROR',
             message: 'Invalid email format',
-            details: error.errors,
+            details: error.issues,
           },
         },
         { status: 400 }

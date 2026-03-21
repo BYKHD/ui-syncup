@@ -33,7 +33,7 @@
         "@tanstack/react-query": "^5.94.5",
         "@tanstack/react-virtual": "^3.13.23",
         "@types/pg": "^8.20.0",
-        "@types/uuid": "^11.0.0",
+        "@types/uuid": "^9.0.0",
         "@vercel/speed-insights": "^2.0.0",
         "better-auth": "^1.5.5",
         "class-variance-authority": "^0.7.1",
@@ -82,6 +82,7 @@
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "@vitest/coverage-v8": "^4.1.0",
+        "baseline-browser-mapping": "^2.10.10",
         "dotenv": "^17.3.1",
         "drizzle-kit": "^0.31.10",
         "eslint": "^9",
@@ -1037,7 +1038,7 @@
 
     "@types/statuses": ["@types/statuses@2.0.6", "", {}, "sha512-xMAgYwceFhRA2zY+XbEA7mxYbA093wdiW8Vu6gZPGWy9cmOyU9XesH1tNcEWsKFd5Vzrqx5T3D38PWx1FIIXkA=="],
 
-    "@types/uuid": ["@types/uuid@11.0.0", "", { "dependencies": { "uuid": "*" } }, "sha512-HVyk8nj2m+jcFRNazzqyVKiZezyhDKrGUA3jlEcg/nZ6Ms+qHwocba1Y/AaVaznJTAM9xpdFSh+ptbNrhOGvZA=="],
+    "@types/uuid": ["@types/uuid@9.0.8", "", {}, "sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA=="],
 
     "@types/validate-npm-package-name": ["@types/validate-npm-package-name@4.0.2", "", {}, "sha512-lrpDziQipxCEeK5kWxvljWYhUvOiB2A9izZd9B2AFarYAkqZshb4lPbRs7zKEic6eGtH8V/2qJW+dPp9OtF6bw=="],
 

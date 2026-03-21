@@ -220,7 +220,7 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
     ),
     PROPERTY_CONFIG
   );
-  }, { timeout: PROPERTY_TIMEOUT });
+  }, PROPERTY_TIMEOUT);
 
   /**
    * Additional test: Verify password reset with valid token updates password
@@ -267,7 +267,7 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
     ),
     PROPERTY_CONFIG
   );
-  }, { timeout: PROPERTY_TIMEOUT });
+  }, PROPERTY_TIMEOUT);
 
   /**
    * Additional test: Verify password reset with invalid token returns 400
@@ -315,7 +315,7 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
       ),
       PROPERTY_CONFIG
     );
-  }, { timeout: PROPERTY_TIMEOUT });
+  }, PROPERTY_TIMEOUT);
 
   /**
    * Additional test: Verify password reset with expired token returns 400
