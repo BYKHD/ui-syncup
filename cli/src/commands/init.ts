@@ -4,7 +4,6 @@ import { select, input, confirm } from '@inquirer/prompts'
 import { ui } from '../lib/ui.js'
 import { generateSecret, writeEnv, parseEnv } from '../lib/env.js'
 import { isDockerRunning, runCompose, volumeExists, removeVolume } from '../lib/docker.js'
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { version } = require('../../package.json') as { version: string }
 
 const COMPOSE_URL =

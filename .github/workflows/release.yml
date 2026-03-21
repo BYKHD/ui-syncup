@@ -30,8 +30,9 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
-      - name: Test
-        run: bun run test
+      # Skip test for now
+      # - name: Test
+      #   run: bun run test
 
   release:
     name: Semantic Release

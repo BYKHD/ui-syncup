@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { version } = require('./package.json') as { version: string }
 import { Command } from 'commander'
 import { initCommand } from './src/commands/init.js'
