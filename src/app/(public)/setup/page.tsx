@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function SetupPage() {
-  const done = await isSetupComplete();
-  if (done) redirect('/sign-in');
+  //const done = await isSetupComplete();
+  //if (done) redirect('/sign-in');
   return <SetupScreen />;
 }
