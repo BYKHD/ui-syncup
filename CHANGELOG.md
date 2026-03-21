@@ -1,3 +1,11 @@
+# [0.4.0-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.3.14...v0.4.0-beta.1) (2026-03-21)
+
+
+### Features
+
+* Configure semantic-release for automated versioning with beta support from `develop` and temporarily disable the setup page redirect. ([6f00c0e](https://github.com/BYKHD/ui-syncup/commit/6f00c0e2a4a5134a5dd37b8c4e842deacf268da7))
+* Enable setup completion check and redirect to sign-in page. ([8b28b90](https://github.com/BYKHD/ui-syncup/commit/8b28b9007598fd8288290b9707872608c1f52923))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
