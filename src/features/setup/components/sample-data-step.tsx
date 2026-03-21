@@ -56,7 +56,7 @@ export function SampleDataStep({ wizard }: SampleDataStepProps) {
           if (data.redirectUrl) {
             router.push(data.redirectUrl);
           } else {
-            router.push('/dashboard');
+            router.push('/projects');
           }
         },
       }

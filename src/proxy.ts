@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { getCorsHeaders } from '@/lib/cors';
 import { buildCSPHeader, HSTS_HEADER } from '@/lib/security-headers';
+import { getSetupStatus } from '@/lib/setup-status';
 
 /**
  * Routes that should bypass the setup check entirely.
@@ -73,44 +74,6 @@ function isProtectedRoute(pathname: string): boolean {
 }
 
 /**
- * Fetch instance setup status from the API.
- * This is called from the Edge runtime, so we use fetch() to call the API route.
- * 
- * @param request - The incoming request (used to construct the API URL)
- * @returns The setup status or null if the check failed
- */
-async function getSetupStatus(request: NextRequest): Promise<{ isSetupComplete: boolean } | null> {
-  try {
-    const url = new URL('/api/setup/status', request.nextUrl.origin);
-    
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-      // Use cache: 'no-store' to always get fresh status
-      // In production, you might want to add some caching strategy
-      cache: 'no-store',
-    });
-    
-    if (!response.ok) {
-      // If the status API fails, log and allow the request to proceed
-      // The app will handle the error appropriately
-      logger.warn(`Setup status check failed with status ${response.status}`);
-      return null;
-    }
-    
-    const data = await response.json();
-    return { isSetupComplete: data.isSetupComplete ?? false };
-  } catch (error) {
-    // Network error or JSON parse error
-    // Log and allow the request to proceed
-    logger.error('Failed to check setup status', { error });
-    return null;
-  }
-}
-
-/**
  * Proxy function for Next.js 16
  * 
  * Responsibilities:
@@ -149,26 +112,40 @@ export async function proxy(request: NextRequest) {
     }
   }
   
-  // Check if this route should bypass setup check
-  if (!shouldBypassSetupCheck(pathname)) {
-    // Only check setup status for protected routes to minimize API calls
-    if (isProtectedRoute(pathname)) {
-      const status = await getSetupStatus(request);
-      
-      // If setup is not complete, redirect to /setup
-      // If status check failed (null), we allow the request to proceed
-      // and let the app handle any issues
-      if (status && !status.isSetupComplete) {
-        logger.info(`Redirecting to /setup - setup not complete`, { pathname });
-        
-        const setupUrl = new URL('/setup', request.nextUrl.origin);
-        return NextResponse.redirect(setupUrl);
-      }
-    }
+  // Fast path: cookie already set by a previous successful check.
+  const cookieValue = request.cookies.get('setup-complete')?.value;
+  const hasCookie = cookieValue === '1';
+
+  // Guard /setup — if setup is already done, redirect away immediately.
+  if (pathname === '/setup' && hasCookie) {
+    return NextResponse.redirect(new URL('/sign-in', request.nextUrl.origin), { status: 302 });
   }
-  
-  // Continue with the request
+
+  // Only run the cold-path status check for protected routes.
+  if (!shouldBypassSetupCheck(pathname) && isProtectedRoute(pathname) && !hasCookie) {
+    const status = await getSetupStatus(request);
+
+    if (status && !status.isSetupComplete) {
+      logger.info(`Redirecting to /setup - setup not complete`, { pathname });
+      return NextResponse.redirect(new URL('/setup', request.nextUrl.origin), { status: 302 });
+    }
+
+    // Setup is confirmed complete — continue and stamp the cookie below.
+  }
+
+  // Continue with the request.
   const response = NextResponse.next();
+
+  // Stamp the fast-path cookie now that we know setup is complete.
+  if (!hasCookie && !shouldBypassSetupCheck(pathname) && isProtectedRoute(pathname)) {
+    response.cookies.set('setup-complete', '1', {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 365, // 1 year
+      path: '/',
+    });
+  }
   
   // Add Content Security Policy
   response.headers.set('Content-Security-Policy', buildCSPHeader());

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SetupWizard } from '../setup-wizard';
 import { SetupProgress } from '../setup-progress';
@@ -18,6 +18,7 @@ const mockUseSaveInstanceConfig = vi.fn();
 const mockUseCreateFirstWorkspace = vi.fn();
 const mockUseWorkspaceMode = vi.fn();
 const mockUseCompleteSetup = vi.fn();
+const mockPush = vi.fn();
 
 vi.mock('../../hooks', () => ({
   useInstanceStatus: () => mockUseInstanceStatus(),
@@ -31,7 +32,7 @@ vi.mock('../../hooks', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: mockPush }),
 }));
 
 const createWizardStub = (): UseSetupWizardReturn =>
@@ -345,5 +346,25 @@ describe('SampleDataStep', () => {
     const { container } = render(<SampleDataStep wizard={createWizardStub()} />);
     const spinner = container.querySelector('svg.animate-spin');
     expect(spinner).toHaveClass('motion-reduce:animate-none');
+  });
+});
+
+describe('SampleDataStep redirect', () => {
+  beforeEach(() => mockPush.mockReset());
+
+  it('redirects to /projects on success when no redirectUrl returned', () => {
+    mockUseCompleteSetup.mockReturnValue({
+      mutate: (_data: unknown, opts: { onSuccess: (d: { redirectUrl?: string }) => void }) => {
+        opts.onSuccess({}); // no redirectUrl in response
+      },
+      isPending: false,
+      error: null,
+    });
+
+    const wizard = { ...createWizardStub(), workspaceData: { id: 'ws-1', name: 'Test', slug: 'test' } };
+    render(<SampleDataStep wizard={wizard} />);
+    fireEvent.click(screen.getByRole('button', { name: /complete setup/i }));
+
+    expect(mockPush).toHaveBeenCalledWith('/projects');
   });
 });

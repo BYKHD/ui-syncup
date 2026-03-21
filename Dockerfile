@@ -31,15 +31,16 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=true
-ENV DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy
-ENV BETTER_AUTH_SECRET=dummy-secret-32-characters-long!!
-ENV BETTER_AUTH_URL=http://localhost:3000
-ENV NEXT_PUBLIC_APP_URL=http://localhost:3000
-ENV NEXT_PUBLIC_API_URL=http://localhost:3000
-ENV STORAGE_ENDPOINT=http://localhost:9000
-ENV STORAGE_ATTACHMENTS_PUBLIC_URL=http://localhost:9000
-ENV STORAGE_MEDIA_PUBLIC_URL=http://localhost:9000
-ENV RESEND_API_KEY=re_dummy
+# Use ARG for build-time-only dummy values so they are not baked into image layers
+ARG DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy
+ARG BETTER_AUTH_SECRET=dummy-secret-32-characters-long!!
+ARG BETTER_AUTH_URL=http://localhost:3000
+ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+ARG NEXT_PUBLIC_API_URL=http://localhost:3000
+ARG STORAGE_ENDPOINT=http://localhost:9000
+ARG STORAGE_ATTACHMENTS_PUBLIC_URL=http://localhost:9000
+ARG STORAGE_MEDIA_PUBLIC_URL=http://localhost:9000
+ARG RESEND_API_KEY=re_dummy
 
 RUN bun run build
 

@@ -1,0 +1,84 @@
+# ============================================================================
+# UI SyncUp — Local Development Infrastructure
+# ============================================================================
+#
+# Postgres is managed by Supabase CLI — start it first:
+#   bun run supabase:start
+#
+# Then start the remaining services:
+#   docker compose -f docker/compose.local.yml up -d
+#
+# Run the app:
+#   bun run dev
+#
+# Services:
+#   redis     → localhost:6379
+#   minio     → localhost:9000 (S3 API) / localhost:9001 (console)
+#   mailpit   → localhost:1025 (SMTP)   / localhost:8025 (web UI)
+# ============================================================================
+
+name: ui-syncup-local
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_local:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_local:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio-init:
+    image: minio/mc:latest
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio:9000 minioadmin minioadmin;
+        mc mb --ignore-existing local/ui-syncup-attachments;
+        mc mb --ignore-existing local/ui-syncup-media;
+        mc anonymous set download local/ui-syncup-attachments;
+        mc anonymous set download local/ui-syncup-media;
+      "
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8025/"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  redis_local:
+  minio_local:
