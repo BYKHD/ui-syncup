@@ -111,13 +111,10 @@ jobs:
           TAG="v${{ needs.release.outputs.new_release_version }}"
           MAJOR="${TAG%%.*}"
           MINOR="${TAG%.*}"
-          TAGS="ghcr.io/bykhd/ui-syncup:${TAG}"
-          if [[ "$TAG" != *"-"* ]]; then
-            TAGS="${TAGS}
+          TAGS="ghcr.io/bykhd/ui-syncup:${TAG}
           ghcr.io/bykhd/ui-syncup:latest
           ghcr.io/bykhd/ui-syncup:${MINOR}
           ghcr.io/bykhd/ui-syncup:${MAJOR}"
-          fi
           echo "tags<<EOF" >> "$GITHUB_OUTPUT"
           echo "$TAGS" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
