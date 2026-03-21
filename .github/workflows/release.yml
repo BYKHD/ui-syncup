@@ -32,12 +32,16 @@ jobs:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Install root dependencies
-        run: npm install
+        run: bun install --frozen-lockfile
 
       - name: Install CLI dependencies
         working-directory: ./cli
-        run: npm install
+        run: bun install --frozen-lockfile
 
       - name: Run semantic-release
         id: semantic
