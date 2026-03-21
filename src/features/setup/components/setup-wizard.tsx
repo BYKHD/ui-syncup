@@ -7,6 +7,7 @@ import { SetupProgress } from './setup-progress';
 import { ServiceHealthStep } from './service-health-step';
 import { AdminAccountStep } from './admin-account-step';
 import { InstanceConfigStep } from './instance-config-step';
+import { MailConfigStep } from './mail-config-step';
 import { FirstWorkspaceStep } from './first-workspace-step';
 import { SampleDataStep } from './sample-data-step';
 import { Card, CardContent } from '@/components/ui/card';
@@ -39,9 +40,9 @@ function determineStartingStep(status: {
     return 'instance-config';
   }
 
-  // Instance configured, skip to workspace creation
+  // Instance configured, show mail config before workspace creation
   if (!status.defaultWorkspaceId) {
-    return 'first-workspace';
+    return 'mail-config';
   }
 
   // Workspace exists, go to sample data step
@@ -50,7 +51,7 @@ function determineStartingStep(status: {
 
 export function SetupWizard() {
   const { data: status, isLoading, error } = useInstanceStatus();
-  
+
   // Determine starting step based on current state
   const startingStep = useMemo<SetupWizardStep>(() => {
     if (!status) return 'health-check';
@@ -63,18 +64,18 @@ export function SetupWizard() {
   useEffect(() => {
     if (status && startingStep !== 'health-check') {
       // Mark previous steps as complete
-      const stepsOrder: SetupWizardStep[] = ['health-check', 'admin-account', 'instance-config', 'first-workspace', 'sample-data', 'complete'];
+      const stepsOrder: SetupWizardStep[] = ['health-check', 'admin-account', 'instance-config', 'mail-config', 'first-workspace', 'sample-data', 'complete'];
       const startingIndex = stepsOrder.indexOf(startingStep);
-      
+
       stepsOrder.slice(0, startingIndex).forEach(step => {
         wizard.markStepComplete(step);
       });
-      
+
       // Go to the determined step
       wizard.goToStep(startingStep);
     }
-  // Only run when startingStep is first determined
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Only run when startingStep is first determined
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startingStep]);
 
   const renderStep = () => {
@@ -85,6 +86,8 @@ export function SetupWizard() {
         return <AdminAccountStep wizard={wizard} />;
       case 'instance-config':
         return <InstanceConfigStep wizard={wizard} />;
+      case 'mail-config':
+        return <MailConfigStep wizard={wizard} />;
       case 'first-workspace':
         return <FirstWorkspaceStep wizard={wizard} />;
       case 'sample-data':

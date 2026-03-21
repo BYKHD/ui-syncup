@@ -22,7 +22,6 @@ import { logger } from "@/lib/logger";
  * {
  *   "isSetupComplete": boolean,
  *   "instanceName": string | null,
- *   "publicUrl": string | null,
  *   "defaultWorkspaceId": string | null,
  *   "defaultMemberRole": "WORKSPACE_VIEWER" | "WORKSPACE_MEMBER" | "WORKSPACE_EDITOR",
  *   "isMultiWorkspaceMode": boolean,

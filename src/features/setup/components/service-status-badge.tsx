@@ -14,7 +14,7 @@ export function ServiceStatusBadge({ status, className }: ServiceStatusBadgeProp
         return {
           variant: 'default' as const,
           label: 'Connected',
-          className: 'bg-green-500 hover:bg-green-600',
+          className: 'text-green-500 hover:text-green-600 bg-transparent',
         };
       case 'not_configured':
         return {
@@ -40,8 +40,8 @@ export function ServiceStatusBadge({ status, className }: ServiceStatusBadgeProp
     >
       {status === 'connected' && (
         <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
         </span>
       )}
       {config.label}

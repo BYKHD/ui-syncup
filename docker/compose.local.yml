@@ -17,7 +17,7 @@
 #   mailpit   → localhost:1025 (SMTP)   / localhost:8025 (web UI)
 # ============================================================================
 
-name: ui-syncup-local
+name: ui-syncup
 
 services:
   redis:
@@ -29,7 +29,7 @@ services:
     volumes:
       - redis_local:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -42,12 +42,12 @@ services:
       - "9001:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_PASSWORD: miniopass
     volumes:
       - minio_local:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: [ "CMD", "mc", "ready", "local" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -74,7 +74,7 @@ services:
       - "1025:1025"
       - "8025:8025"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8025/"]
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8025/" ]
       interval: 5s
       timeout: 3s
       retries: 5

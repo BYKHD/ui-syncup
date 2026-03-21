@@ -202,8 +202,8 @@ export async function initCommand(): Promise<void> {
     profiles.push('mail')
     envVars['SMTP_HOST'] = 'mailpit'
     envVars['SMTP_PORT'] = '1025'
-    envVars['SMTP_USER'] = ''
-    envVars['SMTP_PASSWORD'] = ''
+    envVars['SMTP_USER'] = 'user'
+    envVars['SMTP_PASSWORD'] = 'password'
     envVars['SMTP_FROM_EMAIL'] = 'noreply@localhost.com'
     envVars['SMTP_SECURE'] = 'false'
   }

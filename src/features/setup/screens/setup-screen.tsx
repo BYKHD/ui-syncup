@@ -2,10 +2,11 @@
 
 import { motion } from 'motion/react';
 import { SetupWizard } from '../components/setup-wizard';
+import pkg from '../../../../package.json';
 
 export function SetupScreen() {
   return (
-    <div className="container min-h-screen py-8 flex flex-col items-center justify-center bg-background relative overflow-hidden">
+    <div className="w-full px-4 md:px-8 min-h-screen py-8 flex flex-col items-center justify-center bg-background relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none -z-10" />
       <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay pointer-events-none -z-10" />
@@ -23,6 +24,7 @@ export function SetupScreen() {
           <p className="mx-auto max-w-[600px] text-muted-foreground md:text-lg">
             Let&apos;s get your new instance configured and ready for your team in just a few steps.
           </p>
+          <p className="text-xs text-muted-foreground/50 font-mono">v{pkg.version}</p>
         </motion.div>
         
         <motion.div

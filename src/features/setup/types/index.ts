@@ -23,7 +23,6 @@ export type DefaultMemberRole = 'WORKSPACE_VIEWER' | 'WORKSPACE_MEMBER' | 'WORKS
 export interface InstanceStatus {
   isSetupComplete: boolean;
   instanceName: string | null;
-  publicUrl: string | null;
   adminEmail: string | null;
   defaultWorkspaceId: string | null;
   defaultMemberRole: DefaultMemberRole;
@@ -35,6 +34,7 @@ export type SetupWizardStep =
   | 'health-check'
   | 'admin-account'
   | 'instance-config'
+  | 'mail-config'
   | 'first-workspace'
   | 'sample-data'
   | 'complete';
@@ -43,7 +43,7 @@ export interface SetupWizardState {
   currentStep: SetupWizardStep;
   completedSteps: SetupWizardStep[];
   adminData: { email: string; name: string } | null;
-  instanceData: { name: string; publicUrl: string } | null;
+  instanceData: { name: string } | null;
   workspaceData: { id: string; name: string; slug: string } | null;
   includeSampleData: boolean;
 }
@@ -57,7 +57,6 @@ export interface AdminAccountData {
 
 export interface InstanceConfigData {
   instanceName: string;
-  publicUrl?: string;
 }
 
 export interface FirstWorkspaceData {

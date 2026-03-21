@@ -2,14 +2,15 @@
 
 /**
  * Health Check Service
- * 
+ *
  * Provides functions to check the health/connectivity of various services:
  * - Database (PostgreSQL)
- * - Email (Resend)
- * - Storage (R2/S3)
+ * - Email (Resend / SMTP / console)
+ * - Storage (S3-compatible: MinIO, Supabase Storage, R2, etc.)
  * - Redis
  */
 
+import { S3Client, HeadBucketCommand } from "@aws-sdk/client-s3";
 import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
 import { logger } from "@/lib/logger";
@@ -42,84 +43,165 @@ export async function checkDatabaseHealth(): Promise<ServiceHealthStatus> {
 }
 
 /**
- * Check email service (Resend) configuration.
- * 
+ * Check email service configuration.
+ * Detects Resend, SMTP, or console/Mailpit fallback.
+ *
  * @returns Service health status for email
  */
 export async function checkEmailHealth(): Promise<ServiceHealthStatus> {
-  const resendApiKey = process.env.RESEND_API_KEY;
-  
-  if (!resendApiKey) {
-    return {
-      status: "not_configured",
-      message: "Email service not configured (RESEND_API_KEY missing)",
-      degradedBehavior: "Invitations will show copy-able links instead of sending emails",
-    };
-  }
+  const degradedBehavior = "Invitations will show copy-able links instead of sending emails";
 
-  try {
-    // Validate API key format (basic check)
+  // Check Resend
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (resendApiKey) {
     if (!resendApiKey.startsWith("re_")) {
       return {
         status: "error",
         message: "Invalid Resend API key format",
-        degradedBehavior: "Invitations will show copy-able links instead of sending emails",
+        degradedBehavior,
+      };
+    }
+    return {
+      status: "connected",
+      message: "Email configured via Resend",
+    };
+  }
+
+  // Check SMTP
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = process.env.SMTP_PORT;
+  const smtpFromEmail = process.env.SMTP_FROM_EMAIL;
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPassword = process.env.SMTP_PASSWORD;
+
+  if (smtpHost || smtpPort || smtpFromEmail) {
+    if (!smtpHost || !smtpPort || !smtpFromEmail) {
+      const missing = [
+        !smtpHost && "SMTP_HOST",
+        !smtpPort && "SMTP_PORT",
+        !smtpFromEmail && "SMTP_FROM_EMAIL",
+      ].filter(Boolean).join(", ");
+      return {
+        status: "error",
+        message: `SMTP partially configured — missing: ${missing}`,
+        degradedBehavior,
       };
     }
 
-    // Note: We don't make an actual API call here to avoid rate limiting
-    // The actual validation happens when emails are sent
+    // Validate co-dependent auth fields
+    if ((smtpUser && !smtpPassword) || (!smtpUser && smtpPassword)) {
+      return {
+        status: "error",
+        message: "SMTP authentication requires both SMTP_USER and SMTP_PASSWORD",
+        degradedBehavior,
+      };
+    }
+
     return {
       status: "connected",
-      message: "Email service configured (Resend)",
-    };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown email error";
-    logger.error("Email health check failed", { error: errorMessage });
-    
-    return {
-      status: "error",
-      message: `Email service error: ${errorMessage}`,
-      degradedBehavior: "Invitations will show copy-able links instead of sending emails",
+      message: `Email configured via SMTP (${smtpHost}:${smtpPort})`,
     };
   }
+
+  // No provider configured — console/Mailpit fallback
+  return {
+    status: "not_configured",
+    message: "No email provider configured (using Mailpit / console fallback)",
+    degradedBehavior,
+  };
 }
 
 /**
- * Check storage service (R2/S3) configuration.
- * 
+ * Check S3-compatible object storage configuration and bucket readiness.
+ * Reads the same STORAGE_* env vars used by lib/storage.ts and performs
+ * real HeadBucket probes for both the attachments and media buckets.
+ *
  * @returns Service health status for storage
  */
 export async function checkStorageHealth(): Promise<ServiceHealthStatus> {
-  const accessKeyId = process.env.S3_ACCESS_KEY_ID || process.env.R2_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY || process.env.R2_SECRET_ACCESS_KEY;
-  const bucket = process.env.S3_BUCKET || process.env.R2_BUCKET;
-  const endpoint = process.env.S3_ENDPOINT || process.env.R2_ENDPOINT;
+  const degradedBehavior = "File uploads will use local filesystem storage with 10MB per-file limit";
 
-  if (!accessKeyId || !secretAccessKey || !bucket) {
-    return {
-      status: "not_configured",
-      message: "Cloud storage not configured (S3/R2 credentials missing)",
-      degradedBehavior: "File uploads will use local filesystem storage with 10MB per-file limit",
-    };
+  // Mirror the env var resolution in lib/storage.ts, falling back to MinIO dev defaults.
+  const endpoint =
+    process.env.STORAGE_ENDPOINT ||
+    process.env.STORAGE_ATTACHMENTS_ENDPOINT ||
+    process.env.STORAGE_MEDIA_ENDPOINT ||
+    "http://127.0.0.1:9000";
+
+  const accessKeyId =
+    process.env.STORAGE_ACCESS_KEY_ID ||
+    process.env.STORAGE_ATTACHMENTS_ACCESS_KEY ||
+    process.env.STORAGE_ATTACHMENTS_ACCESS_KEY_ID ||
+    "minioadmin";
+
+  const secretAccessKey =
+    process.env.STORAGE_SECRET_ACCESS_KEY ||
+    process.env.STORAGE_ATTACHMENTS_SECRET_KEY ||
+    process.env.STORAGE_ATTACHMENTS_SECRET_ACCESS_KEY ||
+    "minioadmin";
+
+  const region = process.env.STORAGE_REGION ?? "us-east-1";
+
+  const attachmentsBucket =
+    process.env.STORAGE_ATTACHMENTS_BUCKET ?? "ui-syncup-attachments";
+  const mediaBucket =
+    process.env.STORAGE_MEDIA_BUCKET ?? "ui-syncup-media";
+
+  // Always probe — let the actual connection result determine the status.
+  const client = new S3Client({
+    region,
+    endpoint,
+    credentials: { accessKeyId, secretAccessKey },
+    forcePathStyle: true, // Required for MinIO, Supabase Storage, and most self-hosted providers
+  });
+
+  // Resolve the endpoint hostname for display purposes.
+  let endpointHost = "";
+  try {
+    endpointHost = endpoint ? new URL(endpoint).hostname : "s3.amazonaws.com";
+  } catch {
+    endpointHost = endpoint ?? "unknown";
   }
 
-  try {
-    // Basic validation - actual connectivity is checked on upload
+  // Probe both buckets with HeadBucket — verifies credentials AND bucket existence.
+  const buckets = [
+    { name: attachmentsBucket, label: "attachments" },
+    { name: mediaBucket, label: "media" },
+  ] as const;
+
+  const results = await Promise.all(
+    buckets.map(async ({ name, label }) => {
+      try {
+        await client.send(new HeadBucketCommand({ Bucket: name }));
+        return { label, bucket: name, ok: true, error: null };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { label, bucket: name, ok: false, error: msg };
+      }
+    })
+  );
+
+  const failed = results.filter((r) => !r.ok);
+
+  if (failed.length === 0) {
     return {
       status: "connected",
-      message: `Cloud storage configured${endpoint ? ` (${new URL(endpoint).hostname})` : ""}`,
-    };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown storage error";
-    logger.error("Storage health check failed", { error: errorMessage });
-    
-    return {
-      status: "error",
-      message: `Storage service error: ${errorMessage}`,
-      degradedBehavior: "File uploads will use local filesystem storage with 10MB per-file limit",
+      message: `Object storage connected (${endpointHost}) — buckets: ${buckets.map((b) => b.name).join(", ")}`,
     };
   }
+
+  const failedNames = failed.map((r) => r.bucket).join(", ");
+  const firstError = failed[0].error ?? "unknown error";
+
+  logger.error("Storage bucket health check failed", {
+    failed: failed.map((r) => ({ bucket: r.bucket, error: r.error })),
+  });
+
+  return {
+    status: "error",
+    message: `Storage reachable but bucket(s) not ready: ${failedNames} — ${firstError}`,
+    degradedBehavior,
+  };
 }
 
 /**

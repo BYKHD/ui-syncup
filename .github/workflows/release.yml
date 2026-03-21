@@ -2,39 +2,72 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*.*.*"
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
-  build-and-push:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      issues: write
+      pull-requests: write
+    outputs:
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
+      new_release_git_tag: ${{ steps.semantic.outputs.new_release_git_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install root dependencies
+        run: npm install
+
+      - name: Install CLI dependencies
+        working-directory: ./cli
+        run: npm install
+
+      - name: Run semantic-release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  docker:
     name: Build & Push Docker Image (multi-arch)
     runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.new_release_published == 'true'
     permissions:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.new_release_git_tag }}
 
       - name: Set up QEMU (for ARM cross-compilation)
         uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
-
-      - name: Extract version tags from git tag
-        id: version
-        run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          MAJOR="${TAG%%.*}"
-          MINOR="${TAG%.*}"
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "major=${MAJOR}" >> "$GITHUB_OUTPUT"
-          echo "minor=${MINOR}" >> "$GITHUB_OUTPUT"
-          if [[ "$TAG" == *"-"* ]]; then
-            echo "prerelease=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "prerelease=false" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -46,12 +79,15 @@ jobs:
       - name: Compute Docker tags
         id: docker_tags
         run: |
-          TAGS="ghcr.io/bykhd/ui-syncup:${{ steps.version.outputs.tag }}"
-          if [ "${{ steps.version.outputs.prerelease }}" = "false" ]; then
-            TAGS="ghcr.io/bykhd/ui-syncup:latest
-          ${TAGS}
-          ghcr.io/bykhd/ui-syncup:${{ steps.version.outputs.minor }}
-          ghcr.io/bykhd/ui-syncup:${{ steps.version.outputs.major }}"
+          TAG="v${{ needs.release.outputs.new_release_version }}"
+          MAJOR="${TAG%%.*}"
+          MINOR="${TAG%.*}"
+          TAGS="ghcr.io/bykhd/ui-syncup:${TAG}"
+          if [[ "$TAG" != *"-"* ]]; then
+            TAGS="${TAGS}
+          ghcr.io/bykhd/ui-syncup:latest
+          ghcr.io/bykhd/ui-syncup:${MINOR}
+          ghcr.io/bykhd/ui-syncup:${MAJOR}"
           fi
           echo "tags<<EOF" >> "$GITHUB_OUTPUT"
           echo "$TAGS" >> "$GITHUB_OUTPUT"
@@ -66,53 +102,3 @@ jobs:
           tags: ${{ steps.docker_tags.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-  publish-cli:
-    name: Publish CLI to npm
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "20"
-          registry-url: "https://registry.npmjs.org"
-      - name: Extract semver from tag (strip v prefix)
-        id: version
-        run: |
-          VERSION="${GITHUB_REF#refs/tags/v}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          if [[ "${VERSION}" == *"-"* ]]; then
-            echo "npm_tag=$(echo "${VERSION}" | sed 's/[0-9.]*-\([a-z]*\).*/\1/')" >> "$GITHUB_OUTPUT"
-          else
-            echo "npm_tag=latest" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Install CLI dependencies
-        working-directory: ./cli
-        run: npm install
-      - name: Stamp CLI version from tag
-        working-directory: ./cli
-        run: npm version ${{ steps.version.outputs.version }} --no-git-tag-version
-      - name: Build CLI
-        working-directory: ./cli
-        run: npm run build
-      - name: Publish to npm
-        working-directory: ./cli
-        run: npm publish --access public --tag ${{ steps.version.outputs.npm_tag }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  create-release:
-    name: Create GitHub Release
-    runs-on: ubuntu-latest
-    needs: [build-and-push, publish-cli]
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - name: Create GitHub Release with auto-generated notes
-        uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
-          prerelease: ${{ contains(github.ref, '-') }}

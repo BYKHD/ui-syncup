@@ -16,11 +16,6 @@ import { logger } from "@/lib/logger";
 import { logAdminAction, createChange, filterChanges } from "@/server/audit";
 
 /**
- * URL validation - accepts valid URLs or empty string
- */
-const urlRegex = /^(https?:\/\/)?[\da-z.-]+(\.[a-z.]{2,6})([/\w .-]*)*\/?$/i;
-
-/**
  * Request body schema
  */
 const SaveConfigSchema = z.object({
@@ -28,15 +23,6 @@ const SaveConfigSchema = z.object({
     .string()
     .min(2, "Instance name must be at least 2 characters")
     .max(100, "Instance name must be less than 100 characters"),
-  publicUrl: z
-    .string()
-    .max(255, "Public URL must be less than 255 characters")
-    .refine(
-      (val) => val === "" || urlRegex.test(val) || val.startsWith("http"),
-      "Please enter a valid URL (e.g., https://app.example.com)"
-    )
-    .optional()
-    .default(""),
   defaultMemberRole: z
     .enum(["WORKSPACE_VIEWER", "WORKSPACE_MEMBER", "WORKSPACE_EDITOR"])
     .optional(),
@@ -47,13 +33,12 @@ type SaveConfigInput = z.infer<typeof SaveConfigSchema>;
 /**
  * POST /api/setup/config
  * 
- * Saves instance configuration (instance name, public URL).
+ * Saves instance configuration (instance name).
  * Requires authenticated admin user.
  * 
  * Request body:
  * {
  *   "instanceName": "My UI SyncUp",
- *   "publicUrl": "https://app.example.com",  // optional
  *   "defaultMemberRole": "WORKSPACE_MEMBER"  // optional
  * }
  * 
@@ -157,14 +142,12 @@ export async function POST(request: NextRequest) {
     // Save instance configuration
     await saveInstanceConfig({
       instanceName: body.instanceName,
-      publicUrl: body.publicUrl || undefined,
       defaultMemberRole: body.defaultMemberRole,
     });
 
     // Audit log the configuration change
     const changes = filterChanges([
       createChange('instanceName', currentStatus.instanceName, body.instanceName),
-      createChange('publicUrl', currentStatus.publicUrl, body.publicUrl || null),
       createChange('defaultMemberRole', currentStatus.defaultMemberRole, body.defaultMemberRole),
     ]);
 

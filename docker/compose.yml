@@ -22,6 +22,7 @@ name: ${COMPOSE_PROJECT_NAME:-ui-syncup}
 
 services:
   app:
+    # Replace :latest with your desired version
     image: ghcr.io/bykhd/ui-syncup:latest
     restart: always
     # By default, the app port is published directly to the host for standalone

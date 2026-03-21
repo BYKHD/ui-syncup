@@ -39,7 +39,6 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
       return {
         isSetupComplete: false,
         instanceName: null,
-        publicUrl: null,
         adminEmail: null,
         defaultWorkspaceId: null,
         defaultMemberRole: "WORKSPACE_MEMBER",
@@ -61,7 +60,6 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
     return {
       isSetupComplete: settings.setupCompletedAt !== null,
       instanceName: settings.instanceName,
-      publicUrl: settings.publicUrl,
       adminEmail,
       defaultWorkspaceId: settings.defaultWorkspaceId,
       defaultMemberRole: settings.defaultMemberRole as "WORKSPACE_VIEWER" | "WORKSPACE_MEMBER" | "WORKSPACE_EDITOR",
@@ -131,14 +129,13 @@ export async function createAdmin(input: CreateAdminInput): Promise<{ userId: st
  * @param input - Instance configuration
  */
 export async function saveInstanceConfig(input: InstanceConfigInput): Promise<void> {
-  const { instanceName, publicUrl, defaultMemberRole } = input;
+  const { instanceName, defaultMemberRole } = input;
 
   const existing = await db.query.instanceSettings.findFirst();
   if (!existing) {
     // Create new settings
     await db.insert(instanceSettings).values({
       instanceName,
-      publicUrl: publicUrl || null,
       defaultMemberRole: defaultMemberRole || "WORKSPACE_MEMBER",
     });
   } else {
@@ -146,14 +143,13 @@ export async function saveInstanceConfig(input: InstanceConfigInput): Promise<vo
     await db.update(instanceSettings)
       .set({
         instanceName,
-        publicUrl: publicUrl || null,
         defaultMemberRole: defaultMemberRole || existing.defaultMemberRole,
         updatedAt: new Date(),
       })
       .where(eq(instanceSettings.id, existing.id));
   }
 
-  logger.info("Instance configuration saved", { instanceName, publicUrl });
+  logger.info("Instance configuration saved", { instanceName });
 }
 
 /**

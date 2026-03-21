@@ -31,7 +31,6 @@ export const DefaultMemberRoleSchema = z.enum([
 export const InstanceStatusSchema = z.object({
   isSetupComplete: z.boolean(),
   instanceName: z.string().nullable(),
-  publicUrl: z.string().nullable(),
   adminEmail: z.string().nullable(),
   defaultWorkspaceId: z.string().nullable(),
   defaultMemberRole: DefaultMemberRoleSchema,
@@ -74,11 +73,6 @@ export const InstanceConfigRequestSchema = z.object({
     .string()
     .min(2, 'Instance name must be at least 2 characters')
     .max(100, 'Instance name must be at most 100 characters'),
-  publicUrl: z
-    .string()
-    .url('Please enter a valid URL')
-    .optional()
-    .or(z.literal('')),
 });
 
 export const InstanceConfigResponseSchema = z.object({

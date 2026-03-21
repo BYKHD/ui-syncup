@@ -58,7 +58,6 @@ describe('Setup Service Properties', () => {
         fc.option(fc.record({
           setupCompletedAt: fc.option(fc.date()),
           instanceName: fc.string(),
-          publicUrl: fc.option(fc.webUrl()),
           adminUserId: fc.uuid(),
           defaultWorkspaceId: fc.option(fc.uuid()),
           defaultMemberRole: fc.constantFrom('WORKSPACE_MEMBER', 'WORKSPACE_VIEWER', 'WORKSPACE_EDITOR'),

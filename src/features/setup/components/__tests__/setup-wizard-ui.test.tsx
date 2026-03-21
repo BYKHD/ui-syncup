@@ -271,14 +271,6 @@ describe('InstanceConfigStep', () => {
     expect(instanceName).toHaveAttribute('autocomplete', 'off');
     expect(instanceName).toHaveAttribute('placeholder', 'My Company\u2026');
 
-    const publicUrl = screen.getByLabelText('Public URL');
-    expect(publicUrl).toHaveAttribute('autocomplete', 'off');
-    expect(publicUrl).toHaveAttribute('inputmode', 'url');
-    expect(publicUrl).toHaveAttribute('type', 'url');
-    expect(publicUrl).toHaveAttribute(
-      'placeholder',
-      'https://app.example.com\u2026'
-    );
   });
 
   it('disables motion for the submit spinner', () => {

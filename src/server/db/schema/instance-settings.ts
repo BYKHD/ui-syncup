@@ -15,9 +15,6 @@ export const instanceSettings = pgTable("instance_settings", {
   /** Display name for the instance (shown in UI) */
   instanceName: varchar("instance_name", { length: 100 }).notNull().default("UI SyncUp"),
   
-  /** Public URL for the instance (used in emails, links) */
-  publicUrl: varchar("public_url", { length: 255 }),
-  
   /** Default workspace ID for single-workspace mode */
   defaultWorkspaceId: uuid("default_workspace_id").references(() => teams.id, { onDelete: "set null" }),
   
