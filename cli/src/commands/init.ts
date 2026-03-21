@@ -3,7 +3,7 @@ import { execSync } from 'node:child_process'
 import { select, input, confirm } from '@inquirer/prompts'
 import { ui } from '../lib/ui.js'
 import { generateSecret, writeEnv, parseEnv } from '../lib/env.js'
-import { isDockerRunning, runCompose } from '../lib/docker.js'
+import { isDockerRunning, runCompose, volumeExists, removeVolume } from '../lib/docker.js'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { version } = require('../../package.json') as { version: string }
 
@@ -81,6 +81,36 @@ export async function initCommand(): Promise<void> {
   })
   if (dbChoice === 'bundled') {
     profiles.push('db')
+    const projectName = process.env['COMPOSE_PROJECT_NAME'] || 'ui-syncup'
+    const pgVolume = `${projectName}_postgres_data`
+    const volumeAlreadyExists = volumeExists(pgVolume)
+    if (volumeAlreadyExists) {
+      ui.warn(`Existing PostgreSQL volume detected (${pgVolume}).`)
+      ui.warn('The password you enter MUST match the one used when the volume was first created.')
+      ui.warn('If you changed the password, choose "Reset" to wipe the volume and start fresh.')
+      const resetChoice = await select({
+        message: 'How do you want to proceed?',
+        choices: [
+          { name: 'Keep existing volume (enter the original password)', value: 'keep' },
+          { name: 'Reset volume — wipe all data and reinitialise (irreversible)', value: 'reset' },
+        ],
+      })
+      if (resetChoice === 'reset') {
+        const confirmed = await confirm({
+          message: `Delete volume "${pgVolume}" and all its data? This cannot be undone.`,
+          default: false,
+        })
+        if (confirmed) {
+          if (!removeVolume(pgVolume)) {
+            ui.error(`Failed to remove volume ${pgVolume}. Is the container still running?`)
+            process.exit(1)
+          }
+          ui.success(`Volume ${pgVolume} removed — will be reinitialised with the new password.`)
+        } else {
+          ui.info('Reset cancelled — keeping existing volume. Enter the original password below.')
+        }
+      }
+    }
     const pgPass = await input({
       message: 'PostgreSQL password (POSTGRES_PASSWORD, min 8 chars):',
       validate: v => v.length >= 8 || 'Minimum 8 characters',
