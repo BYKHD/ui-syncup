@@ -5,7 +5,7 @@ on:
     branches: [main, develop]
 
 concurrency:
-  group: release
+  group: release-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -39,7 +39,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: write
       issues: write
       pull-requests: write
     outputs:
@@ -91,6 +90,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           ref: ${{ needs.release.outputs.new_release_git_tag }}
+          persist-credentials: false
 
       - name: Set up QEMU (for ARM cross-compilation)
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
