@@ -152,8 +152,9 @@ export async function initCommand(): Promise<void> {
   const emailChoice = await select({
     message: 'Email provider:',
     choices: [
-      { name: 'Resend', value: 'resend' },
-      { name: 'SMTP (self-hosted)', value: 'smtp' },
+      { name: 'Resend (recommended for production)', value: 'resend' },
+      { name: 'SMTP — custom server (SendGrid, Postmark, etc.)', value: 'smtp' },
+      { name: 'Mailpit — bundled SMTP catcher (dev/test only)', value: 'mailpit' },
       { name: 'Skip for now', value: 'skip' },
     ],
   })
@@ -167,6 +168,14 @@ export async function initCommand(): Promise<void> {
     envVars['SMTP_PASSWORD'] = await input({ message: 'SMTP password:' })
     envVars['SMTP_FROM_EMAIL'] = await input({ message: 'From email:' })
     envVars['SMTP_SECURE'] = await input({ message: 'TLS? (true/false):', default: 'true' })
+  } else if (emailChoice === 'mailpit') {
+    profiles.push('mail')
+    envVars['SMTP_HOST'] = 'mailpit'
+    envVars['SMTP_PORT'] = '1025'
+    envVars['SMTP_USER'] = ''
+    envVars['SMTP_PASSWORD'] = ''
+    envVars['SMTP_FROM_EMAIL'] = 'noreply@localhost'
+    envVars['SMTP_SECURE'] = 'false'
   }
 
   // Store active profiles in .env so bare `docker compose up -d` re-runs work
@@ -187,6 +196,9 @@ export async function initCommand(): Promise<void> {
 
   ui.success('UI SyncUp is running!')
   ui.info(`Open: ${appUrl}`)
+  if (profiles.includes('mail')) {
+    ui.info('Mailpit inbox: http://localhost:8025')
+  }
   if (profiles.length > 0) {
     ui.info(`Active profiles: ${profiles.join(', ')}`)
   }
