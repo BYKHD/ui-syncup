@@ -17,7 +17,7 @@
 #   mailpit   → localhost:1025 (SMTP)   / localhost:8025 (web UI)
 # ============================================================================
 
-name: ui-syncup
+name: ui-syncup-local
 
 services:
   redis:

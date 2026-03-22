@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 const { version } = require('./package.json') as { version: string }
 import { Command } from 'commander'
 import { initCommand } from './src/commands/init.js'
