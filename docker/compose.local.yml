@@ -34,6 +34,23 @@ services:
       timeout: 3s
       retries: 10
 
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    profiles: [ "db" ]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-syncup}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-passgres}
+      POSTGRES_DB: ${POSTGRES_DB:-ui_syncup}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-syncup} -d ${POSTGRES_DB:-ui_syncup}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   minio:
     image: minio/minio:latest
     restart: unless-stopped
@@ -81,4 +98,5 @@ services:
 
 volumes:
   redis_local:
+  postgres_data:
   minio_local:

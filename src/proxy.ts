@@ -74,13 +74,26 @@ function isProtectedRoute(pathname: string): boolean {
 }
 
 /**
+ * Stamp security headers (CSP, HSTS) onto an existing response.
+ */
+function applySecurityHeaders(response: NextResponse): void {
+  response.headers.set('Content-Security-Policy', buildCSPHeader());
+  if (process.env.NODE_ENV === 'production') {
+    response.headers.set(
+      'Strict-Transport-Security',
+      HSTS_HEADER['Strict-Transport-Security']
+    );
+  }
+}
+
+/**
  * Proxy function for Next.js 16
- * 
+ *
  * Responsibilities:
  * 1. Add security headers (CSP, HSTS)
  * 2. Handle CORS preflight requests
  * 3. Redirect to /setup if instance setup is not complete (Requirement 1.1, 1.2, 1.3)
- * 
+ *
  * @requirements 1.1 - Redirect to /setup if no admin user exists
  * @requirements 1.2 - Allow normal routing when setup is complete
  * @requirements 1.3 - Check instance state on each request until setup complete
@@ -116,9 +129,18 @@ export async function proxy(request: NextRequest) {
   const cookieValue = request.cookies.get('setup-complete')?.value;
   const hasCookie = cookieValue === '1';
 
-  // Guard /setup — if setup is already done, redirect away immediately.
+  // Guard /setup — only redirect away if setup is genuinely complete in the DB.
+  // A stale cookie (e.g. after a DB reset) must not block the setup page.
   if (pathname === '/setup' && hasCookie) {
-    return NextResponse.redirect(new URL('/sign-in', request.nextUrl.origin), { status: 302 });
+    const status = await getSetupStatus(request);
+    if (status?.isSetupComplete) {
+      return NextResponse.redirect(new URL('/sign-in', request.nextUrl.origin), { status: 302 });
+    }
+    // Stale cookie — clear it and serve the setup page with security headers.
+    const response = NextResponse.next();
+    response.cookies.delete('setup-complete');
+    applySecurityHeaders(response);
+    return response;
   }
 
   // Only run the cold-path status check for protected routes.
@@ -147,17 +169,8 @@ export async function proxy(request: NextRequest) {
     });
   }
   
-  // Add Content Security Policy
-  response.headers.set('Content-Security-Policy', buildCSPHeader());
-  
-  // Add Strict Transport Security (HSTS) in production
-  if (process.env.NODE_ENV === 'production') {
-    response.headers.set(
-      'Strict-Transport-Security',
-      HSTS_HEADER['Strict-Transport-Security']
-    );
-  }
-  
+  applySecurityHeaders(response);
+
   return response;
 }
 

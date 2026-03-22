@@ -15,15 +15,16 @@ import type { UseSetupWizardReturn } from '../hooks';
 
 interface InstanceConfigStepProps {
   wizard: UseSetupWizardReturn;
+  initialInstanceName?: string;
 }
 
-export function InstanceConfigStep({ wizard }: InstanceConfigStepProps) {
+export function InstanceConfigStep({ wizard, initialInstanceName }: InstanceConfigStepProps) {
   const { mutate: saveConfig, isPending, error } = useSaveInstanceConfig();
 
   const form = useForm<InstanceConfigRequestDTO>({
     resolver: zodResolver(InstanceConfigRequestSchema),
     defaultValues: {
-      instanceName: 'My Organization',
+      instanceName: initialInstanceName ?? 'My Organization',
     },
   });
 
