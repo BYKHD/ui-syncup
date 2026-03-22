@@ -1,6 +1,18 @@
 # [0.4.0-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.1...v0.4.0-beta.2) (2026-03-22)
 
 
+### Bug Fixes
+
+* update image version comment to include `:beta` pre-release option ([142181b](https://github.com/BYKHD/ui-syncup/commit/142181b693dc26ddd398732f929f3140ac9720c1))
+
+
+### Features
+
+* Separate Docker image builds into dedicated workflows for pre-release and stable versions. ([c28d1ad](https://github.com/BYKHD/ui-syncup/commit/c28d1adda4f584a067b202d35448fa4d1766a389))
+
+# [0.4.0-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.1...v0.4.0-beta.2) (2026-03-22)
+
+
 ### Features
 
 * Separate Docker image builds into dedicated workflows for pre-release and stable versions. ([c28d1ad](https://github.com/BYKHD/ui-syncup/commit/c28d1adda4f584a067b202d35448fa4d1766a389))
