@@ -68,22 +68,6 @@ This publishes a `1.2.3-beta.1` pre-release to npm under the `beta` dist-tag and
 
 ---
 
-## Manual Steps Before Releasing
-
-Only **`src/config/changelog.ts`** requires a manual update before pushing. Add a new entry (newest first):
-
-```typescript
-{
-  version: '0.4.0',
-  date: '2026-03-22',
-  title: 'New Feature Release',
-  description: 'Short summary.',
-  changes: [
-    { type: 'feature', text: 'Added X.' },
-    { type: 'fix', text: 'Fixed Y.' }
-  ]
-},
-```
 
 Then commit and push:
 
