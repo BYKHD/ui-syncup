@@ -1,3 +1,10 @@
+# [0.4.0-beta.6](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.5...v0.4.0-beta.6) (2026-03-22)
+
+
+### Bug Fixes
+
+* trigger release ([e8a2c22](https://github.com/BYKHD/ui-syncup/commit/e8a2c226a72061f0b402eeec836330d83b1cf53f))
+
 # [0.4.0-beta.5](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.4...v0.4.0-beta.5) (2026-03-22)
 
 
