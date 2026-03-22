@@ -83,8 +83,47 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+  docker-prerelease:
+    name: Build & Push Docker Image (pre-release)
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.new_release_published == 'true' && contains(needs.release.outputs.new_release_version, '-')
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ needs.release.outputs.new_release_git_tag }}
+          persist-credentials: false
+
+      - name: Set up QEMU (for ARM cross-compilation)
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push pre-release image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/bykhd/ui-syncup:beta
+            ghcr.io/bykhd/ui-syncup:v${{ needs.release.outputs.new_release_version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   docker:
-    name: Build & Push Docker Image (multi-arch)
+    name: Build & Push Docker Image
     runs-on: ubuntu-latest
     needs: release
     if: needs.release.outputs.new_release_published == 'true' && !contains(needs.release.outputs.new_release_version, '-')
