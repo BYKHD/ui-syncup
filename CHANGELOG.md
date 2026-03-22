@@ -1,3 +1,10 @@
+# [0.4.0-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.2...v0.4.0-beta.3) (2026-03-22)
+
+
+### Bug Fixes
+
+* skip CI pipeline on semantic-release back-commits ([418cdbb](https://github.com/BYKHD/ui-syncup/commit/418cdbb1e1b293bfb2adeb223c36d40b38f30868))
+
 # [0.4.0-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.1...v0.4.0-beta.2) (2026-03-22)
 
 
