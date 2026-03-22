@@ -1,3 +1,10 @@
+# [0.4.0-beta.5](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.4...v0.4.0-beta.5) (2026-03-22)
+
+
+### Bug Fixes
+
+* stop publishing root Next.js app to npm, rename CLI package, fix shebang, guard skip-ci ([e7a6c43](https://github.com/BYKHD/ui-syncup/commit/e7a6c4365d7add42ba787094a3f98c589ad355cf))
+
 # [0.4.0-beta.4](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.3...v0.4.0-beta.4) (2026-03-22)
 
 
