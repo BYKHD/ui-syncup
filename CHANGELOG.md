@@ -1,3 +1,10 @@
+# [0.4.0-beta.4](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.3...v0.4.0-beta.4) (2026-03-22)
+
+
+### Bug Fixes
+
+* rename CLI package to ui-syncup-cli, add shebang banner, guard CI against skip-ci commits ([3e9ef29](https://github.com/BYKHD/ui-syncup/commit/3e9ef2970eae274752a5ed74eb9b88d424d60233))
+
 # [0.4.0-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.2...v0.4.0-beta.3) (2026-03-22)
 
 
