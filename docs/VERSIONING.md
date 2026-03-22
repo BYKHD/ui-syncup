@@ -99,3 +99,4 @@ git push origin main   # or develop for a beta
 | `x.0.0` major bump | `feat!: ...` or `BREAKING CHANGE:` in footer |
 
 **One-time escape hatch:** If you need to force a specific baseline version (e.g. jump to `1.0.0`), manually create a git tag on the last commit before pushing — semantic-release uses the last tag as its starting point. This is not a regular workflow, use it only once to correct a version baseline.
+
