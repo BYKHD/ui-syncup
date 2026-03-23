@@ -8,6 +8,13 @@
       "when": 1768745196770,
       "tag": "0000_purple_wilson_fisk",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1768831596770,
+      "tag": "0001_drop_instance_public_url",
+      "breakpoints": true
     }
   ]
 }

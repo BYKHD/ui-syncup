@@ -165,8 +165,8 @@ export async function POST(
         { 
           error: { 
             code: "INVALID_INPUT", 
-            message: validation.error.errors[0]?.message || "Invalid input",
-            details: validation.error.errors,
+            message: validation.error.issues[0]?.message || "Invalid input",
+            details: validation.error.issues,
           } 
         },
         { status: 400 }

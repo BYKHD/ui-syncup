@@ -222,7 +222,7 @@ export async function createNotification(
     const validated = CreateNotificationSchema.safeParse(data);
     if (!validated.success) {
       logger.warn("Invalid notification data", {
-        errors: validated.error.errors,
+        errors: validated.error.issues,
         data,
       });
       return null;

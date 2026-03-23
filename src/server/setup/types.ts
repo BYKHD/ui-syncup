@@ -38,8 +38,6 @@ export interface InstanceStatus {
   isSetupComplete: boolean;
   /** Instance display name */
   instanceName: string | null;
-  /** Public URL for the instance */
-  publicUrl: string | null;
   /** Admin user email */
   adminEmail: string | null;
   /** Default workspace ID for single-workspace mode */
@@ -66,7 +64,6 @@ export interface CreateAdminInput {
  */
 export interface InstanceConfigInput {
   instanceName: string;
-  publicUrl?: string;
   defaultMemberRole?: "WORKSPACE_VIEWER" | "WORKSPACE_MEMBER" | "WORKSPACE_EDITOR";
 }
 

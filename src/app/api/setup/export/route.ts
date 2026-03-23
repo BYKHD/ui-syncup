@@ -66,7 +66,6 @@ export async function GET(request: NextRequest) {
       exportedAt: new Date().toISOString(),
       instanceSettings: {
         instanceName: instanceStatus.instanceName,
-        publicUrl: instanceStatus.publicUrl,
         defaultMemberRole: instanceStatus.defaultMemberRole,
       },
     };

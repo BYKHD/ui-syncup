@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
           error: {
             code: "INVALID_INPUT",
             message: "Invalid query parameters",
-            details: validation.error.errors,
+            details: validation.error.issues,
           },
         },
         { status: 400 }
@@ -265,7 +265,7 @@ export async function POST(request: NextRequest) {
           error: {
             code: "INVALID_INPUT",
             message: "Invalid project data",
-            details: validation.error.errors,
+            details: validation.error.issues,
           },
         },
         { status: 400 }

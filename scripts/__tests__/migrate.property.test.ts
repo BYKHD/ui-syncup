@@ -22,7 +22,7 @@ let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
 let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
 const getAllLogMessages = (spy: ReturnType<typeof vi.spyOn>): string[] =>
-  spy.mock.calls.map(call => String(call[0] ?? ''));
+  spy.mock.calls.map((call: unknown[]) => String(call[0] ?? ''));
 
 beforeEach(() => {
   consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});

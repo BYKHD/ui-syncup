@@ -174,7 +174,7 @@ export async function POST(
           error: {
             code: "INVALID_INPUT",
             message: "Invalid comment data",
-            details: validation.error.errors,
+            details: validation.error.issues,
           },
         },
         { status: 400 }

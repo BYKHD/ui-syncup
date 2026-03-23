@@ -15,26 +15,23 @@ import type { UseSetupWizardReturn } from '../hooks';
 
 interface InstanceConfigStepProps {
   wizard: UseSetupWizardReturn;
+  initialInstanceName?: string;
 }
 
-export function InstanceConfigStep({ wizard }: InstanceConfigStepProps) {
+export function InstanceConfigStep({ wizard, initialInstanceName }: InstanceConfigStepProps) {
   const { mutate: saveConfig, isPending, error } = useSaveInstanceConfig();
 
   const form = useForm<InstanceConfigRequestDTO>({
     resolver: zodResolver(InstanceConfigRequestSchema),
     defaultValues: {
-      instanceName: 'My Organization',
-      publicUrl: typeof window !== 'undefined' ? window.location.origin : '',
+      instanceName: initialInstanceName ?? 'My Organization',
     },
   });
 
   const onSubmit = (data: InstanceConfigRequestDTO) => {
     saveConfig(data, {
       onSuccess: () => {
-        wizard.setInstanceData({
-          name: data.instanceName,
-          publicUrl: data.publicUrl || '',
-        });
+        wizard.setInstanceData({ name: data.instanceName });
         wizard.markStepComplete('instance-config');
         wizard.goToNextStep();
       },
@@ -85,26 +82,6 @@ export function InstanceConfigStep({ wizard }: InstanceConfigStepProps) {
           {form.formState.errors.instanceName && (
             <p className="text-sm font-medium text-destructive">
               {form.formState.errors.instanceName.message}
-            </p>
-          )}
-        </motion.div>
-
-        <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }} className="space-y-2">
-          <Label htmlFor="publicUrl">Public URL</Label>
-          <Input
-            id="publicUrl"
-            type="url"
-            inputMode="url"
-            autoComplete="off"
-            placeholder={'https://app.example.com\u2026'}
-            {...form.register('publicUrl')}
-          />
-          <p className="text-sm text-muted-foreground">
-            The base URL used for generating links in emails.
-          </p>
-          {form.formState.errors.publicUrl && (
-            <p className="text-sm font-medium text-destructive">
-              {form.formState.errors.publicUrl.message}
             </p>
           )}
         </motion.div>

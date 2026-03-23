@@ -39,7 +39,6 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
       return {
         isSetupComplete: false,
         instanceName: null,
-        publicUrl: null,
         adminEmail: null,
         defaultWorkspaceId: null,
         defaultMemberRole: "WORKSPACE_MEMBER",
@@ -61,7 +60,6 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
     return {
       isSetupComplete: settings.setupCompletedAt !== null,
       instanceName: settings.instanceName,
-      publicUrl: settings.publicUrl,
       adminEmail,
       defaultWorkspaceId: settings.defaultWorkspaceId,
       defaultMemberRole: settings.defaultMemberRole as "WORKSPACE_VIEWER" | "WORKSPACE_MEMBER" | "WORKSPACE_EDITOR",
@@ -69,9 +67,36 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
       skipEmailVerification: isEmailVerificationSkipped(),
     };
   } catch (error) {
+    // PostgreSQL error code 42P01 = "undefined_table" (relation does not exist).
+    // This happens on a fresh install before migrations have been applied.
+    // Treat it as "setup not complete" so the app redirects to /setup.
+    if (isUndefinedTableError(error)) {
+      logger.warn("instance_settings table does not exist — treating as fresh install");
+      return {
+        isSetupComplete: false,
+        instanceName: null,
+        adminEmail: null,
+        defaultWorkspaceId: null,
+        defaultMemberRole: "WORKSPACE_MEMBER",
+        isMultiWorkspaceMode: isMultiWorkspaceMode(),
+        skipEmailVerification: isEmailVerificationSkipped(),
+      };
+    }
     logger.error("Failed to get instance status", { error });
     throw error;
   }
+}
+
+function isUndefinedTableError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const err = error as Record<string, unknown>;
+  // postgres.js PostgresError: code is directly on the error
+  if (err.code === "42P01") return true;
+  // Walk the cause chain in case drizzle wraps the error
+  if (err.cause != null) return isUndefinedTableError(err.cause);
+  // Last resort: match PostgreSQL's "relation ... does not exist" message
+  if (typeof err.message === "string" && /relation .+ does not exist/.test(err.message)) return true;
+  return false;
 }
 
 /**
@@ -131,14 +156,13 @@ export async function createAdmin(input: CreateAdminInput): Promise<{ userId: st
  * @param input - Instance configuration
  */
 export async function saveInstanceConfig(input: InstanceConfigInput): Promise<void> {
-  const { instanceName, publicUrl, defaultMemberRole } = input;
+  const { instanceName, defaultMemberRole } = input;
 
   const existing = await db.query.instanceSettings.findFirst();
   if (!existing) {
     // Create new settings
     await db.insert(instanceSettings).values({
       instanceName,
-      publicUrl: publicUrl || null,
       defaultMemberRole: defaultMemberRole || "WORKSPACE_MEMBER",
     });
   } else {
@@ -146,14 +170,13 @@ export async function saveInstanceConfig(input: InstanceConfigInput): Promise<vo
     await db.update(instanceSettings)
       .set({
         instanceName,
-        publicUrl: publicUrl || null,
         defaultMemberRole: defaultMemberRole || existing.defaultMemberRole,
         updatedAt: new Date(),
       })
       .where(eq(instanceSettings.id, existing.id));
   }
 
-  logger.info("Instance configuration saved", { instanceName, publicUrl });
+  logger.info("Instance configuration saved", { instanceName });
 }
 
 /**

@@ -180,7 +180,7 @@ export function validateTeamName(name: string): {
   }
   return {
     valid: false,
-    error: result.error.errors[0]?.message || "Invalid team name",
+    error: result.error.issues[0]?.message || "Invalid team name",
   };
 }
 
@@ -204,6 +204,6 @@ export function validateRoleAssignment(
   }
   return {
     valid: false,
-    error: result.error.errors[0]?.message || "Invalid role assignment",
+    error: result.error.issues[0]?.message || "Invalid role assignment",
   };
 }

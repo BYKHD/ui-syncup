@@ -126,7 +126,7 @@ export async function GET(
           error: {
             code: 'INVALID_PAGINATION',
             message: 'Invalid pagination parameters',
-            details: paginationValidation.error.errors,
+            details: paginationValidation.error.issues,
           },
         },
         { status: 400 }

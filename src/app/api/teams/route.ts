@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
           error: {
             code: 'INVALID_INPUT',
             message: 'Invalid team data',
-            details: validation.error.errors,
+            details: validation.error.issues,
           },
         },
         { status: 400 }

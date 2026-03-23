@@ -22,7 +22,7 @@ const GetNotificationsQuerySchema = z.object({
     .string()
     .transform((val) => val === "true")
     .optional()
-    .default("false"),
+    .default(false),
 });
 
 /**

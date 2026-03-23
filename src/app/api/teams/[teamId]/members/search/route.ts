@@ -120,7 +120,7 @@ export async function GET(
           error: {
             code: 'INVALID_PARAMS',
             message: 'Invalid search parameters',
-            details: validation.error.errors,
+            details: validation.error.issues,
           },
         },
         { status: 400 }

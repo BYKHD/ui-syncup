@@ -41,11 +41,6 @@ const instanceSettingsSchema = z.object({
     .string()
     .min(2, "Instance name must be at least 2 characters")
     .max(100, "Instance name must be at most 100 characters"),
-  publicUrl: z
-    .string()
-    .url("Please enter a valid URL")
-    .optional()
-    .or(z.literal("")),
   defaultMemberRole: z.enum([
     "WORKSPACE_VIEWER",
     "WORKSPACE_MEMBER",
@@ -72,7 +67,6 @@ export function InstanceSettingsForm({ instanceStatus }: InstanceSettingsFormPro
     resolver: zodResolver(instanceSettingsSchema),
     defaultValues: {
       instanceName: instanceStatus.instanceName || "UI SyncUp",
-      publicUrl: instanceStatus.publicUrl || "",
       defaultMemberRole: instanceStatus.defaultMemberRole,
     },
   });
@@ -81,7 +75,6 @@ export function InstanceSettingsForm({ instanceStatus }: InstanceSettingsFormPro
     saveConfig(
       {
         instanceName: values.instanceName,
-        publicUrl: values.publicUrl || undefined,
       },
       {
         onSuccess: () => {
@@ -100,7 +93,7 @@ export function InstanceSettingsForm({ instanceStatus }: InstanceSettingsFormPro
       <CardHeader>
         <CardTitle>Instance Configuration</CardTitle>
         <CardDescription>
-          Configure your instance name and public URL. These settings are
+          Configure your instance name and default member role. These settings are
           visible to all users.
         </CardDescription>
       </CardHeader>
@@ -127,24 +120,6 @@ export function InstanceSettingsForm({ instanceStatus }: InstanceSettingsFormPro
             {form.formState.errors.instanceName && (
               <p className="text-sm font-medium text-destructive">
                 {form.formState.errors.instanceName.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="publicUrl">Public URL</Label>
-            <Input
-              id="publicUrl"
-              type="url"
-              placeholder="https://app.example.com"
-              {...form.register("publicUrl")}
-            />
-            <p className="text-sm text-muted-foreground">
-              The public URL where your instance is accessible (optional)
-            </p>
-            {form.formState.errors.publicUrl && (
-              <p className="text-sm font-medium text-destructive">
-                {form.formState.errors.publicUrl.message}
               </p>
             )}
           </div>

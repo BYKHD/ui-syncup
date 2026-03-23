@@ -410,7 +410,7 @@ export type Env = z.infer<typeof envSchema>
  * Format validation errors into a readable message
  */
 function formatValidationErrors(errors: z.ZodError): string {
-  const fieldErrors = errors.flatten().fieldErrors
+  const fieldErrors = errors.flatten().fieldErrors as Record<string, string[] | undefined>
   const missing: string[] = []
   const invalid: string[] = []
 

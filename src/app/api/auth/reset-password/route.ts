@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // Handle Zod validation errors
     if (error instanceof ZodError) {
-      const fieldErrors = error.flatten().fieldErrors;
+      const fieldErrors = error.flatten().fieldErrors as Record<string, string[] | undefined>;
       const firstError = Object.entries(fieldErrors)[0];
       
       if (firstError) {

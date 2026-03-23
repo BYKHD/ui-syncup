@@ -30,8 +30,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning className={inter.variable}>
+      {/* suppressHydrationWarning: next-themes injects a <script> for SSR theme
+          detection which React 19 warns about. Workaround until next-themes
+          ships a React 19-compatible release (currently 0.4.6 is latest). */}
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         <ThemeProvider
           attribute="class"

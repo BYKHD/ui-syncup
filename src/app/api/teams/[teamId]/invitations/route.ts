@@ -123,7 +123,7 @@ export async function POST(
           error: {
             code: 'INVALID_INPUT',
             message: 'Invalid invitation data',
-            details: validation.error.errors,
+            details: validation.error.issues,
           },
         },
         { status: 400 }

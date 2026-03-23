@@ -55,7 +55,7 @@ export function ServiceHealthStep({ wizard }: ServiceHealthStepProps) {
             <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground motion-reduce:animate-none" />
           </div>
         ) : health ? (
-          <motion.div 
+          <motion.div
             className="grid gap-4"
             initial="hidden"
             animate="show"
@@ -69,77 +69,77 @@ export function ServiceHealthStep({ wizard }: ServiceHealthStepProps) {
           >
             {/* Database (Required) */}
             <motion.div variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
-              <Card className={cn("hover:border-primary/30 transition-colors duration-300", health.database.status !== 'connected' ? 'border-destructive' : '')}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-base font-medium">Database</CardTitle>
-                <ServiceStatusBadge status={health.database.status} />
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">{health.database.message}</p>
-                {health.database.status !== 'connected' && (
-                  <p className="text-sm text-destructive font-medium mt-2">
-                    Required: Application cannot function without a database connection.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+              <Card className={cn("hover:border-primary/30 transition-colors duration-300 gap-1", health.database.status !== 'connected' ? 'border-destructive' : '')}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-base font-medium">Database</CardTitle>
+                  <ServiceStatusBadge status={health.database.status} />
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{health.database.message}</p>
+                  {health.database.status !== 'connected' && (
+                    <p className="text-sm text-destructive font-medium mt-2">
+                      Required: Application cannot function without a database connection.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
             </motion.div>
 
             {/* Email (Optional) */}
             <motion.div variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
-            <Card className="hover:border-primary/30 transition-colors duration-300">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-base font-medium">Email Service</CardTitle>
-                <ServiceStatusBadge status={health.email.status} />
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">{health.email.message}</p>
-                {health.email.status !== 'connected' && (
-                  <div className="mt-2 text-sm bg-muted p-2 rounded border border-border">
-                    <span className="font-semibold">Impact: </span>
-                    {health.email.degradedBehavior}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              <Card className="hover:border-primary/30 transition-colors duration-300 gap-1">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-base font-medium">Email Service</CardTitle>
+                  <ServiceStatusBadge status={health.email.status} />
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{health.email.message}</p>
+                  {health.email.status !== 'connected' && (
+                    <div className="mt-2 text-sm bg-muted p-2 rounded border border-border">
+                      <span className="font-semibold">Impact: </span>
+                      {health.email.degradedBehavior}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </motion.div>
 
             {/* Storage (Optional) */}
             <motion.div variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
-            <Card className="hover:border-primary/30 transition-colors duration-300">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-base font-medium">Object Storage</CardTitle>
-                <ServiceStatusBadge status={health.storage.status} />
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">{health.storage.message}</p>
-                {health.storage.status !== 'connected' && (
-                  <div className="mt-2 text-sm bg-muted p-2 rounded border border-border">
-                    <span className="font-semibold">Impact: </span>
-                    {health.storage.degradedBehavior}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              <Card className="hover:border-primary/30 transition-colors duration-300 gap-1">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-base font-medium">Object Storage</CardTitle>
+                  <ServiceStatusBadge status={health.storage.status} />
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{health.storage.message}</p>
+                  {health.storage.status !== 'connected' && (
+                    <div className="mt-2 text-sm bg-muted p-2 rounded border border-border">
+                      <span className="font-semibold">Impact: </span>
+                      {health.storage.degradedBehavior}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </motion.div>
 
             {/* Redis (Optional) */}
             <motion.div variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
-            <Card className="hover:border-primary/30 transition-colors duration-300">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-base font-medium">Redis Cache</CardTitle>
-                <ServiceStatusBadge status={health.redis.status} />
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">{health.redis.message}</p>
-                {health.redis.status !== 'connected' && (
-                  <div className="mt-2 text-sm bg-muted p-2 rounded border border-border">
-                    <span className="font-semibold">Impact: </span>
-                    {health.redis.degradedBehavior}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              <Card className="hover:border-primary/30 transition-colors duration-300 gap-1">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-base font-medium">Redis Cache</CardTitle>
+                  <ServiceStatusBadge status={health.redis.status} />
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{health.redis.message}</p>
+                  {health.redis.status !== 'connected' && (
+                    <div className="mt-2 text-sm bg-muted p-2 rounded border border-border">
+                      <span className="font-semibold">Impact: </span>
+                      {health.redis.degradedBehavior}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </motion.div>
           </motion.div>
         ) : null}
@@ -167,8 +167,8 @@ export function ServiceHealthStep({ wizard }: ServiceHealthStepProps) {
         </Button>
         <Button
           onClick={() => {
-              wizard.markStepComplete('health-check');
-              wizard.goToNextStep();
+            wizard.markStepComplete('health-check');
+            wizard.goToNextStep();
           }}
           disabled={!canProceed || isLoading}
         >

@@ -6,7 +6,14 @@
  * - ui-syncup-media: Avatars, team logos (public read access)
  */
 
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  HeadBucketCommand,
+  CreateBucketCommand,
+  PutBucketPolicyCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // ============================================================================
@@ -141,10 +148,70 @@ export function getPublicUrl(bucket: StorageBucket, key: string): string {
 
 /**
  * Get bucket name for a given bucket type
- * 
+ *
  * @param bucket - Bucket type
  * @returns Actual bucket name
  */
 export function getBucketName(bucket: StorageBucket): string {
   return BUCKET_CONFIG[bucket].name;
+}
+
+// ============================================================================
+// BUCKET INITIALISATION
+// ============================================================================
+
+/**
+ * Ensure both storage buckets exist, creating them if they don't.
+ * Safe to call on every startup — uses HeadBucket to skip creation when
+ * the bucket already exists.
+ *
+ * Also sets a public-read policy on the media bucket so objects are
+ * accessible without presigned URLs (mirrors what `minio-init` does in Docker).
+ */
+export async function ensureStorageBuckets(): Promise<void> {
+  const buckets: Array<{ type: StorageBucket; publicRead: boolean }> = [
+    { type: 'attachments', publicRead: false },
+    { type: 'media', publicRead: true },
+  ];
+
+  await Promise.all(
+    buckets.map(async ({ type, publicRead }) => {
+      const client = getClient(type);
+      const name = BUCKET_CONFIG[type].name;
+
+      try {
+        await client.send(new HeadBucketCommand({ Bucket: name }));
+        // Bucket already exists — nothing to do
+      } catch (err: unknown) {
+        const code = (err as { name?: string; Code?: string })?.name ?? (err as { Code?: string })?.Code;
+        const isNotFound = code === 'NoSuchBucket' || code === 'NotFound' || (err as { $metadata?: { httpStatusCode?: number } })?.$metadata?.httpStatusCode === 404;
+
+        if (!isNotFound) {
+          // Auth error or network error — surface it rather than silently swallowing
+          console.error(`[storage] Cannot reach bucket "${name}":`, err);
+          return;
+        }
+
+        // Bucket does not exist — create it
+        await client.send(new CreateBucketCommand({ Bucket: name }));
+        console.info(`[storage] Created bucket "${name}"`);
+
+        if (publicRead) {
+          const policy = JSON.stringify({
+            Version: '2012-10-17',
+            Statement: [
+              {
+                Effect: 'Allow',
+                Principal: { AWS: ['*'] },
+                Action: ['s3:GetObject'],
+                Resource: [`arn:aws:s3:::${name}/*`],
+              },
+            ],
+          });
+          await client.send(new PutBucketPolicyCommand({ Bucket: name, Policy: policy }));
+          console.info(`[storage] Set public-read policy on bucket "${name}"`);
+        }
+      }
+    })
+  );
 }

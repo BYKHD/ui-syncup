@@ -23,7 +23,6 @@ const ImportSettingsSchema = z.object({
   exportedAt: z.string().optional(),
   instanceSettings: z.object({
     instanceName: z.string().min(1).max(100),
-    publicUrl: z.string().url().nullable().optional(),
     defaultMemberRole: z.enum([
       "WORKSPACE_VIEWER",
       "WORKSPACE_MEMBER",
@@ -80,7 +79,7 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       logger.warn("setup.import.validation_error", {
         requestId,
-        errors: validation.error.errors,
+        errors: validation.error.issues,
       });
 
       return NextResponse.json(
@@ -88,7 +87,7 @@ export async function POST(request: NextRequest) {
           error: {
             code: "INVALID_FORMAT",
             message: "Invalid settings format",
-            details: validation.error.errors,
+            details: validation.error.issues,
           },
         },
         { status: 400 }
@@ -100,14 +99,12 @@ export async function POST(request: NextRequest) {
     // Apply imported settings
     await saveInstanceConfig({
       instanceName: instanceSettings.instanceName,
-      publicUrl: instanceSettings.publicUrl ?? undefined,
       defaultMemberRole: instanceSettings.defaultMemberRole,
     });
 
     // Audit log the import with changes
     const changes = filterChanges([
       createChange("instanceName", currentStatus.instanceName, instanceSettings.instanceName),
-      createChange("publicUrl", currentStatus.publicUrl, instanceSettings.publicUrl ?? null),
       createChange("defaultMemberRole", currentStatus.defaultMemberRole, instanceSettings.defaultMemberRole),
     ]);
 

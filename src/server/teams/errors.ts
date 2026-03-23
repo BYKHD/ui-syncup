@@ -111,7 +111,7 @@ export class TeamError extends Error {
  * Requirements 13.5: Zod validation returns field-specific errors
  */
 export function formatZodError(error: ZodError): FieldError[] {
-  return error.errors.map((err) => ({
+  return error.issues.map((err) => ({
     field: err.path.join("."),
     message: err.message,
   }));

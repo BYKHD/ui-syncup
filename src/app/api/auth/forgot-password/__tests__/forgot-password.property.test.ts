@@ -163,7 +163,7 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
       ),
       PROPERTY_CONFIG
     );
-  }, { timeout: PROPERTY_TIMEOUT });
+  }, PROPERTY_TIMEOUT);
 
   /**
    * Additional test: Verify that requesting password reset invalidates previous tokens
@@ -222,7 +222,7 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
       ),
       PROPERTY_CONFIG
     );
-  }, { timeout: PROPERTY_TIMEOUT });
+  }, PROPERTY_TIMEOUT);
 
   /**
    * Additional test: Verify that password reset for non-existent email returns success
@@ -276,7 +276,7 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
       ),
       PROPERTY_CONFIG
     );
-  }, { timeout: PROPERTY_TIMEOUT });
+  }, PROPERTY_TIMEOUT);
 
   /**
    * Additional test: Verify rate limiting (5 requests per email per hour)
@@ -349,7 +349,7 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
       ),
       PROPERTY_CONFIG
     );
-  }, { timeout: PROPERTY_TIMEOUT });
+  }, PROPERTY_TIMEOUT);
 
   /**
    * Additional test: Verify email normalization (case-insensitive)
@@ -393,5 +393,5 @@ describe('POST /api/auth/forgot-password - Property-Based Tests', () => {
       ),
       PROPERTY_CONFIG
     );
-  }, { timeout: PROPERTY_TIMEOUT });
+  }, PROPERTY_TIMEOUT);
 });

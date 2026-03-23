@@ -12,6 +12,7 @@ export const SETUP_WIZARD_STEPS: SetupWizardStep[] = [
   'health-check',
   'admin-account',
   'instance-config',
+  'mail-config',
   'first-workspace',
   'sample-data',
   'complete',

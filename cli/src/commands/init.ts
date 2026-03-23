@@ -4,7 +4,6 @@ import { select, input, confirm } from '@inquirer/prompts'
 import { ui } from '../lib/ui.js'
 import { generateSecret, writeEnv, parseEnv } from '../lib/env.js'
 import { isDockerRunning, runCompose, volumeExists, removeVolume } from '../lib/docker.js'
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { version } = require('../../package.json') as { version: string }
 
 const COMPOSE_URL =
@@ -202,8 +201,8 @@ export async function initCommand(): Promise<void> {
     profiles.push('mail')
     envVars['SMTP_HOST'] = 'mailpit'
     envVars['SMTP_PORT'] = '1025'
-    envVars['SMTP_USER'] = ''
-    envVars['SMTP_PASSWORD'] = ''
+    envVars['SMTP_USER'] = 'user'
+    envVars['SMTP_PASSWORD'] = 'password'
     envVars['SMTP_FROM_EMAIL'] = 'noreply@localhost.com'
     envVars['SMTP_SECURE'] = 'false'
   }

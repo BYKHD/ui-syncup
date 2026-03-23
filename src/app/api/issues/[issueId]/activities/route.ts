@@ -150,7 +150,7 @@ export async function GET(
           error: {
             code: "INVALID_INPUT",
             message: "Invalid query parameters",
-            details: validation.error.errors,
+            details: validation.error.issues,
           },
         },
         { status: 400 }

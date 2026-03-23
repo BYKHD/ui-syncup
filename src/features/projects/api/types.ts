@@ -238,7 +238,7 @@ export const ProjectActivitySchema = z.object({
   projectId: z.string(),
   actorId: z.string().nullable(),
   type: ProjectActivityTypeSchema,
-  metadata: z.record(z.any()),
+  metadata: z.record(z.string(), z.any()),
   createdAt: z.string(),
   actor: z.object({
     id: z.string(),

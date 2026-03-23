@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       body = CreateWorkspaceSchema.parse(rawBody);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const fieldErrors = error.errors.map((err) => ({
+        const fieldErrors = error.issues.map((err) => ({
           field: err.path.join("."),
           message: err.message,
         }));

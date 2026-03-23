@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Build artifacts — never lint compiled output
+    "cli/dist/**",
+    // Agent/skill utility scripts — not app code
+    ".agents/**",
   ]),
   {
     files: ["**/*.ts", "**/*.tsx"],

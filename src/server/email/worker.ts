@@ -23,24 +23,39 @@ const WORKER_CONFIG = {
 
 /**
  * Worker state
+ *
+ * Stored on globalThis so that Next.js HMR module re-evaluation in development
+ * does not reset the running state (which would cause false "Degraded" health
+ * status after any hot reload). In production there is no HMR, so this is a
+ * no-op — the object is simply created once and reused.
  */
-let isRunning = false;
-let intervalId: NodeJS.Timeout | null = null;
-let isProcessing = false;
+const g = globalThis as typeof globalThis & {
+  __emailWorkerState?: {
+    isRunning: boolean;
+    intervalId: NodeJS.Timeout | null;
+    isProcessing: boolean;
+  };
+};
+
+if (!g.__emailWorkerState) {
+  g.__emailWorkerState = { isRunning: false, intervalId: null, isProcessing: false };
+}
+
+const workerState = g.__emailWorkerState;
 
 /**
  * Process queue with error handling
  */
 async function processQueueSafely(): Promise<void> {
   // Skip if already processing
-  if (isProcessing) {
+  if (workerState.isProcessing) {
     logger.warn('email.worker.skip', {
       reason: 'Previous processing still in progress',
     });
     return;
   }
 
-  isProcessing = true;
+  workerState.isProcessing = true;
 
   try {
     await processEmailQueue();
@@ -49,7 +64,7 @@ async function processQueueSafely(): Promise<void> {
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   } finally {
-    isProcessing = false;
+    workerState.isProcessing = false;
   }
 }
 
@@ -68,12 +83,12 @@ async function processQueueSafely(): Promise<void> {
  * ```
  */
 export function startEmailWorker(): void {
-  if (isRunning) {
+  if (workerState.isRunning) {
     logger.warn('email.worker.already_running');
     return;
   }
 
-  isRunning = true;
+  workerState.isRunning = true;
 
   logger.info('email.worker.starting', {
     intervalMs: WORKER_CONFIG.intervalMs,
@@ -83,7 +98,7 @@ export function startEmailWorker(): void {
   processQueueSafely();
 
   // Then process at regular intervals
-  intervalId = setInterval(() => {
+  workerState.intervalId = setInterval(() => {
     processQueueSafely();
   }, WORKER_CONFIG.intervalMs);
 
@@ -107,27 +122,27 @@ export function startEmailWorker(): void {
  * ```
  */
 export async function stopEmailWorker(): Promise<void> {
-  if (!isRunning) {
+  if (!workerState.isRunning) {
     return;
   }
 
   logger.info('email.worker.stopping');
 
-  isRunning = false;
+  workerState.isRunning = false;
 
   // Clear interval
-  if (intervalId) {
-    clearInterval(intervalId);
-    intervalId = null;
+  if (workerState.intervalId) {
+    clearInterval(workerState.intervalId);
+    workerState.intervalId = null;
   }
 
   // Wait for current processing to complete (with timeout)
   const startTime = Date.now();
-  while (isProcessing && Date.now() - startTime < WORKER_CONFIG.shutdownTimeoutMs) {
+  while (workerState.isProcessing && Date.now() - startTime < WORKER_CONFIG.shutdownTimeoutMs) {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
 
-  if (isProcessing) {
+  if (workerState.isProcessing) {
     logger.warn('email.worker.force_stop', {
       reason: 'Shutdown timeout reached',
     });
@@ -144,8 +159,8 @@ export function getWorkerStatus(): {
   isProcessing: boolean;
 } {
   return {
-    isRunning,
-    isProcessing,
+    isRunning: workerState.isRunning,
+    isProcessing: workerState.isProcessing,
   };
 }
 
