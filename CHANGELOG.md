@@ -1,3 +1,10 @@
+# [0.4.0-beta.14](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.13...v0.4.0-beta.14) (2026-03-23)
+
+
+### Features
+
+* health check page before setup ([#93](https://github.com/BYKHD/ui-syncup/issues/93)) ([3ad1b7c](https://github.com/BYKHD/ui-syncup/commit/3ad1b7c3d66945ced5d25601f7a2b11cc47bdb93))
+
 # [0.4.0-beta.13](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.12...v0.4.0-beta.13) (2026-03-23)
 
 
