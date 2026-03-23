@@ -53,6 +53,10 @@ export interface IssueAttachment {
   fileSize: number
   fileType: string
   url: string
+  /** Presigned GET URL for viewing the file. Populated server-side when the
+   *  bucket has Block Public Access enabled (Lightsail / AWS S3 default).
+   *  Falls back to `url` when null. */
+  downloadUrl?: string | null
   thumbnailUrl?: string | null
   width?: number | null
   height?: number | null
