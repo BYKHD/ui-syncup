@@ -1,3 +1,10 @@
+# [0.4.0-beta.9](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.8...v0.4.0-beta.9) (2026-03-23)
+
+
+### Features
+
+* Add a plan for a health check page and implement automated database migrations for local development. ([#90](https://github.com/BYKHD/ui-syncup/issues/90)) ([b527e54](https://github.com/BYKHD/ui-syncup/commit/b527e54c054b71268e2774913163d81c4036bea1))
+
 # [0.4.0-beta.8](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.7...v0.4.0-beta.8) (2026-03-23)
 
 
