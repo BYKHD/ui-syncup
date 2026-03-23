@@ -26,12 +26,11 @@ export class ApiError<T = unknown> extends Error {
 }
 
 function buildUrl(path: string, query?: QueryParams): string {
-  // When no base URL is configured and we're in a browser, use relative URLs
-  // so fetch() resolves against the current origin rather than falling back to
-  // "http://localhost" (which would hit the user's machine, not the server).
-  // NEXT_PUBLIC_API_URL is baked at build time; if it was missing at build time
-  // the bundle has an empty string even if the env var is set at runtime.
-  if (!API_BASE_URL && typeof window !== "undefined") {
+  // In the browser, always use relative URLs so fetch() resolves against the
+  // current origin. NEXT_PUBLIC_API_URL is baked at build time (defaulting to
+  // http://localhost:3000 in the pre-built Docker image), so using it in the
+  // browser would send requests to the wrong host on self-hosted deployments.
+  if (typeof window !== "undefined") {
     if (!query) return path
     const qs = new URLSearchParams()
     Object.entries(query).forEach(([key, value]) => {
