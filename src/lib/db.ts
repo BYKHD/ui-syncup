@@ -21,9 +21,15 @@ import * as schema from '@/server/db/schema'
  * - Sets idle timeout to prevent stale connections
  */
 const connectionString = env.DATABASE_URL
+// Respect explicit sslmode in the connection string; fall back to requiring SSL
+// in production only when no sslmode param is present (e.g. plain docker postgres
+// deployments that don't have SSL configured will pass sslmode=disable).
+const urlHasSslMode = connectionString.includes('sslmode=')
+const sslOption = urlHasSslMode ? undefined : (isProduction() ? 'require' as const : false)
+
 const connectionOptions = {
-  // SSL configuration based on environment
-  ssl: isProduction() ? 'require' : false,
+  // SSL configuration: defer to sslmode in URL when present, else env-based default
+  ...(sslOption !== undefined && { ssl: sslOption }),
   
   // Connection pool settings
   max: 10, // Maximum number of connections in pool
