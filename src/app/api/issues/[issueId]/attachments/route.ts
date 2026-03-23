@@ -16,6 +16,7 @@ import {
   getAttachmentsByIssue,
   createAttachment,
 } from "@/server/issues/attachment-service";
+import { generateDownloadUrl, getKeyFromUrl } from "@/lib/storage";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import type { AttachmentReviewVariant } from "@/server/issues/types";
@@ -138,11 +139,26 @@ export async function GET(
       attachmentCount: attachments.length,
     });
 
-    // Serialize dates
-    const serializedAttachments = attachments.map((att) => ({
-      ...att,
-      createdAt: att.createdAt.toISOString(),
-    }));
+    // Generate presigned download URLs for each attachment so the client can
+    // display files even when the attachments bucket has Block Public Access ON.
+    const serializedAttachments = await Promise.all(
+      attachments.map(async (att) => {
+        let downloadUrl: string | null = null;
+        const key = getKeyFromUrl('attachments', att.url);
+        if (key) {
+          try {
+            downloadUrl = await generateDownloadUrl('attachments', key);
+          } catch {
+            // Non-fatal: client will fall back to the stored URL
+          }
+        }
+        return {
+          ...att,
+          createdAt: att.createdAt.toISOString(),
+          downloadUrl, // presigned GET URL; null if generation failed
+        };
+      })
+    );
 
     return NextResponse.json({ attachments: serializedAttachments }, { status: 200 });
   } catch (error) {

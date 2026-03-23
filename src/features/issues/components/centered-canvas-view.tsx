@@ -579,6 +579,9 @@ export function CenteredCanvasView({
   // RENDER
   // ============================================================================
 
+  // Use the presigned download URL when available, fall back to the stored URL.
+  const displayUrl = attachment.downloadUrl ?? attachment.url;
+
   if (imageError) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -586,7 +589,7 @@ export function CenteredCanvasView({
           <p className="text-lg font-medium">Failed to load image</p>
           <p className="text-sm mb-2">{attachment.fileName}</p>
           <div className="text-xs bg-muted p-3 rounded-md text-left">
-            <p><strong>URL:</strong> {attachment.url}</p>
+            <p><strong>URL:</strong> {displayUrl}</p>
             <p className="mt-1"><strong>Possible causes:</strong></p>
             <ul className="list-disc list-inside mt-1 space-y-1">
               <li>File doesn't exist on disk</li>
@@ -606,7 +609,7 @@ export function CenteredCanvasView({
       <div className="relative h-full w-full flex flex-col select-none">
         <div className="flex-1 relative overflow-hidden flex items-center justify-center">
           <video
-            src={attachment.url}
+            src={displayUrl}
             controls
             className="max-h-full max-w-full"
           >
@@ -670,7 +673,7 @@ export function CenteredCanvasView({
               {/* Image */}
               <img
                 ref={imageRef}
-                src={attachment.url}
+                src={displayUrl}
                 alt={attachment.fileName}
                 className={cn(
                   "max-w-none transition-opacity duration-200",

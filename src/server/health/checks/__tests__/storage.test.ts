@@ -11,6 +11,10 @@ vi.mock('@aws-sdk/client-s3', () => ({
   PutObjectCommand:    function(args: unknown) { return args },
   HeadObjectCommand:   function(args: unknown) { return args },
   DeleteObjectCommand: function(args: unknown) { return args },
+  GetObjectCommand:    function(args: unknown) { return args },
+  CreateBucketCommand: function(args: unknown) { return args },
+  PutBucketPolicyCommand: function(args: unknown) { return args },
+  HeadBucketCommand:   function(args: unknown) { return args },
 }))
 
 import { checkStorage } from '../storage'
@@ -26,17 +30,17 @@ describe('checkStorage', () => {
     expect(result.status).toBe('ok')
     expect(result.message).toContain('Storage accessible')
     expect(result.latencyMs).toBeGreaterThanOrEqual(0)
-    // 3 operations: PutObject, HeadObject, DeleteObject
-    expect(mockSend).toHaveBeenCalledTimes(3)
+    // 2 buckets × 3 operations (PutObject, HeadObject, DeleteObject) = 6 calls
+    expect(mockSend).toHaveBeenCalledTimes(6)
   })
 
-  it('returns error when PutObject fails', async () => {
+  it('returns error when a PutObject fails', async () => {
     mockSend.mockRejectedValueOnce(new Error('Access Denied'))
 
     const result = await checkStorage()
 
     expect(result.status).toBe('error')
     expect(result.message).toContain('Access Denied')
-    expect(result.hint).toContain('STORAGE_ENDPOINT')
+    expect(result.hint).toContain('STORAGE_REGION')
   })
 })

@@ -12,7 +12,7 @@ console.log("\nValidated configuration:")
 console.log(`  • NODE_ENV: ${process.env.NODE_ENV}`)
 console.log(`  • NEXT_PUBLIC_APP_URL: ${process.env.NEXT_PUBLIC_APP_URL}`)
 console.log(`  • Database: ${process.env.DATABASE_URL ? "✓ configured" : "✗ missing"}`)
-console.log(`  • Storage (R2): ${process.env.R2_BUCKET_NAME ? "✓ configured" : "✗ missing"}`)
+console.log(`  • Storage: ${process.env.STORAGE_ATTACHMENTS_BUCKET ? "✓ configured" : "✗ missing"}`)
 console.log(`  • Auth (Google): ${process.env.GOOGLE_CLIENT_ID ? "✓ configured" : "✗ missing"}`)
 console.log(`  • better-auth: ${process.env.BETTER_AUTH_SECRET ? "✓ configured" : "✗ missing"}
   • Email (Resend): ${process.env.RESEND_API_KEY ? "✓ configured" : "✗ missing"}`)
