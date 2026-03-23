@@ -9,6 +9,7 @@
 import {
   S3Client,
   PutObjectCommand,
+  GetObjectCommand,
   DeleteObjectCommand,
   HeadBucketCommand,
   CreateBucketCommand,
@@ -28,14 +29,19 @@ export type StorageBucket = 'attachments' | 'media';
 
 const getClientConfig = (type: StorageBucket) => {
   const prefix = type === 'attachments' ? 'STORAGE_ATTACHMENTS' : 'STORAGE_MEDIA';
-  
-  // Helper to check specific prefix first, then global fallback
-  const getVar = (specificSuffix: string, globalVar: string, fallback: string) => {
+
+  // Helper: check bucket-specific env var, then global, then fallback
+  const getVar = (specificSuffix: string, globalVar: string, fallback?: string) => {
     return process.env[`${prefix}${specificSuffix}`] || process.env[globalVar] || fallback;
   };
 
+  // Custom endpoint is only needed for MinIO / self-hosted S3-compatible stores.
+  // For real AWS S3 and Lightsail object storage, leave undefined so the SDK
+  // resolves the correct regional endpoint automatically.
+  const endpoint = getVar('_ENDPOINT', 'STORAGE_ENDPOINT');
+
   return {
-    endpoint: getVar('_ENDPOINT', 'STORAGE_ENDPOINT', 'http://127.0.0.1:9000'),
+    endpoint, // undefined → SDK uses aws default; set → MinIO / custom
     region: getVar('_REGION', 'STORAGE_REGION', 'us-east-1'),
     // Support both ACCESS_KEY (docs) and ACCESS_KEY_ID (standard)
     accessKeyId: process.env[`${prefix}_ACCESS_KEY`] || process.env[`${prefix}_ACCESS_KEY_ID`] || process.env.STORAGE_ACCESS_KEY_ID || 'minioadmin',
@@ -63,14 +69,21 @@ const BUCKET_CONFIG = {
 
 function createClient(type: StorageBucket) {
   const config = getClientConfig(type);
+
+  // forcePathStyle is required for MinIO and other self-hosted S3-compatible stores
+  // (e.g. http://127.0.0.1:9000/bucket/key).  Real AWS S3 and Lightsail use
+  // virtual-hosted-style URLs (bucket.s3.region.amazonaws.com) so it must be false,
+  // otherwise presigned URLs are generated with the wrong format.
+  const isCustomEndpoint = !!config.endpoint;
+
   return new S3Client({
     region: config.region,
-    endpoint: config.endpoint,
+    ...(isCustomEndpoint ? { endpoint: config.endpoint } : {}),
     credentials: {
       accessKeyId: config.accessKeyId,
       secretAccessKey: config.secretAccessKey,
     },
-    forcePathStyle: true, // Required for MinIO and Supabase local storage
+    forcePathStyle: isCustomEndpoint,
   });
 }
 
@@ -115,6 +128,30 @@ export async function generateUploadUrl(
 }
 
 /**
+ * Generate a presigned URL for downloading / viewing a file
+ *
+ * Use this to serve private objects (attachments bucket, or media bucket when
+ * Block Public Access is enabled).  The URL is valid for `expiresIn` seconds.
+ *
+ * @param bucket - Source bucket ('attachments' or 'media')
+ * @param key - Object key (path within bucket)
+ * @param expiresIn - Seconds until the URL expires (default 1 hour)
+ * @returns Presigned download URL
+ */
+export async function generateDownloadUrl(
+  bucket: StorageBucket,
+  key: string,
+  expiresIn = 3600
+): Promise<string> {
+  const client = getClient(bucket);
+  const command = new GetObjectCommand({
+    Bucket: BUCKET_CONFIG[bucket].name,
+    Key: key,
+  });
+  return getSignedUrl(client, command, { expiresIn });
+}
+
+/**
  * Delete a file from storage
  * 
  * @param bucket - Target bucket ('attachments' or 'media')
@@ -156,6 +193,22 @@ export function getBucketName(bucket: StorageBucket): string {
   return BUCKET_CONFIG[bucket].name;
 }
 
+/**
+ * Extract the object key from a stored public URL
+ *
+ * Reverses `getPublicUrl`.  Returns null if the URL does not match the
+ * configured public URL prefix for the given bucket.
+ *
+ * @param bucket - Bucket type
+ * @param publicUrl - Full public URL as stored in the database
+ * @returns S3 object key, or null if the URL is not from this bucket
+ */
+export function getKeyFromUrl(bucket: StorageBucket, publicUrl: string): string | null {
+  const baseUrl = BUCKET_CONFIG[bucket].publicUrl.replace(/\/$/, '');
+  if (!publicUrl.startsWith(baseUrl + '/')) return null;
+  return publicUrl.slice(baseUrl.length + 1); // strip "baseUrl/"
+}
+
 // ============================================================================
 // BUCKET INITIALISATION
 // ============================================================================
@@ -192,9 +245,15 @@ export async function ensureStorageBuckets(): Promise<void> {
           return;
         }
 
-        // Bucket does not exist — create it
-        await client.send(new CreateBucketCommand({ Bucket: name }));
-        console.info(`[storage] Created bucket "${name}"`);
+        // Bucket does not exist — create it (only works for MinIO / self-hosted;
+        // Lightsail and AWS S3 buckets must be created in the console first).
+        try {
+          await client.send(new CreateBucketCommand({ Bucket: name }));
+          console.info(`[storage] Created bucket "${name}"`);
+        } catch (createErr: unknown) {
+          console.warn(`[storage] Could not create bucket "${name}" (may already exist or require console creation):`, (createErr as Error)?.message ?? createErr);
+          return;
+        }
 
         if (publicRead) {
           const policy = JSON.stringify({
@@ -208,8 +267,14 @@ export async function ensureStorageBuckets(): Promise<void> {
               },
             ],
           });
-          await client.send(new PutBucketPolicyCommand({ Bucket: name, Policy: policy }));
-          console.info(`[storage] Set public-read policy on bucket "${name}"`);
+          try {
+            await client.send(new PutBucketPolicyCommand({ Bucket: name, Policy: policy }));
+            console.info(`[storage] Set public-read policy on bucket "${name}"`);
+          } catch (policyErr: unknown) {
+            // Block Public Access (account- or bucket-level) will reject this.
+            // The app falls back to presigned GET URLs for media, so this is non-fatal.
+            console.warn(`[storage] Could not set public-read policy on "${name}" — Block Public Access may be enabled. Media will be served via presigned URLs instead.`);
+          }
         }
       }
     })
