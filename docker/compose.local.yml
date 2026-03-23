@@ -35,7 +35,7 @@ services:
       retries: 10
 
   postgres:
-    image: postgres:15-alpine
+    image: postgres:17
     restart: always
     profiles: [ "db" ]
     ports:
