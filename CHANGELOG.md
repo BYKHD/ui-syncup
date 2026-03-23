@@ -1,3 +1,10 @@
+# [0.4.0-beta.10](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.9...v0.4.0-beta.10) (2026-03-23)
+
+
+### Features
+
+* Upgrade PostgreSQL to v17, refine database SSL connection logic, and ensure email worker state persists across HMR. ([#91](https://github.com/BYKHD/ui-syncup/issues/91)) ([ca2112d](https://github.com/BYKHD/ui-syncup/commit/ca2112dc28b774e62a2994e8a8441b6e64dead16))
+
 # [0.4.0-beta.9](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.8...v0.4.0-beta.9) (2026-03-23)
 
 
