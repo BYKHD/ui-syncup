@@ -7,8 +7,18 @@
 export async function register() {
   // Only run on Node.js runtime (not Edge)
   if (process.env.NEXT_RUNTIME === 'nodejs') {
+    // Run database migrations before anything else
+    const { autoMigrate } = await import('@/server/db/auto-migrate');
+    await autoMigrate();
+
     // Start the email worker to process queued emails
     const { startEmailWorker } = await import('@/server/email/worker');
     startEmailWorker();
+
+    // Ensure storage buckets exist (creates them on first run)
+    const { ensureStorageBuckets } = await import('@/lib/storage');
+    ensureStorageBuckets().catch((err) =>
+      console.error('[storage] ensureStorageBuckets failed:', err)
+    );
   }
 }

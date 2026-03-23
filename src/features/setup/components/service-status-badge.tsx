@@ -36,7 +36,7 @@ export function ServiceStatusBadge({ status, className }: ServiceStatusBadgeProp
   return (
     <Badge
       variant={config.variant}
-      className={cn('capitalize shadow-sm flex items-center gap-1.5', config.className, className)}
+      className={cn('capitalize flex items-center gap-1.5', config.className, className)}
     >
       {status === 'connected' && (
         <span className="relative flex h-2 w-2">
