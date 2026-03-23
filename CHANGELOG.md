@@ -1,3 +1,10 @@
+# [0.4.0-beta.16](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.15...v0.4.0-beta.16) (2026-03-23)
+
+
+### Bug Fixes
+
+* always use relative URLs in browser to fix Dokploy/self-hosted setup ([#98](https://github.com/BYKHD/ui-syncup/issues/98)) ([ac47727](https://github.com/BYKHD/ui-syncup/commit/ac477274689d9802ba8cc8d5f5031834da0d3e3b))
+
 # [0.4.0-beta.15](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.14...v0.4.0-beta.15) (2026-03-23)
 
 
