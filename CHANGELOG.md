@@ -1,3 +1,10 @@
+# [0.4.0-beta.15](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.14...v0.4.0-beta.15) (2026-03-23)
+
+
+### Bug Fixes
+
+* build relative API URLs in browser when base URL is undefined. ([#97](https://github.com/BYKHD/ui-syncup/issues/97)) ([a75dc75](https://github.com/BYKHD/ui-syncup/commit/a75dc75ebc587ed8662f75e712077cfc410928ea))
+
 # [0.4.0-beta.14](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.13...v0.4.0-beta.14) (2026-03-23)
 
 
