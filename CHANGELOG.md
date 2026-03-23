@@ -1,3 +1,10 @@
+# [0.4.0-beta.11](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.10...v0.4.0-beta.11) (2026-03-23)
+
+
+### Features
+
+* implement admin setup wizard and overhaul docker orchestration ([5495c10](https://github.com/BYKHD/ui-syncup/commit/5495c10a329b97ca7030f52dd5bccab44960ab67))
+
 # [0.4.0-beta.10](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.9...v0.4.0-beta.10) (2026-03-23)
 
 
