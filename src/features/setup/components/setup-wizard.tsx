@@ -155,7 +155,7 @@ export function SetupWizard() {
             <div className="flex flex-col items-center justify-center p-8 space-y-4 text-center">
               <p className="text-destructive font-medium">Failed to check setup status</p>
               <p className="text-sm text-muted-foreground">
-                Please check your database connection and try again.
+                Could not reach the setup API. Check that the database is connected and migrations have been applied.
               </p>
             </div>
           </CardContent>
