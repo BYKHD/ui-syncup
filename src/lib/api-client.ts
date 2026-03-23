@@ -25,9 +25,23 @@ export class ApiError<T = unknown> extends Error {
   }
 }
 
-function buildUrl(path: string, query?: QueryParams) {
-  const base = API_BASE_URL || ""
-  const url = new URL(path, base || "http://localhost")
+function buildUrl(path: string, query?: QueryParams): string {
+  // When no base URL is configured and we're in a browser, use relative URLs
+  // so fetch() resolves against the current origin rather than falling back to
+  // "http://localhost" (which would hit the user's machine, not the server).
+  // NEXT_PUBLIC_API_URL is baked at build time; if it was missing at build time
+  // the bundle has an empty string even if the env var is set at runtime.
+  if (!API_BASE_URL && typeof window !== "undefined") {
+    if (!query) return path
+    const qs = new URLSearchParams()
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) qs.set(key, String(value))
+    })
+    const queryStr = qs.toString()
+    return queryStr ? `${path}?${queryStr}` : path
+  }
+
+  const url = new URL(path, API_BASE_URL || "http://localhost")
 
   if (query) {
     Object.entries(query).forEach(([key, value]) => {
