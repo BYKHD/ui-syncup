@@ -94,8 +94,15 @@ function isUndefinedTableError(error: unknown): boolean {
   if (err.code === "42P01") return true;
   // Walk the cause chain in case drizzle wraps the error
   if (err.cause != null) return isUndefinedTableError(err.cause);
-  // Last resort: match PostgreSQL's "relation ... does not exist" message
-  if (typeof err.message === "string" && /relation .+ does not exist/.test(err.message)) return true;
+  // Fallback: serialize the entire error to catch deeply nested or non-standard wrapping
+  if (typeof err.message === "string" && /relation .+ does not exist/i.test(err.message)) return true;
+  try {
+    const serialized = JSON.stringify(error);
+    if (/"code"\s*:\s*"42P01"/.test(serialized)) return true;
+    if (/relation .+ does not exist/i.test(serialized)) return true;
+  } catch {
+    // JSON.stringify can fail on circular references — ignore and fall through
+  }
   return false;
 }
 

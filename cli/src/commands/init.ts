@@ -115,7 +115,7 @@ export async function initCommand(): Promise<void> {
       validate: v => v.length >= 8 || 'Minimum 8 characters',
     })
     envVars['POSTGRES_PASSWORD'] = pgPass
-    envVars['DATABASE_URL'] = `postgresql://syncup:${pgPass}@postgres:5432/ui_syncup`
+    envVars['DATABASE_URL'] = `postgresql://syncup:${pgPass}@postgres:5432/ui_syncup?sslmode=disable`
     envVars['DIRECT_URL'] = envVars['DATABASE_URL']
   } else {
     envVars['DATABASE_URL'] = await input({
