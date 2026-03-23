@@ -1,11 +1,10 @@
-import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useCompleteSetup } from '../hooks';
+import { useCompleteSetup, useSetupDraft } from '../hooks';
 import type { UseSetupWizardReturn } from '../hooks';
 import { useRouter } from 'next/navigation';
 
@@ -16,23 +15,8 @@ interface SampleDataStepProps {
 export function SampleDataStep({ wizard }: SampleDataStepProps) {
   const router = useRouter();
   const { mutate: completeSetup, isPending, error } = useCompleteSetup();
-  const [includeSampleData, setIncludeSampleData] = useState(false);
-
-  // We need workspaceId to complete setup
-  // Since we don't store workspaceId in the wizard state (only name/slug),
-  // we might need to assume the previous step created it and returned it,
-  // or fetch it.
-  // Actually, wait, the `useCreateFirstWorkspace` response has `workspaceId`.
-  // I should probably have stored `id` in `workspaceData` state in wizard.
-  // Let me check `SetupWizardState` type in `types/index.ts`.
-  // It has `workspaceData: { name: string; slug: string } | null;`.
-  // It's missing `id`. I should update the type.
-
-  // For now, I'll proceed with assumed fix, but I'll need to patch `types/index.ts` and `hooks/use-setup-wizard.ts` and `components/first-workspace-step.tsx`.
-  // To avoid circular dependency or context switching, let's just finish this file assuming I'll fix the type in a moment.
-  // Alternatively, I can use the default workspace logic if requirements allow, but passed explicitly is better.
-
-  // Let's assume wizard.workspaceData will have an id.
+  const { draft, setDraft, clearDraft } = useSetupDraft();
+  const includeSampleData = draft.includeSampleData ?? false;
 
   const handleComplete = () => {
     const workspaceId = wizard.workspaceData?.id;
@@ -50,6 +34,7 @@ export function SampleDataStep({ wizard }: SampleDataStepProps) {
       },
       {
         onSuccess: (data) => {
+          clearDraft();
           wizard.markStepComplete('sample-data');
           wizard.markStepComplete('complete');
           // Redirect
@@ -97,7 +82,7 @@ export function SampleDataStep({ wizard }: SampleDataStepProps) {
           <Switch
             id="sample-data"
             checked={includeSampleData}
-            onCheckedChange={setIncludeSampleData}
+            onCheckedChange={(checked) => setDraft({ includeSampleData: checked })}
           />
           <div className="flex-1 space-y-1">
             <Label htmlFor="sample-data" className="font-medium cursor-pointer">

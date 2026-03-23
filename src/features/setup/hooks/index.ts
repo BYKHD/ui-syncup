@@ -10,3 +10,4 @@ export { useCreateFirstWorkspace } from './use-create-first-workspace';
 export { useCompleteSetup } from './use-complete-setup';
 export { useSetupWizard, type UseSetupWizardReturn } from './use-setup-wizard';
 export { useWorkspaceMode } from './use-workspace-mode';
+export { useSetupDraft } from './use-setup-draft';

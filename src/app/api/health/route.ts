@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server'
-import pkg from '../../../../package.json'
+import { runHealthChecks } from '@/server/health'
 
 export async function GET() {
-  return NextResponse.json({
-    status: 'ok',
-    version: pkg.version,
-    timestamp: new Date().toISOString(),
-  })
+  try {
+    const report = await runHealthChecks()
+    const httpStatus = report.overall === 'NOT READY' ? 503 : 200
+    return NextResponse.json(report, { status: httpStatus })
+  } catch {
+    return NextResponse.json({ error: 'Health check failed unexpectedly' }, { status: 500 })
+  }
 }
 
 export async function HEAD() {

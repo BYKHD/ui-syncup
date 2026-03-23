@@ -71,6 +71,15 @@ export function SetupWizard() {
         wizard.markStepComplete(step);
       });
 
+      // Rehydrate workspaceData from DB so SampleDataStep has the workspaceId on resume
+      if (status.defaultWorkspaceId && !wizard.workspaceData) {
+        wizard.setWorkspaceData({
+          id: status.defaultWorkspaceId,
+          name: '',
+          slug: '',
+        });
+      }
+
       // Go to the determined step
       wizard.goToStep(startingStep);
     }
@@ -85,7 +94,16 @@ export function SetupWizard() {
       case 'admin-account':
         return <AdminAccountStep wizard={wizard} />;
       case 'instance-config':
-        return <InstanceConfigStep wizard={wizard} />;
+        return (
+          <InstanceConfigStep
+            wizard={wizard}
+            initialInstanceName={
+              status?.instanceName && status.instanceName !== 'UI SyncUp'
+                ? status.instanceName
+                : undefined
+            }
+          />
+        );
       case 'mail-config':
         return <MailConfigStep wizard={wizard} />;
       case 'first-workspace':

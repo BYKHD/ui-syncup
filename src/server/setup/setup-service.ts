@@ -67,9 +67,36 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
       skipEmailVerification: isEmailVerificationSkipped(),
     };
   } catch (error) {
+    // PostgreSQL error code 42P01 = "undefined_table" (relation does not exist).
+    // This happens on a fresh install before migrations have been applied.
+    // Treat it as "setup not complete" so the app redirects to /setup.
+    if (isUndefinedTableError(error)) {
+      logger.warn("instance_settings table does not exist — treating as fresh install");
+      return {
+        isSetupComplete: false,
+        instanceName: null,
+        adminEmail: null,
+        defaultWorkspaceId: null,
+        defaultMemberRole: "WORKSPACE_MEMBER",
+        isMultiWorkspaceMode: isMultiWorkspaceMode(),
+        skipEmailVerification: isEmailVerificationSkipped(),
+      };
+    }
     logger.error("Failed to get instance status", { error });
     throw error;
   }
+}
+
+function isUndefinedTableError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const err = error as Record<string, unknown>;
+  // postgres.js PostgresError: code is directly on the error
+  if (err.code === "42P01") return true;
+  // Walk the cause chain in case drizzle wraps the error
+  if (err.cause != null) return isUndefinedTableError(err.cause);
+  // Last resort: match PostgreSQL's "relation ... does not exist" message
+  if (typeof err.message === "string" && /relation .+ does not exist/.test(err.message)) return true;
+  return false;
 }
 
 /**
