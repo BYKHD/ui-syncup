@@ -1,3 +1,10 @@
+# [0.4.0-beta.13](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.12...v0.4.0-beta.13) (2026-03-23)
+
+
+### Bug Fixes
+
+* Improve setup error detection for missing tables and clarify the corresponding UI message. ([#95](https://github.com/BYKHD/ui-syncup/issues/95)) ([1c0280f](https://github.com/BYKHD/ui-syncup/commit/1c0280f576f8e0fd685a67a69913ec6607b92858))
+
 # [0.4.0-beta.12](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.11...v0.4.0-beta.12) (2026-03-23)
 
 
