@@ -1,34 +1,16 @@
 import {
-  S3Client,
   PutObjectCommand,
   HeadObjectCommand,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3'
+import { getStorageClient, getBucketName } from '@/lib/storage'
+import type { StorageBucket } from '@/lib/storage'
 import type { CheckResult } from '../types'
 
-function buildClient(): S3Client {
-  return new S3Client({
-    region: process.env.STORAGE_REGION ?? 'us-east-1',
-    endpoint: process.env.STORAGE_ENDPOINT ?? 'http://127.0.0.1:9000',
-    credentials: {
-      accessKeyId:
-        process.env.STORAGE_ACCESS_KEY_ID ??
-        process.env.STORAGE_ATTACHMENTS_ACCESS_KEY ??
-        'minioadmin',
-      secretAccessKey:
-        process.env.STORAGE_SECRET_ACCESS_KEY ??
-        process.env.STORAGE_ATTACHMENTS_SECRET_KEY ??
-        'minioadmin',
-    },
-    forcePathStyle: true,
-  })
-}
-
-export async function checkStorage(): Promise<CheckResult> {
-  const bucket = process.env.STORAGE_ATTACHMENTS_BUCKET ?? 'ui-syncup-attachments'
+async function probeOneBucket(type: StorageBucket): Promise<void> {
+  const client = getStorageClient(type)
+  const bucket = getBucketName(type)
   const probeKey = `_health-check/probe-${Date.now()}.txt`
-  const client = buildClient()
-  const start = performance.now()
 
   try {
     await client.send(
@@ -40,27 +22,37 @@ export async function checkStorage(): Promise<CheckResult> {
       })
     )
     await client.send(new HeadObjectCommand({ Bucket: bucket, Key: probeKey }))
-    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: probeKey }))
+  } finally {
+    // Best-effort cleanup — don't suppress the original error
+    try {
+      await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: probeKey }))
+    } catch { /* ignore */ }
+  }
+}
+
+export async function checkStorage(): Promise<CheckResult> {
+  const start = performance.now()
+
+  try {
+    await Promise.all([
+      probeOneBucket('attachments'),
+      probeOneBucket('media'),
+    ])
 
     const latencyMs = Math.round(performance.now() - start)
     return {
       status: 'ok',
-      message: `Storage accessible (bucket: ${bucket})`,
+      message: `Storage accessible (buckets: ${getBucketName('attachments')}, ${getBucketName('media')})`,
       latencyMs,
     }
   } catch (error) {
-    // Best-effort cleanup
-    try {
-      await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: probeKey }))
-    } catch { /* ignore */ }
-
     const latencyMs = Math.round(performance.now() - start)
     const message = error instanceof Error ? error.message : 'Unknown storage error'
     return {
       status: 'error',
       message,
       latencyMs,
-      hint: 'Check STORAGE_ENDPOINT, STORAGE_ACCESS_KEY_ID, STORAGE_SECRET_ACCESS_KEY, and STORAGE_ATTACHMENTS_BUCKET',
+      hint: 'Check STORAGE_REGION, STORAGE_ATTACHMENTS_BUCKET / STORAGE_MEDIA_BUCKET, and the corresponding ACCESS_KEY_ID / SECRET_ACCESS_KEY vars. For AWS S3/Lightsail, do not set STORAGE_ENDPOINT.',
     }
   }
 }

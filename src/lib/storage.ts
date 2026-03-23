@@ -100,6 +100,14 @@ function getClient(bucket: StorageBucket): S3Client {
 // Export default client (attachments) for backward compatibility
 export const storageClient = attachmentsClient;
 
+/**
+ * Get the configured S3 client for a bucket type.
+ * Use this instead of building your own client so configuration stays in sync.
+ */
+export function getStorageClient(bucket: StorageBucket): S3Client {
+  return getClient(bucket);
+}
+
 // ============================================================================
 // PUBLIC API
 // ============================================================================
