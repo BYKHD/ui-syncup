@@ -1,3 +1,10 @@
+# [0.4.0-beta.8](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.7...v0.4.0-beta.8) (2026-03-23)
+
+
+### Features
+
+* add standalone /health page ([#87](https://github.com/BYKHD/ui-syncup/issues/87)) ([81dbe4e](https://github.com/BYKHD/ui-syncup/commit/81dbe4e97ccb5a7883e085f5b100d69618cb0b6f))
+
 # [0.4.0-beta.7](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.6...v0.4.0-beta.7) (2026-03-22)
 
 
