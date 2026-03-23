@@ -1,3 +1,10 @@
+# [0.4.0-beta.12](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.11...v0.4.0-beta.12) (2026-03-23)
+
+
+### Bug Fixes
+
+* rewrite storage health check to use shared S3 clients ([#92](https://github.com/BYKHD/ui-syncup/issues/92)) ([6598d7f](https://github.com/BYKHD/ui-syncup/commit/6598d7f431607c4a3e869fc42e0cb1a3f379e529))
+
 # [0.4.0-beta.11](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.10...v0.4.0-beta.11) (2026-03-23)
 
 
