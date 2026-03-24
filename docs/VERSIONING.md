@@ -4,6 +4,72 @@ This project follows [Semantic Versioning](https://semver.org/) (MAJOR.MINOR.PAT
 
 ---
 
+## Pre-Release Checklist (read this before every release)
+
+### Beta release (develop → npm beta)
+
+1. Make sure all commits on `develop` use Conventional Commits format (`fix:`, `feat:`, etc.)
+2. Open a PR from a feature branch → `develop`, get checks to pass (`Lint`, `Typecheck`, `Docker Smoke Build`)
+3. Merge the PR — the Release workflow triggers automatically on `develop` push
+4. semantic-release bumps the version to `x.x.x-beta.N`, publishes to npm under `beta` dist-tag, creates a GitHub pre-release, and pushes a `chore(release): x.x.x-beta.N [skip ci]` commit back to `develop`
+5. Docker pre-release image is built and pushed to `ghcr.io/bykhd/ui-syncup:beta`
+
+**Verify:** `gh release list --limit 3` should show the new pre-release tag.
+
+---
+
+### Stable release (develop → main)
+
+1. Confirm the latest beta on `develop` is tested and ready
+2. Open a PR from `develop` → `main`
+3. Wait for all 3 required checks to pass: `Lint`, `Typecheck`, `Docker Smoke Build`
+4. Merge the PR — the Release workflow triggers on `main` push
+5. semantic-release analyzes commits since last stable tag, bumps version (PATCH/MINOR/MAJOR), publishes to npm under `latest`, creates a GitHub release
+6. Docker stable image is built and pushed with `latest`, `vX.Y.Z`, `vX.Y`, `vX` tags
+7. semantic-release pushes `chore(release): x.x.x [skip ci]` back to `main`
+
+**Verify:** `gh release list --limit 3` should show the new stable release (no `-beta` suffix).
+
+---
+
+### If the release workflow ran but stable version didn't bump
+
+This means semantic-release found no `fix:` or `feat:` commits since the last stable tag (only `chore:` etc.).
+
+- Check: `git log vX.X.X..main --oneline` — look for any `fix:` or `feat:` commits
+- If none, there is nothing to release (correct behavior)
+- If commits exist but release didn't fire, check the Release workflow run logs on GitHub Actions
+
+### If the PR is blocked ("Cannot update this protected ref")
+
+All 3 required checks must pass on the PR head commit. If checks passed but merge is still blocked:
+
+1. The checks may have run on a previous commit — push an empty commit to retrigger:
+   ```bash
+   git commit --allow-empty -m "chore: retrigger ci"
+   git push origin develop
+   ```
+2. Wait for checks to complete, then merge
+
+### If the release job didn't fire after a merge (manual trigger)
+
+Use `workflow_dispatch` to trigger the Release workflow without a dummy commit:
+
+```bash
+gh workflow run release.yml --branch main   # for stable
+gh workflow run release.yml --branch develop  # for beta
+```
+
+Or go to **GitHub → Actions → Release → Run workflow** and select the branch.
+
+Use this when:
+- Merge landed but release job was skipped or failed mid-way
+- You need to re-evaluate commits and cut a release on-demand
+
+---
+
+---
+
 ## How Releases Work
 
 The pipeline is **commit-driven, not tag-driven**. Pushing to a configured branch triggers semantic-release, which:
@@ -65,17 +131,6 @@ This publishes a `1.2.3-beta.1` pre-release to npm under the `beta` dist-tag and
 ## `src/config/version.ts` — Auto-Updated by CI
 
 `version.ts` is **automatically stamped by semantic-release** via `@semantic-release/exec` — you do not need to edit it manually. CI updates it, commits it, and pushes it back as part of the release commit.
-
----
-
-
-Then commit and push:
-
-```bash
-git add src/config/changelog.ts
-git commit -m "chore: update changelog for 0.4.0"
-git push origin main   # or develop for a beta
-```
 
 ---
 
