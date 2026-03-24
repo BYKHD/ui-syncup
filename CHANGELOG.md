@@ -1,3 +1,10 @@
+## [0.4.1-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.4.1-beta.1...v0.4.1-beta.2) (2026-03-24)
+
+
+### Bug Fixes
+
+* fix onboarding and acc creation  ([#101](https://github.com/BYKHD/ui-syncup/issues/101)) ([#102](https://github.com/BYKHD/ui-syncup/issues/102)) ([ebba01e](https://github.com/BYKHD/ui-syncup/commit/ebba01e6db0308285b631d2bffc6978383d224ab))
+
 ## [0.4.1-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.4.0...v0.4.1-beta.1) (2026-03-24)
 
 
