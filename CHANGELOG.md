@@ -1,3 +1,10 @@
+# [0.5.0-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.4.1-beta.2...v0.5.0-beta.1) (2026-03-24)
+
+
+### Features
+
+* refactor role retrieval to prioritize dedicated member tables. ([6bf5703](https://github.com/BYKHD/ui-syncup/commit/6bf57038be260e4c2214e279ebb0c349b17248e2))
+
 ## [0.4.1-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.4.1-beta.1...v0.4.1-beta.2) (2026-03-24)
 
 
