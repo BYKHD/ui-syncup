@@ -1,3 +1,35 @@
+# [0.4.0](https://github.com/BYKHD/ui-syncup/compare/v0.3.14...v0.4.0) (2026-03-24)
+
+
+### Bug Fixes
+
+* always use relative URLs in browser to fix Dokploy/self-hosted setup ([#98](https://github.com/BYKHD/ui-syncup/issues/98)) ([ac47727](https://github.com/BYKHD/ui-syncup/commit/ac477274689d9802ba8cc8d5f5031834da0d3e3b))
+* build relative API URLs in browser when base URL is undefined. ([#97](https://github.com/BYKHD/ui-syncup/issues/97)) ([a75dc75](https://github.com/BYKHD/ui-syncup/commit/a75dc75ebc587ed8662f75e712077cfc410928ea))
+* dokploy setup api n gzta ([#100](https://github.com/BYKHD/ui-syncup/issues/100)) ([a11b29e](https://github.com/BYKHD/ui-syncup/commit/a11b29e9e10c3574f3e0ecd95e6072e9c7e1ebe7))
+* Improve setup error detection for missing tables and clarify the corresponding UI message. ([#95](https://github.com/BYKHD/ui-syncup/issues/95)) ([1c0280f](https://github.com/BYKHD/ui-syncup/commit/1c0280f576f8e0fd685a67a69913ec6607b92858))
+* release stable ([56d1e38](https://github.com/BYKHD/ui-syncup/commit/56d1e388f11a630ad70eabd5baaf213f88dcecf2))
+* Remove manual changelog update instructions from versioning guide. ([d9cf394](https://github.com/BYKHD/ui-syncup/commit/d9cf3949c9c4a6700a40c0a85b4c06759bde96db))
+* rename CLI package to ui-syncup-cli, add shebang banner, guard CI against skip-ci commits ([3e9ef29](https://github.com/BYKHD/ui-syncup/commit/3e9ef2970eae274752a5ed74eb9b88d424d60233))
+* rewrite storage health check to use shared S3 clients ([#92](https://github.com/BYKHD/ui-syncup/issues/92)) ([6598d7f](https://github.com/BYKHD/ui-syncup/commit/6598d7f431607c4a3e869fc42e0cb1a3f379e529))
+* skip CI pipeline on semantic-release back-commits ([418cdbb](https://github.com/BYKHD/ui-syncup/commit/418cdbb1e1b293bfb2adeb223c36d40b38f30868))
+* stop publishing root Next.js app to npm, rename CLI package, fix shebang, guard skip-ci ([e7a6c43](https://github.com/BYKHD/ui-syncup/commit/e7a6c4365d7add42ba787094a3f98c589ad355cf))
+* trigger release ([a55c60c](https://github.com/BYKHD/ui-syncup/commit/a55c60c0a7f5ccf9c8a7c60c7742774d11ea3a4e))
+* trigger release ([e8a2c22](https://github.com/BYKHD/ui-syncup/commit/e8a2c226a72061f0b402eeec836330d83b1cf53f))
+* update from develop ([#96](https://github.com/BYKHD/ui-syncup/issues/96)) ([726a71f](https://github.com/BYKHD/ui-syncup/commit/726a71ff1712cc78bffd2c0569470ffa691f7a5a))
+* update image version comment to include `:beta` pre-release option ([142181b](https://github.com/BYKHD/ui-syncup/commit/142181b693dc26ddd398732f929f3140ac9720c1))
+
+
+### Features
+
+* Add a plan for a health check page and implement automated database migrations for local development. ([#90](https://github.com/BYKHD/ui-syncup/issues/90)) ([b527e54](https://github.com/BYKHD/ui-syncup/commit/b527e54c054b71268e2774913163d81c4036bea1))
+* add standalone /health page ([#87](https://github.com/BYKHD/ui-syncup/issues/87)) ([81dbe4e](https://github.com/BYKHD/ui-syncup/commit/81dbe4e97ccb5a7883e085f5b100d69618cb0b6f))
+* Configure semantic-release for automated versioning with beta support from `develop` and temporarily disable the setup page redirect. ([6f00c0e](https://github.com/BYKHD/ui-syncup/commit/6f00c0e2a4a5134a5dd37b8c4e842deacf268da7))
+* Enable setup completion check and redirect to sign-in page. ([8b28b90](https://github.com/BYKHD/ui-syncup/commit/8b28b9007598fd8288290b9707872608c1f52923))
+* health check page before setup ([#93](https://github.com/BYKHD/ui-syncup/issues/93)) ([3ad1b7c](https://github.com/BYKHD/ui-syncup/commit/3ad1b7c3d66945ced5d25601f7a2b11cc47bdb93))
+* implement admin setup wizard and overhaul docker orchestration ([5495c10](https://github.com/BYKHD/ui-syncup/commit/5495c10a329b97ca7030f52dd5bccab44960ab67))
+* Separate Docker image builds into dedicated workflows for pre-release and stable versions. ([c28d1ad](https://github.com/BYKHD/ui-syncup/commit/c28d1adda4f584a067b202d35448fa4d1766a389))
+* Upgrade PostgreSQL to v17, refine database SSL connection logic, and ensure email worker state persists across HMR. ([#91](https://github.com/BYKHD/ui-syncup/issues/91)) ([ca2112d](https://github.com/BYKHD/ui-syncup/commit/ca2112dc28b774e62a2994e8a8441b6e64dead16))
+
 # [0.4.0-beta.18](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.17...v0.4.0-beta.18) (2026-03-24)
 
 
