@@ -10,10 +10,10 @@
  * - Redis
  */
 
-import { S3Client, HeadBucketCommand } from "@aws-sdk/client-s3";
 import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import { checkStorage } from "@/server/health/checks/storage";
 import type { ServiceHealth, ServiceHealthStatus } from "./types";
 
 /**
@@ -113,93 +113,30 @@ export async function checkEmailHealth(): Promise<ServiceHealthStatus> {
 
 /**
  * Check S3-compatible object storage configuration and bucket readiness.
- * Reads the same STORAGE_* env vars used by lib/storage.ts and performs
- * real HeadBucket probes for both the attachments and media buckets.
+ * Delegates to the shared checkStorage() probe which uses per-bucket clients
+ * from lib/storage.ts and object-level operations (PutObject/HeadObject/DeleteObject).
+ * This avoids HeadBucketCommand which can return UnknownError on public-read buckets
+ * with certain S3-compatible providers (MinIO, etc.).
  *
  * @returns Service health status for storage
  */
 export async function checkStorageHealth(): Promise<ServiceHealthStatus> {
   const degradedBehavior = "File uploads will use local filesystem storage with 10MB per-file limit";
 
-  // Mirror the env var resolution in lib/storage.ts, falling back to MinIO dev defaults.
-  const endpoint =
-    process.env.STORAGE_ENDPOINT ||
-    process.env.STORAGE_ATTACHMENTS_ENDPOINT ||
-    process.env.STORAGE_MEDIA_ENDPOINT ||
-    "http://127.0.0.1:9000";
+  const result = await checkStorage();
 
-  const accessKeyId =
-    process.env.STORAGE_ACCESS_KEY_ID ||
-    process.env.STORAGE_ATTACHMENTS_ACCESS_KEY ||
-    process.env.STORAGE_ATTACHMENTS_ACCESS_KEY_ID ||
-    "minioadmin";
-
-  const secretAccessKey =
-    process.env.STORAGE_SECRET_ACCESS_KEY ||
-    process.env.STORAGE_ATTACHMENTS_SECRET_KEY ||
-    process.env.STORAGE_ATTACHMENTS_SECRET_ACCESS_KEY ||
-    "minioadmin";
-
-  const region = process.env.STORAGE_REGION ?? "us-east-1";
-
-  const attachmentsBucket =
-    process.env.STORAGE_ATTACHMENTS_BUCKET ?? "ui-syncup-attachments";
-  const mediaBucket =
-    process.env.STORAGE_MEDIA_BUCKET ?? "ui-syncup-media";
-
-  // Always probe — let the actual connection result determine the status.
-  const client = new S3Client({
-    region,
-    endpoint,
-    credentials: { accessKeyId, secretAccessKey },
-    forcePathStyle: true, // Required for MinIO, Supabase Storage, and most self-hosted providers
-  });
-
-  // Resolve the endpoint hostname for display purposes.
-  let endpointHost = "";
-  try {
-    endpointHost = endpoint ? new URL(endpoint).hostname : "s3.amazonaws.com";
-  } catch {
-    endpointHost = endpoint ?? "unknown";
-  }
-
-  // Probe both buckets with HeadBucket — verifies credentials AND bucket existence.
-  const buckets = [
-    { name: attachmentsBucket, label: "attachments" },
-    { name: mediaBucket, label: "media" },
-  ] as const;
-
-  const results = await Promise.all(
-    buckets.map(async ({ name, label }) => {
-      try {
-        await client.send(new HeadBucketCommand({ Bucket: name }));
-        return { label, bucket: name, ok: true, error: null };
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        return { label, bucket: name, ok: false, error: msg };
-      }
-    })
-  );
-
-  const failed = results.filter((r) => !r.ok);
-
-  if (failed.length === 0) {
+  if (result.status === "ok") {
     return {
       status: "connected",
-      message: `Object storage connected (${endpointHost}) — buckets: ${buckets.map((b) => b.name).join(", ")}`,
+      message: result.message,
     };
   }
 
-  const failedNames = failed.map((r) => r.bucket).join(", ");
-  const firstError = failed[0].error ?? "unknown error";
-
-  logger.error("Storage bucket health check failed", {
-    failed: failed.map((r) => ({ bucket: r.bucket, error: r.error })),
-  });
+  logger.error("Storage bucket health check failed", { message: result.message });
 
   return {
     status: "error",
-    message: `Storage reachable but bucket(s) not ready: ${failedNames} — ${firstError}`,
+    message: result.message,
     degradedBehavior,
   };
 }
