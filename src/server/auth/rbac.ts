@@ -17,9 +17,7 @@ import {
   type ProjectRole,
   type Role,
   ROLE_PERMISSIONS,
-  TEAM_MANAGEMENT_ROLES,
   type TeamManagementRole,
-  TEAM_OPERATIONAL_ROLES,
   TEAM_OPERATIONAL_ROLE_HIERARCHY,
   type TeamOperationalRole,
   TEAM_ROLES,
@@ -372,6 +370,46 @@ export async function getHighestTeamRole(
   userId: string,
   teamId: string
 ): Promise<TeamRole | null> {
+  // Query team_members table (single source of truth for team roles)
+  const { teamMembers } = await import("@/server/db/schema/team-members");
+  
+  const teamMember = await db
+    .select()
+    .from(teamMembers)
+    .where(
+      and(
+        eq(teamMembers.teamId, teamId),
+        eq(teamMembers.userId, userId)
+      )
+    )
+    .limit(1);
+
+  if (teamMember.length > 0) {
+    const member = teamMember[0];
+    
+    // Find highest role by hierarchy
+    const teamRoleHierarchy = {
+      [TEAM_ROLES.TEAM_VIEWER]: 1,
+      [TEAM_ROLES.TEAM_MEMBER]: 2,
+      [TEAM_ROLES.TEAM_EDITOR]: 3,
+      [TEAM_ROLES.TEAM_ADMIN]: 4,
+      [TEAM_ROLES.TEAM_OWNER]: 5,
+    };
+
+    const managementRole = member.managementRole as TeamRole | null;
+    const operationalRole = member.operationalRole as TeamRole;
+
+    let highestRole = operationalRole;
+    const highestLevel = teamRoleHierarchy[highestRole] || 0;
+
+    if (managementRole && teamRoleHierarchy[managementRole] > highestLevel) {
+      highestRole = managementRole;
+    }
+
+    return highestRole;
+  }
+
+  // Fallback to legacy user_roles
   const roles = await getUserTeamRoles(userId, teamId);
 
   if (roles.length === 0) {
@@ -412,6 +450,25 @@ export async function getHighestProjectRole(
   userId: string,
   projectId: string
 ): Promise<ProjectRole | null> {
+  // Query project_members table (single source of truth for project roles)
+  const { projectMembers } = await import("@/server/db/schema/project-members");
+  
+  const projectMember = await db
+    .select()
+    .from(projectMembers)
+    .where(
+      and(
+        eq(projectMembers.projectId, projectId),
+        eq(projectMembers.userId, userId)
+      )
+    )
+    .limit(1);
+
+  if (projectMember.length > 0) {
+    return projectMember[0].role as ProjectRole;
+  }
+
+  // Fallback to legacy user_roles
   const roles = await getUserProjectRoles(userId, projectId);
 
   if (roles.length === 0) {

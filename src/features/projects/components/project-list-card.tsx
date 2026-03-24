@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useLayoutEffect } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import * as RemixIcons from "@remixicon/react";
 import {
   RiBox2Fill,
@@ -40,14 +41,14 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
       if (!folderRef.current) return;
       const w = folderRef.current.offsetWidth;
       const h = folderRef.current.offsetHeight;
-      
+
       // Fixed tab dimensions (same as original)
       const r = 24;        // corner radius
       const tabEnd = 105;  // where tab ends
       const biteStart = 140; // bite curve start
       const biteEnd = 160;   // bite curve end  
       const biteY = 24;      // bite height
-      
+
       // Generate path with dynamic width
       const path = `M 0 ${r} Q 0 0 ${r} 0 L ${tabEnd} 0 C ${tabEnd + 20} 0 ${biteStart} ${biteY} ${biteEnd} ${biteY} L ${w - r} ${biteY} Q ${w} ${biteY} ${w} ${biteY + r} L ${w} ${h - r} Q ${w} ${h} ${w - r} ${h} L ${r} ${h} Q 0 ${h} 0 ${h - r} Z`;
       setClipPath(`path('${path}')`);
@@ -95,9 +96,16 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
             {/* Papers stack area */}
             <div className="relative flex-1 min-h-[20px] flex items-center justify-center p-6">
               <div className="relative w-full max-w-[200px] h-[10px]">
-                <div
+                <motion.div
                   className="absolute w-[85%] h-[80px] rounded-xl bg-muted dark:bg-ring shadow-lg overflow-hidden"
-                  style={{ left: 0, top: "10px", transform: "rotate(-6deg)" }}
+                  initial={false}
+                  animate={{
+                    y: isHovered ? -10 : 0,
+                    x: isHovered ? -8 : 0,
+                    rotate: isHovered ? -12 : -6,
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  style={{ left: 0, top: "10px" }}
                 >
                   <div
                     className="absolute opacity-60"
@@ -109,10 +117,17 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
                       `,
                     }}
                   />
-                </div>
-                <div
+                </motion.div>
+                <motion.div
                   className="absolute w-[85%] h-[80px] rounded-xl bg-muted dark:bg-ring shadow-lg overflow-hidden"
-                  style={{ left: "12%", top: "4px", transform: "rotate(2deg)" }}
+                  initial={false}
+                  animate={{
+                    y: isHovered ? -14 : 0,
+                    x: isHovered ? -4 : 0,
+                    rotate: isHovered ? -2 : 2,
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.02 }}
+                  style={{ left: "12%", top: "4px" }}
                 >
                   <div
                     className="absolute opacity-60"
@@ -124,10 +139,16 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
                       `,
                     }}
                   />
-                </div>
-                <div
+                </motion.div>
+                <motion.div
                   className="absolute w-[85%] h-[80px] rounded-xl bg-muted dark:bg-ring shadow-lg overflow-hidden opacity-[0.98]"
-                  style={{ left: "24%", top: "12px", transform: "rotate(8deg)" }}
+                  initial={false}
+                  animate={{
+                    y: isHovered ? -18 : 0,
+                    rotate: isHovered ? 6 : 8,
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.04 }}
+                  style={{ left: "24%", top: "2px" }}
                 >
                   <div
                     className="absolute opacity-60"
@@ -139,7 +160,7 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
                       `,
                     }}
                   />
-                </div>
+                </motion.div>
               </div>
             </div>
 
