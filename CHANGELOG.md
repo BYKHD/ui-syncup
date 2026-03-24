@@ -1,3 +1,31 @@
+# [0.4.0-beta.17](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.16...v0.4.0-beta.17) (2026-03-24)
+
+
+### Bug Fixes
+
+* update from develop ([#96](https://github.com/BYKHD/ui-syncup/issues/96)) ([726a71f](https://github.com/BYKHD/ui-syncup/commit/726a71ff1712cc78bffd2c0569470ffa691f7a5a))
+
+# [0.4.0-beta.16](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.15...v0.4.0-beta.16) (2026-03-23)
+
+
+### Bug Fixes
+
+* always use relative URLs in browser to fix Dokploy/self-hosted setup ([#98](https://github.com/BYKHD/ui-syncup/issues/98)) ([ac47727](https://github.com/BYKHD/ui-syncup/commit/ac477274689d9802ba8cc8d5f5031834da0d3e3b))
+
+# [0.4.0-beta.15](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.14...v0.4.0-beta.15) (2026-03-23)
+
+
+### Bug Fixes
+
+* build relative API URLs in browser when base URL is undefined. ([#97](https://github.com/BYKHD/ui-syncup/issues/97)) ([a75dc75](https://github.com/BYKHD/ui-syncup/commit/a75dc75ebc587ed8662f75e712077cfc410928ea))
+
+# [0.4.0-beta.14](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.13...v0.4.0-beta.14) (2026-03-23)
+
+
+### Features
+
+* health check page before setup ([#93](https://github.com/BYKHD/ui-syncup/issues/93)) ([3ad1b7c](https://github.com/BYKHD/ui-syncup/commit/3ad1b7c3d66945ced5d25601f7a2b11cc47bdb93))
+
 # [0.4.0-beta.13](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.12...v0.4.0-beta.13) (2026-03-23)
 
 

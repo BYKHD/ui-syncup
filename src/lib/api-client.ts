@@ -25,9 +25,22 @@ export class ApiError<T = unknown> extends Error {
   }
 }
 
-function buildUrl(path: string, query?: QueryParams) {
-  const base = API_BASE_URL || ""
-  const url = new URL(path, base || "http://localhost")
+function buildUrl(path: string, query?: QueryParams): string {
+  // In the browser, always use relative URLs so fetch() resolves against the
+  // current origin. NEXT_PUBLIC_API_URL is baked at build time (defaulting to
+  // http://localhost:3000 in the pre-built Docker image), so using it in the
+  // browser would send requests to the wrong host on self-hosted deployments.
+  if (typeof window !== "undefined") {
+    if (!query) return path
+    const qs = new URLSearchParams()
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) qs.set(key, String(value))
+    })
+    const queryStr = qs.toString()
+    return queryStr ? `${path}?${queryStr}` : path
+  }
+
+  const url = new URL(path, API_BASE_URL || "http://localhost")
 
   if (query) {
     Object.entries(query).forEach(([key, value]) => {
