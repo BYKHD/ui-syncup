@@ -23,8 +23,8 @@ import { logger } from "@/lib/logger";
 const CreateWorkspaceSchema = z.object({
   workspaceName: z
     .string()
-    .min(2, "Workspace name must be at least 2 characters")
-    .max(50, "Workspace name must be less than 50 characters"),
+    .min(2, "Team name must be at least 2 characters")
+    .max(50, "Team name must be less than 50 characters"),
 });
 
 type CreateWorkspaceInput = z.infer<typeof CreateWorkspaceSchema>;
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
         {
           error: {
             code: "FORBIDDEN",
-            message: "Only the instance admin can create the first workspace",
+            message: "Only the instance admin can create the first team",
           },
         },
         { status: 403 }
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
         {
           error: {
             code: "WORKSPACE_ALREADY_EXISTS",
-            message: "First workspace has already been created",
+            message: "First team has already been created",
           },
         },
         { status: 409 }
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
     }).returning({ id: teams.id });
 
     if (!workspace) {
-      throw new Error("Failed to create workspace");
+      throw new Error("Failed to create team");
     }
 
     // Add admin as WORKSPACE_OWNER with WORKSPACE_EDITOR operational role
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
         {
           error: {
             code: "DUPLICATE_WORKSPACE",
-            message: "A workspace with this name already exists",
+            message: "A team with this name already exists",
           },
         },
         { status: 409 }
@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
       {
         error: {
           code: "INTERNAL_SERVER_ERROR",
-          message: "An unexpected error occurred while creating workspace.",
+          message: "An unexpected error occurred while creating team.",
         },
       },
       { status: 500 }

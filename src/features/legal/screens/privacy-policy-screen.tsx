@@ -30,9 +30,9 @@ const highlights = [
   },
   {
     icon: RiLockLine,
-    title: "Workspace-scoped",
+    title: "Team-scoped",
     description:
-      "Data is strictly isolated to your workspace with server-enforced permissions.",
+      "Data is strictly isolated to your team with server-enforced permissions.",
   },
   {
     icon: RiEyeOffLine,
@@ -176,7 +176,7 @@ export default function PrivacyPolicyScreen() {
                     </ul>
                   </div>
                   <div className="p-5 rounded-lg border bg-card">
-                    <h3 className="font-semibold mb-2 text-primary">Workspace Data</h3>
+                    <h3 className="font-semibold mb-2 text-primary">Team Data</h3>
                     <ul className="space-y-2 text-sm text-muted-foreground">
                       <li>• Team & Project metadata</li>
                       <li>• Issues, Comments, Annotations</li>
@@ -288,11 +288,11 @@ export default function PrivacyPolicyScreen() {
                     <strong>Access & Export:</strong> You can access your project data at any time via the dashboard.
                   </p>
                   <p>
-                    <strong>Correction:</strong> You can update your profile, password, and workspace settings directly in the app.
+                    <strong>Correction:</strong> You can update your profile, password, and team settings directly in the app.
                   </p>
                   <p>
                     <strong>Deletion:</strong> You can delete projects, teams, or your entire account. 
-                    Deleting an account will permanently remove your personal data and associated workspace data.
+                    Deleting an account will permanently remove your personal data and associated team data.
                   </p>
                 </div>
               </div>

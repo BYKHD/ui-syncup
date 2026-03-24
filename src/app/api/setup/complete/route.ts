@@ -157,6 +157,7 @@ export async function POST(request: NextRequest) {
     // Mark setup as complete (workspace should already exist from previous step)
     const { db } = await import("@/lib/db");
     const { instanceSettings } = await import("@/server/db/schema");
+    const { users } = await import("@/server/db/schema/users");
     const { eq } = await import("drizzle-orm");
     
     const settings = await db.query.instanceSettings.findFirst();
@@ -194,6 +195,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Activate the workspace as the admin's active team so /team/* routes work immediately
+    await db
+      .update(users)
+      .set({ lastActiveTeamId: body.workspaceId })
+      .where(eq(users.id, session.id));
+
     logger.info("setup.complete.success", {
       requestId,
       userId: session.id,
@@ -215,6 +222,16 @@ export async function POST(request: NextRequest) {
     // Cache setup completion in the browser so middleware takes the fast path
     response.cookies.set("setup-complete", "1", {
       httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 365, // 1 year
+      path: "/",
+    });
+
+    // Set active team cookie so /team/settings and other protected routes
+    // resolve immediately without redirecting to /onboarding
+    response.cookies.set("team_id", body.workspaceId, {
+      httpOnly: false,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24 * 365, // 1 year
