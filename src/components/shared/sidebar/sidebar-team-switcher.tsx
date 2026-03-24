@@ -138,7 +138,7 @@ export function TeamSwitcher() {
               sideOffset={4}
             >
               <DropdownMenuLabel className="px-2 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                Workspaces
+                Teams
               </DropdownMenuLabel>
               {visibleTeams.map((team) => (
                 <DropdownMenuItem

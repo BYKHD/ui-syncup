@@ -54,7 +54,7 @@ export function SelfRegistrationChoice({
       <div className="flex min-h-[200px] flex-col items-center justify-center space-y-4">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         <p className="text-sm text-muted-foreground">
-          Setting up your workspace...
+          Setting up your team...
         </p>
         {error && (
           <p className="text-sm text-destructive">{error}</p>
@@ -89,9 +89,9 @@ export function SelfRegistrationChoice({
             <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
               <Building2 className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="text-lg">Create a new workspace</CardTitle>
+            <CardTitle className="text-lg">Create a new team</CardTitle>
             <CardDescription>
-              Set up your own workspace and invite team members
+              Set up your own team and invite members
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -109,7 +109,7 @@ export function SelfRegistrationChoice({
                   Loading...
                 </>
               ) : (
-                'Create workspace'
+                'Create team'
               )}
             </Button>
           </CardContent>
@@ -126,7 +126,7 @@ export function SelfRegistrationChoice({
             </div>
             <CardTitle className="text-lg">I have an invite code</CardTitle>
             <CardDescription>
-              Join an existing workspace with an invitation
+              Join an existing team with an invitation
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -146,7 +146,7 @@ export function SelfRegistrationChoice({
       </div>
 
       <p className="text-center text-xs text-muted-foreground">
-        You can always create more workspaces or join others later from your settings.
+        You can always create more teams or join others later from your settings.
       </p>
     </div>
   );

@@ -2,7 +2,7 @@ import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/shared/
 import ProjectsListScreen from "@/features/projects/screens/projects-list-screen";
 
 const PROJECTS_BREADCRUMBS: BreadcrumbItem[] = [
-  { label: "Workspace", href: "/dashboard" },
+  { label: "Team", href: "/dashboard" },
   { label: "Projects" },
 ];
 

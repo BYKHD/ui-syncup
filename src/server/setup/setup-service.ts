@@ -11,7 +11,7 @@
  */
 
 import { db } from "@/lib/db";
-import { instanceSettings, users, teams, teamMembers } from "@/server/db/schema";
+import { instanceSettings, users, teams, teamMembers, account } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { hashPassword } from "@/server/auth/password";
 import { isMultiWorkspaceMode } from "@/config/workspace";
@@ -126,16 +126,27 @@ export async function createAdmin(input: CreateAdminInput): Promise<{ userId: st
   const hashedPassword = await hashPassword(password);
 
   // Create user with admin privileges
+  // Admin is always email-verified: they control the instance directly
   const [newUser] = await db.insert(users).values({
     email: email.toLowerCase(),
     name: displayName,
     passwordHash: hashedPassword,
-    emailVerified: isEmailVerificationSkipped(), // Skip verification if configured
+    emailVerified: true,
   }).returning({ id: users.id });
 
   if (!newUser) {
     throw new Error("Failed to create admin user");
   }
+
+  // Create the Better Auth credential account record so email/password sign-in works.
+  // Better Auth looks up the `account` table (providerId = "credential") on every sign-in;
+  // without this row the login returns "Credential account not found".
+  await db.insert(account).values({
+    accountId: newUser.id,
+    providerId: "credential",
+    userId: newUser.id,
+    password: hashedPassword,
+  });
 
   // Create or update instance settings with admin user
   const existing = await db.query.instanceSettings.findFirst();

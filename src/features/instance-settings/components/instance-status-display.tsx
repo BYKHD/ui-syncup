@@ -95,17 +95,17 @@ export function InstanceStatusDisplay({ instanceStatus }: InstanceStatusDisplayP
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Info className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Workspace Mode</span>
+              <span className="text-sm font-medium">Team Mode</span>
             </div>
             <Badge variant="outline">
-              {instanceStatus.isMultiWorkspaceMode ? "Multi-Workspace" : "Single-Workspace"}
+              {instanceStatus.isMultiWorkspaceMode ? "Multi-Team" : "Single-Team"}
             </Badge>
           </div>
 
           <p className="text-xs text-muted-foreground ml-6">
             {instanceStatus.isMultiWorkspaceMode
-              ? "Users can create and manage multiple workspaces"
-              : "All users share a single default workspace"}
+              ? "Users can create and manage multiple teams"
+              : "All users share a single default team"}
           </p>
 
           <Separator />

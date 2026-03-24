@@ -31,7 +31,7 @@ const STEP_LABELS: Partial<Record<SetupWizardStep, string>> = {
   'admin-account': 'Admin',
   'instance-config': 'Instance',
   'mail-config': 'Email',
-  'first-workspace': 'Workspace',
+  'first-workspace': 'Team',
   'sample-data': 'Data',
 };
 

@@ -55,21 +55,21 @@ export function OnboardingForm({
   const headerCopy =
     mode === "accept"
       ? {
-          title: "Join your workspace",
+          title: "Join your team",
           description:
-            "Accept the invitation to join this workspace.",
+            "Accept the invitation to join this team.",
         }
       : {
-          title: hasExistingTeams ? "Create another workspace" : "Create your workspace",
+          title: hasExistingTeams ? "Create another team" : "Create your team",
           description: hasExistingTeams
-            ? "Add a new workspace to organize additional projects and collaborate with different teams."
-            : "Name the workspace that will house your projects and feedback.",
+            ? "Add a new team to organize additional projects and collaborate with different members."
+            : "Name the team that will house your projects and feedback.",
         };
 
   const footerCopy =
     mode === "accept"
       ? "Accepting the invite will add you to the shared dashboard."
-      : "Creating a workspace provisions sample projects so you can explore.";
+      : "Creating a team provisions sample projects so you can explore.";
 
   return (
     <div className="w-full max-w-2xl space-y-6">
@@ -80,7 +80,7 @@ export function OnboardingForm({
         <p className="mt-2 text-sm text-muted-foreground">
           {mode === "accept"
             ? "You can review the invitation experience below."
-            : "Spin up a workspace to tour the dashboard shell."}
+            : "Spin up a team to tour the dashboard shell."}
         </p>
       </div>
 
@@ -136,13 +136,13 @@ export function OnboardingForm({
                 disabled={status === "working"}
                 onClick={() => onSwitchMode("create")}
               >
-                Create my own workspace instead
+                Create my own team instead
               </Button>
             </div>
           ) : (
             <form className="space-y-5" onSubmit={onCreateTeam}>
               <div className="space-y-2">
-                <Label htmlFor="teamName">Workspace name</Label>
+                <Label htmlFor="teamName">Team name</Label>
                 <Input
                   id="teamName"
                   {...register("teamName")}
@@ -157,7 +157,7 @@ export function OnboardingForm({
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  You can edit this later in workspace settings.
+                  You can edit this later in team settings.
                 </p>
               </div>
 
@@ -168,7 +168,7 @@ export function OnboardingForm({
                 className="w-full"
                 disabled={status === "working"}
               >
-                {status === "working" ? "Creating workspace…" : "Continue"}
+                {status === "working" ? "Creating team…" : "Continue"}
               </Button>
 
               {invitationToken && (
@@ -179,7 +179,7 @@ export function OnboardingForm({
                   disabled={status === "working"}
                   onClick={() => onSwitchMode("accept")}
                 >
-                  Accept workspace invitation instead
+                  Accept team invitation instead
                 </Button>
               )}
             </form>
