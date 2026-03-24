@@ -1,3 +1,10 @@
+# [0.4.0-beta.18](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.17...v0.4.0-beta.18) (2026-03-24)
+
+
+### Bug Fixes
+
+* dokploy setup api n gzta ([#100](https://github.com/BYKHD/ui-syncup/issues/100)) ([a11b29e](https://github.com/BYKHD/ui-syncup/commit/a11b29e9e10c3574f3e0ecd95e6072e9c7e1ebe7))
+
 # [0.4.0-beta.17](https://github.com/BYKHD/ui-syncup/compare/v0.4.0-beta.16...v0.4.0-beta.17) (2026-03-24)
 
 
