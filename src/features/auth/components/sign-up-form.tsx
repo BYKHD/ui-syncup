@@ -40,7 +40,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
       <CardHeader className="pb-0">
         <CardTitle>Team owner details</CardTitle>
         <CardDescription>
-          We&apos;ll use these fields to personalize your workspace shell.
+          We&apos;ll use these fields to personalize your team shell.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
@@ -128,7 +128,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
             disabled={isLoading}
           >
             {isLoading 
-              ? (isLongLoading ? "Still working..." : "Creating workspace…") 
+              ? (isLongLoading ? "Still working..." : "Creating team…")
               : "Create account"}
           </Button>
         </form>

@@ -293,10 +293,10 @@ describe('FirstWorkspaceStep', () => {
     render(<FirstWorkspaceStep wizard={createWizardStub()} />);
 
     expect(
-      screen.getByRole('heading', { name: /create first workspace/i })
+      screen.getByRole('heading', { name: /create your team/i })
     ).toHaveClass('text-balance');
 
-    const workspaceName = screen.getByLabelText('Workspace Name');
+    const workspaceName = screen.getByLabelText('Team Name');
     expect(workspaceName).toHaveAttribute('autocomplete', 'off');
     expect(workspaceName).toHaveAttribute(
       'placeholder',

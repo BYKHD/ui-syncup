@@ -51,18 +51,18 @@ export function FirstWorkspaceStep({ wizard }: FirstWorkspaceStepProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight text-balance">Create First Workspace</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-balance">Create Your Team</h2>
         <p className="text-muted-foreground">
           {isMultiWorkspaceMode
-            ? 'Create the initial workspace where your team will collaborate.'
-            : 'Set up your primary workspace.'}
+            ? 'Create the initial team where your members will collaborate.'
+            : 'Set up your primary team.'}
         </p>
       </div>
 
       {error && (
         <Alert variant="destructive">
           <AlertDescription>
-            {error.message || 'Failed to create workspace'}
+            {error.message || 'Failed to create team'}
           </AlertDescription>
         </Alert>
       )}
@@ -81,7 +81,7 @@ export function FirstWorkspaceStep({ wizard }: FirstWorkspaceStepProps) {
         }}
       >
         <motion.div variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }} className="space-y-2">
-          <Label htmlFor="workspaceName">Workspace Name</Label>
+          <Label htmlFor="workspaceName">Team Name</Label>
           <Input
             id="workspaceName"
             autoComplete="off"
@@ -89,7 +89,7 @@ export function FirstWorkspaceStep({ wizard }: FirstWorkspaceStepProps) {
             {...form.register('workspaceName')}
           />
           <p className="text-sm text-muted-foreground">
-            This will be the display name of your first workspace.
+            This will be the display name of your first team.
           </p>
           {form.formState.errors.workspaceName && (
             <p className="text-sm font-medium text-destructive">
@@ -111,7 +111,7 @@ export function FirstWorkspaceStep({ wizard }: FirstWorkspaceStepProps) {
             {isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" />
             )}
-            Create Workspace
+            Create Team
           </Button>
         </motion.div>
       </motion.form>

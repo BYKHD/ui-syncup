@@ -188,7 +188,7 @@ export function InvitedUserForm({
           ) : (
             <form onSubmit={onFormSubmit} className="space-y-4">
               <p className="text-sm text-muted-foreground text-center">
-                Create an account to join the workspace
+                Create an account to join the team
               </p>
 
               <div className="space-y-2">

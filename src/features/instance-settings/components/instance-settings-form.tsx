@@ -148,7 +148,7 @@ export function InstanceSettingsForm({ instanceStatus }: InstanceSettingsFormPro
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground">
-              Default role assigned to new users in single-workspace mode
+              Default role assigned to new users in single-team mode
             </p>
             {form.formState.errors.defaultMemberRole && (
               <p className="text-sm font-medium text-destructive">

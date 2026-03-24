@@ -53,7 +53,7 @@ export function SampleDataStep({ wizard }: SampleDataStepProps) {
       <div className="space-y-2">
         <h2 className="text-2xl font-bold tracking-tight text-balance">Finalize Setup</h2>
         <p className="text-muted-foreground">
-          You&apos;re almost done. Choose if you want to populate your workspace with sample data.
+          You&apos;re almost done. Choose if you want to populate your team with sample data.
         </p>
       </div>
 

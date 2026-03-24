@@ -78,9 +78,9 @@ export function InviteCodeInput({
   return (
     <div className="w-full max-w-md space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold">Join a workspace</h1>
+        <h1 className="text-3xl font-bold">Join a team</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Enter your invitation code to join an existing workspace
+          Enter your invitation code to join an existing team
         </p>
       </div>
 
@@ -88,7 +88,7 @@ export function InviteCodeInput({
         <CardHeader>
           <CardTitle className="text-lg">Enter invite code</CardTitle>
           <CardDescription>
-            Your workspace admin should have provided you with an invitation code or link.
+            Your team admin should have provided you with an invitation code or link.
           </CardDescription>
         </CardHeader>
         <CardContent>
