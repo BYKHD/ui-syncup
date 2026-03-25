@@ -1,3 +1,10 @@
+# [0.6.0-beta.6](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.5...v0.6.0-beta.6) (2026-03-25)
+
+
+### Bug Fixes
+
+* Implement dynamic auth client baseURL based on environment. ([e9f4400](https://github.com/BYKHD/ui-syncup/commit/e9f44008335bb66ec822f6c5a9f667901fe89a17))
+
 # [0.6.0-beta.5](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.4...v0.6.0-beta.5) (2026-03-25)
 
 
