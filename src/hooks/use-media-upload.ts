@@ -25,7 +25,7 @@ export function useMediaUpload(): UseMediaUploadResult {
     setError(null);
 
     try {
-      // 1. Get presigned URL
+      // 1. Get presigned upload URL and storage key
       const res = await fetch('/api/uploads/media', {
         method: 'POST',
         headers: {
@@ -44,9 +44,9 @@ export function useMediaUpload(): UseMediaUploadResult {
         throw new Error(errorData.error || 'Failed to get upload URL');
       }
 
-      const { uploadUrl, publicUrl } = await res.json();
+      const { uploadUrl, key } = await res.json();
 
-      // 2. Upload file to presigned URL
+      // 2. Upload file directly to storage via presigned URL
       const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
         headers: {
@@ -59,7 +59,9 @@ export function useMediaUpload(): UseMediaUploadResult {
         throw new Error('Failed to upload image to storage');
       }
 
-      return publicUrl;
+      // Return the proxy URL — /api/media/[...key] resolves to a presigned or
+      // public URL and is safe to use as an <img src> in any component
+      return `/api/media/${key}`;
     } catch (err) {
       const e = err instanceof Error ? err : new Error('Unknown upload error');
       console.error('Media upload error:', e);
@@ -72,8 +74,6 @@ export function useMediaUpload(): UseMediaUploadResult {
   };
 
   const deleteImage = async (key: string, type: 'avatar' | 'team', entityId: string) => {
-    // We don't set loading for delete to generic 'isUploading' to avoid blocking unrelated UIs
-    // or we can, depends on preference. Let's keep it simple.
     try {
       const response = await fetch('/api/uploads/media', {
         method: 'DELETE',
@@ -82,11 +82,11 @@ export function useMediaUpload(): UseMediaUploadResult {
       });
 
       if (!response.ok) {
-         throw new Error(`Failed to delete image: ${response.statusText}`);
+        throw new Error(`Failed to delete image: ${response.statusText}`);
       }
       return true;
     } catch (err) {
-      console.error("Delete image error:", err);
+      console.error('Delete image error:', err);
       return false;
     }
   };
