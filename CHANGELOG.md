@@ -1,3 +1,10 @@
+# [0.6.0-beta.5](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.4...v0.6.0-beta.5) (2026-03-25)
+
+
+### Features
+
+* refactor storage to use a single bucket ([#106](https://github.com/BYKHD/ui-syncup/issues/106)) ([c41cb2c](https://github.com/BYKHD/ui-syncup/commit/c41cb2c5d623ba5f86414fe2cb2f7f6d79e6d7cf))
+
 # [0.6.0-beta.4](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.3...v0.6.0-beta.4) (2026-03-25)
 
 
