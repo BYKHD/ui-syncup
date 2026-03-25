@@ -253,7 +253,7 @@ export async function GET(request: NextRequest) {
     }));
     
     return NextResponse.json(
-      { teams: serializedTeams },
+      { teams: serializedTeams, activeTeamId: user.lastActiveTeamId ?? null },
       { status: 200 }
     );
     

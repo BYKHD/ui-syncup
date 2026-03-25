@@ -9,7 +9,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/server/auth/session';
-import { getTeamIdCookie } from '@/server/auth/cookies';
 import { createInvitation } from '@/server/teams/invitation-service';
 import { hasRole } from '@/server/auth/rbac';
 import { logger } from '@/lib/logger';
@@ -83,20 +82,6 @@ export async function POST(
       );
     }
 
-    // Validate team context
-    const activeTeamId = await getTeamIdCookie();
-    if (teamId !== activeTeamId) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'FORBIDDEN',
-            message: "You do not have permission to access this team's data in the current context",
-          },
-        },
-        { status: 403 }
-      );
-    }
-    
     // Check permissions (TEAM_OWNER or TEAM_ADMIN)
     const isOwner = await hasRole(user.id, 'WORKSPACE_OWNER', 'team', teamId);
     const isAdmin = await hasRole(user.id, 'WORKSPACE_ADMIN', 'team', teamId);
@@ -288,20 +273,6 @@ export async function GET(
       );
     }
     
-    // Validate team context
-    const activeTeamId = await getTeamIdCookie();
-    if (teamId !== activeTeamId) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'FORBIDDEN',
-            message: "You do not have permission to access this team's data in the current context",
-          },
-        },
-        { status: 403 }
-      );
-    }
-
     // Check permissions (TEAM_OWNER or TEAM_ADMIN)
     const isOwner = await hasRole(user.id, 'WORKSPACE_OWNER', 'team', teamId);
     const isAdmin = await hasRole(user.id, 'WORKSPACE_ADMIN', 'team', teamId);

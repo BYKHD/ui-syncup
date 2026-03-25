@@ -10,7 +10,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/server/auth/session';
-import { getTeamIdCookie } from '@/server/auth/cookies';
 import { getTeam, updateTeam, softDeleteTeam } from '@/server/teams/team-service';
 import { hasRole } from '@/server/auth/rbac';
 import { logger } from '@/lib/logger';
@@ -174,19 +173,6 @@ export async function PATCH(
     }
     
     // Check permissions (TEAM_OWNER or TEAM_ADMIN)
-    const activeTeamId = await getTeamIdCookie();
-    if (teamId !== activeTeamId) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'FORBIDDEN',
-            message: "You do not have permission to access this team's data in the current context",
-          },
-        },
-        { status: 403 }
-      );
-    }
-
     const isOwner = await hasRole(user.id, 'WORKSPACE_OWNER', 'team', teamId);
     const isAdmin = await hasRole(user.id, 'WORKSPACE_ADMIN', 'team', teamId);
     

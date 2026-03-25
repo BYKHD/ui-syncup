@@ -90,6 +90,7 @@ export const paginationSchema = z.object({
 export const teamsResponseSchema = z.object({
   teams: z.array(teamWithMemberInfoSchema),
   pagination: paginationSchema.optional(),
+  activeTeamId: z.string().uuid().nullable().optional(),
 });
 
 export const teamResponseSchema = z.object({

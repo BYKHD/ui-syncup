@@ -1,10 +1,16 @@
-## [0.4.1](https://github.com/BYKHD/ui-syncup/compare/v0.4.0...v0.4.1) (2026-03-24)
+# [0.5.0-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.5.0-beta.1...v0.5.0-beta.2) (2026-03-25)
 
 
-### Bug Fixes
+### Features
 
-* fix onboarding and acc creation  ([#101](https://github.com/BYKHD/ui-syncup/issues/101)) ([#102](https://github.com/BYKHD/ui-syncup/issues/102)) ([ebba01e](https://github.com/BYKHD/ui-syncup/commit/ebba01e6db0308285b631d2bffc6978383d224ab))
-* trigger release pipeline ([#104](https://github.com/BYKHD/ui-syncup/issues/104)) ([b0ea640](https://github.com/BYKHD/ui-syncup/commit/b0ea6404e5e782ede4ce961281fc2fee28c49a3a)), closes [#101](https://github.com/BYKHD/ui-syncup/issues/101)
+* Migrate team context management to user session and introduce slug-based routing for team settings. ([d261ccd](https://github.com/BYKHD/ui-syncup/commit/d261ccdef619dd7640999d673f4ce70049db0885))
+
+# [0.5.0-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.4.1-beta.2...v0.5.0-beta.1) (2026-03-24)
+
+
+### Features
+
+* refactor role retrieval to prioritize dedicated member tables. ([6bf5703](https://github.com/BYKHD/ui-syncup/commit/6bf57038be260e4c2214e279ebb0c349b17248e2))
 
 ## [0.4.1-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.4.1-beta.1...v0.4.1-beta.2) (2026-03-24)
 

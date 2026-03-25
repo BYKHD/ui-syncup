@@ -1,23 +1,13 @@
-import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/shared/headers";
-import IntegrationsSettingsScreen from "@/features/team-settings/components/team-setting-integrations";
+import { redirect } from "next/navigation";
+import { getSession } from "@/server/auth/session";
+import { getActiveTeam } from "@/server/teams/team-context";
 
-const TEAM_SETTINGS_INTEGRATIONS_BREADCRUMBS: BreadcrumbItem[] = [
-  { label: "Team", href: "/team" },
-  { label: "Settings", href: "/team/settings" },
-  { label: "Integrations" },
-];
+export default async function IntegrationsSettingsRedirectPage() {
+  const session = await getSession();
+  if (!session) redirect("/sign-in");
 
-export default function IntegrationsSettingsPage() {
-  // Server component - thin page that renders feature component
-  // Layout provides TeamSettingsScreen wrapper with sidebar and shared structure
+  const { team } = await getActiveTeam(session.id);
+  if (!team) redirect("/onboarding");
 
-  return (
-    <>
-      <AppHeaderConfigurator
-        pageName="Integrations"
-        breadcrumbs={TEAM_SETTINGS_INTEGRATIONS_BREADCRUMBS}
-      />
-      <IntegrationsSettingsScreen />
-    </>
-  );
+  redirect(`/team/${team.slug}/settings/integrations`);
 }

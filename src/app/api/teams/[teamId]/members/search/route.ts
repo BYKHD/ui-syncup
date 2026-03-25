@@ -8,7 +8,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/server/auth/session';
-import { getTeamIdCookie } from '@/server/auth/cookies';
 import { hasRole } from '@/server/auth/rbac';
 import { db } from '@/lib/db';
 import { teamMembers } from '@/server/db/schema/team-members';
@@ -73,20 +72,6 @@ export async function GET(
       );
     }
 
-    // Validate team context
-    const activeTeamId = await getTeamIdCookie();
-    if (teamId !== activeTeamId) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'FORBIDDEN',
-            message: "You do not have permission to access this team's data",
-          },
-        },
-        { status: 403 }
-      );
-    }
-    
     // Check if user is a member of the team
     const isMember = await hasRole(user.id, 'WORKSPACE_VIEWER', 'team', teamId) ||
                      await hasRole(user.id, 'WORKSPACE_MEMBER', 'team', teamId) ||

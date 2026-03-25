@@ -1,9 +1,10 @@
+import { useParams } from 'next/navigation'
 import { useTeams } from '@/features/teams/hooks/use-teams'
-import Cookies from 'js-cookie'
 
 interface Team {
   id: string
   name: string
+  slug: string
   image: string | null
 }
 
@@ -14,19 +15,27 @@ interface UseTeamResult {
 
 export function useTeam(): UseTeamResult {
   const { data, isLoading } = useTeams()
-  
-  // Get the team ID from the cookie
-  const teamIdCookie = Cookies.get('team_id')
-  
-  // Find the team that matches the cookie, or fall back to the first team
-  const currentTeam = data?.teams?.find(t => t.id === teamIdCookie) ?? data?.teams?.[0] ?? null
+  const params = useParams()
+
+  const slug = params?.slug as string | undefined
+  const teams = data?.teams ?? []
+
+  // Priority:
+  // 1. URL slug (authoritative — user is explicitly on this team's page)
+  // 2. activeTeamId from API (DB-backed lastActiveTeamId, no cookie)
+  // 3. First team (fallback for single-workspace mode)
+  const currentTeam = (
+    slug
+      ? teams.find(t => t.slug === slug)
+      : data?.activeTeamId
+        ? teams.find(t => t.id === data.activeTeamId)
+        : teams[0]
+  ) ?? null
 
   return {
-    currentTeam: currentTeam ? {
-      id: currentTeam.id,
-      name: currentTeam.name,
-      image: currentTeam.image ?? null
-    } : null,
+    currentTeam: currentTeam
+      ? { id: currentTeam.id, name: currentTeam.name, slug: currentTeam.slug, image: currentTeam.image ?? null }
+      : null,
     isLoading,
   }
 }
