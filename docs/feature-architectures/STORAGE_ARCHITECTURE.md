@@ -4,22 +4,22 @@
 
 ---
 
-## Two-Bucket Model
+## Single-Bucket Model
 
-The app uses two logically separate S3-compatible buckets with intentionally different access patterns:
+The app uses a **single S3-compatible bucket** with logical key prefixes to separate content categories:
 
-| Bucket | Env var | Purpose | Access pattern |
-|--------|---------|---------|----------------|
-| `attachments` | `STORAGE_ATTACHMENTS_BUCKET` | Issue attachments | **Always private** — served via presigned GET URLs |
-| `media` | `STORAGE_MEDIA_BUCKET` | Avatars, team logos | **Public read** when provider allows; presigned GET URLs when Block Public Access is enabled |
+| Prefix | Type | Purpose | Access pattern |
+|--------|------|---------|----------------|
+| `attachments/` | `StorageCategory` | Issue attachments | **Always private** — served via presigned GET URLs |
+| `media/` | `StorageCategory` | Avatars, team logos | **Private by default** — served via `/api/media/[...key]` proxy with cached presigned URLs; direct public URLs when `STORAGE_PUBLIC_ACCESS=true` |
 
-These can be different S3 providers with independent credentials — each bucket has its own `ACCESS_KEY_ID` and `SECRET_ACCESS_KEY` env vars.
+A single set of credentials (`STORAGE_ACCESS_KEY_ID` / `STORAGE_SECRET_ACCESS_KEY`) controls the whole bucket. This is compatible with **AWS Lightsail**, which enforces Block Public Access by default.
 
 ---
 
 ## Supported Providers
 
-The storage layer (`src/lib/storage.ts`) auto-detects which provider to use based on whether `STORAGE_ENDPOINT` is set.
+The storage layer (`src/lib/storage.ts`) auto-detects the provider from whether `STORAGE_ENDPOINT` is set.
 
 ### Detection logic
 
@@ -35,61 +35,50 @@ STORAGE_ENDPOINT set?
 
 ### Provider cheat-sheet
 
-| Provider | `STORAGE_ENDPOINT` | `forcePathStyle` | Notes |
-|----------|-------------------|-----------------|-------|
-| **MinIO** (local dev) | `http://127.0.0.1:9000` | `true` (auto) | Bucket auto-created on startup |
-| **MinIO** (Docker Compose) | `http://minio:9000` | `true` (auto) | Use `COMPOSE_PROFILES=storage` to bundle |
-| **Cloudflare R2** | `https://<account>.r2.cloudflarestorage.com` | `true` (auto) | Set CORS; public URL can be a separate custom domain |
-| **AWS S3** | *(not set)* | `false` (auto) | Set `STORAGE_REGION` |
-| **Lightsail object storage** | *(not set)* | `false` (auto) | Set `STORAGE_REGION`; Block Public Access is ON by default |
-| **Other S3-compatible** | `https://...` | `true` (auto) | Works if the provider supports the S3 API |
+| Provider | `STORAGE_ENDPOINT` | `STORAGE_PUBLIC_ACCESS` | Notes |
+|----------|-------------------|------------------------|-------|
+| **MinIO** (local dev) | `http://127.0.0.1:9000` | `true` | Bucket auto-created on startup |
+| **MinIO** (Docker Compose) | `http://minio:9000` | `true` | Use `COMPOSE_PROFILES=storage` to bundle |
+| **Cloudflare R2** | `https://<account>.r2.cloudflarestorage.com` | `true` (if public) | Set CORS; `STORAGE_PUBLIC_URL` can be a custom domain |
+| **AWS S3** | *(not set)* | `false` (default) | Set `STORAGE_REGION`; Block Public Access on by default |
+| **Lightsail object storage** | *(not set)* | `false` (default) | Set `STORAGE_REGION`; single key pair per bucket |
+| **Other S3-compatible** | `https://...` | depends | Works if the provider supports the S3 API |
 
 ---
 
 ## Environment Variables
 
-### Minimal configuration (same credentials for both buckets)
+### Minimal configuration (private bucket — AWS S3, Lightsail)
 
 ```bash
 # Provider type: omit STORAGE_ENDPOINT for AWS S3 / Lightsail
-# Set STORAGE_ENDPOINT for MinIO, R2, or any custom S3-compatible endpoint
 STORAGE_ENDPOINT=                         # empty or absent → native AWS mode
-STORAGE_REGION=ap-southeast-1            # required for AWS / Lightsail
+STORAGE_REGION=ap-southeast-1
+
+STORAGE_ACCESS_KEY_ID=AKIA...
+STORAGE_SECRET_ACCESS_KEY=...
+
+STORAGE_BUCKET=ui-syncup-storage
+# STORAGE_PUBLIC_ACCESS and STORAGE_PUBLIC_URL are NOT needed for private buckets
+```
+
+### Public bucket (MinIO, R2 with public policy)
+
+```bash
+STORAGE_ENDPOINT=https://<account>.r2.cloudflarestorage.com
+STORAGE_REGION=auto
 
 STORAGE_ACCESS_KEY_ID=...
 STORAGE_SECRET_ACCESS_KEY=...
 
-STORAGE_ATTACHMENTS_BUCKET=ui-syncup-attachments
-STORAGE_ATTACHMENTS_PUBLIC_URL=https://my-attachments.s3.ap-southeast-1.amazonaws.com
-
-STORAGE_MEDIA_BUCKET=ui-syncup-media
-STORAGE_MEDIA_PUBLIC_URL=https://my-media.s3.ap-southeast-1.amazonaws.com
-```
-
-### Per-bucket credentials (Lightsail: each bucket has its own key)
-
-```bash
-# No shared STORAGE_ENDPOINT or STORAGE_ACCESS_KEY_ID needed when per-bucket vars are set
-
-STORAGE_REGION=ap-southeast-1            # shared fallback region
-
-STORAGE_ATTACHMENTS_BUCKET=ui-syncup-attachments
-STORAGE_ATTACHMENTS_PUBLIC_URL=https://my-attachments.s3.ap-southeast-1.amazonaws.com
-STORAGE_ATTACHMENTS_ACCESS_KEY_ID=AKIA...
-STORAGE_ATTACHMENTS_SECRET_ACCESS_KEY=...
-
-# Optional per-bucket region override:
-# STORAGE_ATTACHMENTS_REGION=ap-southeast-1
-
-STORAGE_MEDIA_BUCKET=ui-syncup-media
-STORAGE_MEDIA_PUBLIC_URL=https://my-media.s3.ap-southeast-1.amazonaws.com
-STORAGE_MEDIA_ACCESS_KEY_ID=AKIA...
-STORAGE_MEDIA_SECRET_ACCESS_KEY=...
+STORAGE_BUCKET=ui-syncup-storage
+STORAGE_PUBLIC_ACCESS=true
+STORAGE_PUBLIC_URL=https://pub-xxxx.r2.dev
 ```
 
 ### Bundled MinIO (Docker Compose)
 
-When `COMPOSE_PROFILES=storage` is set, a MinIO container is started alongside the app. The MinIO admin credentials must match the storage credentials:
+When `COMPOSE_PROFILES=storage` is set, a MinIO container is started alongside the app:
 
 ```bash
 COMPOSE_PROFILES=storage
@@ -97,31 +86,28 @@ COMPOSE_PROFILES=storage
 STORAGE_ENDPOINT=http://minio:9000
 STORAGE_REGION=us-east-1
 STORAGE_ACCESS_KEY_ID=minioadmin
-STORAGE_SECRET_ACCESS_KEY=minioadmin
+STORAGE_SECRET_ACCESS_KEY=change-me-min-8-chars
 
-STORAGE_ATTACHMENTS_BUCKET=ui-syncup-attachments
-STORAGE_ATTACHMENTS_PUBLIC_URL=http://localhost:9000/ui-syncup-attachments
-
-STORAGE_MEDIA_BUCKET=ui-syncup-media
-STORAGE_MEDIA_PUBLIC_URL=http://localhost:9000/ui-syncup-media
+STORAGE_BUCKET=ui-syncup-storage
+STORAGE_PUBLIC_ACCESS=true
+STORAGE_PUBLIC_URL=http://localhost:9000/ui-syncup-storage
 
 # MinIO admin bootstrap (must match credentials above)
 MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=change-me-min-8-chars
 ```
 
-### Variable resolution order (per bucket)
+### Full variable reference
 
-```
-STORAGE_ATTACHMENTS_ENDPOINT     →  STORAGE_ENDPOINT         →  (undefined)
-STORAGE_ATTACHMENTS_REGION       →  STORAGE_REGION           →  'us-east-1'
-STORAGE_ATTACHMENTS_ACCESS_KEY_ID (or _ACCESS_KEY)
-                                 →  STORAGE_ACCESS_KEY_ID    →  'minioadmin'
-STORAGE_ATTACHMENTS_SECRET_ACCESS_KEY (or _SECRET_KEY)
-                                 →  STORAGE_SECRET_ACCESS_KEY →  'minioadmin'
-```
-
-Replace `ATTACHMENTS` with `MEDIA` for the media bucket.
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `STORAGE_ENDPOINT` | No | *(native AWS)* | Set for MinIO, R2, or custom S3-compatible endpoints |
+| `STORAGE_REGION` | Yes | `us-east-1` | AWS region or `auto` for R2 |
+| `STORAGE_ACCESS_KEY_ID` | Yes | — | S3 access key ID |
+| `STORAGE_SECRET_ACCESS_KEY` | Yes | — | S3 secret access key |
+| `STORAGE_BUCKET` | Yes | — | Single bucket name |
+| `STORAGE_PUBLIC_ACCESS` | No | `false` | Set `true` to serve media via direct public URLs instead of the media proxy |
+| `STORAGE_PUBLIC_URL` | No | — | Base URL for public object access (required when `STORAGE_PUBLIC_ACCESS=true`) |
 
 ---
 
@@ -137,19 +123,18 @@ Browser                  App Server               S3 Provider
   │  (or /media)             │ generateUploadUrl()      │
   │                          │────────────────────────▶│
   │                          │◀── presigned PUT URL ───│
-  │◀── { uploadUrl,          │                         │
-  │      publicUrl, key } ───│                         │
+  │◀── { uploadUrl, key } ───│                         │
   │                          │                         │
   │  PUT <uploadUrl>  ───────│────────────────────────▶│
   │  (direct, no app server) │                     object stored
   │                          │                         │
   │  POST /api/issues/       │                         │
   │  {id}/attachments ──────▶│  createAttachment()     │
-  │  { url: publicUrl, ... } │  stores publicUrl in DB │
+  │  { url: key, ... }       │  stores raw key in DB   │
   │◀── { attachment } ───────│                         │
 ```
 
-The `publicUrl` stored in the DB is constructed from `STORAGE_ATTACHMENTS_PUBLIC_URL + "/" + key`. It is a direct S3 URL — it is **not** the presigned URL.
+> **The DB stores the raw storage key** (e.g. `attachments/issues/t1/p1/i1/uuid.png`), not a full URL. URLs are generated server-side on every read.
 
 ### File size limits
 
@@ -167,14 +152,13 @@ Allowed media content types: `image/jpeg`, `image/png`, `image/webp`, `image/gif
 
 ### Attachments (always private)
 
-Attachments are private on all providers. When the attachments list is fetched, the server generates a **presigned GET URL** for each attachment before returning the response. The client never makes a direct URL request to S3 for attachment content.
+Attachments are private on all providers. When the attachments list is fetched, the server calls `generateDownloadUrl(key)` for each attachment and returns the presigned URL in the response. The client never accesses S3 directly for attachment content.
 
 ```
 Browser                  App Server               S3 Provider
   │                          │                         │
   │  GET /api/issues/        │                         │
   │  {id}/attachments ──────▶│                         │
-  │                          │  getAttachmentsByIssue()│
   │                          │  generateDownloadUrl()  │
   │                          │────────────────────────▶│ (per attachment)
   │                          │◀── presigned GET URL ───│
@@ -184,62 +168,74 @@ Browser                  App Server               S3 Provider
   │        ... }             │                         │
   │    ] } ─────────────────│                         │
   │                          │                         │
-  │  GET <downloadUrl> ──────│────────────────────────▶│ (browser fetches directly)
-  │◀── file bytes ───────────│────────────────────────◀│
+  │  GET <downloadUrl> ──────│────────────────────────▶│
+  │◀── file bytes ──────────────────────────────────◀│
 ```
 
-The `IssueAttachment` type has both `url` (the stored public URL) and `downloadUrl` (the presigned GET URL, valid for 1 hour). Rendering components use `downloadUrl ?? url` so they fall back gracefully if presigned URL generation fails.
+The `IssueAttachment` type exposes `downloadUrl` (presigned GET URL, valid 1 hour). `url` is the raw storage key stored in the DB.
 
 ### Media (avatars, logos)
 
-When the media bucket is **public** (MinIO in dev, R2 with public policy), avatars and team logos are served via their stored `publicUrl` directly — no presigned URL needed.
-
-When the media bucket has **Block Public Access enabled** (Lightsail / AWS S3 default), use the presigned download endpoint:
+Media is served via the **`/api/media/[...key]`** proxy route:
 
 ```
-GET /api/uploads/presigned/download?key=<key>&bucket=media
-→ { url: "<presigned-get-url>" }
+Browser                  App Server               S3 Provider
+  │                          │                         │
+  │  GET /api/media/         │                         │
+  │  media/avatars/u1/x.jpg ▶│                         │
+  │                          │                         │
+  │                STORAGE_PUBLIC_ACCESS=true?          │
+  │                  ├─ YES → 307 to STORAGE_PUBLIC_URL/key
+  │                  └─ NO  → getMediaUrl(key)          │
+  │                           (cached presigned URL)    │
+  │                           ──────────────────────▶   │
+  │                           ◀── presigned GET URL ──  │
+  │◀── 307 redirect ─────────│                         │
+  │  Cache-Control: max-age=79200                       │
+  │                          │                         │
+  │  GET <redirectTarget> ───│────────────────────────▶│
+  │◀── image bytes ─────────────────────────────────◀│
 ```
 
-This endpoint requires an authenticated session. Presigned URLs expire after 1 hour.
+- **Public bucket** (`STORAGE_PUBLIC_ACCESS=true`): proxy redirects to `STORAGE_PUBLIC_URL/key` — no S3 API call needed.
+- **Private bucket** (default): proxy calls `getMediaUrl(key)`, which returns a presigned GET URL from an **in-memory server cache** (22h TTL). URLs are generated with a 24h expiry. No authentication required to hit the proxy — it only validates that the key starts with `media/`.
+
+Clients always use `/api/media/<key>` as the display URL for avatars and team logos. This URL is stable — bookmarking it works even as underlying presigned URLs rotate.
 
 ---
 
 ## Core Storage API (`src/lib/storage.ts`)
 
 ```typescript
+// Logical storage category (not a physical bucket)
+type StorageCategory = 'attachments' | 'media'
+
+// Build a full storage key from a category and relative path
+buildKey(category: StorageCategory, relativePath: string): string
+
 // Generate a presigned PUT URL for uploading (valid 1 hour)
-generateUploadUrl(bucket: StorageBucket, key: string, contentType: string): Promise<string>
+generateUploadUrl(key: string, contentType: string): Promise<string>
 
 // Generate a presigned GET URL for viewing/downloading (valid 1 hour by default)
-generateDownloadUrl(bucket: StorageBucket, key: string, expiresIn?: number): Promise<string>
+generateDownloadUrl(key: string, expiresIn?: number): Promise<string>
 
-// Construct the stored public URL for a key (used after upload, stored in DB)
-getPublicUrl(bucket: StorageBucket, key: string): string
+// Construct a direct public URL for a key (only meaningful when STORAGE_PUBLIC_ACCESS=true)
+getPublicUrl(key: string): string
 
-// Reverse getPublicUrl: extract the S3 key from a stored public URL
-// Returns null if the URL doesn't match the bucket's configured public URL prefix
-getKeyFromUrl(bucket: StorageBucket, publicUrl: string): string | null
+// Get a cached presigned GET URL for a media key (22h server-side cache)
+getMediaUrl(key: string): Promise<string>
 
-// Delete an object
-deleteFile(bucket: StorageBucket, key: string): Promise<void>
+// Invalidate the server-side cache entry for a media key (call on update/delete)
+invalidateMediaUrl(key: string): void
 
-// Get the actual bucket name for a logical bucket type
-getBucketName(bucket: StorageBucket): string
+// Delete an object from storage
+deleteFile(key: string): Promise<void>
 
-// Get the configured S3Client for a bucket type
-getStorageClient(bucket: StorageBucket): S3Client
-```
+// Get the configured bucket name (from STORAGE_BUCKET env var)
+getBucketName(): string
 
-### Attachment service helpers (`src/server/issues/attachment-service.ts`)
-
-```typescript
-// Build the canonical S3 key for an attachment
-// Path: issues/{teamId}/{projectId}/{issueId}/{attachmentId}-{sanitizedFilename}
-generateR2Path(teamId, projectId, issueId, attachmentId, fileName): string
-
-// Returns true if the MIME type is an image
-isImageType(fileType: string): boolean
+// Get the shared S3Client instance
+getStorageClient(): S3Client
 ```
 
 ---
@@ -251,7 +247,8 @@ isImageType(fileType: string): boolean
 | `POST` | `/api/uploads/presigned` | Get presigned PUT URL for an issue attachment | Session |
 | `POST` | `/api/uploads/media` | Get presigned PUT URL for avatar/team logo | Session |
 | `DELETE` | `/api/uploads/media` | Delete an avatar or team logo from storage | Session |
-| `GET` | `/api/uploads/presigned/download` | Get presigned GET URL for any private object | Session |
+| `GET` | `/api/uploads/presigned/download` | Get presigned GET URL for a private object | Session |
+| `GET` | `/api/media/[...key]` | Serve media via redirect (proxy) | None |
 
 ### POST /api/uploads/presigned
 
@@ -262,8 +259,10 @@ Request body:
 
 Response:
 ```json
-{ "uploadUrl": "https://...", "publicUrl": "https://...", "key": "issues/..." }
+{ "uploadUrl": "https://...", "key": "attachments/issues/..." }
 ```
+
+> No `publicUrl` in the response — callers store the raw `key` in the DB.
 
 ### POST /api/uploads/media
 
@@ -274,59 +273,66 @@ Request body:
 
 Response:
 ```json
-{ "uploadUrl": "https://...", "publicUrl": "https://...", "key": "avatars/...", "maxFileSize": 2097152 }
+{ "uploadUrl": "https://...", "key": "media/avatars/...", "maxFileSize": 2097152 }
 ```
 
 ### DELETE /api/uploads/media
 
 Request body:
 ```json
-{ "key": "avatars/...", "type": "avatar|team", "entityId": "<userId|teamId>" }
+{ "key": "media/avatars/...", "type": "avatar|team", "entityId": "<userId|teamId>" }
 ```
 
-### Presigned download endpoint
+### GET /api/uploads/presigned/download
 
 ```
-GET /api/uploads/presigned/download?key=<key>&bucket=<attachments|media>
+GET /api/uploads/presigned/download?key=<key>
 
 Response: { url: "https://..." }
 Cache-Control: private, max-age=3600
 ```
+
+### GET /api/media/[...key]
+
+```
+GET /api/media/media/avatars/<userId>/<uuid>.jpg
+
+Response: 307 Temporary Redirect
+Location: <presigned-url or STORAGE_PUBLIC_URL path>
+Cache-Control: public, max-age=79200, stale-while-revalidate=3600
+```
+
+Returns `400` if the key does not start with `media/`.
 
 ---
 
 ## Object Key Structure
 
 ```
-# Issue attachments (generated by presigned upload endpoint)
-issues/{teamId}/{projectId}/{issueId}/{uuid}.{ext}
-
-# Issue attachments (generated by generateR2Path helper)
-issues/{teamId}/{projectId}/{issueId}/{attachmentId}-{sanitizedFilename}
+# Issue attachments
+attachments/issues/{teamId}/{projectId}/{issueId}/{uuid}.{ext}
 
 # Avatars
-avatars/{userId}/{uuid}.{ext}
+media/avatars/{userId}/{uuid}.{ext}
 
 # Team logos
-teams/{teamId}/{uuid}.{ext}
+media/teams/{teamId}/{uuid}.{ext}
 ```
 
 The hierarchical structure enables:
-- Batch-deleting all attachments for a project (`issues/{teamId}/{projectId}/`)
+- Batch-deleting all attachments for a project (`attachments/issues/{teamId}/{projectId}/`)
 - Storage quota calculation per team or project
-- Access control validation by checking key prefix
+- Access control validation by checking the key prefix
 
 ---
 
 ## Attachment Record Fields
 
-The `IssueAttachment` type includes the following fields beyond the core file metadata:
-
 | Field | Type | Description |
 |-------|------|-------------|
-| `url` | `string` | Public URL stored in DB (not presigned) |
+| `url` | `string` | Raw storage key stored in DB (e.g. `attachments/issues/...`) |
 | `downloadUrl` | `string \| null` | Presigned GET URL (populated server-side, valid 1 hour) |
-| `thumbnailUrl` | `string \| null` | Optional thumbnail for image attachments |
+| `thumbnailUrl` | `string \| null` | Optional thumbnail key for image attachments |
 | `width` | `number \| null` | Image width in pixels |
 | `height` | `number \| null` | Image height in pixels |
 | `reviewVariant` | `"as_is" \| "to_be" \| "reference"` | Review context tag (default: `as_is`) |
@@ -336,11 +342,21 @@ The `IssueAttachment` type includes the following fields beyond the core file me
 
 ## Bucket Initialisation
 
-`ensureStorageBuckets()` runs on app startup (via `src/instrumentation.ts`). It:
+`ensureStorageBucket()` runs on app startup (via `src/instrumentation.ts`). It:
 
-1. Calls `HeadBucket` to check if each bucket exists
+1. Calls `HeadBucket` to check if the bucket exists.
 2. If the bucket is missing, attempts to create it — **this only works for MinIO and other self-hosted stores**. For AWS S3 and Lightsail, buckets must be created manually in the console.
-3. For the media bucket, attempts to set a public-read bucket policy. If Block Public Access is enabled, this is silently skipped and a warning is logged — the app falls back to presigned GET URLs.
+3. If `STORAGE_PUBLIC_ACCESS=true`, attempts to set a public-read bucket policy (MinIO / R2 only). For AWS S3 / Lightsail, Block Public Access rejects this — leave `STORAGE_PUBLIC_ACCESS` unset and use the media proxy instead.
+
+---
+
+## Database Migration (existing deployments)
+
+For deployments upgrading from the two-bucket model, run the Drizzle migration `drizzle/0002_storage_single_bucket_keys.sql`. It:
+
+- Strips old full URL prefixes from `issue_attachments.url`, `issue_attachments.thumbnail_url`, `users.image`, and `teams.image`.
+- Prepends the appropriate category prefix (`attachments/` or `media/`).
+- Is **idempotent** — rows where the value does not start with `http` are skipped, so it is safe to re-run.
 
 ---
 
@@ -351,26 +367,23 @@ The `IssueAttachment` type includes the following fields beyond the core file me
 1. Add an API route under `src/app/api/uploads/` that:
    - Authenticates the user
    - Validates file type and size
-   - Generates a key using the appropriate path structure
-   - Calls `generateUploadUrl(bucket, key, contentType)`
-   - Calls `getPublicUrl(bucket, key)` to derive the stored URL
-   - Returns `{ uploadUrl, publicUrl, key }`
+   - Generates a key: `buildKey('attachments', 'issues/{teamId}/...')` or `buildKey('media', 'avatars/{userId}/...')`
+   - Calls `generateUploadUrl(key, contentType)`
+   - Returns `{ uploadUrl, key }`
 
 2. On the client, upload directly via `PUT <uploadUrl>` with `Content-Type` header.
 
-3. Store `publicUrl` in the database.
+3. Store the raw `key` in the database.
 
-### Displaying a private file
+### Displaying a private attachment
 
-Use `generateDownloadUrl(bucket, key)` server-side and pass the presigned URL to the client. Do **not** pass the raw `publicUrl` from the DB as an `<img src>` or link for private objects — it will 403.
+Use `generateDownloadUrl(key)` server-side and pass the presigned URL to the client. Do **not** use the stored `key` directly as an `<img src>` or download link — it will 403.
 
-If you need the key from a stored `publicUrl`:
-```typescript
-const key = getKeyFromUrl('attachments', attachment.url);
-if (key) {
-  const downloadUrl = await generateDownloadUrl('attachments', key);
-}
-```
+### Displaying media (avatars, logos)
+
+Use `/api/media/${key}` as the `<img src>`. The proxy handles both public and private buckets transparently — no per-component logic needed.
+
+Call `invalidateMediaUrl(key)` whenever a media object is replaced or deleted so the next request generates a fresh URL.
 
 ### CORS requirements
 
@@ -397,17 +410,9 @@ Minimum required CORS rule:
 Lightsail object storage (and AWS S3) enables Block Public Access by default. This means:
 
 - Bucket policies that grant `s3:GetObject` to `*` are rejected
-- Direct `https://bucket.s3.region.amazonaws.com/key` URLs return 403 for unauthenticated requests
+- Direct object URLs return 403 for unauthenticated requests
 - Presigned URLs (signed with valid credentials) still work regardless of Block Public Access
 
-The **attachments bucket** is always private — this is correct and expected. No action needed.
+The single-bucket model is designed with this as the **default**. Do not set `STORAGE_PUBLIC_ACCESS=true` on Lightsail or AWS S3. The media proxy (`/api/media/[...key]`) handles serving avatars and logos via cached presigned URLs automatically.
 
-The **media bucket** needs extra consideration depending on your deployment:
-
-| Scenario | What to do |
-|----------|-----------|
-| MinIO (dev) | Bucket auto-created with public-read policy. Direct URLs work. |
-| R2 (production) | Configure public-read policy in R2 dashboard. Direct URLs work. |
-| Lightsail / AWS S3 | Block Public Access is ON. Use presigned GET URLs via `/api/uploads/presigned/download?bucket=media&key=...` to serve avatars/logos. |
-
-> **Note for Lightsail**: Each Lightsail bucket has its own access key pair. Supply them via `STORAGE_ATTACHMENTS_ACCESS_KEY_ID` / `STORAGE_MEDIA_ACCESS_KEY_ID` etc. Do not set `STORAGE_ENDPOINT` — the AWS SDK resolves the endpoint automatically from the region.
+> **Note for Lightsail**: Each Lightsail bucket has a **single access key pair** (unlike the old two-bucket setup). Supply it via `STORAGE_ACCESS_KEY_ID` and `STORAGE_SECRET_ACCESS_KEY`. Do **not** set `STORAGE_ENDPOINT` — the AWS SDK resolves the endpoint automatically from the region.

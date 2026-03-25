@@ -49,13 +49,14 @@ export function useTeamSettings(options: UseTeamSettingsOptions) {
     });
 
     if (publicUrl) {
-      setUploadedImageUrl(publicUrl);
-      
-      // Create a FileList-like object for compatibility if needed, 
+      const absoluteUrl = new URL(publicUrl, window.location.origin).toString();
+      setUploadedImageUrl(absoluteUrl);
+
+      // Create a FileList-like object for compatibility if needed,
       // or just set it if the type allows. assuming we stick to FileList for now:
       const dt = new DataTransfer();
       dt.items.add(file);
-      form.setValue("image", dt.files, { shouldDirty: true }); 
+      form.setValue("image", dt.files, { shouldDirty: true });
     } else {
       // Revert preview on failure
       setImagePreview(currentTeam.image);

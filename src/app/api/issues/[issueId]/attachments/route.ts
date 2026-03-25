@@ -334,10 +334,20 @@ export async function POST(
       fileSize,
     });
 
+    // Generate a presigned download URL so the client can preview the
+    // attachment immediately without a separate GET request.
+    let downloadUrl: string | null = null;
+    try {
+      downloadUrl = await generateDownloadUrl(attachment.url);
+    } catch {
+      // Non-fatal: client will retry on next GET
+    }
+
     // Serialize dates
     const serializedAttachment = {
       ...attachment,
       createdAt: attachment.createdAt.toISOString(),
+      downloadUrl,
     };
 
     return NextResponse.json({ attachment: serializedAttachment }, { status: 201 });

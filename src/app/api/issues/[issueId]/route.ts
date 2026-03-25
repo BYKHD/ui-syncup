@@ -18,6 +18,7 @@ import {
   deleteIssue,
 } from "@/server/issues/issue-service";
 import { getAttachmentsByIssue } from "@/server/issues/attachment-service";
+import { generateDownloadUrl } from "@/lib/storage";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import type {
@@ -142,15 +143,29 @@ export async function GET(
       projectId: issue.projectId,
     });
 
+    // Generate presigned download URLs for each attachment
+    const serializedAttachments = await Promise.all(
+      attachments.map(async (att) => {
+        let downloadUrl: string | null = null;
+        try {
+          downloadUrl = await generateDownloadUrl(att.url);
+        } catch {
+          // Non-fatal: client falls back to the stored key
+        }
+        return {
+          ...att,
+          createdAt: att.createdAt.toISOString(),
+          downloadUrl,
+        };
+      })
+    );
+
     // Serialize dates and include attachments
     const serializedIssue = {
       ...issue,
       createdAt: issue.createdAt.toISOString(),
       updatedAt: issue.updatedAt.toISOString(),
-      attachments: attachments.map((att) => ({
-        ...att,
-        createdAt: att.createdAt.toISOString(),
-      })),
+      attachments: serializedAttachments,
     };
 
     return NextResponse.json({ issue: serializedIssue }, { status: 200 });
