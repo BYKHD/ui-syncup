@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/BYKHD/ui-syncup/compare/v0.4.1...v0.5.0) (2026-03-25)
+
+
+### Features
+
+* Migrate team context management to user session ([#105](https://github.com/BYKHD/ui-syncup/issues/105)) ([bd31b15](https://github.com/BYKHD/ui-syncup/commit/bd31b1529cd09b17c3bde8c6122d9f5c2f4d1f77)), closes [#101](https://github.com/BYKHD/ui-syncup/issues/101) [#104](https://github.com/BYKHD/ui-syncup/issues/104)
+
 # [0.5.0-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.5.0-beta.1...v0.5.0-beta.2) (2026-03-25)
 
 
