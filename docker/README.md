@@ -167,7 +167,7 @@ Because `COMPOSE_PROFILES` is set in `.env`, Docker Compose reads it automatical
 
 1. Bundled infrastructure services (if any profiles active) start and run their health checks.
 2. The `app` container waits for any bundled `postgres`/`redis` to pass their health checks before starting (via `depends_on: condition: service_healthy`). External services have no wait — their availability is your responsibility.
-3. The `app` container runs the compiled migration binary (`./scripts/migrate-bin`) automatically before the Next.js server starts.
+3. The `app` container runs `bun run db:migrate` automatically before the Next.js server starts.
 4. If migration fails, the `app` container exits immediately (the server never starts). Check logs with `docker compose logs app`.
 5. Once migrations succeed, `node server.js` starts and the app becomes available.
 
@@ -216,7 +216,7 @@ Coolify manages `docker compose` deployments through its UI. There are no `--pro
 
 5. **Deploy** — click Deploy. Coolify runs `docker compose up -d` with your env vars injected.
 
-6. **Verify** — check the deployment logs in Coolify's UI. Look for `Starting database migrations...` completing successfully in the `app` container logs.
+6. **Verify** — check the deployment logs in Coolify's UI. Look for `bun run db:migrate` completing successfully in the `app` container logs.
 
 ### Profile selection on Coolify
 
@@ -390,7 +390,7 @@ The most common cause is a failed migration. Check:
 docker compose logs app
 ```
 
-Look for the migration output (`Starting database migrations...`). Common causes:
+Look for the `bun run db:migrate` output. Common causes:
 - `DATABASE_URL` is wrong or unreachable
 - Postgres container is not yet healthy (should not happen with `depends_on`, but can occur with external DBs)
 - Schema conflict from a partial previous migration
