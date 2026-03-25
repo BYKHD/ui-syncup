@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import {
   Sidebar,
   SidebarContent,
@@ -27,9 +28,8 @@ import { useRecentProjects } from '@/features/projects/hooks';
 import type { NavItem } from '@/components/shared/sidebar';
 import { Separator } from '@/components/ui/separator';
 
-import Cookies from 'js-cookie';
+import { useTeam } from '@/hooks/use-team';
 import { useCanManageTeam } from '@/features/teams/hooks/use-can-manage-team';
-import { useTeams } from '@/features/teams';
 import { isSingleWorkspaceMode } from '@/config/workspace';
 
 // Mock navigation data for mockup UI
@@ -37,14 +37,10 @@ import { isSingleWorkspaceMode } from '@/config/workspace';
 
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const teamIdCookie = Cookies.get("team_id");
-  const { data: teamsData } = useTeams();
-  const teams = teamsData?.teams ?? [];
-  
-  // Use cookie if available and valid, otherwise fallback to first team
-  const currentTeam = teams.find((t) => t.id === teamIdCookie) ?? teams[0];
+  const { currentTeam } = useTeam();
+  const teamSlug = currentTeam?.slug;
   const teamId = currentTeam?.id;
-  
+
   const canManageTeam = useCanManageTeam(teamId);
   const { recentProjects, isLoaded: isRecentProjectsLoaded } = useRecentProjects();
 
@@ -62,21 +58,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
     ];
 
-    if (canManageTeam) {
+    // Only add settings nav when slug is resolved — prevents /team/undefined/settings
+    if (canManageTeam && teamSlug) {
       items.push({
         // In single-workspace mode: Use "Settings" label (Requirement 12.4)
         // In multi-workspace mode: Use "Team Settings" label
         title: isSingleWorkspaceMode() ? 'Settings' : 'Team Settings',
-        url: '/team/settings',
+        url: `/team/${teamSlug}/settings`,
         icon: RiListSettingsLine,
         items: [
           {
             title: 'General',
-            url: '/team/settings',
+            url: `/team/${teamSlug}/settings`,
           },
           {
             title: 'Members',
-            url: '/team/settings/members',
+            url: `/team/${teamSlug}/settings/members`,
           },
         ],
       });
@@ -92,7 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
 
     return items;
-  }, [canManageTeam]);
+  }, [canManageTeam, teamSlug]);
 
   return (
     <Sidebar
@@ -103,18 +100,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="/">
+              <Link href="/">
                 <div className="flex aspect-square size-8 items-center justify-center">
-                  <svg 
-                    width="32" 
-                    height="32" 
-                    viewBox="0 0 218 218" 
-                    fill="none" 
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 218 218"
+                    fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                     className="size-8"
                   >
-                    <path 
-                      d="M119.001 109.071V209.071H99.001V132.879L14.002 216.212L0 201.931L84.5166 119.071H9.00098V99.0713H109.001L119.001 109.071ZM186.782 172.711L179.711 179.782L172.641 186.854L132.234 146.447L139.306 139.376L146.376 132.305L186.782 172.711ZM209.001 119.071H151.857V99.0713H209.001V119.071ZM85.7676 71.6953L71.625 85.8379L31.2188 45.4316L45.3613 31.2891L85.7676 71.6953ZM209.001 9.07129L216.071 16.1426L146.376 85.8379L139.306 78.7666L132.234 71.6953L201.93 2L209.001 9.07129ZM119.001 66.2139H99.001V9.07129H119.001V66.2139Z" 
+                    <path
+                      d="M119.001 109.071V209.071H99.001V132.879L14.002 216.212L0 201.931L84.5166 119.071H9.00098V99.0713H109.001L119.001 109.071ZM186.782 172.711L179.711 179.782L172.641 186.854L132.234 146.447L139.306 139.376L146.376 132.305L186.782 172.711ZM209.001 119.071H151.857V99.0713H209.001V119.071ZM85.7676 71.6953L71.625 85.8379L31.2188 45.4316L45.3613 31.2891L85.7676 71.6953ZM209.001 9.07129L216.071 16.1426L146.376 85.8379L139.306 78.7666L132.234 71.6953L201.93 2L209.001 9.07129ZM119.001 66.2139H99.001V9.07129H119.001V66.2139Z"
                       fill="currentColor"
                       className="dark:fill-white fill-black"
                     />
@@ -127,7 +124,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </div>
                   <span className="truncate text-xs text-muted-foreground">Design Feedback Tracker</span>
                 </div>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

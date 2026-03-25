@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { RiExpandUpDownLine, RiAddLine } from "@remixicon/react";
 import { toast } from "sonner";
-import Cookies from "js-cookie";
 
 import {
   DropdownMenu,
@@ -20,6 +19,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useTeams, useSwitchTeam } from "@/features/teams";
+import { useTeam } from "@/hooks/use-team";
 import { TeamAvatar } from "./sidebar-team-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isSingleWorkspaceMode } from "@/config/workspace";
@@ -39,36 +39,41 @@ const TEAM_SWITCHER_DESIGN = {
 const VISIBLE_TEAM_LIMIT = 5;
 
 export function TeamSwitcher() {
-  // Hide workspace switcher in single-workspace mode (Requirement 12.1)
-  if (isSingleWorkspaceMode()) {
-    return null;
-  }
-
   const router = useRouter();
+  const pathname = usePathname();
   const { isMobile, state } = useSidebar();
   const { data: teamsData, isLoading } = useTeams();
   const { mutate: switchTeam, isPending: isSwitching } = useSwitchTeam();
-  
-  const isCollapsed = state === "collapsed";
-  const teams = teamsData?.teams ?? [];
-  
-  // Determine current team from cookie or first team
-  const teamIdCookie = Cookies.get("team_id");
-  const currentTeam = teams.find((t) => t.id === teamIdCookie) ?? teams[0];
-  
+  const { currentTeam } = useTeam();
+
+  const teams = useMemo(() => teamsData?.teams ?? [], [teamsData?.teams]);
   const visibleTeams = useMemo(
     () => teams.slice(0, VISIBLE_TEAM_LIMIT),
     [teams]
   );
 
+  // Hide workspace switcher in single-workspace mode (Requirement 12.1)
+  if (isSingleWorkspaceMode()) {
+    return null;
+  }
+
+  const isCollapsed = state === "collapsed";
+
   const handleTeamSwitch = (teamId: string) => {
     if (teamId === currentTeam?.id) return;
-    
+
+    const newTeam = teams.find((t) => t.id === teamId);
+    if (!newTeam) return;
+
     switchTeam(teamId, {
       onSuccess: () => {
         toast.success("Team switched successfully");
-        // Reload page to update team context
-        window.location.reload();
+        const isOnTeamRoute = /^\/team\/[^/]+/.test(pathname);
+        if (isOnTeamRoute) {
+          router.push(pathname.replace(/^\/team\/[^/]+/, `/team/${newTeam.slug}`));
+        } else if (newTeam.slug) {
+          router.push(`/team/${newTeam.slug}/settings`);
+        }
       },
       onError: (error) => {
         toast.error(error.message || "Failed to switch team");
@@ -159,7 +164,7 @@ export function TeamSwitcher() {
                 </DropdownMenuItem>
               ))}
               {teams.length > visibleTeams.length && (
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="rounded-xl px-2 py-2 text-xs text-muted-foreground"
                   disabled
                 >

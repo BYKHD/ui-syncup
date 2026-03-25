@@ -40,6 +40,7 @@ export interface SessionUser {
   image?: string | null;
   hasPassword?: boolean;
   sessionId: string;
+  lastActiveTeamId?: string | null;
 }
 
 /**
@@ -228,17 +229,20 @@ export async function getSession(
         name: betterAuthSession.user.name,
         image: betterAuthSession.user.image ?? null,
         sessionId: betterAuthSession.session.id,
-        hasPassword: await (async () => {
+        ...(await (async () => {
           try {
-             const dbUser = await db.query.users.findFirst({
+            const dbUser = await db.query.users.findFirst({
               where: (users, { eq }) => eq(users.id, betterAuthSession.user.id),
-              columns: { passwordHash: true },
+              columns: { passwordHash: true, lastActiveTeamId: true },
             });
-            return !!dbUser?.passwordHash;
+            return {
+              hasPassword: !!dbUser?.passwordHash,
+              lastActiveTeamId: dbUser?.lastActiveTeamId ?? null,
+            };
           } catch {
-            return false;
+            return { hasPassword: false, lastActiveTeamId: null };
           }
-        })(),
+        })()),
       };
     }
     
@@ -272,6 +276,7 @@ export async function getSession(
             image: user.image ?? null,
             sessionId: sessionRecord.id,
             hasPassword: !!user.passwordHash,
+            lastActiveTeamId: user.lastActiveTeamId ?? null,
           };
         }
       }
