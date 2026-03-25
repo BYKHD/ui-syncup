@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/server/auth/session';
-import { generateUploadUrl, getPublicUrl } from '@/lib/storage';
+import { generateUploadUrl, buildKey } from '@/lib/storage';
 import { db } from '@/lib/db';
 import { issues } from '@/server/db/schema/issues';
 import { eq } from 'drizzle-orm';
@@ -30,15 +30,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Issue not found' }, { status: 404 });
     }
 
-    // 4. Generate key with hierarchical path structure
-    // Structure: issues/{teamId}/{projectId}/{issueId}/{uuid}.{ext}
+    // 4. Build key with hierarchical path structure
+    // Structure: attachments/issues/{teamId}/{projectId}/{issueId}/{uuid}.{ext}
     // Benefits: Easy to query/delete by team or project, supports storage quotas
     const extension = fileName.includes('.') ? fileName.split('.').pop() : '';
-    const key = `issues/${issue.teamId}/${issue.projectId}/${issueId}/${uuidv4()}${extension ? `.${extension}` : ''}`;
-    const uploadUrl = await generateUploadUrl('attachments', key, contentType);
-    const publicUrl = getPublicUrl('attachments', key);
+    const relativePath = `issues/${issue.teamId}/${issue.projectId}/${issueId}/${uuidv4()}${extension ? `.${extension}` : ''}`;
+    const key = buildKey('attachments', relativePath);
 
-    return NextResponse.json({ uploadUrl, publicUrl, key });
+    const uploadUrl = await generateUploadUrl(key, contentType);
+
+    return NextResponse.json({ uploadUrl, key });
   } catch (error) {
     console.error('Presigned URL error:', error);
     return NextResponse.json(

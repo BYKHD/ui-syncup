@@ -151,7 +151,9 @@ export async function initCommand(): Promise<void> {
     message: 'Storage backend:',
     choices: [
       { name: 'Bundled MinIO (recommended)', value: 'bundled' },
-      { name: 'External S3 (AWS / R2 / Backblaze)', value: 'external' },
+      { name: 'AWS S3 or Lightsail object storage', value: 'aws' },
+      { name: 'Cloudflare R2', value: 'r2' },
+      { name: 'Other S3-compatible (Backblaze, etc.)', value: 'other' },
     ],
   })
   if (storageChoice === 'bundled') {
@@ -167,14 +169,34 @@ export async function initCommand(): Promise<void> {
     envVars['STORAGE_REGION'] = 'us-east-1'
     envVars['STORAGE_ACCESS_KEY_ID'] = minioUser
     envVars['STORAGE_SECRET_ACCESS_KEY'] = minioPass
-    envVars['STORAGE_ATTACHMENTS_BUCKET'] = 'ui-syncup-attachments'
-    envVars['STORAGE_MEDIA_BUCKET'] = 'ui-syncup-media'
-    envVars['STORAGE_ATTACHMENTS_PUBLIC_URL'] = `${appUrl}/storage/attachments`
-    envVars['STORAGE_MEDIA_PUBLIC_URL'] = `${appUrl}/storage/media`
+    envVars['STORAGE_BUCKET'] = 'ui-syncup-storage'
+    envVars['STORAGE_PUBLIC_ACCESS'] = 'true'
+    envVars['STORAGE_PUBLIC_URL'] = 'http://minio:9000/ui-syncup-storage'
+  } else if (storageChoice === 'aws') {
+    ui.info('Leave the endpoint blank — the AWS SDK resolves it from the region automatically.')
+    envVars['STORAGE_REGION'] = await input({ message: 'AWS region (e.g. ap-southeast-1):' })
+    envVars['STORAGE_ACCESS_KEY_ID'] = await input({ message: 'Access key ID:' })
+    envVars['STORAGE_SECRET_ACCESS_KEY'] = await input({ message: 'Secret access key:' })
+    envVars['STORAGE_BUCKET'] = await input({ message: 'Bucket name:' })
+    // Block Public Access is the default — no STORAGE_PUBLIC_ACCESS needed
+  } else if (storageChoice === 'r2') {
+    const accountId = await input({ message: 'Cloudflare account ID:' })
+    envVars['STORAGE_ENDPOINT'] = `https://${accountId}.r2.cloudflarestorage.com`
+    envVars['STORAGE_REGION'] = 'auto'
+    envVars['STORAGE_ACCESS_KEY_ID'] = await input({ message: 'R2 access key ID:' })
+    envVars['STORAGE_SECRET_ACCESS_KEY'] = await input({ message: 'R2 secret access key:' })
+    envVars['STORAGE_BUCKET'] = await input({ message: 'Bucket name:' })
+    const r2Public = await confirm({ message: 'Is this bucket public (custom domain configured)?', default: false })
+    if (r2Public) {
+      envVars['STORAGE_PUBLIC_ACCESS'] = 'true'
+      envVars['STORAGE_PUBLIC_URL'] = await input({ message: 'R2 public URL (e.g. https://media.example.com):' })
+    }
   } else {
     envVars['STORAGE_ENDPOINT'] = await input({ message: 'Storage endpoint URL:' })
-    envVars['STORAGE_ACCESS_KEY_ID'] = await input({ message: 'Storage access key ID:' })
-    envVars['STORAGE_SECRET_ACCESS_KEY'] = await input({ message: 'Storage secret access key:' })
+    envVars['STORAGE_REGION'] = await input({ message: 'Region:', default: 'us-east-1' })
+    envVars['STORAGE_ACCESS_KEY_ID'] = await input({ message: 'Access key ID:' })
+    envVars['STORAGE_SECRET_ACCESS_KEY'] = await input({ message: 'Secret access key:' })
+    envVars['STORAGE_BUCKET'] = await input({ message: 'Bucket name:' })
   }
 
   // Email

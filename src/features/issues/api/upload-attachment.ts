@@ -15,7 +15,6 @@ export interface UploadAttachmentParams {
 interface PresignedResponse {
   uploadUrl: string;
   key: string;
-  publicUrl: string;
 }
 
 interface CreateAttachmentResponse {
@@ -25,17 +24,17 @@ interface CreateAttachmentResponse {
 export async function uploadAttachment(params: UploadAttachmentParams): Promise<IssueAttachment> {
   const { issueId, file, reviewVariant = 'as_is', width, height, annotations, onProgress } = params;
 
-  // 1. Get presigned URL from server
-  const { uploadUrl, publicUrl } = await apiClient<PresignedResponse>('/api/uploads/presigned', {
+  // 1. Get presigned upload URL and storage key from server
+  const { uploadUrl, key } = await apiClient<PresignedResponse>('/api/uploads/presigned', {
     method: 'POST',
-    body: { 
-      fileName: file.name, 
+    body: {
+      fileName: file.name,
       contentType: file.type,
-      issueId 
+      issueId
     }
   });
 
-  // 2. Upload file directly to S3/R2 using XHR for progress tracking
+  // 2. Upload file directly to S3/storage using XHR for progress tracking
   await new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('PUT', uploadUrl);
@@ -62,14 +61,14 @@ export async function uploadAttachment(params: UploadAttachmentParams): Promise<
     xhr.send(file);
   });
 
-  // 3. Create attachment record in database
+  // 3. Create attachment record in database — store the storage key in the url field
   const { attachment } = await apiClient<CreateAttachmentResponse>(`/api/issues/${issueId}/attachments`, {
     method: 'POST',
     body: {
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type,
-      url: publicUrl,
+      url: key,
       width,
       height,
       reviewVariant,

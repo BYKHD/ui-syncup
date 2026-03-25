@@ -1,13 +1,12 @@
 /**
  * Media upload presigned URL endpoint
- * 
- * For uploading avatars and team images to the media bucket
+ *
+ * For uploading avatars and team images to storage.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import { getSession } from '@/server/auth/session';
-import { generateUploadUrl, getPublicUrl, deleteFile } from '@/lib/storage';
+import { generateUploadUrl, buildKey, deleteFile, invalidateMediaUrl } from '@/lib/storage';
 import { v4 as uuidv4 } from 'uuid';
 
 type MediaType = 'avatar' | 'team';
@@ -48,17 +47,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Generate key based on media type
-    // Structure: avatars/{userId}/{uuid}.{ext} or teams/{teamId}/{uuid}.{ext}
+    // 5. Build key: media/avatars/{userId}/{uuid}.{ext} or media/teams/{teamId}/{uuid}.{ext}
     const ext = fileName.split('.').pop() || 'jpg';
     const folder = type === 'avatar' ? 'avatars' : 'teams';
-    const key = `${folder}/${entityId}/${uuidv4()}.${ext}`;
+    const key = buildKey('media', `${folder}/${entityId}/${uuidv4()}.${ext}`);
 
-    // 6. Generate presigned URL
-    const uploadUrl = await generateUploadUrl('media', key, contentType);
-    const publicUrl = getPublicUrl('media', key);
+    // 6. Generate presigned upload URL
+    const uploadUrl = await generateUploadUrl(key, contentType);
 
-    return NextResponse.json({ uploadUrl, publicUrl, key, maxFileSize: MAX_FILE_SIZE });
+    return NextResponse.json({ uploadUrl, key, maxFileSize: MAX_FILE_SIZE });
   } catch (error) {
     console.error('Media presigned URL error:', error);
     return NextResponse.json(
@@ -73,45 +70,35 @@ export async function DELETE(request: NextRequest) {
     const session = await getSession();
 
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    // Re-use simpler validation or just strict checks
     const { key, type, entityId } = body;
 
-    // Basic validation
     if (!key || typeof key !== 'string') {
-        return NextResponse.json({ error: "Missing or invalid 'key'" }, { status: 400 });
+      return NextResponse.json({ error: "Missing or invalid 'key'" }, { status: 400 });
     }
 
-    // Security check: Ensure user has access to the entity they are modifying
-    // For 'team', check if user is admin/member of the team
-    // For 'avatar', check if userId matches session.user.id
-    // This logic mimics the POST validation but for deletion
+    // Security check: ensure user has access to the entity they are modifying
     if (type === 'team') {
-       // Validate team permission
-       // Ideally we check if session.user is member of entityId (teamId)
-       // For MVP, we'll check if the key starts with the expected path
-       if (!key.includes(`teams/${entityId}`)) {
-         return NextResponse.json({ error: "Invalid key for this entity" }, { status: 403 });
-       }
+      if (!key.includes(`teams/${entityId}`)) {
+        return NextResponse.json({ error: 'Invalid key for this entity' }, { status: 403 });
+      }
     } else if (type === 'avatar') {
-       if (entityId !== session.id) {
-         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-       }
+      if (entityId !== session.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+      }
     }
 
-    // Call storage deletion
-    // Helper needed from storage.ts
-    // We need to import deleteFile which we just added
-    await deleteFile('media', key);
+    await deleteFile(key);
+    invalidateMediaUrl(key);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting media:", error);
+    console.error('Error deleting media:', error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }

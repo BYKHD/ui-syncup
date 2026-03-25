@@ -15,10 +15,10 @@ export async function register() {
     const { startEmailWorker } = await import('@/server/email/worker');
     startEmailWorker();
 
-    // Ensure storage buckets exist (creates them on first run)
-    const { ensureStorageBuckets } = await import('@/lib/storage');
-    ensureStorageBuckets().catch((err) =>
-      console.error('[storage] ensureStorageBuckets failed:', err)
+    // Ensure storage bucket exists (creates it on first run if using MinIO)
+    const { ensureStorageBucket } = await import('@/lib/storage');
+    ensureStorageBucket().catch((err) =>
+      console.error('[storage] ensureStorageBucket failed:', err)
     );
   }
 }

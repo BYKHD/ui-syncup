@@ -8,9 +8,8 @@
  */
 
 import { db } from './db'
-import { storageClient } from './storage'
+import { getStorageClient, getBucketName } from './storage'
 import { authConfig } from './auth-config'
-import { env } from './env'
 import { HeadBucketCommand } from '@aws-sdk/client-s3'
 
 /**
@@ -69,37 +68,31 @@ export async function checkDatabase(): Promise<ServiceHealthResult> {
 
 /**
  * Validate storage connection
- * 
- * Verifies Cloudflare R2 bucket accessibility by checking
- * if the configured bucket exists and is accessible.
+ *
+ * Verifies the storage bucket is accessible by sending a HeadBucket request.
  */
 export async function checkStorage(): Promise<ServiceHealthResult> {
   const startTime = Date.now()
-  
+
   try {
-    // Check if bucket is accessible using HeadBucket
-    const command = new HeadBucketCommand({
-      Bucket: env.R2_BUCKET_NAME,
-    })
-    
-    // Access the internal S3 client to send the command
-    await storageClient.send(command)
-    
+    const command = new HeadBucketCommand({ Bucket: getBucketName() })
+    await getStorageClient().send(command)
+
     const responseTime = Date.now() - startTime
-    
+
     return {
       name: 'storage',
       status: 'healthy',
-      message: 'Cloudflare R2 bucket accessible',
+      message: `Storage bucket accessible (${getBucketName()})`,
       responseTime,
     }
   } catch (error) {
     const responseTime = Date.now() - startTime
-    
+
     return {
       name: 'storage',
       status: 'unhealthy',
-      message: 'Failed to access Cloudflare R2 bucket',
+      message: 'Failed to access storage bucket',
       responseTime,
       error: error instanceof Error ? error.message : 'Unknown error',
     }
