@@ -1,3 +1,10 @@
+# [0.6.0-beta.4](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.3...v0.6.0-beta.4) (2026-03-25)
+
+
+### Reverts
+
+* Revert "fix: Compile the database migration script into a self-contained binary, removing `bun` and `node_modules` from the production image and updating execution commands." ([377f81f](https://github.com/BYKHD/ui-syncup/commit/377f81f7d90b04b31ab1745594c685006bf3f101))
+
 # [0.6.0-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.5.0...v0.6.0-beta.1) (2026-03-25)
 
 
