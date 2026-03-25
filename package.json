@@ -18,7 +18,7 @@
     "test:ui:report": "playwright show-report",
     "validate-env": "bun run scripts/validate-env.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "bun run scripts/migrate.ts",
+    "db:migrate": "bun run ./scripts/migrate.ts",
     "db:migrate:kit": "drizzle-kit migrate",
     "db:migrate:sync": "bun run scripts/sync-migration-tracking.ts",
     "db:studio": "drizzle-kit studio",

@@ -46,7 +46,7 @@ RUN bun run build
 
 # Compile the migration script into a self-contained binary.
 # This eliminates the need for node_modules in the runner stage.
-RUN bun build --compile scripts/migrate.ts --outfile scripts/migrate-bin
+RUN bun build --compile ./scripts/migrate.ts --outfile ./scripts/migrate-bin
 
 # ---------------------------------------------------------------------------
 # Stage 3: Production runtime (oven/bun for migration support)
