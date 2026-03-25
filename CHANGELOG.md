@@ -1,3 +1,10 @@
+# [0.6.0-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.1...v0.6.0-beta.2) (2026-03-25)
+
+
+### Bug Fixes
+
+* Compile the database migration script into a self-contained binary, removing `bun` and `node_modules` from the production image and updating execution commands. ([c9347c9](https://github.com/BYKHD/ui-syncup/commit/c9347c9b8e9ae658b827c054f2b79a9a250d74eb))
+
 # [0.6.0-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.5.0...v0.6.0-beta.1) (2026-03-25)
 
 
