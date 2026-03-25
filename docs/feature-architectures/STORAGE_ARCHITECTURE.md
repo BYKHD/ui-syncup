@@ -38,6 +38,7 @@ STORAGE_ENDPOINT set?
 | Provider | `STORAGE_ENDPOINT` | `forcePathStyle` | Notes |
 |----------|-------------------|-----------------|-------|
 | **MinIO** (local dev) | `http://127.0.0.1:9000` | `true` (auto) | Bucket auto-created on startup |
+| **MinIO** (Docker Compose) | `http://minio:9000` | `true` (auto) | Use `COMPOSE_PROFILES=storage` to bundle |
 | **Cloudflare R2** | `https://<account>.r2.cloudflarestorage.com` | `true` (auto) | Set CORS; public URL can be a separate custom domain |
 | **AWS S3** | *(not set)* | `false` (auto) | Set `STORAGE_REGION` |
 | **Lightsail object storage** | *(not set)* | `false` (auto) | Set `STORAGE_REGION`; Block Public Access is ON by default |
@@ -58,10 +59,10 @@ STORAGE_REGION=ap-southeast-1            # required for AWS / Lightsail
 STORAGE_ACCESS_KEY_ID=...
 STORAGE_SECRET_ACCESS_KEY=...
 
-STORAGE_ATTACHMENTS_BUCKET=my-attachments
+STORAGE_ATTACHMENTS_BUCKET=ui-syncup-attachments
 STORAGE_ATTACHMENTS_PUBLIC_URL=https://my-attachments.s3.ap-southeast-1.amazonaws.com
 
-STORAGE_MEDIA_BUCKET=my-media
+STORAGE_MEDIA_BUCKET=ui-syncup-media
 STORAGE_MEDIA_PUBLIC_URL=https://my-media.s3.ap-southeast-1.amazonaws.com
 ```
 
@@ -72,7 +73,7 @@ STORAGE_MEDIA_PUBLIC_URL=https://my-media.s3.ap-southeast-1.amazonaws.com
 
 STORAGE_REGION=ap-southeast-1            # shared fallback region
 
-STORAGE_ATTACHMENTS_BUCKET=my-attachments
+STORAGE_ATTACHMENTS_BUCKET=ui-syncup-attachments
 STORAGE_ATTACHMENTS_PUBLIC_URL=https://my-attachments.s3.ap-southeast-1.amazonaws.com
 STORAGE_ATTACHMENTS_ACCESS_KEY_ID=AKIA...
 STORAGE_ATTACHMENTS_SECRET_ACCESS_KEY=...
@@ -80,19 +81,44 @@ STORAGE_ATTACHMENTS_SECRET_ACCESS_KEY=...
 # Optional per-bucket region override:
 # STORAGE_ATTACHMENTS_REGION=ap-southeast-1
 
-STORAGE_MEDIA_BUCKET=my-media
+STORAGE_MEDIA_BUCKET=ui-syncup-media
 STORAGE_MEDIA_PUBLIC_URL=https://my-media.s3.ap-southeast-1.amazonaws.com
 STORAGE_MEDIA_ACCESS_KEY_ID=AKIA...
 STORAGE_MEDIA_SECRET_ACCESS_KEY=...
 ```
 
+### Bundled MinIO (Docker Compose)
+
+When `COMPOSE_PROFILES=storage` is set, a MinIO container is started alongside the app. The MinIO admin credentials must match the storage credentials:
+
+```bash
+COMPOSE_PROFILES=storage
+
+STORAGE_ENDPOINT=http://minio:9000
+STORAGE_REGION=us-east-1
+STORAGE_ACCESS_KEY_ID=minioadmin
+STORAGE_SECRET_ACCESS_KEY=minioadmin
+
+STORAGE_ATTACHMENTS_BUCKET=ui-syncup-attachments
+STORAGE_ATTACHMENTS_PUBLIC_URL=http://localhost:9000/ui-syncup-attachments
+
+STORAGE_MEDIA_BUCKET=ui-syncup-media
+STORAGE_MEDIA_PUBLIC_URL=http://localhost:9000/ui-syncup-media
+
+# MinIO admin bootstrap (must match credentials above)
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=change-me-min-8-chars
+```
+
 ### Variable resolution order (per bucket)
 
 ```
-STORAGE_ATTACHMENTS_ENDPOINT  →  STORAGE_ENDPOINT  →  (undefined)
-STORAGE_ATTACHMENTS_REGION    →  STORAGE_REGION    →  'us-east-1'
-STORAGE_ATTACHMENTS_ACCESS_KEY_ID  →  STORAGE_ACCESS_KEY_ID  →  'minioadmin'
-STORAGE_ATTACHMENTS_SECRET_ACCESS_KEY  →  STORAGE_SECRET_ACCESS_KEY  →  'minioadmin'
+STORAGE_ATTACHMENTS_ENDPOINT     →  STORAGE_ENDPOINT         →  (undefined)
+STORAGE_ATTACHMENTS_REGION       →  STORAGE_REGION           →  'us-east-1'
+STORAGE_ATTACHMENTS_ACCESS_KEY_ID (or _ACCESS_KEY)
+                                 →  STORAGE_ACCESS_KEY_ID    →  'minioadmin'
+STORAGE_ATTACHMENTS_SECRET_ACCESS_KEY (or _SECRET_KEY)
+                                 →  STORAGE_SECRET_ACCESS_KEY →  'minioadmin'
 ```
 
 Replace `ATTACHMENTS` with `MEDIA` for the media bucket.
@@ -124,6 +150,16 @@ Browser                  App Server               S3 Provider
 ```
 
 The `publicUrl` stored in the DB is constructed from `STORAGE_ATTACHMENTS_PUBLIC_URL + "/" + key`. It is a direct S3 URL — it is **not** the presigned URL.
+
+### File size limits
+
+| Scope | Limit |
+|-------|-------|
+| Single attachment | 10 MB |
+| Total per issue | 50 MB |
+| Media (avatar / team logo) | 2 MB |
+
+Allowed media content types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`.
 
 ---
 
@@ -190,6 +226,20 @@ deleteFile(bucket: StorageBucket, key: string): Promise<void>
 
 // Get the actual bucket name for a logical bucket type
 getBucketName(bucket: StorageBucket): string
+
+// Get the configured S3Client for a bucket type
+getStorageClient(bucket: StorageBucket): S3Client
+```
+
+### Attachment service helpers (`src/server/issues/attachment-service.ts`)
+
+```typescript
+// Build the canonical S3 key for an attachment
+// Path: issues/{teamId}/{projectId}/{issueId}/{attachmentId}-{sanitizedFilename}
+generateR2Path(teamId, projectId, issueId, attachmentId, fileName): string
+
+// Returns true if the MIME type is an image
+isImageType(fileType: string): boolean
 ```
 
 ---
@@ -202,6 +252,37 @@ getBucketName(bucket: StorageBucket): string
 | `POST` | `/api/uploads/media` | Get presigned PUT URL for avatar/team logo | Session |
 | `DELETE` | `/api/uploads/media` | Delete an avatar or team logo from storage | Session |
 | `GET` | `/api/uploads/presigned/download` | Get presigned GET URL for any private object | Session |
+
+### POST /api/uploads/presigned
+
+Request body:
+```json
+{ "fileName": "screenshot.png", "contentType": "image/png", "issueId": "<uuid>" }
+```
+
+Response:
+```json
+{ "uploadUrl": "https://...", "publicUrl": "https://...", "key": "issues/..." }
+```
+
+### POST /api/uploads/media
+
+Request body:
+```json
+{ "fileName": "avatar.jpg", "contentType": "image/jpeg", "type": "avatar|team", "entityId": "<userId|teamId>" }
+```
+
+Response:
+```json
+{ "uploadUrl": "https://...", "publicUrl": "https://...", "key": "avatars/...", "maxFileSize": 2097152 }
+```
+
+### DELETE /api/uploads/media
+
+Request body:
+```json
+{ "key": "avatars/...", "type": "avatar|team", "entityId": "<userId|teamId>" }
+```
 
 ### Presigned download endpoint
 
@@ -217,8 +298,11 @@ Cache-Control: private, max-age=3600
 ## Object Key Structure
 
 ```
-# Issue attachments
+# Issue attachments (generated by presigned upload endpoint)
 issues/{teamId}/{projectId}/{issueId}/{uuid}.{ext}
+
+# Issue attachments (generated by generateR2Path helper)
+issues/{teamId}/{projectId}/{issueId}/{attachmentId}-{sanitizedFilename}
 
 # Avatars
 avatars/{userId}/{uuid}.{ext}
@@ -231,6 +315,22 @@ The hierarchical structure enables:
 - Batch-deleting all attachments for a project (`issues/{teamId}/{projectId}/`)
 - Storage quota calculation per team or project
 - Access control validation by checking key prefix
+
+---
+
+## Attachment Record Fields
+
+The `IssueAttachment` type includes the following fields beyond the core file metadata:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `url` | `string` | Public URL stored in DB (not presigned) |
+| `downloadUrl` | `string \| null` | Presigned GET URL (populated server-side, valid 1 hour) |
+| `thumbnailUrl` | `string \| null` | Optional thumbnail for image attachments |
+| `width` | `number \| null` | Image width in pixels |
+| `height` | `number \| null` | Image height in pixels |
+| `reviewVariant` | `"as_is" \| "to_be" \| "reference"` | Review context tag (default: `as_is`) |
+| `annotations` | `AttachmentAnnotation[]` | JSONB array of canvas annotations (max 50) |
 
 ---
 
