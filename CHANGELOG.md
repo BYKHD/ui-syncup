@@ -1,3 +1,10 @@
+# [0.6.0-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.2...v0.6.0-beta.3) (2026-03-25)
+
+
+### Bug Fixes
+
+* script paths ([6581607](https://github.com/BYKHD/ui-syncup/commit/65816074d1933cd5593ed5e4a52b6f7177135ec8))
+
 # [0.6.0-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.1...v0.6.0-beta.2) (2026-03-25)
 
 
