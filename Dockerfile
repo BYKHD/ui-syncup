@@ -44,6 +44,10 @@ ARG RESEND_API_KEY=re_dummy
 
 RUN bun run build
 
+# Compile the migration script into a self-contained binary.
+# This eliminates the need for node_modules in the runner stage.
+RUN bun build --compile scripts/migrate.ts --outfile scripts/migrate-bin
+
 # ---------------------------------------------------------------------------
 # Stage 3: Production runtime (oven/bun for migration support)
 # ---------------------------------------------------------------------------
@@ -64,21 +68,17 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy migration assets needed by the compose entrypoint: bun run db:migrate
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/bun.lock* ./
-COPY --from=builder /app/scripts/migrate.ts ./scripts/migrate.ts
+# Copy compiled migration binary and SQL migration files.
+# No node_modules needed — the binary is fully self-contained.
+COPY --from=builder /app/scripts/migrate-bin ./scripts/migrate-bin
 COPY --from=builder /app/drizzle ./drizzle
 
-# Install production deps (drizzle-orm, postgres, dotenv needed by migration)
-RUN bun install --production --frozen-lockfile
-
-RUN chown -R nextjs:nodejs /app/drizzle /app/scripts /app/package.json
+RUN chown -R nextjs:nodejs /app/drizzle /app/scripts
 
 USER nextjs
 
 EXPOSE 3000
 
 # Default CMD for standalone runs without compose.
-# The compose entrypoint overrides this with: sh -c "bun run db:migrate && node server.js"
+# The compose entrypoint overrides this with: sh -c "./scripts/migrate-bin && node server.js"
 CMD ["node", "server.js"]
