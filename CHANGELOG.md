@@ -1,3 +1,10 @@
+# [0.5.0-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.5.0-beta.1...v0.5.0-beta.2) (2026-03-25)
+
+
+### Features
+
+* Migrate team context management to user session and introduce slug-based routing for team settings. ([d261ccd](https://github.com/BYKHD/ui-syncup/commit/d261ccdef619dd7640999d673f4ce70049db0885))
+
 # [0.5.0-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.4.1-beta.2...v0.5.0-beta.1) (2026-03-24)
 
 
