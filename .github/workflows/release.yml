@@ -13,7 +13,7 @@ jobs:
   quality:
     name: Quality Gate
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    if: "github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip ci]')"
     permissions:
       contents: read
     steps:
@@ -123,6 +123,28 @@ jobs:
             ghcr.io/bykhd/ui-syncup:v${{ needs.release.outputs.new_release_version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  sync-develop:
+    name: Sync develop with main
+    needs: release
+    runs-on: ubuntu-latest
+    if: |
+      needs.release.outputs.new_release_published == 'true' &&
+      !contains(needs.release.outputs.new_release_version, '-') &&
+      github.ref_name == 'main'
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Merge main back into develop
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout develop
+          git merge main --no-edit
+          git push origin develop
 
   docker:
     name: Build & Push Docker Image
