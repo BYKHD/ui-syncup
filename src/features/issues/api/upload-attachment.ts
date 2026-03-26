@@ -12,69 +12,67 @@ export interface UploadAttachmentParams {
   onProgress?: (progress: number) => void;
 }
 
-interface PresignedResponse {
-  uploadUrl: string;
-  key: string;
-}
-
 interface CreateAttachmentResponse {
   attachment: IssueAttachment;
 }
 
-export async function uploadAttachment(params: UploadAttachmentParams): Promise<IssueAttachment> {
-  const { issueId, file, reviewVariant = 'as_is', width, height, annotations, onProgress } = params;
-
-  // 1. Get presigned upload URL and storage key from server
-  const { uploadUrl, key } = await apiClient<PresignedResponse>('/api/uploads/presigned', {
-    method: 'POST',
-    body: {
-      fileName: file.name,
-      contentType: file.type,
-      issueId
-    }
-  });
-
-  // 2. Upload file directly to S3/storage using XHR for progress tracking
-  await new Promise<void>((resolve, reject) => {
+function xhrUpload(
+  url: string,
+  body: FormData,
+  onProgress?: (progress: number) => void
+): Promise<{ key: string }> {
+  return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('PUT', uploadUrl);
-    xhr.setRequestHeader('Content-Type', file.type);
+    xhr.open('POST', url);
 
     if (onProgress) {
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
-          const percentComplete = (event.loaded / event.total) * 100;
-          onProgress(percentComplete);
+          onProgress((event.loaded / event.total) * 100);
         }
       };
     }
 
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
+        resolve(JSON.parse(xhr.responseText));
       } else {
         reject(new Error(`Upload failed with status ${xhr.status}`));
       }
     };
 
     xhr.onerror = () => reject(new Error('Upload failed due to network error'));
-    xhr.send(file);
+    xhr.send(body);
   });
+}
 
-  // 3. Create attachment record in database — store the storage key in the url field
-  const { attachment } = await apiClient<CreateAttachmentResponse>(`/api/issues/${issueId}/attachments`, {
-    method: 'POST',
-    body: {
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      url: key,
-      width,
-      height,
-      reviewVariant,
-      annotations
+export async function uploadAttachment(params: UploadAttachmentParams): Promise<IssueAttachment> {
+  const { issueId, file, reviewVariant = 'as_is', width, height, annotations, onProgress } = params;
+
+  // 1. Upload file to server (server uploads to S3)
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('issueId', issueId);
+
+  const { key } = await xhrUpload('/api/uploads/attachment', formData, onProgress);
+
+  // 2. Create attachment record in database
+  const { attachment } = await apiClient<CreateAttachmentResponse>(
+    `/api/issues/${issueId}/attachments`,
+    {
+      method: 'POST',
+      body: {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        url: key,
+        width,
+        height,
+        reviewVariant,
+        annotations,
+      },
     }
-  });
+  );
 
   return attachment;
 }

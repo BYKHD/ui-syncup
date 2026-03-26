@@ -65,7 +65,7 @@ export function getCSPDirectives(): CSPDirectives {
       'https://www.ui-syncup.com',
       ...(env.NEXT_PUBLIC_APP_URL ? [env.NEXT_PUBLIC_APP_URL] : []),
       // Development: allow local connections for API and MinIO storage
-      ...(isDevelopment() ? ['http://localhost:*', 'ws://localhost:*', 'http://127.0.0.1:*'] : []),
+      ...(isDevelopment() ? ['http://localhost:*', 'ws://localhost:*', 'http://127.0.0.1:*', 'ws://127.0.0.1:*'] : []),
       // Storage endpoints
       env.STORAGE_ENDPOINT || 'http://127.0.0.1:9000',
       ...(env.STORAGE_PUBLIC_URL ? [env.STORAGE_PUBLIC_URL] : []),

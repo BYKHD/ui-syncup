@@ -69,8 +69,8 @@ function createClient(): S3Client {
     // checksum in presigned PUT URLs. Browsers cannot send the required
     // x-amz-checksum-crc32 header, causing S3 to reject uploads with 400.
     // 'when_required' disables automatic checksums for presigned URLs.
-    requestChecksumCalculation: 'when_required',
-    responseChecksumValidation: 'when_required',
+    requestChecksumCalculation: 'WHEN_REQUIRED',
+    responseChecksumValidation: 'WHEN_REQUIRED',
   });
 }
 
@@ -125,22 +125,19 @@ export function getPublicUrl(key: string): string {
 // ============================================================================
 
 /**
- * Generate a presigned URL for uploading a file.
+ * Upload a file to storage from the server side.
  *
  * @param key - Full storage key (use buildKey() to construct)
+ * @param body - File contents as a Buffer
  * @param contentType - MIME type of the file
- * @returns Presigned PUT URL valid for 1 hour
  */
-export async function generateUploadUrl(
-  key: string,
-  contentType: string
-): Promise<string> {
-  const command = new PutObjectCommand({
+export async function uploadFile(key: string, body: Buffer, contentType: string): Promise<void> {
+  await client.send(new PutObjectCommand({
     Bucket: getBucketName(),
     Key: key,
+    Body: body,
     ContentType: contentType,
-  });
-  return getSignedUrl(client, command, { expiresIn: 3600 });
+  }));
 }
 
 /**

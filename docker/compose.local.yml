@@ -67,39 +67,41 @@ services:
         condition: service_healthy
     restart: "no"
 
-  minio:
-    image: minio/minio:latest
-    restart: unless-stopped
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: miniopass
-    volumes:
-      - minio_local:/data
-    command: server /data --console-address ":9001"
-    healthcheck:
-      test: [ "CMD", "mc", "ready", "local" ]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+  # minio:
+  #   image: minio/minio:latest
+  #   restart: unless-stopped
+  #   ports:
+  #     - "9000:9000"
+  #     - "9001:9001"
+  #   environment:
+  #     MINIO_ROOT_USER: minioadmin
+  #     MINIO_ROOT_PASSWORD: miniopass
+  #   volumes:
+  #     - minio_local:/data
+  #   command: server /data --console-address ":9001"
+  #   healthcheck:
+  #     test: [ "CMD", "mc", "ready", "local" ]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 10
 
-  minio-init:
-    image: minio/mc:latest
-    restart: "no"
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-        mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
-        mc mb --ignore-existing myminio/${STORAGE_BUCKET:-ui-syncup-storage};
-        if [ \"$${STORAGE_PUBLIC_ACCESS}\" = \"true\" ]; then
-          mc anonymous set download myminio/${STORAGE_BUCKET:-ui-syncup-storage};
-        fi;
-        exit 0;
-      "
+  # minio-init:
+  #   image: minio/mc:latest
+  #   restart: "no"
+  #   depends_on:
+  #     minio:
+  #       condition: service_healthy
+  #   entrypoint: >
+  #     /bin/sh -c "
+  #       mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
+  #       mc mb --ignore-existing myminio/${STORAGE_BUCKET:-ui-syncup-storage};
+  #       if [ \"$${STORAGE_PUBLIC_ACCESS}\" = \"true\" ]; then
+  #         mc anonymous set download myminio/${STORAGE_BUCKET:-ui-syncup-storage};
+  #       else
+  #         mc anonymous set none myminio/${STORAGE_BUCKET:-ui-syncup-storage};
+  #       fi;
+  #       exit 0;
+  #     "
 
   mailpit:
     image: axllent/mailpit:latest
@@ -115,5 +117,4 @@ services:
 
 volumes:
   redis_local:
-  postgres_data:
-  minio_local:
+  postgres_data: # minio_local:
