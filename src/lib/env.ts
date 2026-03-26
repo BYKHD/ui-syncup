@@ -46,7 +46,7 @@ const envSchema = z.object({
     .url()
     .describe("Public API base URL"),
 
-  // Database (Supabase PostgreSQL)
+  // Database
   DATABASE_URL: z
     .string()
     .min(1)
@@ -56,23 +56,12 @@ const envSchema = z.object({
     .min(1)
     .optional()
     .describe("Direct PostgreSQL connection string (for migrations)"),
-  // SUPABASE_URL is optional - local dev uses NEXT_PUBLIC_SUPABASE_URL
-  SUPABASE_URL: optionalUrl().describe(
-    "Supabase project URL (optional in dev, uses NEXT_PUBLIC_SUPABASE_URL)"
-  ),
-  // NEXT_PUBLIC_SUPABASE_URL for client-side access
+  // Supabase Realtime (optional — enables push notifications; falls back to polling)
   NEXT_PUBLIC_SUPABASE_URL: optionalUrl().describe(
-    "Supabase public URL for client-side"
-  ),
-  // SUPABASE_ANON_KEY optional - local uses NEXT_PUBLIC_SUPABASE_ANON_KEY
-  SUPABASE_ANON_KEY: optionalString().describe(
-    "Supabase anonymous/public key"
+    "Supabase project URL (enables Realtime notifications)"
   ),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: optionalString().describe(
-    "Supabase public anon key for client-side"
-  ),
-  SUPABASE_SERVICE_ROLE_KEY: optionalString().describe(
-    "Supabase service role key (server-side only)"
+    "Supabase anon key for client-side Realtime"
   ),
 
   // Storage (S3-compatible — single bucket)
