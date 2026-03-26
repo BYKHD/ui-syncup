@@ -10,7 +10,7 @@ A visual feedback and issue tracking platform for design-to-development collabor
 - **Issue Management**: Create, track, and resolve UI/UX issues with workflow states (Open → In Progress → In Review → Resolved → Archived)
 - **Team & Project Organization**: Multi-team workspace with project-based access control
 - **Two-Tier Role System**: Management roles (OWNER, ADMIN) for team settings + Operational roles (EDITOR, MEMBER, VIEWER) for content access
-- **Plan-Based Limits**: Free tier (10 users, 1 project, 50 issues) and Pro tier (unlimited users, 50 projects, unlimited issues)
+- **Plan-Based Limits**: Configurable limits for users, projects, and issues per deployment
 
 ## Tech Stack
 
@@ -196,21 +196,21 @@ Each feature follows this structure:
 
 ### Management Roles (Team Settings Access)
 
-- **TEAM_OWNER**: Full control over team, billing, members. Can delete team and transfer ownership. Not billable by itself.
-- **TEAM_ADMIN**: Manage members, projects, integrations. Cannot delete team or transfer ownership. Not billable by itself.
+- **TEAM_OWNER**: Full control over team, members, and settings. Can delete team and transfer ownership.
+- **TEAM_ADMIN**: Manage members, projects, integrations. Cannot delete team or transfer ownership.
 
 ### Operational Roles (Content Access & Billing)
 
-- **TEAM_EDITOR**: Create and manage issues/annotations. **Billable ($8/month)**. Auto-assigned when user becomes PROJECT_OWNER or PROJECT_EDITOR.
-- **TEAM_MEMBER**: View projects and comment. Can be assigned to projects. **Free**.
-- **TEAM_VIEWER**: Read-only access. **Free**.
+- **TEAM_EDITOR**: Create and manage issues/annotations. Auto-assigned when user becomes PROJECT_OWNER or PROJECT_EDITOR.
+- **TEAM_MEMBER**: View projects and comment. Can be assigned to projects.
+- **TEAM_VIEWER**: Read-only access.
 
 ### Project Roles
 
-- **PROJECT_OWNER**: Full project control. Auto-promotes to TEAM_EDITOR (billable).
-- **PROJECT_EDITOR**: Create/manage issues. Auto-promotes to TEAM_EDITOR (billable).
-- **PROJECT_DEVELOPER**: Update issue status and comment. **Free**.
-- **PROJECT_VIEWER**: Read-only project access. **Free**.
+- **PROJECT_OWNER**: Full project control. Auto-promotes to TEAM_EDITOR.
+- **PROJECT_EDITOR**: Create/manage issues. Auto-promotes to TEAM_EDITOR.
+- **PROJECT_DEVELOPER**: Update issue status and comment.
+- **PROJECT_VIEWER**: Read-only project access.
 
 ### Target Users
 
