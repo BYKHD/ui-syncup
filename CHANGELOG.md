@@ -1,3 +1,11 @@
+# [0.6.0-beta.7](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.6...v0.6.0-beta.7) (2026-03-26)
+
+
+### Bug Fixes
+
+* Implement server-side proxy uploads for media and attachments, replacing direct-to-S3 presigned URL uploads. ([#108](https://github.com/BYKHD/ui-syncup/issues/108)) ([f1d2cc9](https://github.com/BYKHD/ui-syncup/commit/f1d2cc94fdab5185bf1241342e7d1eb331ac5a35))
+* use `BETTER_AUTH_URL` for runtime app URL resolution. ([37234e2](https://github.com/BYKHD/ui-syncup/commit/37234e25ebac2608776cbe155cd30244625cc986))
+
 # [0.6.0-beta.6](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.5...v0.6.0-beta.6) (2026-03-25)
 
 
