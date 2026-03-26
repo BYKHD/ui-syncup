@@ -25,42 +25,19 @@ export function useMediaUpload(): UseMediaUploadResult {
     setError(null);
 
     try {
-      // 1. Get presigned upload URL and storage key
-      const res = await fetch('/api/uploads/media', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fileName: file.name,
-          contentType: file.type,
-          type,
-          entityId,
-        }),
-      });
+      const body = new FormData();
+      body.append('file', file);
+      body.append('type', type);
+      body.append('entityId', entityId);
+
+      const res = await fetch('/api/uploads/media', { method: 'POST', body });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to get upload URL');
+        const data = await res.json();
+        throw new Error(data.error || 'Upload failed');
       }
 
-      const { uploadUrl, key } = await res.json();
-
-      // 2. Upload file directly to storage via presigned URL
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': file.type,
-        },
-        body: file,
-      });
-
-      if (!uploadRes.ok) {
-        throw new Error('Failed to upload image to storage');
-      }
-
-      // Return the proxy URL — /api/media/[...key] resolves to a presigned or
-      // public URL and is safe to use as an <img src> in any component
+      const { key } = await res.json();
       return `/api/media/${key}`;
     } catch (err) {
       const e = err instanceof Error ? err : new Error('Unknown upload error');

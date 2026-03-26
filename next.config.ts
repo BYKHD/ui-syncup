@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
       "lodash-es",
       "framer-motion",
     ],
+    serverActions: {
+      bodySizeLimit: '10mb' // enough for most mockup screenshots
+    },
   },
   async headers() {
     // Use BETTER_AUTH_URL (server-side runtime env var) — NOT NEXT_PUBLIC_APP_URL, which is
