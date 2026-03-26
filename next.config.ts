@@ -18,8 +18,9 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
-    // Get environment-specific origins for CORS
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    // Use BETTER_AUTH_URL (server-side runtime env var) — NOT NEXT_PUBLIC_APP_URL, which is
+    // inlined by Next.js/webpack at build time with the Docker ARG dummy value.
+    const appUrl = process.env.BETTER_AUTH_URL || "http://localhost:3000"
     const allowedOrigins = [
       appUrl,
       // Allow Vercel preview deployments

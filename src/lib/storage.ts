@@ -65,6 +65,12 @@ function createClient(): S3Client {
       secretAccessKey: process.env.STORAGE_SECRET_ACCESS_KEY ?? 'minioadmin',
     },
     forcePathStyle: isCustomEndpoint,
+    // AWS SDK v3 >= 3.750 defaults to 'when_supported', which embeds a CRC32
+    // checksum in presigned PUT URLs. Browsers cannot send the required
+    // x-amz-checksum-crc32 header, causing S3 to reject uploads with 400.
+    // 'when_required' disables automatic checksums for presigned URLs.
+    requestChecksumCalculation: 'when_required',
+    responseChecksumValidation: 'when_required',
   });
 }
 
