@@ -402,7 +402,7 @@ function validateTests(): void {
       "All tests passed",
       "info"
     );
-  } catch (error) {
+  } catch {
     addResult(
       "Tests",
       "Test execution",

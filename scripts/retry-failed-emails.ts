@@ -5,7 +5,7 @@
 
 import { db } from "../src/lib/db";
 import { emailJobs } from "../src/server/db/schema/email-jobs";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 async function retryFailedEmails() {
   try {

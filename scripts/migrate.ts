@@ -247,7 +247,7 @@ function validateMigrationFiles(migrationsFolder: string): MigrationFile[] {
  * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5
  */
 function formatError(error: unknown, context?: string): string {
-  const errorObj = error as any;
+  const errorObj = error as { message?: string; code?: string; position?: string; constraint?: string; table?: string; column?: string };
   let message = "";
 
   if (context) {
@@ -451,7 +451,7 @@ async function runMigrations(): Promise<void> {
   console.log("━".repeat(60));
 
   let migrationClient: postgres.Sql | undefined;
-  let appliedMigrationsBefore: any[] = [];
+  let appliedMigrationsBefore: Array<{ hash: string; created_at: string }> = [];
   let pendingCount = 0;
 
   try {
@@ -486,7 +486,7 @@ async function runMigrations(): Promise<void> {
         });
       }
       console.log();
-    } catch (trackingError) {
+    } catch {
       // Table might not exist yet on first run
       console.log("   Migration tracking table not found (will be created)\n");
     }
@@ -604,7 +604,7 @@ async function runMigrations(): Promise<void> {
         console.log(`   ✓ All ${newlyAppliedCount} migration(s) committed successfully`);
         console.log(`   ✓ Tracking table updated with ${newlyAppliedCount} new entries`);
         console.log(`   ✓ Database state is consistent`);
-      } catch (trackingError) {
+      } catch {
         console.warn("   Could not verify migration tracking table");
       }
       
@@ -652,7 +652,7 @@ async function runMigrations(): Promise<void> {
         if (newlyAppliedCount > 0) {
           console.error(`\n📊 Partial Success: ${newlyAppliedCount} migration(s) completed before failure`);
         }
-      } catch (trackingError) {
+      } catch {
         // Ignore tracking table query errors during error handling
       }
     }

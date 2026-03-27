@@ -4,7 +4,6 @@
  */
 
 import { processEmailQueue } from "../src/server/email/queue";
-import { logger } from "../src/lib/logger";
 
 async function processQueue() {
   try {

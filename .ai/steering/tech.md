@@ -22,7 +22,7 @@
 - **TanStack Query (React Query) 5** - Server state management, caching, mutations
 - **Zod** - Runtime validation and type inference
 - **SWR** - Alternative data fetching (used in some features)
-- **Supabase Realtime** - Real-time database updates via WebSockets
+- **Server-Sent Events (SSE)** - Real-time push notifications via `/api/notifications/stream`
 
 ## Forms & Validation
 
@@ -31,21 +31,22 @@
 
 ## Database
 
-- **PostgreSQL 15** - Primary database via Supabase
+- **PostgreSQL 15** - Primary database (self-hosted, Neon, Supabase, or any provider)
 - **Drizzle ORM** - Type-safe database queries and migrations
-- **Supabase CLI** - Local development environment (replaces docker-compose)
-- **Supabase** - PostgreSQL hosting, Auth, Storage, and additional services
+- **PGlite** - In-process WASM Postgres for unit/integration tests (no external DB needed)
 
 ## Storage
 
-- **Cloudflare R2** - S3-compatible object storage for file uploads
-- **AWS SDK** - S3 client for R2 integration
+- **S3-compatible object storage** - Single-bucket model supporting MinIO (local dev), Cloudflare R2, AWS S3, and Lightsail object storage
+- **AWS SDK v3** (`@aws-sdk/client-s3`) - S3 client; auto-detects provider from `STORAGE_ENDPOINT`
+- **Upload flow**: browser POSTs `multipart/form-data` to Next.js (`/api/uploads/attachment` or `/api/uploads/media`); server uploads to S3 with `PutObjectCommand` — no CORS configuration required on the bucket
+- **Media serving**: `/api/media/[...key]` proxy redirects to cached presigned GET URLs (private) or direct public URLs (`STORAGE_PUBLIC_ACCESS=true`)
 
 ## Auth & Security
 
 - **better-auth** - Authentication library with session management
 - **@node-rs/argon2** - Password hashing
-- **ioredis** - Redis client for rate limiting and session storage
+- **ioredis** - Redis client for rate limiting, session storage, and SSE notification fan-out (optional)
 
 ## Email
 
@@ -58,7 +59,7 @@
 - **@testing-library/react** - Component testing utilities
 - **Playwright** - E2E browser tests
 - **fast-check** - Property-based testing
-- **pg-mem** - In-memory PostgreSQL for testing
+- **PGlite** - In-process WASM Postgres for integration tests (via `src/lib/testing/test-db.ts`)
 
 ### Testing Rules
 
@@ -129,11 +130,6 @@ bun run db:migrate     # Run migrations
 bun run db:studio      # Open Drizzle Studio
 bun run db:seed        # Seed database with test data
 
-# Supabase (Local Development - replaces docker-compose)
-bun run supabase:start # Start local Supabase stack (Postgres, Studio, Auth, Storage)
-bun run supabase:stop  # Stop local Supabase
-bun run supabase:status # Check Supabase status and get connection details
-
 # Validation
 bun run validate-env   # Validate environment variables
 ```
@@ -171,11 +167,10 @@ npm link               # Install CLI globally for local testing
 
 ## Local Development
 
-- **Supabase CLI** is used for local development (not docker-compose)
-- Run `bun run supabase:start` to spin up local Postgres, Auth, Storage, Studio, and more
-- Supabase Studio available at http://127.0.0.1:54323 for database management
-- Local database runs on port 54322 (not 5432)
-- See `docs/SUPABASE_LOCAL_SETUP.md` for detailed setup instructions
+- Run `docker compose -f docker/compose.local.yml up -d` to spin up Redis, MinIO, and Mailpit locally (Postgres is managed by `bun run supabase:start`)
+- Or use external managed services and point `DATABASE_URL`, `REDIS_URL`, and `STORAGE_*` env vars at them
+- Drizzle Studio available via `bun run db:studio` for database management
+- See `.env.development` for default local service URLs and `docs/DEPLOYMENT.md` for full setup
 
 ## Architecture Notes
 

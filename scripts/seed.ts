@@ -433,7 +433,7 @@ async function main() {
 
 
     // Update last active team pointer per user
-    for (const [email, user] of usersByEmail.entries()) {
+    for (const [, user] of usersByEmail.entries()) {
       const lastActiveTeamId = lastActiveTeamByUser.get(user.id) ?? null;
       await db
         .update(schema.users)

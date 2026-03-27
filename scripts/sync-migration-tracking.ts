@@ -3,7 +3,6 @@
  * Sync migration tracking table with already-applied migrations
  * Use this when migrations were applied via drizzle-kit migrate (which doesn't track)
  */
-import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as dotenv from "dotenv";
 import { createHash } from "crypto";
@@ -26,7 +25,6 @@ async function syncMigrationTracking() {
   console.log("🔄 Syncing migration tracking table...");
 
   const client = postgres(dbUrl, { max: 1 });
-  const db = drizzle(client);
 
   try {
     // Read all migration files

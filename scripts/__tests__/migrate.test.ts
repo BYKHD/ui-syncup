@@ -7,7 +7,7 @@
  * Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 7.1, 7.2, 7.3, 7.4, 7.5
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, test, expect } from 'vitest';
 
 // ============================================================================
 // Helper Functions (extracted from migrate.ts for testing)

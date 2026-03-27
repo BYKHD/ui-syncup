@@ -64,7 +64,9 @@ src/
 │   ├── utils.ts                  # cn() helper (clsx + tailwind-merge)
 │   ├── env.ts                    # Environment variables
 │   ├── logger.ts                 # Logging utility
-│   └── performance.ts            # Performance monitoring
+│   ├── performance.ts            # Performance monitoring
+│   ├── redis.ts                  # Lazy ioredis publisher/subscriber singletons (optional)
+│   └── pg-listener.ts            # PostgreSQL LISTEN singleton → Redis PUBLISH for SSE
 │
 ├── server/                       # Server-only logic (auth, DB, RBAC)
 │   ├── auth/                     # Session, tokens, RBAC
@@ -123,8 +125,7 @@ cli/                              # CLI package (published independently to npm)
 │
 docs/                             # Architecture documentation
 tests/                            # Test files
-drizzle/                          # Database migrations
-supabase/                         # Supabase configuration and seed data
+drizzle/                          # Database migrations (Drizzle ORM)
 public/                           # Static assets
 ```
 

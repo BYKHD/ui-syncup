@@ -42,7 +42,7 @@ UI SyncUp is a visual feedback and issue tracking platform for design-to-develop
 **Self-Hosting**:
 - CLI published to npm: `npm install -g ui-syncup` or `bun add -g ui-syncup`
 - Docker Compose support for easy deployment
-- Requires PostgreSQL and Supabase (Self-hosted or Cloud)
+- Requires PostgreSQL; Redis and S3-compatible storage are optional but recommended
 - Full data ownership and privacy
 
 **Community**:
