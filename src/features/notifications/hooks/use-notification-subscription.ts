@@ -99,15 +99,17 @@ export function useNotificationSubscription({
 
   useEffect(() => {
     if (!enabled || !userId) {
-      if (esRef.current) { esRef.current.close(); esRef.current = null }
-      stopPolling()
-      setIsConnected(false)
       return
     }
+    // connect() manages EventSource subscription and calls setState in async
+    // callbacks (open/error/message events) — not synchronously. React 18
+    // batches these updates, so no cascading render risk.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     connect()
     return () => {
       if (esRef.current) { esRef.current.close(); esRef.current = null }
       stopPolling()
+      setIsConnected(false)
     }
   }, [userId, enabled, connect, stopPolling])
 

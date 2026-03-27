@@ -42,8 +42,8 @@ export default function DevAuthPage() {
     onSuccess: () => {
       toast.success("Email verified successfully");
     },
-    onError: (error: any) => {
-      const message = error?.payload?.error?.message || "Failed to verify email";
+    onError: (error: unknown) => {
+      const message = (error as { payload?: { error?: { message?: string } } })?.payload?.error?.message || "Failed to verify email";
       toast.error(message);
     },
   });
@@ -52,8 +52,8 @@ export default function DevAuthPage() {
     onSuccess: () => {
       toast.success("Rate limits cleared successfully");
     },
-    onError: (error: any) => {
-      const message = error?.payload?.error?.message || "Failed to reset rate limits";
+    onError: (error: unknown) => {
+      const message = (error as { payload?: { error?: { message?: string } } })?.payload?.error?.message || "Failed to reset rate limits";
       toast.error(message);
     },
   });
@@ -516,9 +516,9 @@ export default function DevAuthPage() {
               </h4>
               <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-300 ml-2">
                 <li>Sign up with a new account (email will be unverified)</li>
-                <li>Check this page - you should see "Unverified" badge</li>
-                <li>Click "Force Verify Email" to bypass email verification</li>
-                <li>Refresh to see "Verified" badge</li>
+                <li>Check this page - you should see &quot;Unverified&quot; badge</li>
+                <li>Click &quot;Force Verify Email&quot; to bypass email verification</li>
+                <li>Refresh to see &quot;Verified&quot; badge</li>
               </ul>
             </div>
 
@@ -528,7 +528,7 @@ export default function DevAuthPage() {
               </h4>
               <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-300 ml-2">
                 <li>Sign in from multiple browsers/devices</li>
-                <li>Check "Active Sessions" to see all devices</li>
+                <li>Check &quot;Active Sessions&quot; to see all devices</li>
                 <li>Sign out from one device - other sessions remain active</li>
                 <li>Verify session count decreases by 1</li>
               </ul>
@@ -539,7 +539,7 @@ export default function DevAuthPage() {
                 3. Session Cache Invalidation
               </h4>
               <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-300 ml-2">
-                <li>Click "Invalidate Session Cache"</li>
+                <li>Click &quot;Invalidate Session Cache&quot;</li>
                 <li>Session data should refetch from server</li>
                 <li>Useful for testing React Query cache behavior</li>
               </ul>
@@ -550,7 +550,7 @@ export default function DevAuthPage() {
                 4. Account Deletion
               </h4>
               <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-300 ml-2">
-                <li>Click "Delete Account" to test cleanup</li>
+                <li>Click &quot;Delete Account&quot; to test cleanup</li>
                 <li>Confirms all data is deleted (sessions, roles, tokens)</li>
                 <li>Redirects to sign-in page</li>
                 <li>Cannot sign in with deleted credentials</li>
@@ -562,7 +562,7 @@ export default function DevAuthPage() {
                 5. Session Expiration
               </h4>
               <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-300 ml-2">
-                <li>Check "Time Remaining" in Session Information</li>
+                <li>Check &quot;Time Remaining&quot; in Session Information</li>
                 <li>Sessions expire after 7 days by default</li>
                 <li>Rolling renewal extends expiration on each request</li>
               </ul>
@@ -574,8 +574,8 @@ export default function DevAuthPage() {
               </h4>
               <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-300 ml-2">
                 <li>Try signing in with wrong password 3+ times</li>
-                <li>You'll see "Too many sign-in attempts" error</li>
-                <li>Click "Reset Rate Limits" to clear the block</li>
+                <li>You&apos;ll see &quot;Too many sign-in attempts&quot; error</li>
+                <li>Click &quot;Reset Rate Limits&quot; to clear the block</li>
                 <li>You can now sign in again immediately</li>
               </ul>
             </div>
