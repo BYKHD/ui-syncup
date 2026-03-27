@@ -1,3 +1,22 @@
+# [0.6.0-beta.8](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.7...v0.6.0-beta.8) (2026-03-27)
+
+
+### Bug Fixes
+
+* **lint:** resolve no-explicit-any, unescaped-entities, and set-state-in-effect warnings ([d2c40c3](https://github.com/BYKHD/ui-syncup/commit/d2c40c3bfabeffb7d48d8252a3f87e3bfa850407))
+
+
+### Features
+
+* **api:** add SSE stream endpoint for push notifications ([8c29e9b](https://github.com/BYKHD/ui-syncup/commit/8c29e9bfef9f35b72d0ab31509c7303dd3f63dcf))
+* change to single bucket storage ([#107](https://github.com/BYKHD/ui-syncup/issues/107)) ([e663cbb](https://github.com/BYKHD/ui-syncup/commit/e663cbb05bc04f3d1c46704e93612dab5518f439)), closes [#101](https://github.com/BYKHD/ui-syncup/issues/101) [#104](https://github.com/BYKHD/ui-syncup/issues/104) [#106](https://github.com/BYKHD/ui-syncup/issues/106) [#108](https://github.com/BYKHD/ui-syncup/issues/108) [#109](https://github.com/BYKHD/ui-syncup/issues/109)
+* **db:** add pg_notify trigger on notifications INSERT ([823591b](https://github.com/BYKHD/ui-syncup/commit/823591bf940e5cede48e82e4691ac037c4fafd0f))
+* **dev:** add test notification button and dev-only API endpoint ([e34ffe3](https://github.com/BYKHD/ui-syncup/commit/e34ffe3970e5c320c7bc76f0a1f8ab18055a0a0a))
+* **env:** add optional REDIS_URL to env schema ([592301d](https://github.com/BYKHD/ui-syncup/commit/592301d9d35b1dc467c9d31f3a8194a8ae8dc290))
+* **infra:** add lazy Redis pub/sub client singletons ([3424c71](https://github.com/BYKHD/ui-syncup/commit/3424c71853673f86febeb3d1bb94bb47e971ba8e))
+* **infra:** add PostgreSQL LISTEN singleton with Redis fan-out ([a00ac1f](https://github.com/BYKHD/ui-syncup/commit/a00ac1f4bcc85763c625941ff172d5782a30d8ae))
+* **notifications:** replace Supabase Realtime with EventSource SSE ([0384807](https://github.com/BYKHD/ui-syncup/commit/038480791e055d655819ba71b4792e85757ffed7))
+
 # [0.6.0-beta.7](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.6...v0.6.0-beta.7) (2026-03-26)
 
 
