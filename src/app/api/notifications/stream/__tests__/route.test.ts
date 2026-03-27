@@ -23,7 +23,7 @@ describe("GET /api/notifications/stream", () => {
 
   it("returns 401 when unauthenticated", async () => {
     mocks.mockGetSession.mockResolvedValue(null)
-    const res = await GET(new Request("http://localhost/api/notifications/stream"))
+    const res = await GET(new Request("http://localhost/api/notifications/stream") as unknown as import("next/server").NextRequest)
     expect(res.status).toBe(401)
     const body = await res.json()
     expect(body.error.code).toBe("UNAUTHORIZED")
@@ -31,7 +31,7 @@ describe("GET /api/notifications/stream", () => {
 
   it("returns 200 with text/event-stream content type", async () => {
     mocks.mockGetSession.mockResolvedValue({ id: "u-1", email: "t@t.com" })
-    const res = await GET(new Request("http://localhost/api/notifications/stream"))
+    const res = await GET(new Request("http://localhost/api/notifications/stream") as unknown as import("next/server").NextRequest)
     expect(res.status).toBe(200)
     expect(res.headers.get("Content-Type")).toBe("text/event-stream")
     expect(res.headers.get("Cache-Control")).toBe("no-cache, no-transform")
@@ -39,13 +39,13 @@ describe("GET /api/notifications/stream", () => {
 
   it("subscribes to the correct Redis channel for the user", async () => {
     mocks.mockGetSession.mockResolvedValue({ id: "u-abc", email: "t@t.com" })
-    await GET(new Request("http://localhost/api/notifications/stream"))
+    await GET(new Request("http://localhost/api/notifications/stream") as unknown as import("next/server").NextRequest)
     expect(mocks.mockSub.subscribe).toHaveBeenCalledWith("notifications:u-abc")
   })
 
   it("emits a 'connected' event as the first chunk", async () => {
     mocks.mockGetSession.mockResolvedValue({ id: "u-1", email: "t@t.com" })
-    const res = await GET(new Request("http://localhost/api/notifications/stream"))
+    const res = await GET(new Request("http://localhost/api/notifications/stream") as unknown as import("next/server").NextRequest)
     const reader = res.body!.getReader()
     const { value } = await reader.read()
     const text = new TextDecoder().decode(value)

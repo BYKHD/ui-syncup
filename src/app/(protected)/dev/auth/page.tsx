@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState } from "react";
-import { Copy, AlertTriangle, CheckCircle, XCircle, Loader2, Monitor, RefreshCw } from "lucide-react";
+import { Copy, AlertTriangle, CheckCircle, XCircle, Loader2, Monitor, RefreshCw, Bell } from "lucide-react";
 import { toast } from "sonner";
 
 import { useSession } from "@/features/auth/hooks/use-session";
@@ -59,6 +59,20 @@ export default function DevAuthPage() {
   });
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isSendingTestNotification, setIsSendingTestNotification] = useState(false);
+
+  const sendTestNotification = async () => {
+    setIsSendingTestNotification(true);
+    try {
+      const res = await fetch("/api/dev/notifications/test", { method: "POST" });
+      if (!res.ok) throw new Error("Failed");
+      toast.success("Test notification sent — check the bell icon!");
+    } catch {
+      toast.error("Failed to send test notification");
+    } finally {
+      setIsSendingTestNotification(false);
+    }
+  };
 
   // Debug: Log session state (client-side only)
   if (typeof window !== 'undefined') {
@@ -453,6 +467,20 @@ export default function DevAuthPage() {
                 <RefreshCw className="h-4 w-4 mr-2" />
               )}
               Reset Rate Limits
+            </Button>
+
+            <Button
+              onClick={sendTestNotification}
+              disabled={isSendingTestNotification}
+              variant="outline"
+              className="w-full"
+            >
+              {isSendingTestNotification ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Bell className="h-4 w-4 mr-2" />
+              )}
+              Send Test Notification
             </Button>
           </div>
 
