@@ -56,6 +56,10 @@ const envSchema = z.object({
     .min(1)
     .optional()
     .describe("Direct PostgreSQL connection string (for migrations)"),
+  // Redis (optional — enables SSE push notifications; falls back to polling)
+  REDIS_URL: optionalString().describe(
+    "Redis connection URL (enables SSE push notifications)"
+  ),
   // Supabase Realtime (optional — enables push notifications; falls back to polling)
   NEXT_PUBLIC_SUPABASE_URL: optionalUrl().describe(
     "Supabase project URL (enables Realtime notifications)"
