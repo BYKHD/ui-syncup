@@ -4,12 +4,13 @@ import {
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3'
 import { getStorageClient, getBucketName } from '@/lib/storage'
-import type { StorageBucket } from '@/lib/storage'
 import type { CheckResult } from '../types'
 
-async function probeOneBucket(type: StorageBucket): Promise<void> {
-  const client = getStorageClient(type)
-  const bucket = getBucketName(type)
+export async function checkStorage(): Promise<CheckResult> {
+  const start = performance.now()
+
+  const client = getStorageClient()
+  const bucket = getBucketName()
   const probeKey = `_health-check/probe-${Date.now()}.txt`
 
   try {
@@ -22,27 +23,11 @@ async function probeOneBucket(type: StorageBucket): Promise<void> {
       })
     )
     await client.send(new HeadObjectCommand({ Bucket: bucket, Key: probeKey }))
-  } finally {
-    // Best-effort cleanup — don't suppress the original error
-    try {
-      await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: probeKey }))
-    } catch { /* ignore */ }
-  }
-}
-
-export async function checkStorage(): Promise<CheckResult> {
-  const start = performance.now()
-
-  try {
-    await Promise.all([
-      probeOneBucket('attachments'),
-      probeOneBucket('media'),
-    ])
 
     const latencyMs = Math.round(performance.now() - start)
     return {
       status: 'ok',
-      message: `Storage accessible (buckets: ${getBucketName('attachments')}, ${getBucketName('media')})`,
+      message: `Storage accessible (bucket: ${bucket})`,
       latencyMs,
     }
   } catch (error) {
@@ -52,7 +37,12 @@ export async function checkStorage(): Promise<CheckResult> {
       status: 'error',
       message,
       latencyMs,
-      hint: 'Check STORAGE_REGION, STORAGE_ATTACHMENTS_BUCKET / STORAGE_MEDIA_BUCKET, and the corresponding ACCESS_KEY_ID / SECRET_ACCESS_KEY vars. For AWS S3/Lightsail, do not set STORAGE_ENDPOINT.',
+      hint: 'Check STORAGE_REGION, STORAGE_BUCKET, STORAGE_ACCESS_KEY_ID, and STORAGE_SECRET_ACCESS_KEY. For AWS S3 / Lightsail, do not set STORAGE_ENDPOINT.',
     }
+  } finally {
+    // Best-effort cleanup — don't suppress the original error
+    try {
+      await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: probeKey }))
+    } catch { /* ignore */ }
   }
 }

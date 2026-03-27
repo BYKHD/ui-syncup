@@ -25,41 +25,20 @@ export function useMediaUpload(): UseMediaUploadResult {
     setError(null);
 
     try {
-      // 1. Get presigned URL
-      const res = await fetch('/api/uploads/media', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fileName: file.name,
-          contentType: file.type,
-          type,
-          entityId,
-        }),
-      });
+      const body = new FormData();
+      body.append('file', file);
+      body.append('type', type);
+      body.append('entityId', entityId);
+
+      const res = await fetch('/api/uploads/media', { method: 'POST', body });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to get upload URL');
+        const data = await res.json();
+        throw new Error(data.error || 'Upload failed');
       }
 
-      const { uploadUrl, publicUrl } = await res.json();
-
-      // 2. Upload file to presigned URL
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': file.type,
-        },
-        body: file,
-      });
-
-      if (!uploadRes.ok) {
-        throw new Error('Failed to upload image to storage');
-      }
-
-      return publicUrl;
+      const { key } = await res.json();
+      return `/api/media/${key}`;
     } catch (err) {
       const e = err instanceof Error ? err : new Error('Unknown upload error');
       console.error('Media upload error:', e);
@@ -72,8 +51,6 @@ export function useMediaUpload(): UseMediaUploadResult {
   };
 
   const deleteImage = async (key: string, type: 'avatar' | 'team', entityId: string) => {
-    // We don't set loading for delete to generic 'isUploading' to avoid blocking unrelated UIs
-    // or we can, depends on preference. Let's keep it simple.
     try {
       const response = await fetch('/api/uploads/media', {
         method: 'DELETE',
@@ -82,11 +59,11 @@ export function useMediaUpload(): UseMediaUploadResult {
       });
 
       if (!response.ok) {
-         throw new Error(`Failed to delete image: ${response.statusText}`);
+        throw new Error(`Failed to delete image: ${response.statusText}`);
       }
       return true;
     } catch (err) {
-      console.error("Delete image error:", err);
+      console.error('Delete image error:', err);
       return false;
     }
   };

@@ -414,6 +414,38 @@ async function runMigrations(): Promise<void> {
     });
   }
 
+  // Step 3.5: Validate journal sync
+  console.log("\n📓 Step 3.5: Validating journal sync...");
+  const journalPath = path.join(migrationsFolder, "meta/_journal.json");
+  try {
+    if (!fs.existsSync(journalPath)) {
+      logError("drizzle/meta/_journal.json not found. Run 'drizzle-kit generate' to create it.");
+      process.exit(1);
+    }
+
+    const journal = JSON.parse(fs.readFileSync(journalPath, "utf-8")) as {
+      entries: { tag: string }[];
+    };
+    const journalTags = new Set(journal.entries.map((e) => e.tag));
+
+    const untracked = validMigrations.filter(
+      (m) => !journalTags.has(`${m.filename.replace(/\.sql$/, "")}`)
+    );
+
+    if (untracked.length > 0) {
+      console.error(`\n❌ JOURNAL SYNC ERROR: ${untracked.length} migration file(s) are not in _journal.json:`);
+      untracked.forEach((m) => console.error(`   - ${m.filename}`));
+      console.error("\n   Fix: Run 'drizzle-kit generate' locally and commit the updated _journal.json.");
+      console.error("   Never manually create .sql migration files without updating the journal.\n");
+      process.exit(1);
+    }
+
+    console.log("   ✅ All migration files are present in _journal.json");
+  } catch (error) {
+    logError(`Failed to validate journal: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
+
   // Step 4: Execute migrations
   console.log("\n🚀 Step 4: Executing migrations...");
   console.log("━".repeat(60));

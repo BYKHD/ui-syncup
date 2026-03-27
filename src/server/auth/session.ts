@@ -200,10 +200,14 @@ export async function getSession(
     }
     
     // Convert Headers to plain object as better-auth might expect that for internal API calls
+    // Use BETTER_AUTH_URL (server-side runtime env var) — NOT NEXT_PUBLIC_APP_URL, which is
+    // inlined at build time with the Docker ARG dummy value (http://localhost:3000).
+    const appUrl = process.env.BETTER_AUTH_URL || 'http://localhost:3000';
+    const appHost = new URL(appUrl).host;
     const headersObj: Record<string, string> = {
       // Ensure Origin and Host are present for better-auth validation
-      'origin': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-      'host': 'localhost:3000',
+      'origin': appUrl,
+      'host': appHost,
     };
     
     requestHeaders.forEach((value, key) => {

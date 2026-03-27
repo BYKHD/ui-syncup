@@ -16,7 +16,7 @@ import {
   getAttachmentsByIssue,
   createAttachment,
 } from "@/server/issues/attachment-service";
-import { generateDownloadUrl, getKeyFromUrl } from "@/lib/storage";
+import { generateDownloadUrl } from "@/lib/storage";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import type { AttachmentReviewVariant } from "@/server/issues/types";
@@ -28,7 +28,7 @@ const CreateAttachmentBodySchema = z.object({
   fileName: z.string().min(1, "File name is required").max(255),
   fileSize: z.number().int().positive("File size must be positive"),
   fileType: z.string().min(1, "File type is required").max(50),
-  url: z.string().url("Valid URL is required"),
+  url: z.string().min(1, "Storage key is required"),
   thumbnailUrl: z.string().url().optional().nullable(),
   width: z.number().int().positive().optional().nullable(),
   height: z.number().int().positive().optional().nullable(),
@@ -140,17 +140,15 @@ export async function GET(
     });
 
     // Generate presigned download URLs for each attachment so the client can
-    // display files even when the attachments bucket has Block Public Access ON.
+    // display files even when the bucket has Block Public Access enabled.
+    // att.url is the full storage key (e.g. attachments/issues/{t}/{p}/{i}/{uuid}.png)
     const serializedAttachments = await Promise.all(
       attachments.map(async (att) => {
         let downloadUrl: string | null = null;
-        const key = getKeyFromUrl('attachments', att.url);
-        if (key) {
-          try {
-            downloadUrl = await generateDownloadUrl('attachments', key);
-          } catch {
-            // Non-fatal: client will fall back to the stored URL
-          }
+        try {
+          downloadUrl = await generateDownloadUrl(att.url);
+        } catch {
+          // Non-fatal: client will fall back to the stored key
         }
         return {
           ...att,
@@ -336,10 +334,20 @@ export async function POST(
       fileSize,
     });
 
+    // Generate a presigned download URL so the client can preview the
+    // attachment immediately without a separate GET request.
+    let downloadUrl: string | null = null;
+    try {
+      downloadUrl = await generateDownloadUrl(attachment.url);
+    } catch {
+      // Non-fatal: client will retry on next GET
+    }
+
     // Serialize dates
     const serializedAttachment = {
       ...attachment,
       createdAt: attachment.createdAt.toISOString(),
+      downloadUrl,
     };
 
     return NextResponse.json({ attachment: serializedAttachment }, { status: 201 });

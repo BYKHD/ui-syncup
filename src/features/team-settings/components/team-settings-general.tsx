@@ -76,6 +76,7 @@ function TeamSettingsContent({
 }) {
   const {
     form,
+    currentTeam,
     imagePreview,
     isLoading: isSaving,
     isUploading: isUploading,
@@ -98,7 +99,7 @@ function TeamSettingsContent({
       <div className="space-y-8">
         <TeamInformationForm
           form={form}
-          currentTeam={team}
+          currentTeam={currentTeam}
           imagePreview={imagePreview}
           isLoading={isSaving}
           isUploading={isUploading}

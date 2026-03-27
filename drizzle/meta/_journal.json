@@ -15,6 +15,13 @@
       "when": 1768831596770,
       "tag": "0001_drop_instance_public_url",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1768917996770,
+      "tag": "0002_storage_single_bucket_keys",
+      "breakpoints": true
     }
   ]
 }

@@ -124,10 +124,10 @@ services:
     entrypoint: >
       /bin/sh -c "
         mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
-        mc mb --ignore-existing myminio/${STORAGE_ATTACHMENTS_BUCKET:-ui-syncup-attachments};
-        mc mb --ignore-existing myminio/${STORAGE_MEDIA_BUCKET:-ui-syncup-media};
-        mc anonymous set download myminio/${STORAGE_ATTACHMENTS_BUCKET:-ui-syncup-attachments};
-        mc anonymous set download myminio/${STORAGE_MEDIA_BUCKET:-ui-syncup-media};
+        mc mb --ignore-existing myminio/${STORAGE_BUCKET:-ui-syncup-storage};
+        if [ \"$${STORAGE_PUBLIC_ACCESS}\" = \"true\" ]; then
+          mc anonymous set download myminio/${STORAGE_BUCKET:-ui-syncup-storage};
+        fi;
         exit 0;
       "
 

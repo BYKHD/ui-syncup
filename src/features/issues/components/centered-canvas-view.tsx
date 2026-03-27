@@ -548,8 +548,11 @@ export function CenteredCanvasView({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasState.fitMode]);
 
-  // Handle responsive resizing when in fit mode
+  // Handle responsive resizing when in fit mode.
+  // Skipped when hideZoomControls=true (compare mode) because two panes sharing
+  // canvasState would compute different fitZooms and fight each other indefinitely.
   useEffect(() => {
+    if (hideZoomControls) return;
     if (canvasState.fitMode === 'fit' && containerSize.width > 0) {
       const newFitZoom = calculateFitZoom(true);
       // Only update if significantly different to avoid loops
@@ -557,7 +560,7 @@ export function CenteredCanvasView({
         onCanvasStateChange({ zoom: newFitZoom });
       }
     }
-  }, [containerSize, canvasState.fitMode, calculateFitZoom, onCanvasStateChange, canvasState.zoom]);
+  }, [containerSize, canvasState.fitMode, calculateFitZoom, onCanvasStateChange, canvasState.zoom, hideZoomControls]);
 
   // ============================================================================
   // ZOOM CONTROL HANDLERS

@@ -46,7 +46,7 @@ const envSchema = z.object({
     .url()
     .describe("Public API base URL"),
 
-  // Database (Supabase PostgreSQL)
+  // Database
   DATABASE_URL: z
     .string()
     .min(1)
@@ -56,67 +56,42 @@ const envSchema = z.object({
     .min(1)
     .optional()
     .describe("Direct PostgreSQL connection string (for migrations)"),
-  // SUPABASE_URL is optional - local dev uses NEXT_PUBLIC_SUPABASE_URL
-  SUPABASE_URL: optionalUrl().describe(
-    "Supabase project URL (optional in dev, uses NEXT_PUBLIC_SUPABASE_URL)"
-  ),
-  // NEXT_PUBLIC_SUPABASE_URL for client-side access
+  // Supabase Realtime (optional — enables push notifications; falls back to polling)
   NEXT_PUBLIC_SUPABASE_URL: optionalUrl().describe(
-    "Supabase public URL for client-side"
-  ),
-  // SUPABASE_ANON_KEY optional - local uses NEXT_PUBLIC_SUPABASE_ANON_KEY
-  SUPABASE_ANON_KEY: optionalString().describe(
-    "Supabase anonymous/public key"
+    "Supabase project URL (enables Realtime notifications)"
   ),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: optionalString().describe(
-    "Supabase public anon key for client-side"
-  ),
-  SUPABASE_SERVICE_ROLE_KEY: optionalString().describe(
-    "Supabase service role key (server-side only)"
+    "Supabase anon key for client-side Realtime"
   ),
 
-  // Storage (Cloudflare R2 - Production)
-  // These are optional in development when using local MinIO via STORAGE_* variables
-  R2_ACCOUNT_ID: optionalString().describe(
-    "Cloudflare R2 account ID (production only)"
-  ),
-  R2_ACCESS_KEY_ID: optionalString().describe(
-    "Cloudflare R2 access key ID (production only)"
-  ),
-  R2_SECRET_ACCESS_KEY: optionalString().describe(
-    "Cloudflare R2 secret access key (production only)"
-  ),
-  R2_BUCKET_NAME: optionalString().describe(
-    "Cloudflare R2 bucket name (production only)"
-  ),
-  R2_PUBLIC_URL: z
-    .preprocess(emptyToUndefined, z.string().url().optional())
-    .refine((val) => !val || val.startsWith("http"), {
-      message: "Must be a valid URL if provided",
-    })
-    .describe("Cloudflare R2 public URL for assets (production only)"),
-
-  // Storage (Unified S3-compatible - MinIO local / R2 production)
-  // Shared connection settings
+  // Storage (S3-compatible — single bucket)
+  // Supports MinIO (local dev), AWS S3, AWS Lightsail, Cloudflare R2, and any
+  // S3-compatible provider. All objects are private by default; media is served
+  // through /api/media/[...key] which redirects to a server-cached presigned URL.
+  //
+  // R2 users: set STORAGE_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+  // and use STORAGE_ACCESS_KEY_ID / STORAGE_SECRET_ACCESS_KEY for R2 API tokens.
   STORAGE_ENDPOINT: optionalUrl().describe(
-    "S3-compatible storage endpoint URL"
+    "Custom S3-compatible endpoint (MinIO, R2, etc). Leave empty for AWS S3 / Lightsail."
   ),
-  STORAGE_REGION: optionalString().describe("Storage region"),
+  STORAGE_REGION: optionalString().describe(
+    "Storage region (e.g. ap-southeast-1). Use 'auto' for Cloudflare R2."
+  ),
   STORAGE_ACCESS_KEY_ID: optionalString().describe("Storage access key ID"),
   STORAGE_SECRET_ACCESS_KEY: optionalString().describe(
     "Storage secret access key"
   ),
-  // Attachments bucket (issue attachments - requires auth)
-  STORAGE_ATTACHMENTS_BUCKET: optionalString().describe(
-    "Attachments bucket name"
+  STORAGE_BUCKET: optionalString().describe(
+    "Bucket name (default: ui-syncup-storage)"
   ),
-  STORAGE_ATTACHMENTS_PUBLIC_URL: optionalUrl().describe(
-    "Public URL for attachments bucket"
-  ),
-  // Media bucket (avatars, team logos - public read)
-  STORAGE_MEDIA_BUCKET: optionalString().describe("Media bucket name"),
-  STORAGE_MEDIA_PUBLIC_URL: optionalUrl().describe(
-    "Public URL for media bucket"
+  // Public access mode — enables direct public URLs instead of presigned URLs.
+  // Set to 'true' only when the bucket allows public read (e.g. local MinIO dev,
+  // R2 with a public custom domain). Leave unset for AWS S3 / Lightsail.
+  STORAGE_PUBLIC_ACCESS: z
+    .preprocess(emptyToUndefined, z.enum(["true", "false"]).optional())
+    .describe("Enable public URL access instead of presigned URLs (default: false)"),
+  STORAGE_PUBLIC_URL: optionalUrl().describe(
+    "Base public URL for storage (required when STORAGE_PUBLIC_ACCESS=true)"
   ),
 
   // Authentication (Google OAuth)

@@ -1,19 +1,21 @@
 /**
  * Presigned download URL endpoint
  *
- * GET /api/uploads/presigned/download?key=<key>&bucket=<attachments|media>
+ * GET /api/uploads/presigned/download?key=<storage-key>
  *
  * Returns a time-limited presigned GET URL so the browser can fetch a private
  * S3 object without the bucket needing public-read access.
  *
- * This is required when "Block Public Access" is enabled on the bucket
- * (the default for Lightsail and recommended for AWS S3).
+ * Used for issue attachments — the key is the full storage key stored in the DB
+ * (e.g. attachments/issues/{teamId}/{projectId}/{issueId}/{uuid}.png).
+ *
+ * Note: media objects (avatars, logos) are served through /api/media/[...key]
+ * which has server-side caching. This endpoint is for one-off attachment downloads.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/server/auth/session';
 import { generateDownloadUrl } from '@/lib/storage';
-import type { StorageBucket } from '@/lib/storage';
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,20 +27,12 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = request.nextUrl;
     const key = searchParams.get('key');
-    const bucketParam = searchParams.get('bucket') ?? 'attachments';
 
     if (!key) {
       return NextResponse.json({ error: 'Missing required parameter: key' }, { status: 400 });
     }
 
-    if (!['attachments', 'media'].includes(bucketParam)) {
-      return NextResponse.json(
-        { error: 'Invalid bucket. Must be "attachments" or "media"' },
-        { status: 400 }
-      );
-    }
-
-    const url = await generateDownloadUrl(bucketParam as StorageBucket, key);
+    const url = await generateDownloadUrl(key);
 
     // Cache-Control: private so CDNs don't cache the signed URL, but allow the
     // browser to reuse it within its validity window (1 hour).

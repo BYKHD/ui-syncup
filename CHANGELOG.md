@@ -1,3 +1,46 @@
+# [0.6.0-beta.7](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.6...v0.6.0-beta.7) (2026-03-26)
+
+
+### Bug Fixes
+
+* Implement server-side proxy uploads for media and attachments, replacing direct-to-S3 presigned URL uploads. ([#108](https://github.com/BYKHD/ui-syncup/issues/108)) ([f1d2cc9](https://github.com/BYKHD/ui-syncup/commit/f1d2cc94fdab5185bf1241342e7d1eb331ac5a35))
+* use `BETTER_AUTH_URL` for runtime app URL resolution. ([37234e2](https://github.com/BYKHD/ui-syncup/commit/37234e25ebac2608776cbe155cd30244625cc986))
+
+# [0.6.0-beta.6](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.5...v0.6.0-beta.6) (2026-03-25)
+
+
+### Bug Fixes
+
+* Implement dynamic auth client baseURL based on environment. ([e9f4400](https://github.com/BYKHD/ui-syncup/commit/e9f44008335bb66ec822f6c5a9f667901fe89a17))
+
+# [0.6.0-beta.5](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.4...v0.6.0-beta.5) (2026-03-25)
+
+
+### Features
+
+* refactor storage to use a single bucket ([#106](https://github.com/BYKHD/ui-syncup/issues/106)) ([c41cb2c](https://github.com/BYKHD/ui-syncup/commit/c41cb2c5d623ba5f86414fe2cb2f7f6d79e6d7cf))
+
+# [0.6.0-beta.4](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.3...v0.6.0-beta.4) (2026-03-25)
+
+
+### Reverts
+
+* Revert "fix: Compile the database migration script into a self-contained binary, removing `bun` and `node_modules` from the production image and updating execution commands." ([377f81f](https://github.com/BYKHD/ui-syncup/commit/377f81f7d90b04b31ab1745594c685006bf3f101))
+
+# [0.6.0-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.5.0...v0.6.0-beta.1) (2026-03-25)
+
+
+### Bug Fixes
+
+* fix onboarding and acc creation  ([#101](https://github.com/BYKHD/ui-syncup/issues/101)) ([aac4535](https://github.com/BYKHD/ui-syncup/commit/aac453503abb009a27421d3e78bf641caedae2f0))
+* update active team retrieval in settings pages to use direct Drizzle queries. ([8d650f5](https://github.com/BYKHD/ui-syncup/commit/8d650f546fff0a968ae230cea811dbbd33247d9a))
+
+
+### Features
+
+* Migrate team context management to user session and introduce slug-based routing for team settings. ([d261ccd](https://github.com/BYKHD/ui-syncup/commit/d261ccdef619dd7640999d673f4ce70049db0885))
+* refactor role retrieval to prioritize dedicated member tables. ([6bf5703](https://github.com/BYKHD/ui-syncup/commit/6bf57038be260e4c2214e279ebb0c349b17248e2))
+
 # [0.5.0](https://github.com/BYKHD/ui-syncup/compare/v0.4.1...v0.5.0) (2026-03-25)
 
 
