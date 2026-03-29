@@ -77,11 +77,6 @@ const INVALID_MIGRATION = createMigrationFixture(4, 'invalid_syntax', `
   );
 `);
 
-const CONSTRAINT_VIOLATION_MIGRATION = createMigrationFixture(5, 'duplicate_table', `
-  CREATE TABLE users (
-    id UUID PRIMARY KEY
-  );
-`);
 
 // ============================================================================
 // Helper Functions
@@ -110,7 +105,7 @@ async function getAppliedMigrations(client: PGlite): Promise<Array<{ hash: strin
       ORDER BY created_at ASC
     `);
     return result.rows as Array<{ hash: string; created_at: string }>;
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -257,7 +252,7 @@ describe('Migration Runner - Integration Tests', () => {
           await applyMigration(testDb.client, migration);
           const hash = generateMigrationHash(migration.content);
           await recordMigration(testDb.client, hash);
-        } catch (error) {
+        } catch {
           failedMigrationIndex = i;
           break; // Halt on failure
         }
@@ -292,7 +287,7 @@ describe('Migration Runner - Integration Tests', () => {
       let failed = false;
       try {
         await applyMigration(testDb.client, INVALID_MIGRATION);
-      } catch (error) {
+      } catch {
         failed = true;
       }
 
@@ -321,7 +316,7 @@ describe('Migration Runner - Integration Tests', () => {
       let firstAttemptFailed = false;
       try {
         await applyMigration(testDb.client, INVALID_MIGRATION);
-      } catch (error) {
+      } catch {
         firstAttemptFailed = true;
       }
 
@@ -360,7 +355,7 @@ describe('Migration Runner - Integration Tests', () => {
       let failed = false;
       try {
         await applyMigration(testDb.client, INVALID_MIGRATION);
-      } catch (error) {
+      } catch {
         failed = true;
       }
       expect(failed).toBe(true);
@@ -526,7 +521,7 @@ describe('Migration Runner - Integration Tests', () => {
       let failed = false;
       try {
         await applyMigration(testDb.client, INVALID_MIGRATION);
-      } catch (error) {
+      } catch {
         failed = true;
       }
 
@@ -553,7 +548,7 @@ describe('Migration Runner - Integration Tests', () => {
       try {
         await applyMigration(testDb.client, INVALID_MIGRATION);
         // If it didn't fail, don't record it
-      } catch (error) {
+      } catch {
         failed = true;
         // Don't record failed migration
       }

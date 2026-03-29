@@ -20,19 +20,6 @@ async function main() {
     // Based on schema: account, sessions, verification_tokens, user_roles, email_jobs depend on users?
     // Using CASCADE to handle dependencies automatically
     
-    const tables = [
-      'account',
-      'session', // Drizzle schema says 'session' or 'sessions'? Check schema file.
-      'verificationToken', // Check schema file.
-      'user_roles',
-      'email_jobs',
-      'user' // Check schema file.
-    ];
-
-    // Actually, let's just drop the ones we saw in the error + others.
-    // Drizzle usually uses plural or singular based on config.
-    // The error said "sessions", "users", "verification_tokens".
-    
     await sql`DROP TABLE IF EXISTS "account", "session", "sessions", "verificationToken", "verification_tokens", "user_roles", "email_jobs", "user", "users" CASCADE`;
     
     console.log('✅ Tables dropped successfully');

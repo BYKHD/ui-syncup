@@ -22,6 +22,13 @@
       "when": 1768917996770,
       "tag": "0002_storage_single_bucket_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1769004396770,
+      "tag": "0003_notifications_pg_listen_trigger",
+      "breakpoints": true
     }
   ]
 }

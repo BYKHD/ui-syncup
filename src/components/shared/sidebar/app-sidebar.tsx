@@ -96,12 +96,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       collapsible="icon"
       {...props}
     >
-      <SidebarHeader>
+      <SidebarHeader className="border-b-3d group-data-[collapsible=icon]:h-12">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center">
+                <div className="flex aspect-square size-7 items-center justify-center group-data-[collapsible=icon]:ml-0.5">
                   <svg
                     width="32"
                     height="32"
@@ -130,7 +130,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
         <TeamSwitcher />
       </SidebarHeader>
-      <Separator/>
       <SidebarContent>
         <NavMain items={navItems} />
         <NavProjects projects={recentProjects} isLoading={!isRecentProjectsLoaded} />

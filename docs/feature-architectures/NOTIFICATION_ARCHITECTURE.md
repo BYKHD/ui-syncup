@@ -2,36 +2,40 @@
 
 ## 1. Overview
 
-The Notification system provides real-time alerts to users about critical workspace activities. It uses a **pull-based architecture with real-time updates** via Supabase Realtime, ensuring users stay informed about collaboration updates (comments, mentions), workflow changes (assignments, status updates), and system access events (invitations).
+The Notification system provides real-time alerts to users about critical workspace activities. It uses a **push-based architecture** via Server-Sent Events (SSE) backed by PostgreSQL LISTEN/NOTIFY and Redis pub/sub, ensuring users stay informed about collaboration updates (comments, mentions), workflow changes (assignments, status updates), and system access events (invitations).
 
 **Key characteristics:**
-- Real-time notification delivery with polling fallback
+- Real-time notification delivery via SSE with polling fallback
 - Actor self-notification prevention
 - Deduplication to prevent spam
 - Client-side grouping for better UX
 - Deep-link navigation to relevant entities
-- Row-Level Security for data protection
+- Session-based authentication for SSE stream security
 
 ---
 
 ## 2. Architecture & Data Flow
 
-### A. How Notifications Are Created
+### A. How Notifications Are Created and Delivered
 
 ```mermaid
 sequenceDiagram
     participant User as User (Actor)
     participant Service as Service Layer
-    participant DB as Database
-    participant RT as Supabase Realtime
+    participant DB as Database (pg_notify)
+    participant PG as pg-listener (server)
+    participant Redis as Redis pub/sub
+    participant SSE as SSE /stream
     participant Recipient as Recipient Client
 
     User->>Service: Performs action (e.g., createComment)
     Service->>Service: Check shouldCreateNotification()<br/>(actor exclusion)
     Service->>Service: Check isDuplicate()<br/>(deduplication)
     Service->>DB: INSERT into notifications
-    DB->>RT: Broadcast INSERT event
-    RT->>Recipient: Push notification payload
+    DB->>PG: pg_notify('new_notification', payload)
+    PG->>Redis: PUBLISH notifications channel
+    Redis->>SSE: Fan-out to all connected processes
+    SSE->>Recipient: Push notification event (text/event-stream)
     Recipient->>Recipient: Show Toast + Update Badge
 ```
 
@@ -39,10 +43,10 @@ sequenceDiagram
 
 ### B. Real-time Updates with Fallback
 
-1. **Primary:** Supabase Realtime subscription via `useNotificationSubscription` hook
-2. **Fallback:** If Realtime connection is lost, automatically switches to polling `/api/notifications/unread-count` every 30 seconds
+1. **Primary:** SSE stream via `useNotificationSubscription` hook → `EventSource` → `/api/notifications/stream`
+2. **Fallback:** If SSE connection is lost, automatically switches to polling `/api/notifications/unread-count` every 30 seconds
 
-#### Supabase Realtime Implementation
+#### SSE Implementation
 
 The `useNotificationSubscription` hook (`src/features/notifications/hooks/use-notification-subscription.ts`) provides:
 
@@ -57,24 +61,38 @@ const { isConnected, isPolling, error, reconnect } = useNotificationSubscription
 ```
 
 **Features:**
-- Subscribes to `postgres_changes` INSERT events on `notifications` table
-- Filters by `recipient_id=eq.{userId}` for security
+- Opens an `EventSource` to `/api/notifications/stream`
+- Receives `notification` events pushed by the server in real time
 - Automatically invalidates React Query cache on new notifications
-- Falls back to polling if connection fails
+- Falls back to polling if the SSE connection fails
 - Provides `reconnect()` function for manual retry
 
 **Connection States:**
-- `isConnected: true` → Realtime active, polling disabled
-- `isPolling: true` → Realtime failed, polling every 30s
+- `isConnected: true` → SSE stream active, polling disabled
+- `isPolling: true` → SSE failed, polling every 30s
 - Both `false` → Disconnected (e.g., no user logged in)
 
-#### Supabase Client Setup
+#### Server-Side SSE Pipeline
 
-The browser client (`src/lib/supabase-client.ts`) uses:
-- `NEXT_PUBLIC_SUPABASE_URL` (or `SUPABASE_URL` for SSR)
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `SUPABASE_ANON_KEY` for SSR)
+```
+pg_notify trigger (drizzle/0003_notifications_pg_listen_trigger.sql)
+    ↓
+pg-listener singleton (src/lib/pg-listener.ts)
+    — DIRECT_URL, max:1, non-pooled postgres.js connection
+    ↓
+Redis PUBLISH (src/lib/redis.ts — ioredis publisher)
+    ↓
+SSE route handler (src/app/api/notifications/stream/route.ts)
+    — per-request Redis SUBSCRIBE, ReadableStream
+    — abort signal triggers cleanup
+    — heartbeat every 30s to keep connection alive
+    ↓
+EventSource in browser (useNotificationSubscription hook)
+```
 
-**Important:** Only the anon key is used client-side. RLS policies ensure users only receive their own notifications.
+**Why Redis?** A single pg-listener process handles all DB notifications and fans them out via Redis pub/sub. This ensures every SSE-connected process (e.g., multiple Next.js instances behind a load balancer) delivers the event to the correct recipient client.
+
+**Redis is optional.** If `REDIS_URL` is not set, pg-listener still starts, but cross-process fan-out is disabled. In a single-process deployment (local dev, single container), this is not a problem — the pg-listener and SSE handler run in the same process.
 
 ---
 
@@ -104,17 +122,42 @@ create table notifications (
   recipient_id uuid not null references auth.users(id) on delete cascade,
   actor_id uuid references auth.users(id) on delete set null,
   type notification_type not null,
-  
+
   -- Polymorphic relation to entity
   entity_type text not null,  -- 'issue', 'project', 'comment', 'team'
   entity_id uuid not null,
-  
+
   -- Denormalized metadata for rendering without extra fetches
   metadata jsonb default '{}'::jsonb,
-  
+
   read_at timestamptz,
   created_at timestamptz default now()
 );
+```
+
+### pg_notify Trigger
+
+A database trigger fires `pg_notify` on every INSERT into `notifications`, carrying the new row's `id` and `recipient_id` as a JSON payload:
+
+```sql
+-- drizzle/0003_notifications_pg_listen_trigger.sql
+CREATE OR REPLACE FUNCTION notify_new_notification()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  BEGIN
+    PERFORM pg_notify(
+      'new_notification',
+      json_build_object('id', NEW.id, 'recipient_id', NEW.recipient_id)::text
+    );
+  EXCEPTION WHEN OTHERS THEN NULL;  -- PGlite-safe: silently ignore in test env
+  END;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER notifications_notify_trigger
+AFTER INSERT ON notifications
+FOR EACH ROW EXECUTE FUNCTION notify_new_notification();
 ```
 
 ### Metadata Structure
@@ -130,11 +173,11 @@ interface NotificationMetadata {
   project_key?: string;
   team_name?: string;
   team_slug?: string;
-  
+
   // Navigation
   target_url: string;        // Deep-link URL (e.g., /teams/demo/projects/APP/issues/APP-123#comment-abc)
   comment_id?: string;       // For scroll-to-comment anchor
-  
+
   // Action data
   invitation_id?: string;    // For Accept/Decline actions
   old_role?: string;
@@ -147,12 +190,12 @@ interface NotificationMetadata {
 
 ```sql
 -- Unread notifications query (most common)
-create index idx_notifications_recipient_unread 
-  on notifications(recipient_id, created_at desc) 
+create index idx_notifications_recipient_unread
+  on notifications(recipient_id, created_at desc)
   where read_at is null;
 
 -- Entity lookup (for cleanup when entity is deleted)
-create index idx_notifications_entity 
+create index idx_notifications_entity
   on notifications(entity_type, entity_id);
 
 -- Grouping queries (client-side grouping)
@@ -245,9 +288,11 @@ Checks if identical notification exists within the time window (default: 5 minut
 | Method | Endpoint | Purpose | Performance Target |
 |--------|----------|---------|-------------------|
 | GET | `/api/notifications` | Paginated notification list | < 200ms for 50 notifications |
-| GET | `/api/notifications/unread-count` | Lightweight unread count | < 100ms |
+| GET | `/api/notifications/unread-count` | Lightweight unread count (polling fallback) | < 100ms |
+| GET | `/api/notifications/stream` | SSE push stream (primary real-time channel) | Long-lived, heartbeat every 30s |
 | PATCH | `/api/notifications/[id]/read` | Mark specific notification as read | < 100ms |
 | POST | `/api/notifications/read-all` | Mark all notifications as read | < 200ms |
+| POST | `/api/dev/notifications/test` | **Dev only** — trigger a test notification | N/A (development only) |
 
 ---
 
@@ -259,18 +304,18 @@ Location: `src/features/notifications/hooks/`
 
 #### `useNotifications(options?: PaginationOptions)`
 - Fetches paginated notifications
-- Auto-updates cache when new notifications arrive via Realtime
-- Implements fallback polling if Realtime disconnects
+- Auto-updates cache when new notifications arrive via SSE
+- Implements fallback polling if SSE disconnects
 
 #### `useUnreadCount()`
 - Fetches unread count for badge display
 - Supports polling interval for fallback mode
 
 #### `useNotificationSubscription(options)`
-- **Primary Realtime hook** - subscribes to Supabase Realtime INSERT events
-- Filters by `recipient_id` for security
+- **Primary real-time hook** — opens an `EventSource` to `/api/notifications/stream`
+- Receives server-pushed `notification` events (no `recipient_id` filter needed — server already filters by session user)
 - Invalidates React Query cache on new notifications
-- Falls back to polling if connection fails
+- Falls back to polling if SSE connection fails
 - Returns `{ isConnected, isPolling, error, reconnect }`
 
 #### `useMarkAsRead()`
@@ -347,7 +392,8 @@ Location: `src/components/shared/notifications/`
     │                 │              │ - Build metadata │              │         │
     │                 │              │                  ├─────────────►│ INSERT  │
     │                 │              │                  │              │ notif   │
-    │                 │              │                  │              │         │
+    │                 │              │                  │              │  ↓      │
+    │                 │              │                  │              │pg_notify│
     │                 │              │                  │              │         │
     │  4. Return      │◄──────┐      │                  │              │         │
     │  ──────────────►│       │      │                  │              │         │
@@ -361,16 +407,20 @@ Location: `src/components/shared/notifications/`
     │                 │       └──────┤  - Don't throw   │              │         │
     │                 │              │                  │              │         │
     └─────────────────┘              └──────────────────┘              └─────────┘
-                                            │
-                                            │ Realtime Broadcast
-                                            ▼
-                                     ┌─────────────┐
-                                     │  Recipient  │
-                                     │   Client    │
-                                     │             │
-                                     │ • Toast     │
-                                     │ • Badge ↑   │
-                                     └─────────────┘
+                                                                pg-listener
+                                                                    │
+                                                               Redis PUBLISH
+                                                                    │
+                                                               SSE /stream
+                                                                    │
+                                                         ┌─────────────┐
+                                                         │  Recipient  │
+                                                         │   Client    │
+                                                         │ (EventSource│
+                                                         │             │
+                                                         │ • Toast     │
+                                                         │ • Badge ↑   │
+                                                         └─────────────┘
 
     KEY PRINCIPLE: Notifications are FIRE-AND-FORGET
     ───────────────────────────────────────────────
@@ -405,7 +455,7 @@ import { createNotification, buildTargetUrl } from '@/server/notifications/notif
 export async function createComment(data: CreateCommentDTO) {
   // 1. Create the comment
   const comment = await db.insert(comments).values(data).returning()
-  
+
   // 2. Create notifications (fire-and-forget)
   try {
     // Notify mentioned users
@@ -431,7 +481,7 @@ export async function createComment(data: CreateCommentDTO) {
         },
       }))
     )
-    
+
     // Notify issue assignee if comment is on their issue
     if (issue.assigneeId && issue.assigneeId !== data.authorId) {
       await createNotification({
@@ -447,7 +497,7 @@ export async function createComment(data: CreateCommentDTO) {
     // Log but don't block
     logger.error('Failed to create comment notifications', { error, commentId: comment.id })
   }
-  
+
   return comment
 }
 ```
@@ -459,7 +509,7 @@ export async function createComment(data: CreateCommentDTO) {
 export async function assignIssue(issueId: string, assigneeId: string, actorId: string) {
   // 1. Update the issue
   await db.update(issues).set({ assigneeId }).where(eq(issues.id, issueId))
-  
+
   // 2. Create notification (fire-and-forget)
   try {
     await createNotification({
@@ -491,7 +541,7 @@ export async function assignIssue(issueId: string, assigneeId: string, actorId: 
 export async function createProjectInvitation(data: CreateInvitationDTO) {
   // 1. Create the invitation
   const invitation = await db.insert(projectInvitations).values(data).returning()
-  
+
   // 2. Create notification
   try {
     await createNotification({
@@ -514,7 +564,7 @@ export async function createProjectInvitation(data: CreateInvitationDTO) {
   } catch (error) {
     logger.error('Failed to create invitation notification', { error, invitationId: invitation.id })
   }
-  
+
   return invitation
 }
 ```
@@ -532,7 +582,7 @@ describe('createComment', () => {
       authorId: bob.id,
       issueId: issue.id,
     })
-    
+
     const notifications = await getNotifications(alice.id)
     expect(notifications).toHaveLength(1)
     expect(notifications[0]).toMatchObject({
@@ -542,19 +592,25 @@ describe('createComment', () => {
       entityId: comment.id,
     })
   })
-  
+
   it('should NOT create self-notification when user mentions themselves', async () => {
     await createComment({
       content: '@alice Self-reminder',
       authorId: alice.id,
       issueId: issue.id,
     })
-    
+
     const notifications = await getNotifications(alice.id)
     expect(notifications).toHaveLength(0)  // Actor exclusion
   })
 })
 ```
+
+**Dev Testing Without a Second User:**
+
+Use the "Send Test Notification" button on `/dev/auth` (development only). This calls `POST /api/dev/notifications/test`, which creates a `mention` notification for the currently logged-in user with:
+- No `actorId` → bypasses actor exclusion check
+- Random `entityId` → bypasses deduplication
 
 ---
 
@@ -585,7 +641,7 @@ Prevents notification spam by checking for identical notifications within a 5-mi
 ```typescript
 async function isDuplicate(data: CreateNotificationDTO, windowMs: number = 5 * 60 * 1000): Promise<boolean> {
   const cutoff = new Date(Date.now() - windowMs)
-  
+
   const existing = await db
     .select({ id: notifications.id })
     .from(notifications)
@@ -600,16 +656,17 @@ async function isDuplicate(data: CreateNotificationDTO, windowMs: number = 5 * 6
       )
     )
     .limit(1)
-  
+
   return existing.length > 0
 }
 ```
 
-### C. Row-Level Security
+### C. SSE Endpoint Authentication
 
-- Users can only `SELECT` and `UPDATE` their own notifications
-- Notification creation uses service role (server-side only)
-- All API endpoints validate session and enforce `recipient_id = auth.uid()`
+The `/api/notifications/stream` endpoint:
+- Returns `401 Unauthorized` if the session is invalid or missing
+- Only delivers events matching the authenticated user's `recipient_id`
+- Never exposes other users' notification payloads
 
 ### D. Input Validation
 
@@ -697,7 +754,9 @@ if (notification.type === 'project_invitation') {
 | Scenario | Handling |
 |----------|----------|
 | Notification creation fails | Log error, do NOT block triggering action (fire-and-forget) |
-| Realtime connection lost | Fall back to polling `unread-count` every 30s |
+| SSE connection lost | Fall back to polling `unread-count` every 30s |
+| pg-listener disconnects from DB | Auto-reconnect with exponential backoff |
+| Redis unavailable | pg-listener still runs; SSE works within a single process (no cross-process fan-out) |
 | Invalid notification type | Reject with 400 Bad Request, log for debugging |
 | Missing recipient | Skip notification creation, log warning |
 | Invitation already accepted/declined | Return 409 Conflict, notification remains but actions disabled |
@@ -711,8 +770,9 @@ if (notification.type === 'project_invitation') {
 | Notification list API | < 200ms for 50 notifications | Optimized indexes, pagination |
 | Unread count API | < 100ms | Indexed query on `recipient_id, read_at` |
 | Notification creation | Non-blocking | Fire-and-forget pattern, logged errors |
-| Realtime delivery | < 1 second | Supabase Realtime subscription |
+| SSE delivery | < 1 second | pg_notify → Redis → SSE push |
 | Polling fallback | 30-second intervals | Lightweight `/unread-count` endpoint |
+| SSE heartbeat | Every 30 seconds | Keeps connection alive through proxies/load balancers |
 
 ---
 
@@ -735,6 +795,7 @@ if (notification.type === 'project_invitation') {
 - `buildTargetUrl()` generates correct URLs for all entity types
 - `groupNotifications()` utility with various edge cases
 - `NotificationItem` renders correct text/links for each type
+- `useNotificationSubscription` hook — mocked `EventSource`, SSE event handling, fallback to polling
 
 ### Integration Tests
 - Service layer creates notifications correctly for different triggers
@@ -753,10 +814,10 @@ Each correctness property with minimum 100 iterations:
 - **Property 8:** Deduplication correctness
 
 ### E2E Tests
-- User A comments → User B receives notification and badge update
+- User A comments → User B receives notification and badge update via SSE
 - Click notification → navigate to correct issue with comment scroll
 - Invitation Accept/Decline flow updates notification state
-- Realtime fallback activates when connection lost
+- SSE fallback polling activates when EventSource connection is lost
 
 ---
 
@@ -799,7 +860,8 @@ Each correctness property with minimum 100 iterations:
 ```
 src/
 ├── lib/
-│   └── supabase-client.ts                    # Supabase browser client (Realtime)
+│   ├── redis.ts                              # Lazy ioredis publisher/subscriber singletons
+│   └── pg-listener.ts                        # PostgreSQL LISTEN singleton → Redis PUBLISH
 │
 ├── server/
 │   └── notifications/
@@ -810,11 +872,14 @@ src/
 │           └── notification.property.test.ts
 │
 ├── app/api/
-│   └── notifications/
-│       ├── route.ts                          # GET /api/notifications
-│       ├── unread-count/route.ts             # GET /api/notifications/unread-count
-│       ├── [id]/read/route.ts                # PATCH /api/notifications/[id]/read
-│       └── read-all/route.ts                 # POST /api/notifications/read-all
+│   ├── notifications/
+│   │   ├── route.ts                          # GET /api/notifications
+│   │   ├── unread-count/route.ts             # GET /api/notifications/unread-count
+│   │   ├── stream/route.ts                   # GET /api/notifications/stream (SSE)
+│   │   ├── [id]/read/route.ts                # PATCH /api/notifications/[id]/read
+│   │   └── read-all/route.ts                 # POST /api/notifications/read-all
+│   └── dev/
+│       └── notifications/test/route.ts       # POST /api/dev/notifications/test (dev only)
 │
 ├── features/notifications/
 │   ├── api/                                  # API fetcher functions
@@ -823,14 +888,14 @@ src/
 │   │   ├── use-unread-count.ts
 │   │   ├── use-mark-as-read.ts
 │   │   ├── use-mark-all-as-read.ts
-│   │   ├── use-notification-subscription.ts  # Supabase Realtime subscription
+│   │   ├── use-notification-subscription.ts  # SSE EventSource subscription
 │   │   ├── use-notification-toast.ts
 │   │   └── index.ts                          # Barrel export
 │   └── utils/
 │       └── group-notifications.ts
 │
 └── components/shared/notifications/
-    ├── notification-panel.tsx                # Main entry point (integrates Realtime)
+    ├── notification-panel.tsx                # Main entry point (integrates SSE hook)
     ├── notification-bell-button.tsx
     ├── notification-dropdown.tsx
     ├── notification-item.tsx
@@ -842,9 +907,21 @@ src/
 ### Migration Files
 
 ```
-supabase/migrations/
-└── XXXXXX_create_notifications_table.sql
+drizzle/
+├── 0000_purple_wilson_fisk.sql               # Initial schema (notifications table + indexes)
+├── 0003_notifications_pg_listen_trigger.sql  # pg_notify trigger for SSE delivery
+└── meta/_journal.json
 ```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | Pooled PostgreSQL connection (Drizzle ORM) |
+| `DIRECT_URL` | Recommended | Non-pooled connection — required for pg-listener |
+| `REDIS_URL` | Optional | Enables cross-process SSE fan-out (ioredis) |
+
+> If `DIRECT_URL` is not set, pg-listener falls back to `DATABASE_URL`. This works for local dev but is not recommended in production where `DATABASE_URL` is a pooled connection.
 
 ---
 
@@ -856,3 +933,4 @@ supabase/migrations/
 - **Use service role** for notification creation (bypasses RLS)
 - **Test deduplication** to ensure spam prevention works correctly
 - **Monitor performance** — notification queries should be fast (<200ms)
+- **Redis is optional** — the system degrades gracefully to single-process SSE delivery when Redis is unavailable

@@ -56,14 +56,10 @@ const envSchema = z.object({
     .min(1)
     .optional()
     .describe("Direct PostgreSQL connection string (for migrations)"),
-  // Supabase Realtime (optional — enables push notifications; falls back to polling)
-  NEXT_PUBLIC_SUPABASE_URL: optionalUrl().describe(
-    "Supabase project URL (enables Realtime notifications)"
+  // Redis (optional — enables SSE push notifications; falls back to polling)
+  REDIS_URL: optionalString().describe(
+    "Redis connection URL (enables SSE push notifications)"
   ),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: optionalString().describe(
-    "Supabase anon key for client-side Realtime"
-  ),
-
   // Storage (S3-compatible — single bucket)
   // Supports MinIO (local dev), AWS S3, AWS Lightsail, Cloudflare R2, and any
   // S3-compatible provider. All objects are private by default; media is served

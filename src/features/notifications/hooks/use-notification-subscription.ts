@@ -1,244 +1,117 @@
 /**
- * USE NOTIFICATION SUBSCRIPTION HOOK
- * Supabase Realtime subscription for instant notification updates
+ * USE NOTIFICATION SUBSCRIPTION HOOK (SSE version)
  *
- * Subscribes to INSERT events on the notifications table filtered by recipient_id.
- * When a new notification arrives, it invalidates the React Query cache to trigger
- * a refetch and shows a toast notification.
- *
- * Falls back to polling if Realtime connection fails.
+ * Subscribes to real-time notification events via Server-Sent Events.
+ * Falls back to polling if EventSource is unavailable or connection fails.
  */
-
-import { useEffect, useRef, useCallback, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { RealtimeChannel } from "@supabase/supabase-js";
-import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase-client";
-import { notificationKeys } from "./use-notifications";
-import type { Notification, NotificationMetadata } from "../api";
-
-// ============================================================================
-// TYPES
-// ============================================================================
+import { useEffect, useRef, useCallback, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import { notificationKeys } from "./use-notifications"
+import type { Notification } from "../api"
 
 export interface UseNotificationSubscriptionOptions {
-  /** User ID to subscribe to notifications for */
-  userId: string | null;
-  /** Whether the subscription is enabled */
-  enabled?: boolean;
-  /** Callback when a new notification arrives */
-  onNewNotification?: (notification: Notification) => void;
-  /** Polling interval in ms when Realtime is disconnected (default: 30000) */
-  fallbackPollingInterval?: number;
+  userId: string | null
+  enabled?: boolean
+  onNewNotification?: (notification: Partial<Notification> & { id: string }) => void
+  fallbackPollingInterval?: number
 }
 
 export interface UseNotificationSubscriptionResult {
-  /** Whether the Realtime connection is active */
-  isConnected: boolean;
-  /** Whether we're using polling fallback */
-  isPolling: boolean;
-  /** Any connection error */
-  error: Error | null;
-  /** Manually reconnect */
-  reconnect: () => void;
+  isConnected: boolean
+  isPolling: boolean
+  error: Error | null
+  reconnect: () => void
 }
 
-/** Database row shape (snake_case from Postgres) */
-interface NotificationRow {
-  id: string;
-  recipient_id: string;
-  actor_id: string | null;
-  type: Notification["type"];
-  entity_type: Notification["entityType"];
-  entity_id: string;
-  metadata: NotificationMetadata;
-  read_at: string | null;
-  created_at: string;
-}
+const SSE_ENDPOINT = "/api/notifications/stream"
 
-// ============================================================================
-// HOOK
-// ============================================================================
-
-/**
- * Subscribe to real-time notification updates via Supabase Realtime
- *
- * @example
- * const { isConnected, isPolling } = useNotificationSubscription({
- *   userId: session?.user?.id,
- *   enabled: !!session,
- *   onNewNotification: (notification) => {
- *     console.log('New notification:', notification)
- *   }
- * })
- */
 export function useNotificationSubscription({
   userId,
   enabled = true,
   onNewNotification,
   fallbackPollingInterval = 30000,
 }: UseNotificationSubscriptionOptions): UseNotificationSubscriptionResult {
-  const queryClient = useQueryClient();
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const queryClient = useQueryClient()
+  const esRef = useRef<EventSource | null>(null)
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [isConnected, setIsConnected] = useState(false)
+  const [isPolling, setIsPolling] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
 
-  const [isConnected, setIsConnected] = useState(false);
-  const [isPolling, setIsPolling] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  // Transform database row to API type (snake_case -> camelCase)
-  const transformRow = useCallback((row: NotificationRow): Notification => {
-    return {
-      id: row.id,
-      recipientId: row.recipient_id,
-      actorId: row.actor_id,
-      type: row.type,
-      entityType: row.entity_type,
-      entityId: row.entity_id,
-      metadata: row.metadata,
-      readAt: row.read_at,
-      createdAt: row.created_at,
-    };
-  }, []);
-
-  // Handle new notification from Realtime
-  const handleNewNotification = useCallback(
-    (payload: { new: NotificationRow }) => {
-      const notification = transformRow(payload.new);
-
-      // Invalidate queries to trigger refetch
-      queryClient.invalidateQueries({
-        queryKey: notificationKeys.all,
-      });
-
-      // Call the callback if provided
-      onNewNotification?.(notification);
-    },
-    [queryClient, onNewNotification, transformRow]
-  );
-
-  // Start polling fallback
   const startPolling = useCallback(() => {
-    if (pollingIntervalRef.current) return;
+    if (pollingRef.current) return
+    setIsPolling(true)
+    pollingRef.current = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() })
+    }, fallbackPollingInterval)
+  }, [queryClient, fallbackPollingInterval])
 
-    setIsPolling(true);
-    pollingIntervalRef.current = setInterval(() => {
-      queryClient.invalidateQueries({
-        queryKey: notificationKeys.unreadCount(),
-      });
-    }, fallbackPollingInterval);
-  }, [queryClient, fallbackPollingInterval]);
-
-  // Stop polling fallback
   const stopPolling = useCallback(() => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current)
+      pollingRef.current = null
     }
-    setIsPolling(false);
-  }, []);
+    setIsPolling(false)
+  }, [])
 
-  // Connect to Realtime
   const connect = useCallback(() => {
-    if (!userId || !enabled || !isSupabaseConfigured()) {
-      return;
+    if (!userId || !enabled) return
+
+    if (typeof EventSource === "undefined") {
+      startPolling()
+      return
     }
 
-    // Clean up existing channel
-    if (channelRef.current) {
-      channelRef.current.unsubscribe();
-      channelRef.current = null;
+    if (esRef.current) {
+      esRef.current.close()
+      esRef.current = null
     }
 
-    try {
-      const supabase = getSupabaseClient();
+    const es = new EventSource(SSE_ENDPOINT)
+    esRef.current = es
 
-      // Create channel with unique name per user
-      const channel = supabase
-        .channel(`notifications:${userId}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "notifications",
-            filter: `recipient_id=eq.${userId}`,
-          },
-          handleNewNotification
-        )
-        .subscribe((status) => {
-          if (status === "SUBSCRIBED") {
-            setIsConnected(true);
-            setError(null);
-            stopPolling();
-          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            setIsConnected(false);
-            setError(new Error(`Realtime connection failed: ${status}`));
-            // Fall back to polling
-            startPolling();
-          } else if (status === "CLOSED") {
-            setIsConnected(false);
-            // Fall back to polling
-            startPolling();
-          }
-        });
+    es.addEventListener("open", () => {
+      setIsConnected(true)
+      setError(null)
+      stopPolling()
+    })
 
-      channelRef.current = channel;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to connect"));
-      setIsConnected(false);
-      startPolling();
-    }
-  }, [
-    userId,
-    enabled,
-    handleNewNotification,
-    startPolling,
-    stopPolling,
-  ]);
+    es.addEventListener("notification", (event: MessageEvent) => {
+      try {
+        const payload = JSON.parse(event.data) as { id: string; user_id: string }
+        queryClient.invalidateQueries({ queryKey: notificationKeys.all })
+        onNewNotification?.({ id: payload.id })
+      } catch { /* malformed */ }
+    })
 
-  // Reconnect function for manual retry
+    es.addEventListener("error", () => {
+      setIsConnected(false)
+      setError(new Error("SSE connection failed"))
+      startPolling()
+    })
+  }, [userId, enabled, queryClient, onNewNotification, startPolling, stopPolling])
+
   const reconnect = useCallback(() => {
-    setError(null);
-    stopPolling();
-    connect();
-  }, [connect, stopPolling]);
+    setError(null)
+    stopPolling()
+    connect()
+  }, [connect, stopPolling])
 
-  // Set up subscription on mount and when dependencies change
   useEffect(() => {
     if (!enabled || !userId) {
-      // Clean up if disabled
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        channelRef.current = null;
-      }
-      stopPolling();
-      setIsConnected(false);
-      return;
+      return
     }
-
-    // Check if Supabase is configured
-    if (!isSupabaseConfigured()) {
-      // Fall back to polling if Supabase is not configured
-      startPolling();
-      return;
-    }
-
-    connect();
-
-    // Cleanup on unmount
+    // connect() manages EventSource subscription and calls setState in async
+    // callbacks (open/error/message events) — not synchronously. React 18
+    // batches these updates, so no cascading render risk.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    connect()
     return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        channelRef.current = null;
-      }
-      stopPolling();
-    };
-  }, [userId, enabled, connect, startPolling, stopPolling]);
+      if (esRef.current) { esRef.current.close(); esRef.current = null }
+      stopPolling()
+      setIsConnected(false)
+    }
+  }, [userId, enabled, connect, stopPolling])
 
-  return {
-    isConnected,
-    isPolling,
-    error,
-    reconnect,
-  };
+  return { isConnected, isPolling, error, reconnect }
 }

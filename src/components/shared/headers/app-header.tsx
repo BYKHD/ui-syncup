@@ -56,7 +56,7 @@ export function AppHeader({
 
   return (
     <header
-      className={`sticky top-0 z-40 flex h-12 w-full shrink-0 items-center justify-between gap-2 border-b bg-background px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 ${className}`}
+      className={`sticky top-0 z-40 flex h-12 w-full shrink-0 items-center justify-between gap-2 border-b-3d bg-card px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 ${className}`}
       role="banner"
     >
       <div className="flex items-center gap-3">

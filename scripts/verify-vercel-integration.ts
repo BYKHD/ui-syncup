@@ -88,7 +88,7 @@ async function checkGitRemote(): Promise<void> {
         'Requirements 2.2, 3.3'
       )
     }
-  } catch (error) {
+  } catch {
     addResult(
       'Git Remote',
       'fail',
@@ -113,7 +113,7 @@ async function checkVercelProject(): Promise<void> {
 
   try {
     // Check if project is linked
-    const projectInfo = execSync('vercel project ls --json 2>/dev/null || echo "[]"', { 
+    execSync('vercel project ls --json 2>/dev/null || echo "[]"', {
       encoding: 'utf-8',
       stdio: 'pipe'
     })
@@ -128,7 +128,7 @@ async function checkVercelProject(): Promise<void> {
       '    4. Verify GitHub repository is connected',
       'Requirements 2.2, 3.3'
     )
-  } catch (error) {
+  } catch {
     addResult(
       'Vercel Project Link',
       'manual',
@@ -249,7 +249,7 @@ async function checkGitHubWorkflows(): Promise<void> {
         'Requirements 2.2, 3.3'
       )
     }
-  } catch (error) {
+  } catch {
     addResult(
       'GitHub Workflows',
       'fail',

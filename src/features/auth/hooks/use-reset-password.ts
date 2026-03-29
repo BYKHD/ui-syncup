@@ -27,6 +27,7 @@ async function resetPassword(data: ResetPasswordSchema): Promise<SuccessResponse
     body: {
       token: data.token,
       password: data.password,
+      confirmPassword: data.confirmPassword,
     },
   });
 

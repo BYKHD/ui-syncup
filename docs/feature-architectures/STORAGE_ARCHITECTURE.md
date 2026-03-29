@@ -113,25 +113,40 @@ MINIO_ROOT_PASSWORD=change-me-min-8-chars
 
 ## Upload Flow
 
-All uploads are **client-direct** — the browser uploads straight to the S3 provider, bypassing the app server. This avoids large request bodies going through Next.js.
+All uploads are **server-proxied** — the browser sends a `multipart/form-data` POST to the Next.js app server, which uploads to S3 server-side. This eliminates CORS configuration requirements on the bucket.
+
+### Attachments
 
 ```
 Browser                  App Server               S3 Provider
   │                          │                         │
   │  POST /api/uploads/      │                         │
-  │  presigned  ────────────▶│                         │
-  │  (or /media)             │ generateUploadUrl()      │
+  │  attachment              │                         │
+  │  FormData(file, issueId)▶│  looks up issue,        │
+  │                          │  builds key,            │
+  │                          │  uploadFile(key, buf)   │
   │                          │────────────────────────▶│
-  │                          │◀── presigned PUT URL ───│
-  │◀── { uploadUrl, key } ───│                         │
-  │                          │                         │
-  │  PUT <uploadUrl>  ───────│────────────────────────▶│
-  │  (direct, no app server) │                     object stored
+  │                          │                    object stored
+  │◀── { key } ─────────────│                         │
   │                          │                         │
   │  POST /api/issues/       │                         │
   │  {id}/attachments ──────▶│  createAttachment()     │
   │  { url: key, ... }       │  stores raw key in DB   │
   │◀── { attachment } ───────│                         │
+```
+
+### Media (avatars, team logos)
+
+```
+Browser                  App Server               S3 Provider
+  │                          │                         │
+  │  POST /api/uploads/media │                         │
+  │  FormData(file,          │                         │
+  │    type, entityId) ─────▶│  validates, builds key, │
+  │                          │  uploadFile(key, buf)   │
+  │                          │────────────────────────▶│
+  │                          │                    object stored
+  │◀── { key } ─────────────│                         │
 ```
 
 > **The DB stores the raw storage key** (e.g. `attachments/issues/t1/p1/i1/uuid.png`), not a full URL. URLs are generated server-side on every read.
@@ -213,8 +228,8 @@ type StorageCategory = 'attachments' | 'media'
 // Build a full storage key from a category and relative path
 buildKey(category: StorageCategory, relativePath: string): string
 
-// Generate a presigned PUT URL for uploading (valid 1 hour)
-generateUploadUrl(key: string, contentType: string): Promise<string>
+// Upload a file to storage server-side (used by upload API routes)
+uploadFile(key: string, body: Buffer, contentType: string): Promise<void>
 
 // Generate a presigned GET URL for viewing/downloading (valid 1 hour by default)
 generateDownloadUrl(key: string, expiresIn?: number): Promise<string>
@@ -244,36 +259,41 @@ getStorageClient(): S3Client
 
 | Method | Path | Purpose | Auth |
 |--------|------|---------|------|
-| `POST` | `/api/uploads/presigned` | Get presigned PUT URL for an issue attachment | Session |
-| `POST` | `/api/uploads/media` | Get presigned PUT URL for avatar/team logo | Session |
+| `POST` | `/api/uploads/attachment` | Upload an issue attachment (server-side to S3) | Session |
+| `POST` | `/api/uploads/media` | Upload an avatar or team logo (server-side to S3) | Session |
 | `DELETE` | `/api/uploads/media` | Delete an avatar or team logo from storage | Session |
 | `GET` | `/api/uploads/presigned/download` | Get presigned GET URL for a private object | Session |
 | `GET` | `/api/media/[...key]` | Serve media via redirect (proxy) | None |
 
-### POST /api/uploads/presigned
+### POST /api/uploads/attachment
 
-Request body:
-```json
-{ "fileName": "screenshot.png", "contentType": "image/png", "issueId": "<uuid>" }
-```
+Request: `multipart/form-data`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `file` | File | The attachment file (max 10 MB) |
+| `issueId` | string | Issue UUID — used to look up `teamId` / `projectId` for the key |
 
 Response:
 ```json
-{ "uploadUrl": "https://...", "key": "attachments/issues/..." }
+{ "key": "attachments/issues/{teamId}/{projectId}/{issueId}/{uuid}.{ext}" }
 ```
 
-> No `publicUrl` in the response — callers store the raw `key` in the DB.
+> Callers store the raw `key` in the DB.
 
 ### POST /api/uploads/media
 
-Request body:
-```json
-{ "fileName": "avatar.jpg", "contentType": "image/jpeg", "type": "avatar|team", "entityId": "<userId|teamId>" }
-```
+Request: `multipart/form-data`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `file` | File | Image file — JPEG, PNG, WebP, or GIF; max 2 MB |
+| `type` | `"avatar"` \| `"team"` | Media category |
+| `entityId` | string | User ID (avatar) or Team ID (team logo) |
 
 Response:
 ```json
-{ "uploadUrl": "https://...", "key": "media/avatars/...", "maxFileSize": 2097152 }
+{ "key": "media/avatars/{userId}/{uuid}.{ext}" }
 ```
 
 ### DELETE /api/uploads/media
@@ -366,14 +386,15 @@ For deployments upgrading from the two-bucket model, run the Drizzle migration `
 
 1. Add an API route under `src/app/api/uploads/` that:
    - Authenticates the user
+   - Parses `request.formData()` to get the `File` and any required IDs
    - Validates file type and size
    - Generates a key: `buildKey('attachments', 'issues/{teamId}/...')` or `buildKey('media', 'avatars/{userId}/...')`
-   - Calls `generateUploadUrl(key, contentType)`
-   - Returns `{ uploadUrl, key }`
+   - Calls `uploadFile(key, Buffer.from(await file.arrayBuffer()), file.type)`
+   - Returns `{ key }`
 
-2. On the client, upload directly via `PUT <uploadUrl>` with `Content-Type` header.
+2. Store the raw `key` in the database.
 
-3. Store the raw `key` in the database.
+> **No CORS configuration required.** The browser POSTs `FormData` to the Next.js server, which uploads to S3 server-side. The S3 provider never receives a cross-origin request from the browser.
 
 ### Displaying a private attachment
 
@@ -384,24 +405,6 @@ Use `generateDownloadUrl(key)` server-side and pass the presigned URL to the cli
 Use `/api/media/${key}` as the `<img src>`. The proxy handles both public and private buckets transparently — no per-component logic needed.
 
 Call `invalidateMediaUrl(key)` whenever a media object is replaced or deleted so the next request generates a fresh URL.
-
-### CORS requirements
-
-Presigned PUT upload URLs require the S3 provider to allow cross-origin PUT requests from your app's origin. Configure CORS on the bucket if uploads fail with CORS errors:
-
-- **R2**: Dashboard → Bucket → Settings → CORS Policy
-- **MinIO**: `mc admin config set local api cors_allow_origin="http://localhost:3000"`
-- **AWS S3 / Lightsail**: Bucket → Permissions → CORS configuration
-
-Minimum required CORS rule:
-```json
-[{
-  "AllowedOrigins": ["https://yourdomain.com"],
-  "AllowedMethods": ["PUT"],
-  "AllowedHeaders": ["Content-Type"],
-  "ExposeHeaders": ["ETag"]
-}]
-```
 
 ---
 

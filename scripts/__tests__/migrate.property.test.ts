@@ -1139,7 +1139,7 @@ describe('Migration Runner - Property-Based Tests', () => {
           migrationSuccess: fc.boolean(),
           trackingSuccess: fc.boolean(),
         }),
-        async ({ hash, filename, migrationSuccess, trackingSuccess }) => {
+        async ({ hash, migrationSuccess, trackingSuccess }) => {
           // Simulate transaction behavior: both must succeed or both must fail
           const transactionSuccess = migrationSuccess && trackingSuccess;
           
@@ -1193,7 +1193,7 @@ describe('Migration Runner - Property-Based Tests', () => {
             { minLength: 1, maxLength: 10 }
           ),
         }),
-        async ({ migrationHash, filename, preMigrationState, migrationOperations }) => {
+        async ({ preMigrationState, migrationOperations }) => {
           // Determine if migration succeeds (all operations must succeed)
           const migrationSucceeds = migrationOperations.every(op => op.success);
           
@@ -1333,7 +1333,7 @@ describe('Migration Runner - Property-Based Tests', () => {
             { minLength: 1, maxLength: 5 }
           ),
         }),
-        async ({ migrationHash, filename, migrationSuccess, sqlOperations }) => {
+        async ({ migrationHash, migrationSuccess, sqlOperations }) => {
           // Migration succeeds only if all SQL operations succeed
           const allOperationsSucceed = sqlOperations.every(op => op.success);
           const actualMigrationSuccess = migrationSuccess && allOperationsSucceed;
@@ -1661,11 +1661,6 @@ describe('Migration Runner - Property-Based Tests', () => {
         ),
         async (pendingMigrations, alreadyAppliedMigrations) => {
           // Simulate tracking table with already applied migrations
-          const trackingTableBefore = alreadyAppliedMigrations.map(m => ({
-            hash: m.hash,
-            created_at: Date.now() - 1000000,
-          }));
-          
           const appliedHashes = new Set(alreadyAppliedMigrations.map(m => m.hash));
           
           // Filter out already applied migrations
