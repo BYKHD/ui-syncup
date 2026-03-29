@@ -1,3 +1,11 @@
+# [0.6.0-beta.9](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.8...v0.6.0-beta.9) (2026-03-29)
+
+
+### Bug Fixes
+
+* add migrationHash to migrate.property.test.ts callback parameters ([fc656ad](https://github.com/BYKHD/ui-syncup/commit/fc656ad0abd07bd3a5e4585502281b5f6bce013c))
+* reset password redirect ([df7633d](https://github.com/BYKHD/ui-syncup/commit/df7633dc034068d60555b555effff330180c62e0))
+
 # [0.6.0-beta.8](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.7...v0.6.0-beta.8) (2026-03-27)
 
 
