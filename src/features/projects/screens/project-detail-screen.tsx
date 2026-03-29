@@ -59,7 +59,7 @@ export default function ProjectDetailScreen({
   const router = useRouter();
   const pathname = usePathname();
   const { addRecentProject } = useRecentProjects();
-  
+
   useEffect(() => {
     if (project) {
       addRecentProject({
@@ -68,7 +68,7 @@ export default function ProjectDetailScreen({
         url: pathname,
         icon: project.icon,
       });
-      
+
       // Update local form state when project data changes (e.g. after refresh)
       setSettingsFormData({
         name: project.name,
@@ -119,30 +119,30 @@ export default function ProjectDetailScreen({
 
   // Member dialog state - dialog open/close is managed by project-actions.tsx
   const [invitationDialogOpen, setInvitationDialogOpen] = useState(false);
-  
+
   // Track if member dialog has been opened (for enabling hooks)
   const [memberDialogOpened, setMemberDialogOpened] = useState(false);
-  
+
   // Real data hooks for members - enabled once dialog has been opened
-  const { 
-    data: membersData, 
-    isLoading: isMembersLoading, 
+  const {
+    data: membersData,
+    isLoading: isMembersLoading,
     error: membersQueryError,
-    refetch: refetchMembers 
+    refetch: refetchMembers
   } = useProjectMembers({ projectId: project.id, enabled: memberDialogOpened });
-  
+
   const { mutateAsync: updateRoleMutation } = useUpdateMemberRole();
   const { mutateAsync: removeMemberMutation } = useRemoveMember();
-  
+
   // Real data hooks for invitations
-  const { 
+  const {
     pendingInvitations: invitationsData,
-    refetch: refetchInvitations 
+    refetch: refetchInvitations
   } = useProjectInvitations({ projectId: project.id, enabled: memberDialogOpened });
-  
+
   const { mutateAsync: revokeInvitationMutation } = useRevokeInvitation();
   const { mutateAsync: resendInvitationMutation } = useResendInvitation();
-  
+
   // Transform API members to dialog format
   const members = useMemo(() => {
     if (!membersData?.members) return [];
@@ -160,9 +160,9 @@ export default function ProjectDetailScreen({
       },
     }));
   }, [membersData]);
-  
+
   const membersError = membersQueryError?.message || null;
-  
+
   // Transform API invitations to dialog format
   const pendingInvitations = useMemo(() => {
     if (!invitationsData) return [];
@@ -233,7 +233,7 @@ export default function ProjectDetailScreen({
 
     try {
       setIsSubmittingIssue(true);
-      
+
       // 1. Create issue
       const { issue } = await createIssueMutation({
         projectId: project.id,
@@ -373,7 +373,7 @@ export default function ProjectDetailScreen({
     }
 
     setIsSubmittingSettings(true);
-    
+
     try {
       await updateProjectMutation({
         projectId: project.id,
@@ -634,13 +634,13 @@ export default function ProjectDetailScreen({
       />
 
       <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
+        <div className="flex flex-col gap-8">
+          <div className="w-full space-y-8">
             {/* Project Issues */}
             <ProjectIssues projectId={project.id} initialIssues={initialIssues} />
           </div>
 
-          <div className="space-y-8">
+          <div className="w-full space-y-8">
             {/* Activity Feed */}
             <ProjectActivityFeed projectId={project.id} />
           </div>

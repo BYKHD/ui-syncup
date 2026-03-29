@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
-import { cva, VariantProps } from "class-variance-authority"
+import { cva, type VariantProps } from "class-variance-authority"
 import { RiSidebarFoldLine, RiSidebarUnfoldLine } from "@remixicon/react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -27,10 +27,270 @@ import {
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
+
+/** Reads the sidebar open state from the cookie synchronously (client-only). */
+function getSidebarCookieState(fallback: boolean): boolean {
+  if (typeof document === "undefined") return fallback
+  const match = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(`${SIDEBAR_COOKIE_NAME}=`))
+  if (!match) return fallback
+  return match.split("=")[1] === "true"
+}
+
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
+
+// ---- Centralized Styles ----
+
+// -------------------------------------------------------------------------
+// CENTRALIZED STYLES (CVA Variants)
+// -------------------------------------------------------------------------
+//
+// These variant configurations determine the visual appearance, layout, 
+// and interactive states (hover, focus, active) of each sidebar piece.
+// You can edit the Tailwind classes here to broadly customize the Sidebar.
+//
+// -------------------------------------------------------------------------
+
+// 1. SidebarWrapper: Defines the outermost container of the entire layout.
+export const sidebarWrapperVariants = cva(
+  "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full"
+)
+
+// 2. Sidebar Static: Styles the non-collapsible, standard version of the sidebar.
+export const sidebarVariants = cva(
+  "bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col"
+)
+
+// 3. Sidebar Mobile: Styles the sidebar when opened inside a mobile Sheet component.
+export const sidebarMobileVariants = cva(
+  "bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+)
+
+// 4. Sidebar Desktop (Wrapper): Controls visibility classes for the desktop perspective.
+export const sidebarDesktopVariants = cva(
+  "group peer text-sidebar-foreground hidden md:block"
+)
+
+// 5. Sidebar Gap: Invisible element used on desktop to reserve the space that the sidebar occupies.
+export const sidebarGapVariants = cva(
+  "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear group-data-[collapsible=offcanvas]:w-0 group-data-[side=right]:rotate-180",
+  {
+    variants: {
+      variant: {
+        floating: "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]",
+        inset: "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]",
+        sidebar: "group-data-[collapsible=icon]:w-(--sidebar-width-icon)",
+      },
+    },
+    defaultVariants: {
+      variant: "sidebar",
+    },
+  }
+)
+
+// 6. Sidebar Container: The fixed container clamping the sidebar in the view (handles side placement).
+export const sidebarContainerVariants = cva(
+  "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
+  {
+    variants: {
+      side: {
+        left: "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]",
+        right: "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+      },
+      variant: {
+        floating: "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]",
+        inset: "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]",
+        sidebar: "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
+      },
+    },
+    defaultVariants: {
+      side: "left",
+      variant: "sidebar",
+    },
+  }
+)
+
+// 7. Sidebar Inner: The visible card/surface of the sidebar. Defines background, border, shadow.
+export const sidebarInnerVariants = cva(
+  "bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
+)
+
+// 8. Sidebar Rail: The draggable edge that can be clicked to collapse the sidebar.
+export const sidebarRailVariants = cva(
+  "hover:after:bg-sidebar-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] sm:flex in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize [[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize hover:group-data-[collapsible=offcanvas]:bg-sidebar group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full [[data-side=left][data-collapsible=offcanvas]_&]:-right-2 [[data-side=right][data-collapsible=offcanvas]_&]:-left-2"
+)
+
+// 9. Sidebar Inset: Wraps the main page content, making space or adding border/radius when sidebar is "inset".
+export const sidebarInsetVariants = cva(
+  "bg-background relative flex w-full flex-1 flex-col md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2"
+)
+
+// 10. Sidebar Input: Replaces standard inputs for a subtler, sidebar-fitted version.
+export const sidebarInputVariants = cva("bg-background h-8 w-full shadow-none")
+
+// 11. Sidebar Header: Topmost section of the sidebar content, usually contains brand or team selector.
+export const sidebarHeaderVariants = cva("flex flex-col gap-2 p-2")
+
+// 12. Sidebar Footer: Bottommost section of the sidebar, usually contains the user profile indicator.
+export const sidebarFooterVariants = cva("flex flex-col gap-2 p-2")
+
+// 13. Sidebar Separator: A horizontal line divider between sections in the sidebar.
+export const sidebarSeparatorVariants = cva("bg-sidebar-border mx-2 w-auto")
+
+// 14. Sidebar Content: Scrollable core area for the sidebar containing multiple groups or links.
+export const sidebarContentVariants = cva(
+  "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden"
+)
+
+// 15. Sidebar Group: A distinct group of links or content (e.g. "Platform", "Projects").
+export const sidebarGroupVariants = cva(
+  "relative flex w-full min-w-0 flex-col p-2"
+)
+
+// 16. Sidebar Group Label: The small title header for a `SidebarGroup`.
+export const sidebarGroupLabelVariants = cva(
+  "text-sidebar-foreground/70 ring-sidebar-ring flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0"
+)
+
+// 17. Sidebar Group Action: Optional button near the group label (e.g., "+" to create a new project).
+export const sidebarGroupActionVariants = cva(
+  "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 after:absolute after:-inset-2 md:after:hidden group-data-[collapsible=icon]:hidden"
+)
+
+// 18. Sidebar Group Content: Wraps the actual list items / navigation links inside the group.
+export const sidebarGroupContentVariants = cva("w-full text-sm")
+
+// 19. Sidebar Menu: The `ul` list wrapper around items.
+export const sidebarMenuVariants = cva("flex w-full min-w-0 flex-col gap-1")
+
+// 20. Sidebar Menu Item: The `li` wrapper for an individual navigation item.
+export const sidebarMenuItemVariants = cva("group/menu-item relative")
+
+// 21. Sidebar Menu Button: The clickable area of the item. Includes all interactive states (hover/active/selected).
+export const sidebarMenuButtonVariants = cva(
+  [
+    // Base layout & text
+    "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden",
+    // Focus ring
+    "ring-sidebar-ring focus-visible:ring-2",
+    // Transitions
+    "transition-[width,height,padding]",
+    // Hover states
+    "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+    "data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground",
+    // ACTIVE  
+    "active:bg-sidebar-accent active:text-sidebar-accent-foreground active:scale-[0.98]",
+    "data-[active=true]:bg-card data-[active=true]:shadow-active-menu data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground",
+    // ACTIVE + HOVER
+    "data-[active=true]:hover:bg-card",
+    // ACTIVE + PRESS
+    "data-[active=true]:active:bg-card data-[active=true]:active:scale-[0.98]",
+    // Disabled states
+    "disabled:pointer-events-none disabled:opacity-50",
+    "aria-disabled:pointer-events-none aria-disabled:opacity-50",
+    // Collapsible Icon tweaks
+    "group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2!",
+    // Children formatting (text truncate & icon sizing)
+    "[&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+    // Actions space reservation
+    "group-has-data-[sidebar=menu-action]/menu-item:pr-8",
+  ],
+  {
+    variants: {
+      variant: {
+        default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        outline:
+          "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
+      },
+      size: {
+        default: "h-8 text-sm",
+        sm: "h-7 text-xs",
+        lg: "h-12 text-sm group-data-[collapsible=icon]:p-0!",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+// 22. Sidebar Menu Action: Optional auxiliary button inside the item (e.g. dropdown trigger `...`).
+export const sidebarMenuActionVariants = cva(
+  "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground peer-hover/menu-button:text-sidebar-accent-foreground absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 after:absolute after:-inset-2 md:after:hidden peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden",
+  {
+    variants: {
+      showOnHover: {
+        true: "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
+        false: "",
+      },
+    },
+    defaultVariants: {
+      showOnHover: false,
+    },
+  }
+)
+
+// 23. Sidebar Menu Badge: The small icon/text tag pinned to the edge of the item (e.g., numbering or status).
+export const sidebarMenuBadgeVariants = cva(
+  "text-sidebar-foreground pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium tabular-nums select-none peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden"
+)
+
+// 24. Sidebar Menu Skeleton: Placeholder loading state for the menu item.
+export const sidebarMenuSkeletonVariants = cva(
+  "flex h-8 items-center gap-2 rounded-md px-2"
+)
+
+// 25. Sidebar Menu Sub: The list container for nested/child navigation paths.
+export const sidebarMenuSubVariants = cva(
+  "border-sidebar-border mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l px-2.5 py-0.5 group-data-[collapsible=icon]:hidden"
+)
+
+// 26. Sidebar Menu Sub Item: `li` item for the nested navigation.
+export const sidebarMenuSubItemVariants = cva("group/menu-sub-item relative")
+
+// 27. Sidebar Menu Sub Button: The clickable nested link.
+export const sidebarMenuSubButtonVariants = cva(
+  [
+    // Base layout
+    "flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden",
+    // Text rendering & focus ring
+    "text-sidebar-foreground ring-sidebar-ring focus-visible:ring-2",
+    // Hover states
+    "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+    // ⬇️ active
+    "active:bg-sidebar-accent active:text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground active:scale-[0.98]",
+    "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
+    // ACTIVE + HOVER
+    "data-[active=true]:hover:bg-sidebar-accent/80",
+    // ACTIVE + PRESS
+    "data-[active=true]:active:bg-sidebar-accent/70 data-[active=true]:active:scale-[0.98]",
+    // Disabled states
+    "disabled:pointer-events-none disabled:opacity-50",
+    "aria-disabled:pointer-events-none aria-disabled:opacity-50",
+    // Children formatting
+    "[&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+    // Hidden on collapsible
+    "group-data-[collapsible=icon]:hidden",
+  ],
+  {
+    variants: {
+      size: {
+        sm: "text-xs",
+        md: "text-sm",
+      },
+    },
+    defaultVariants: {
+      size: "md",
+    },
+  }
+)
+
+// ---- Context & Providers ----
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed"
@@ -71,7 +331,8 @@ function SidebarProvider({
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
-  const [_open, _setOpen] = React.useState(defaultOpen)
+  // Lazy initializer: restore from cookie on first mount (component is client-only).
+  const [_open, _setOpen] = React.useState(() => getSidebarCookieState(defaultOpen))
   const open = openProp ?? _open
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
@@ -138,10 +399,7 @@ function SidebarProvider({
               ...style,
             } as React.CSSProperties
           }
-          className={cn(
-            "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
-            className
-          )}
+          className={cn(sidebarWrapperVariants(), className)}
           {...props}
         >
           {children}
@@ -169,10 +427,7 @@ function Sidebar({
     return (
       <div
         data-slot="sidebar"
-        className={cn(
-          "bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col",
-          className
-        )}
+        className={cn(sidebarVariants(), className)}
         {...props}
       >
         {children}
@@ -187,7 +442,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+          className={sidebarMobileVariants()}
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -207,7 +462,7 @@ function Sidebar({
 
   return (
     <div
-      className="group peer text-sidebar-foreground hidden md:block"
+      className={sidebarDesktopVariants()}
       data-state={state}
       data-collapsible={state === "collapsed" ? collapsible : ""}
       data-variant={variant}
@@ -217,34 +472,17 @@ function Sidebar({
       {/* This is what handles the sidebar gap on desktop */}
       <div
         data-slot="sidebar-gap"
-        className={cn(
-          "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
-          "group-data-[collapsible=offcanvas]:w-0",
-          "group-data-[side=right]:rotate-180",
-          variant === "floating" || variant === "inset"
-            ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
-            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
-        )}
+        className={sidebarGapVariants({ variant })}
       />
       <div
         data-slot="sidebar-container"
-        className={cn(
-          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
-          side === "left"
-            ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-            : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-          // Adjust the padding for floating and inset variants.
-          variant === "floating" || variant === "inset"
-            ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
-            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
-          className
-        )}
+        className={cn(sidebarContainerVariants({ side, variant }), className)}
         {...props}
       >
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          className="bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
+          className={sidebarInnerVariants()}
         >
           {children}
         </div>
@@ -279,7 +517,7 @@ function SidebarTrigger({
       {isOpen ? (
         <RiSidebarFoldLine />
       ) : (
-        <RiSidebarUnfoldLine/>
+        <RiSidebarUnfoldLine />
       )}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
@@ -297,15 +535,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
       tabIndex={-1}
       onClick={toggleSidebar}
       title="Toggle Sidebar"
-      className={cn(
-        "hover:after:bg-sidebar-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] sm:flex",
-        "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
-        "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
-        "hover:group-data-[collapsible=offcanvas]:bg-sidebar group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full",
-        "[[data-side=left][data-collapsible=offcanvas]_&]:-right-2",
-        "[[data-side=right][data-collapsible=offcanvas]_&]:-left-2",
-        className
-      )}
+      className={cn(sidebarRailVariants(), className)}
       {...props}
     />
   )
@@ -315,11 +545,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
   return (
     <main
       data-slot="sidebar-inset"
-      className={cn(
-        "bg-background relative flex w-full flex-1 flex-col",
-        "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
-        className
-      )}
+      className={cn(sidebarInsetVariants(), className)}
       {...props}
     />
   )
@@ -333,7 +559,7 @@ function SidebarInput({
     <Input
       data-slot="sidebar-input"
       data-sidebar="input"
-      className={cn("bg-background h-8 w-full shadow-none", className)}
+      className={cn(sidebarInputVariants(), className)}
       {...props}
     />
   )
@@ -344,7 +570,7 @@ function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="sidebar-header"
       data-sidebar="header"
-      className={cn("flex flex-col gap-2 p-2", className)}
+      className={cn(sidebarHeaderVariants(), className)}
       {...props}
     />
   )
@@ -355,7 +581,7 @@ function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="sidebar-footer"
       data-sidebar="footer"
-      className={cn("flex flex-col gap-2 p-2", className)}
+      className={cn(sidebarFooterVariants(), className)}
       {...props}
     />
   )
@@ -369,7 +595,7 @@ function SidebarSeparator({
     <Separator
       data-slot="sidebar-separator"
       data-sidebar="separator"
-      className={cn("bg-sidebar-border mx-2 w-auto", className)}
+      className={cn(sidebarSeparatorVariants(), className)}
       {...props}
     />
   )
@@ -380,10 +606,7 @@ function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="sidebar-content"
       data-sidebar="content"
-      className={cn(
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
-        className
-      )}
+      className={cn(sidebarContentVariants(), className)}
       {...props}
     />
   )
@@ -394,7 +617,7 @@ function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="sidebar-group"
       data-sidebar="group"
-      className={cn("relative flex w-full min-w-0 flex-col p-2", className)}
+      className={cn(sidebarGroupVariants(), className)}
       {...props}
     />
   )
@@ -411,11 +634,7 @@ function SidebarGroupLabel({
     <Comp
       data-slot="sidebar-group-label"
       data-sidebar="group-label"
-      className={cn(
-        "text-sidebar-foreground/70 ring-sidebar-ring flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
-        "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
-        className
-      )}
+      className={cn(sidebarGroupLabelVariants(), className)}
       {...props}
     />
   )
@@ -432,13 +651,7 @@ function SidebarGroupAction({
     <Comp
       data-slot="sidebar-group-action"
       data-sidebar="group-action"
-      className={cn(
-        "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
-        // Increases the hit area of the button on mobile.
-        "after:absolute after:-inset-2 md:after:hidden",
-        "group-data-[collapsible=icon]:hidden",
-        className
-      )}
+      className={cn(sidebarGroupActionVariants(), className)}
       {...props}
     />
   )
@@ -452,7 +665,7 @@ function SidebarGroupContent({
     <div
       data-slot="sidebar-group-content"
       data-sidebar="group-content"
-      className={cn("w-full text-sm", className)}
+      className={cn(sidebarGroupContentVariants(), className)}
       {...props}
     />
   )
@@ -463,7 +676,7 @@ function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
     <ul
       data-slot="sidebar-menu"
       data-sidebar="menu"
-      className={cn("flex w-full min-w-0 flex-col gap-1", className)}
+      className={cn(sidebarMenuVariants(), className)}
       {...props}
     />
   )
@@ -474,33 +687,11 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
     <li
       data-slot="sidebar-menu-item"
       data-sidebar="menu-item"
-      className={cn("group/menu-item relative", className)}
+      className={cn(sidebarMenuItemVariants(), className)}
       {...props}
     />
   )
 }
-
-const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
-  {
-    variants: {
-      variant: {
-        default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-        outline:
-          "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
-      },
-      size: {
-        default: "h-8 text-sm",
-        sm: "h-7 text-xs",
-        lg: "h-12 text-sm group-data-[collapsible=icon]:p-0!",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
 
 function SidebarMenuButton({
   asChild = false,
@@ -567,18 +758,7 @@ function SidebarMenuAction({
     <Comp
       data-slot="sidebar-menu-action"
       data-sidebar="menu-action"
-      className={cn(
-        "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground peer-hover/menu-button:text-sidebar-accent-foreground absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
-        // Increases the hit area of the button on mobile.
-        "after:absolute after:-inset-2 md:after:hidden",
-        "peer-data-[size=sm]/menu-button:top-1",
-        "peer-data-[size=default]/menu-button:top-1.5",
-        "peer-data-[size=lg]/menu-button:top-2.5",
-        "group-data-[collapsible=icon]:hidden",
-        showOnHover &&
-          "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
-        className
-      )}
+      className={cn(sidebarMenuActionVariants({ showOnHover }), className)}
       {...props}
     />
   )
@@ -592,15 +772,7 @@ function SidebarMenuBadge({
     <div
       data-slot="sidebar-menu-badge"
       data-sidebar="menu-badge"
-      className={cn(
-        "text-sidebar-foreground pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium tabular-nums select-none",
-        "peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground",
-        "peer-data-[size=sm]/menu-button:top-1",
-        "peer-data-[size=default]/menu-button:top-1.5",
-        "peer-data-[size=lg]/menu-button:top-2.5",
-        "group-data-[collapsible=icon]:hidden",
-        className
-      )}
+      className={cn(sidebarMenuBadgeVariants(), className)}
       {...props}
     />
   )
@@ -622,7 +794,7 @@ function SidebarMenuSkeleton({
     <div
       data-slot="sidebar-menu-skeleton"
       data-sidebar="menu-skeleton"
-      className={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
+      className={cn(sidebarMenuSkeletonVariants(), className)}
       {...props}
     >
       {showIcon && (
@@ -649,11 +821,7 @@ function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
     <ul
       data-slot="sidebar-menu-sub"
       data-sidebar="menu-sub"
-      className={cn(
-        "border-sidebar-border mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l px-2.5 py-0.5",
-        "group-data-[collapsible=icon]:hidden",
-        className
-      )}
+      className={cn(sidebarMenuSubVariants(), className)}
       {...props}
     />
   )
@@ -667,7 +835,7 @@ function SidebarMenuSubItem({
     <li
       data-slot="sidebar-menu-sub-item"
       data-sidebar="menu-sub-item"
-      className={cn("group/menu-sub-item relative", className)}
+      className={cn(sidebarMenuSubItemVariants(), className)}
       {...props}
     />
   )
@@ -692,14 +860,7 @@ function SidebarMenuSubButton({
       data-sidebar="menu-sub-button"
       data-size={size}
       data-active={isActive}
-      className={cn(
-        "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
-        "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
-        size === "sm" && "text-xs",
-        size === "md" && "text-sm",
-        "group-data-[collapsible=icon]:hidden",
-        className
-      )}
+      className={cn(sidebarMenuSubButtonVariants({ size }), className)}
       {...props}
     />
   )

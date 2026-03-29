@@ -29,15 +29,15 @@ function SidebarLayout({
     <AppShellHeaderContext.Provider value={{ headerConfig, setHeaderConfig }}>
       <SidebarProvider>
         {sidebar || <AppSidebar />}
-        <SidebarInset className="min-w-0 flex flex-col h-screen">
+        <SidebarInset className="min-w-0 flex flex-col h-screen overflow-hidden">
           {/* Skip link for accessibility */}
-          <a 
-            href="#content" 
+          <a
+            href="#content"
             className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 bg-primary text-primary-foreground px-3 py-2 rounded"
           >
             Skip to content
           </a>
-          
+
           {/* Sticky header (outside scroll container) */}
           {header || (
             <AppHeader
@@ -49,9 +49,9 @@ function SidebarLayout({
               )}
             />
           )}
-          
+
           {/* Single scroll container */}
-          <main 
+          <main
             id="content"
             className="flex-1 overflow-auto [scrollbar-gutter:stable] h-full"
           >
@@ -80,7 +80,7 @@ export function AppShell({
   const pathname = usePathname()
   const router = useRouter()
   const { data: teamsData, isLoading } = useTeams()
-  
+
   const isOnboarding = pathname?.startsWith("/onboarding")
   const isTeamRoute = pathname?.startsWith("/team/")
   const effectiveVariant = isOnboarding ? "blank" : variant
