@@ -17,8 +17,8 @@ jobs:
     name: Semantic Release
     runs-on: ubuntu-latest
     if: |
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.merged == true
+      (github.event_name != 'pull_request' || github.event.pull_request.merged == true) &&
+      (github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip ci]'))
     permissions:
       contents: write
       issues: write
@@ -122,7 +122,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout develop
-          git merge main --no-edit
+          git merge main -m "chore: sync main into develop [skip ci]"
           git push origin develop
 
   docker:
