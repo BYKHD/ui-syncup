@@ -23,7 +23,7 @@ This project follows [Semantic Versioning](https://semver.org/) (MAJOR.MINOR.PAT
 1. Confirm the latest beta on `develop` is tested and ready
 2. Open a PR from `develop` → `main`
 3. Wait for all 3 required checks to pass: `Lint`, `Typecheck`, `Docker Smoke Build`
-4. Merge the PR — the Release workflow triggers on `main` push
+4. Merge the PR — the Release workflow triggers on `main` push **and** on the PR closed event (dual trigger for reliability)
 5. semantic-release analyzes commits since last stable tag, bumps version (PATCH/MINOR/MAJOR), publishes to npm under `latest`, creates a GitHub release
 6. Docker stable image is built and pushed with `latest`, `vX.Y.Z`, `vX.Y`, `vX` tags
 7. semantic-release pushes `chore(release): x.x.x [skip ci]` back to `main`
@@ -53,7 +53,7 @@ All 3 required checks must pass on the PR head commit. If checks passed but merg
 
 ### If the release job didn't fire after a merge (manual trigger)
 
-Use `workflow_dispatch` to trigger the Release workflow without a dummy commit:
+The Release workflow has two triggers — `push` and `pull_request: closed` — so a dropped event from GitHub is automatically covered by the second path. If both are missed (rare), trigger manually:
 
 ```bash
 gh workflow run release.yml --branch main   # for stable
@@ -62,17 +62,11 @@ gh workflow run release.yml --branch develop  # for beta
 
 Or go to **GitHub → Actions → Release → Run workflow** and select the branch.
 
-Use this when:
-- Merge landed but release job was skipped or failed mid-way
-- You need to re-evaluate commits and cut a release on-demand
-
----
-
 ---
 
 ## How Releases Work
 
-The pipeline is **commit-driven, not tag-driven**. Pushing to a configured branch triggers semantic-release, which:
+The pipeline is **commit-driven, not tag-driven**. Pushing to a configured branch (or merging a PR into one) triggers semantic-release, which:
 
 1. Analyzes commit messages since the last release
 2. Determines the version bump automatically
@@ -80,6 +74,20 @@ The pipeline is **commit-driven, not tag-driven**. Pushing to a configured branc
 4. Then the Docker job builds and pushes the multi-arch image
 
 **You never create tags or edit `package.json` manually.**
+
+---
+
+## How the Release Workflow Is Triggered
+
+The Release workflow fires on two independent event paths to guard against GitHub dropping a push event:
+
+| Event | When it fires |
+|---|---|
+| `push` to `main` / `develop` | Immediately when the branch is updated |
+| `pull_request: closed` on `main` / `develop` | When the PR is merged (different GitHub event path) |
+| `workflow_dispatch` | Manual fallback via CLI or GitHub UI |
+
+A SHA-based concurrency group (`release-${{ github.sha }}`) ensures that if both events fire for the same merge commit, the second run queues and exits immediately once it sees the first already completed.
 
 ---
 
@@ -154,4 +162,3 @@ This publishes a `1.2.3-beta.1` pre-release to npm under the `beta` dist-tag and
 | `x.0.0` major bump | `feat!: ...` or `BREAKING CHANGE:` in footer |
 
 **One-time escape hatch:** If you need to force a specific baseline version (e.g. jump to `1.0.0`), manually create a git tag on the last commit before pushing — semantic-release uses the last tag as its starting point. This is not a regular workflow, use it only once to correct a version baseline.
-
