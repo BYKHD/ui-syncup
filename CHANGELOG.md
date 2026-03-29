@@ -1,3 +1,16 @@
+# [0.6.0](https://github.com/BYKHD/ui-syncup/compare/v0.5.0...v0.6.0) (2026-03-29)
+
+
+### Bug Fixes
+
+* minor bug fix ([#110](https://github.com/BYKHD/ui-syncup/issues/110)) ([3171dfc](https://github.com/BYKHD/ui-syncup/commit/3171dfc81bc72b091c9cbf880dd5430462ffd9eb)), closes [#101](https://github.com/BYKHD/ui-syncup/issues/101) [#104](https://github.com/BYKHD/ui-syncup/issues/104) [#106](https://github.com/BYKHD/ui-syncup/issues/106) [#108](https://github.com/BYKHD/ui-syncup/issues/108) [#109](https://github.com/BYKHD/ui-syncup/issues/109)
+* Minor Bug Fix ([#111](https://github.com/BYKHD/ui-syncup/issues/111)) ([2dd20ba](https://github.com/BYKHD/ui-syncup/commit/2dd20baf83a710233698298f9707fc9d791b0c7b)), closes [#101](https://github.com/BYKHD/ui-syncup/issues/101) [#104](https://github.com/BYKHD/ui-syncup/issues/104) [#106](https://github.com/BYKHD/ui-syncup/issues/106) [#108](https://github.com/BYKHD/ui-syncup/issues/108) [#109](https://github.com/BYKHD/ui-syncup/issues/109)
+
+
+### Features
+
+* change to single bucket storage ([#107](https://github.com/BYKHD/ui-syncup/issues/107)) ([e663cbb](https://github.com/BYKHD/ui-syncup/commit/e663cbb05bc04f3d1c46704e93612dab5518f439)), closes [#101](https://github.com/BYKHD/ui-syncup/issues/101) [#104](https://github.com/BYKHD/ui-syncup/issues/104) [#106](https://github.com/BYKHD/ui-syncup/issues/106) [#108](https://github.com/BYKHD/ui-syncup/issues/108) [#109](https://github.com/BYKHD/ui-syncup/issues/109)
+
 # [0.6.0-beta.11](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.10...v0.6.0-beta.11) (2026-03-29)
 
 
