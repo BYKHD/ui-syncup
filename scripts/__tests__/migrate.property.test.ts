@@ -1333,7 +1333,7 @@ describe('Migration Runner - Property-Based Tests', () => {
             { minLength: 1, maxLength: 5 }
           ),
         }),
-        async ({ migrationSuccess, sqlOperations }) => {
+        async ({ migrationHash, migrationSuccess, sqlOperations }) => {
           // Migration succeeds only if all SQL operations succeed
           const allOperationsSucceed = sqlOperations.every(op => op.success);
           const actualMigrationSuccess = migrationSuccess && allOperationsSucceed;
