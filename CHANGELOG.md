@@ -1,3 +1,10 @@
+# [0.6.0-beta.10](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.9...v0.6.0-beta.10) (2026-03-29)
+
+
+### Bug Fixes
+
+* minor bug fix ([6d055ba](https://github.com/BYKHD/ui-syncup/commit/6d055ba9b725b21acda51c0fadd402676871989c))
+
 # [0.6.0-beta.9](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.8...v0.6.0-beta.9) (2026-03-29)
 
 
