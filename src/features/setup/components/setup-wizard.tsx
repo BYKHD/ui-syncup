@@ -168,7 +168,7 @@ export function SetupWizard() {
     <div className="w-full max-w-2xl mx-auto space-y-8">
       <SetupProgress currentStep={wizard.currentStep} />
       <Card className="border-border/50 shadow-md backdrop-blur-sm bg-card/95">
-        <CardContent className="pt-6 p-0 sm:p-6 overflow-hidden min-h-[450px]">
+        <CardContent className="pt-6 p-0 sm:p-6 min-h-[450px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={wizard.currentStep}
