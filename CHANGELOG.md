@@ -1,3 +1,10 @@
+# [0.7.0-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.7.0-beta.1...v0.7.0-beta.2) (2026-03-30)
+
+
+### Bug Fixes
+
+* release workflow problems ([d42cb21](https://github.com/BYKHD/ui-syncup/commit/d42cb213ebdfaefe3c01a63685e0c4fe00dc2b80))
+
 # [0.7.0-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.6.0...v0.7.0-beta.1) (2026-03-30)
 
 
