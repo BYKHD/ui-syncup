@@ -1,3 +1,11 @@
+# [0.6.0-beta.12](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.11...v0.6.0-beta.12) (2026-03-30)
+
+
+### Bug Fixes
+
+* remove overflow-hidden and justify-center styles from setup screen and wizard container ([9f27e89](https://github.com/BYKHD/ui-syncup/commit/9f27e89764d16f2d4a50dc5f72e24eab29d58998))
+* update release workflow to trigger on PR merge and improve concurrency handling [skip ci] ([0457dbd](https://github.com/BYKHD/ui-syncup/commit/0457dbd68186597a25554e0a28688c03c9ccaa75))
+
 # [0.6.0-beta.11](https://github.com/BYKHD/ui-syncup/compare/v0.6.0-beta.10...v0.6.0-beta.11) (2026-03-29)
 
 
