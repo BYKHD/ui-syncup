@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -58,9 +59,9 @@ export default function VerifyEmailScreen({ defaultEmail = "", callbackUrl }: Ve
       footer={
         <>
           <p>Already verified?</p>
-          <a href="/sign-in" className="font-medium text-primary hover:underline">
+          <Link href="/sign-in" className="font-medium text-primary hover:underline">
             Sign in
-          </a>
+          </Link>
         </>
       }
     >
@@ -84,7 +85,7 @@ export default function VerifyEmailScreen({ defaultEmail = "", callbackUrl }: Ve
             <RiCheckboxCircleLine className="h-4 w-4" />
             <AlertTitle>Email Sent</AlertTitle>
             <AlertDescription>
-              We've sent a verification link to <strong>{email}</strong>. Please check your inbox
+              We&apos;ve sent a verification link to <strong>{email}</strong>. Please check your inbox
               and spam folder.
             </AlertDescription>
           </Alert>
@@ -136,7 +137,7 @@ export default function VerifyEmailScreen({ defaultEmail = "", callbackUrl }: Ve
 
         {/* Info Box */}
         <div className="rounded-lg border border-muted bg-muted/30 p-4">
-          <h3 className="mb-2 text-sm font-medium">Didn't receive the email?</h3>
+          <h3 className="mb-2 text-sm font-medium">Didn&apos;t receive the email?</h3>
           <ul className="space-y-1 text-xs text-muted-foreground">
             <li>• Check your spam or junk folder</li>
             <li>• Make sure you entered the correct email address</li>
@@ -147,12 +148,12 @@ export default function VerifyEmailScreen({ defaultEmail = "", callbackUrl }: Ve
 
         {/* Back to Sign In */}
         <div className="text-center">
-          <a
+          <Link
             href="/sign-in"
             className="text-sm text-muted-foreground hover:text-primary hover:underline"
           >
             ← Back to sign in
-          </a>
+          </Link>
         </div>
       </div>
     </AuthCard>

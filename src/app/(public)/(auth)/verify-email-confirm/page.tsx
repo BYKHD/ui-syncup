@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
 
 import VerifyEmailConfirmScreen from "@/features/auth/screens/verify-email-confirm-screen";
 

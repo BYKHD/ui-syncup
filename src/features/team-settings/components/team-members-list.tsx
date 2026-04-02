@@ -245,19 +245,19 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="WORKSPACE_EDITOR">
+                            <SelectItem value="TEAM_EDITOR">
                               <div className="flex items-center gap-2">
                                 <RiUserLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Editor</span>
                               </div>
                             </SelectItem>
-                            <SelectItem value="WORKSPACE_MEMBER">
+                            <SelectItem value="TEAM_MEMBER">
                               <div className="flex items-center gap-2">
                                 <RiUserLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Member</span>
                               </div>
                             </SelectItem>
-                            <SelectItem value="WORKSPACE_VIEWER">
+                            <SelectItem value="TEAM_VIEWER">
                               <div className="flex items-center gap-2">
                                 <RiEyeLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Viewer</span>

@@ -292,7 +292,7 @@ export default function VerifyEmailConfirmScreen({ token, callbackUrl }: VerifyE
           <div className="space-y-1">
             <h2 className="text-xl font-semibold">Verification Failed</h2>
             <p className="text-sm text-muted-foreground">
-              We couldn't verify your email address.
+              We couldn&apos;t verify your email address.
             </p>
           </div>
         </div>

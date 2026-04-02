@@ -73,7 +73,7 @@ export const auth = betterAuth({
    * Requirements: 1.5, 2.5, 3.5
    */
   emailVerification: {
-    sendVerificationEmail: async ({ user, url, token }, request) => {
+    sendVerificationEmail: async ({ user, url, token }) => {
       // Import enqueueEmail dynamically to avoid circular dependencies
       const { enqueueEmail } = await import('@/server/email/queue');
 
@@ -151,7 +151,7 @@ export const auth = betterAuth({
         return verifyPassword(data.password, data.hash);
       },
     },
-    sendResetPassword: async ({ user, url, token }, request) => {
+    sendResetPassword: async ({ user, url }) => {
       // Import enqueueEmail dynamically to avoid circular dependencies
       const { enqueueEmail } = await import('@/server/email/queue');
       
