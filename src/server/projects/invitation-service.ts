@@ -544,7 +544,8 @@ export async function resendProjectInvitation(
  */
 export async function acceptProjectInvitation(
   token: string,
-  userId: string
+  userId: string,
+  userEmail: string
 ): Promise<{ projectId: string; projectSlug: string }> {
   const tokenHash = createHash("sha256").update(token).digest("hex");
 
@@ -553,11 +554,15 @@ export async function acceptProjectInvitation(
     .from(projectInvitations)
     .where(eq(projectInvitations.tokenHash, tokenHash))
     .limit(1);
-  
+
   const invitation = invitationResult[0];
 
   if (!invitation) {
     throw new Error("Invalid invitation token");
+  }
+
+  if (invitation.email.toLowerCase() !== userEmail.toLowerCase()) {
+    throw new Error("This invitation was sent to a different email address");
   }
 
   if (invitation.usedAt) {

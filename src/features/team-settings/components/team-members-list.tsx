@@ -48,15 +48,15 @@ import { SettingsCard } from "./settings-card";
 import { TeamMembersLoadingSkeleton } from "./loading-states";
 
 const operationalRoleIcons: Record<string, any> = {
-  TEAM_EDITOR: RiUserLine,
-  TEAM_MEMBER: RiUserLine,
-  TEAM_VIEWER: RiEyeLine,
+  WORKSPACE_EDITOR: RiUserLine,
+  WORKSPACE_MEMBER: RiUserLine,
+  WORKSPACE_VIEWER: RiEyeLine,
 };
 
 const operationalRoleLabels: Record<string, string> = {
-  TEAM_EDITOR: "Editor",
-  TEAM_MEMBER: "Member",
-  TEAM_VIEWER: "Viewer",
+  WORKSPACE_EDITOR: "Editor",
+  WORKSPACE_MEMBER: "Member",
+  WORKSPACE_VIEWER: "Viewer",
 };
 
 interface TeamMembersListProps {

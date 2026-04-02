@@ -73,10 +73,35 @@ export const auth = betterAuth({
    * Requirements: 1.5, 2.5, 3.5
    */
   emailVerification: {
-    sendVerificationEmail: async ({ user, url, token }, request) => {
+    sendVerificationEmail: async ({ user, url, token }) => {
       // Import enqueueEmail dynamically to avoid circular dependencies
       const { enqueueEmail } = await import('@/server/email/queue');
-      
+
+      // Point to the custom verification page instead of the raw API route so
+      // expired/invalid tokens render a proper error UI instead of raw JSON.
+      const baseUrl = url.split('/api/auth/')[0];
+      let verificationUrl = `${baseUrl}/verify-email-confirm?token=${token}`;
+
+      // Look up any pending signup intent to embed the callbackUrl directly in
+      // the verification URL — this makes the invitation flow cross-device safe.
+      try {
+        const { signupIntents } = await import('@/server/db/schema');
+        const { eq } = await import('drizzle-orm');
+        const [intent] = await db
+          .select({ callbackUrl: signupIntents.callbackUrl })
+          .from(signupIntents)
+          .where(eq(signupIntents.email, user.email))
+          .limit(1);
+
+        if (intent?.callbackUrl) {
+          verificationUrl += `&callbackUrl=${encodeURIComponent(intent.callbackUrl)}`;
+          await db.delete(signupIntents).where(eq(signupIntents.email, user.email));
+        }
+      } catch (err) {
+        console.error('[better-auth] signup intent lookup failed:', err);
+        // Proceed without callbackUrl — email must still be sent
+      }
+
       // Use void to avoid awaiting (prevents timing attacks)
       void enqueueEmail({
         userId: user.id,
@@ -86,7 +111,7 @@ export const auth = betterAuth({
           type: 'verification',
           data: {
             name: user.name || 'User',
-            verificationUrl: url,
+            verificationUrl,
           },
         },
       });
@@ -126,7 +151,7 @@ export const auth = betterAuth({
         return verifyPassword(data.password, data.hash);
       },
     },
-    sendResetPassword: async ({ user, url, token }, request) => {
+    sendResetPassword: async ({ user, url }) => {
       // Import enqueueEmail dynamically to avoid circular dependencies
       const { enqueueEmail } = await import('@/server/email/queue');
       

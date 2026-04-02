@@ -237,7 +237,7 @@ describe('Integration Test: Project Activity Logging', () => {
     const inviteeUser = await createTestUser(inviteeEmail, 'Invitee Log Accept');
 
     // Act: Accept invitation
-    await acceptProjectInvitation(token, inviteeUser.id);
+    await acceptProjectInvitation(token, inviteeUser.id, inviteeEmail);
 
     // Assert: Check activity log
     const activities = await db

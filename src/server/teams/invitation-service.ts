@@ -3,7 +3,7 @@ import { teamInvitations } from "@/server/db/schema/team-invitations";
 import { teamMembers } from "@/server/db/schema/team-members";
 import { teams } from "@/server/db/schema/teams";
 import { users } from "@/server/db/schema/users";
-import { eq, and, gt, sql } from "drizzle-orm";
+import { eq, and, gt, sql, isNull } from "drizzle-orm";
 import { randomBytes, createHash } from "crypto";
 import { logTeamEvent } from "./team-service";
 import { addMember } from "./member-service";
@@ -65,6 +65,31 @@ export async function createInvitation(input: CreateInvitationInput): Promise<{ 
         metadata: { email },
       });
       throw new Error("User is already a member of this team");
+    }
+
+    // Check for an existing pending invitation for the same email
+    const existingInvitation = await db
+      .select({ id: teamInvitations.id })
+      .from(teamInvitations)
+      .where(and(
+        eq(teamInvitations.teamId, teamId),
+        eq(teamInvitations.email, email.toLowerCase().trim()),
+        isNull(teamInvitations.usedAt),
+        isNull(teamInvitations.cancelledAt),
+        gt(teamInvitations.expiresAt, new Date())
+      ))
+      .limit(1);
+
+    if (existingInvitation.length > 0) {
+      logTeamEvent("team.invitation.create.failure", {
+        outcome: "failure",
+        userId: invitedBy,
+        teamId,
+        errorCode: "INVITATION_ALREADY_PENDING",
+        errorMessage: "A pending invitation already exists for this email",
+        metadata: { email },
+      });
+      throw new Error("A pending invitation already exists for this email");
     }
 
     // Generate secure token
@@ -705,4 +730,63 @@ export async function declineInvitationById(
     }
     throw error;
   }
+}
+
+/**
+ * Looks up a team invitation by its raw token (for the /join-team page).
+ * Returns null if the token does not match any invitation.
+ * Read-only — no side effects.
+ */
+export async function getTeamInvitationByToken(token: string): Promise<{
+  invitation: {
+    id: string;
+    email: string;
+    managementRole: string | null;
+    operationalRole: string;
+    expiresAt: Date;
+    usedAt: Date | null;
+    cancelledAt: Date | null;
+  };
+  teamName: string;
+  teamSlug: string;
+  inviterName: string;
+} | null> {
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+
+  const result = await db
+    .select({
+      id: teamInvitations.id,
+      email: teamInvitations.email,
+      managementRole: teamInvitations.managementRole,
+      operationalRole: teamInvitations.operationalRole,
+      expiresAt: teamInvitations.expiresAt,
+      usedAt: teamInvitations.usedAt,
+      cancelledAt: teamInvitations.cancelledAt,
+      teamName: teams.name,
+      teamSlug: teams.slug,
+      inviterName: users.name,
+    })
+    .from(teamInvitations)
+    .innerJoin(teams, eq(teamInvitations.teamId, teams.id))
+    .innerJoin(users, eq(teamInvitations.invitedBy, users.id))
+    .where(eq(teamInvitations.tokenHash, tokenHash))
+    .limit(1);
+
+  const row = result[0];
+  if (!row) return null;
+
+  return {
+    invitation: {
+      id: row.id,
+      email: row.email,
+      managementRole: row.managementRole,
+      operationalRole: row.operationalRole,
+      expiresAt: row.expiresAt,
+      usedAt: row.usedAt,
+      cancelledAt: row.cancelledAt,
+    },
+    teamName: row.teamName,
+    teamSlug: row.teamSlug,
+    inviterName: row.inviterName,
+  };
 }

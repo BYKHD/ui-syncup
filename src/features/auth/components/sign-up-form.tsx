@@ -20,11 +20,13 @@ import { SocialLoginButtons } from "./social-login-buttons";
 
 type SignUpFormProps = {
   onSuccess?: (data: SuccessResponse) => void;
+  callbackUrl?: string;
 };
 
-export function SignUpForm({ onSuccess }: SignUpFormProps) {
+export function SignUpForm({ onSuccess, callbackUrl }: SignUpFormProps) {
   const { form, status, message, handleSubmit, isLoading, isLongLoading } = useSignUp({
     onSuccess,
+    callbackUrl,
   });
 
   const {
@@ -44,11 +46,9 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
-        {message && (
-          <Alert variant={status === "success" ? "default" : "destructive"}>
-            <AlertTitle>
-              {status === "success" ? "All set" : "Error"}
-            </AlertTitle>
+        {message && status !== "success" && (
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
             <AlertDescription>{message}</AlertDescription>
           </Alert>
         )}

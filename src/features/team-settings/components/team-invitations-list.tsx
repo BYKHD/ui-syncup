@@ -60,6 +60,7 @@ import {
   useCancelInvitation,
 } from "@/features/teams";
 import type { Invitation } from "@/features/teams/api";
+import { ROLE_LABELS, ROLE_DESCRIPTIONS } from "@/config/roles";
 import { useServiceHealth } from "@/features/setup";
 import { SettingsCard } from "./settings-card";
 import { LoadingButton } from "./loading-states";
@@ -296,6 +297,11 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
                     {formErrors.role && (
                       <p className="text-sm text-destructive">{formErrors.role}</p>
                     )}
+                    {formData.role && !formErrors.role && (
+                      <p className="text-xs text-muted-foreground">
+                        {ROLE_DESCRIPTIONS[formData.role as keyof typeof ROLE_DESCRIPTIONS]}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -379,7 +385,7 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <RoleIcon className="h-4 w-4" />
-                            <Badge variant="outline">{invitation.operationalRole}</Badge>
+                            <Badge variant="outline">{ROLE_LABELS[invitation.operationalRole as keyof typeof ROLE_LABELS] ?? invitation.operationalRole}</Badge>
                           </div>
                         </TableCell>
                         <TableCell>

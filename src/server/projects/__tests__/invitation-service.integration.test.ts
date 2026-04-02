@@ -435,8 +435,8 @@ describe('Integration Test: Project Invitation Service', () => {
     const invitee = await createTestUser(inviteeEmail, 'Invitee User');
     
     // Accept invitation
-    await acceptProjectInvitation(token, invitee.id);
-    
+    await acceptProjectInvitation(token, invitee.id, inviteeEmail);
+
     // Verify invitation is marked as used
     const [usedInvitation] = await db
       .select()
@@ -504,7 +504,7 @@ describe('Integration Test: Project Invitation Service', () => {
     
     // Try to accept expired invitation - should fail
     await expect(
-      acceptProjectInvitation(token, invitee.id)
+      acceptProjectInvitation(token, invitee.id, inviteeEmail)
     ).rejects.toThrow('Invitation expired');
   });
   
