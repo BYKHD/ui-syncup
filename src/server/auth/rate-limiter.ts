@@ -239,6 +239,11 @@ export const RATE_LIMITS = {
     limit: 5,
     windowMs: 60 * 1000, // 1 minute
   },
+  // Signup intent: 10 stores per email per hour
+  SIGNUP_INTENT: {
+    limit: 10,
+    windowMs: 60 * 60 * 1000, // 1 hour
+  },
 } as const;
 
 /**
@@ -254,4 +259,5 @@ export const createRateLimitKey = {
   resendVerification: (email: string) => `resend-verification:email:${email.toLowerCase()}`,
   invitationAction: (token: string) => `invitation:${token.substring(0, 8)}`,
   setupAdminIp: (ip: string) => `setup:admin:ip:${ip}`,
+  signupIntent: (email: string) => `signup-intent:email:${email.toLowerCase()}`,
 } as const;

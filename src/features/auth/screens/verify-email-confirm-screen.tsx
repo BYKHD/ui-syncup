@@ -18,7 +18,37 @@ import { useVerifyEmailToken } from "../hooks/use-verify-email-token";
 
 type VerifyEmailConfirmScreenProps = {
   token?: string;
+  callbackUrl?: string;
 };
+
+/**
+ * Validates a redirect URL is a safe relative path (client-safe, no env import).
+ */
+function sanitizeClientCallbackUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) return trimmed;
+  return undefined;
+}
+
+/**
+ * Resolves the sign-in redirect URL after email verification.
+ * Priority: URL param (cross-device) > localStorage (same-device fallback) > default.
+ */
+function resolveSignInUrl(urlCallbackUrl: string | undefined): string {
+  const safe = sanitizeClientCallbackUrl(urlCallbackUrl);
+  if (safe) {
+    return `/sign-in?callbackUrl=${encodeURIComponent(safe)}`;
+  }
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("invitation_callback_url");
+    if (stored) {
+      localStorage.removeItem("invitation_callback_url");
+      return `/sign-in?callbackUrl=${encodeURIComponent(stored)}`;
+    }
+  }
+  return "/sign-in";
+}
 
 /**
  * Verify Email Confirmation Screen
@@ -31,7 +61,7 @@ type VerifyEmailConfirmScreenProps = {
  * - Provides "Request New Link" button for expired/error states
  * - Clean, centered layout with shadcn components and Remix Icons
  */
-export default function VerifyEmailConfirmScreen({ token }: VerifyEmailConfirmScreenProps) {
+export default function VerifyEmailConfirmScreen({ token, callbackUrl }: VerifyEmailConfirmScreenProps) {
   const router = useRouter();
   const { status, message, retry } = useVerifyEmailToken({ token, autoVerify: true });
 
@@ -39,11 +69,11 @@ export default function VerifyEmailConfirmScreen({ token }: VerifyEmailConfirmSc
   useEffect(() => {
     if (status === "success") {
       const timer = setTimeout(() => {
-        router.push("/sign-in");
+        router.push(resolveSignInUrl(callbackUrl));
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [status, router]);
+  }, [status, router, callbackUrl]);
 
   // Handle missing token
   if (!token) {
@@ -143,8 +173,11 @@ export default function VerifyEmailConfirmScreen({ token }: VerifyEmailConfirmSc
             </AlertDescription>
           </Alert>
 
-          <Button asChild className="w-full">
-            <Link href="/sign-in">Continue to Sign In</Link>
+          <Button
+            className="w-full"
+            onClick={() => router.push(resolveSignInUrl(callbackUrl))}
+          >
+            Continue to Sign In
           </Button>
 
           <p className="text-center text-xs text-muted-foreground">
@@ -190,7 +223,7 @@ export default function VerifyEmailConfirmScreen({ token }: VerifyEmailConfirmSc
           </Alert>
 
           <Button asChild className="w-full">
-            <Link href="/sign-in">Go to Sign In</Link>
+            <Link href={resolveSignInUrl(callbackUrl)}>Go to Sign In</Link>
           </Button>
         </div>
       </AuthCard>

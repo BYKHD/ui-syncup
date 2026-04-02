@@ -93,6 +93,9 @@ export type AuthEventType =
   | 'auth.resend_verification.success'
   | 'auth.resend_verification.validation_error'
   | 'auth.resend_verification.error'
+  // Signup intent events
+  | 'auth.signup_intent.stored'
+  | 'auth.signup_intent.error'
   // Email events
   | 'email.queued'
   | 'email.sent'

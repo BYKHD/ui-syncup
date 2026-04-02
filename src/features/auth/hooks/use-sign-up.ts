@@ -6,24 +6,38 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { signUpSchema, type SignUpSchema } from "../utils/validators";
+import type { SuccessResponse } from "../api/types";
 import { authClient } from "@/lib/auth-client";
 
 type SubmissionStatus = "idle" | "submitting" | "success";
 
-// Response type for sign up
+// Internal response type for the signUp fn
 interface SignUpResponse {
   message: string;
 }
 
 type UseSignUpOptions = {
   defaultValues?: Partial<SignUpSchema>;
-  onSuccess?: (data: SignUpResponse) => void;
+  onSuccess?: (data: SuccessResponse) => void;
+  callbackUrl?: string;
 };
 
 /**
- * Sign up using better-auth's email/password method
+ * Sign up using better-auth's email/password method.
+ * If a callbackUrl is provided, stores it server-side first so it can be
+ * embedded in the verification email URL (cross-device safe).
  */
-async function signUp(data: SignUpSchema): Promise<SignUpResponse> {
+async function signUp(data: SignUpSchema, callbackUrl?: string): Promise<SignUpResponse> {
+  if (callbackUrl) {
+    await fetch('/api/auth/signup-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: data.email, callbackUrl }),
+    }).catch(() => {
+      // Silent fail — localStorage remains the same-device fallback
+    });
+  }
+
   const result = await authClient.signUp.email({
     name: data.name,
     email: data.email,
@@ -52,7 +66,7 @@ async function signUp(data: SignUpSchema): Promise<SignUpResponse> {
  * @returns Form state, handlers, and mutation state
  */
 export function useSignUp(options: UseSignUpOptions = {}) {
-  const { defaultValues, onSuccess } = options;
+  const { defaultValues, onSuccess, callbackUrl } = options;
 
   const form = useForm<SignUpSchema>({
     resolver: zodResolver(signUpSchema),
@@ -70,7 +84,7 @@ export function useSignUp(options: UseSignUpOptions = {}) {
 
   // Sign-up mutation
   const mutation = useMutation({
-    mutationFn: signUp,
+    mutationFn: (data: SignUpSchema) => signUp(data, callbackUrl),
     onMutate: () => {
       setStatus("submitting");
       setMessage(null);
@@ -87,11 +101,17 @@ export function useSignUp(options: UseSignUpOptions = {}) {
       if (context?.timerId) clearTimeout(context.timerId);
       setIsLongLoading(false);
       setStatus("success");
-      setMessage(data.message || "Account created successfully! Please check your email to verify your account.");
-      
-      // Call custom success handler
-      onSuccess?.(data);
-      
+
+      // Persist callbackUrl so it survives the email-verification round-trip
+      if (callbackUrl) {
+        localStorage.setItem('invitation_callback_url', callbackUrl);
+      }
+
+      // Call custom success handler — pass the submitted email via data.data
+      // so callers (sign-up-screen) can show the success screen regardless of
+      // whether better-auth treated this as a new account or a re-send.
+      onSuccess?.({ message: data.message, data: { email: variables.email } });
+
       // Reset form on success
       form.reset();
     },
@@ -167,7 +187,7 @@ export function useSignUp(options: UseSignUpOptions = {}) {
     try {
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/projects", // Redirect to projects after sign up
+        callbackURL: callbackUrl ?? "/projects",
       });
     } catch (error) {
       setOauthStatus("error");

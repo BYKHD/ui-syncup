@@ -445,7 +445,7 @@ export const ROLE_DESCRIPTIONS: Record<Role, string> = {
 
   // Team operational roles
   [TEAM_ROLES.TEAM_EDITOR]:
-    "Create and manage issues and annotations. Automatically assigned when user becomes PROJECT_OWNER or PROJECT_EDITOR.",
+    "Create and manage issues and annotations. Automatically assigned when user becomes a Project Owner or Project Editor.",
   [TEAM_ROLES.TEAM_MEMBER]:
     "View projects and comment on issues. Can be assigned to projects.",
   [TEAM_ROLES.TEAM_VIEWER]:

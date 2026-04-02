@@ -13,6 +13,7 @@ import { useResendVerification } from "../hooks/use-resend-verification";
 
 type VerifyEmailScreenProps = {
   defaultEmail?: string;
+  callbackUrl?: string;
 };
 
 /**
@@ -25,18 +26,31 @@ type VerifyEmailScreenProps = {
  * - Success/error state handling
  * - Clean, centered layout with shadcn components
  */
-export default function VerifyEmailScreen({ defaultEmail = "" }: VerifyEmailScreenProps) {
+export default function VerifyEmailScreen({ defaultEmail = "", callbackUrl }: VerifyEmailScreenProps) {
   const searchParams = useSearchParams();
   const emailFromParams = searchParams?.get("email") || defaultEmail;
+  const callbackUrlFromParams = callbackUrl ?? searchParams?.get("callbackUrl") ?? undefined;
 
   const [email, setEmail] = useState(emailFromParams);
   const { resend, countdown, canResend, isLoading, isSuccess } = useResendVerification();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim() && canResend) {
-      resend(email.trim());
+    if (!email.trim() || !canResend) return;
+
+    // Re-store the signup intent so resend-verification/route.ts can embed
+    // the callbackUrl in the new verification email URL (cross-device safe).
+    if (callbackUrlFromParams) {
+      await fetch('/api/auth/signup-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), callbackUrl: callbackUrlFromParams }),
+      }).catch(() => {
+        // Silent fail — verification email will still be sent without callbackUrl
+      });
     }
+
+    resend(email.trim());
   };
 
   return (

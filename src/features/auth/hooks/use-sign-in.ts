@@ -162,10 +162,15 @@ export function useSignIn(options: UseSignInOptions = {}) {
         // Handle forbidden errors (403) - email not verified
         if (status === 403 || code === "EMAIL_NOT_VERIFIED") {
           setErrorCode(code || "EMAIL_NOT_VERIFIED");
-          
-          // Redirect to verify-email page if email is not verified
+
+          // Redirect to verify-email page, preserving callbackUrl so the
+          // resend flow can restore the invitation destination after re-verification
           const email = form.getValues("email");
-          router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+          const params = new URLSearchParams({ email });
+          if (redirectTo && redirectTo !== "/projects") {
+            params.set("callbackUrl", redirectTo);
+          }
+          router.push(`/verify-email?${params.toString()}`);
           return;
         }
         
