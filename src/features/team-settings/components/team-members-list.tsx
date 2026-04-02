@@ -48,15 +48,15 @@ import { SettingsCard } from "./settings-card";
 import { TeamMembersLoadingSkeleton } from "./loading-states";
 
 const operationalRoleIcons: Record<string, any> = {
-  TEAM_EDITOR: RiUserLine,
-  TEAM_MEMBER: RiUserLine,
-  TEAM_VIEWER: RiEyeLine,
+  WORKSPACE_EDITOR: RiUserLine,
+  WORKSPACE_MEMBER: RiUserLine,
+  WORKSPACE_VIEWER: RiEyeLine,
 };
 
 const operationalRoleLabels: Record<string, string> = {
-  TEAM_EDITOR: "Editor",
-  TEAM_MEMBER: "Member",
-  TEAM_VIEWER: "Viewer",
+  WORKSPACE_EDITOR: "Editor",
+  WORKSPACE_MEMBER: "Member",
+  WORKSPACE_VIEWER: "Viewer",
 };
 
 interface TeamMembersListProps {
@@ -245,19 +245,19 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="TEAM_EDITOR">
+                            <SelectItem value="WORKSPACE_EDITOR">
                               <div className="flex items-center gap-2">
                                 <RiUserLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Editor</span>
                               </div>
                             </SelectItem>
-                            <SelectItem value="TEAM_MEMBER">
+                            <SelectItem value="WORKSPACE_MEMBER">
                               <div className="flex items-center gap-2">
                                 <RiUserLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Member</span>
                               </div>
                             </SelectItem>
-                            <SelectItem value="TEAM_VIEWER">
+                            <SelectItem value="WORKSPACE_VIEWER">
                               <div className="flex items-center gap-2">
                                 <RiEyeLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Viewer</span>
