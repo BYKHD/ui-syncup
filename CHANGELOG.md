@@ -1,3 +1,14 @@
+## [0.7.2](https://github.com/BYKHD/ui-syncup/compare/v0.7.1...v0.7.2) (2026-04-03)
+
+
+### Bug Fixes
+
+* add version number to sidebar ([68e6d1d](https://github.com/BYKHD/ui-syncup/commit/68e6d1d2dd35a1285a3f86806d23980d0566b4ff))
+* fix invitation bug ([#114](https://github.com/BYKHD/ui-syncup/issues/114)) ([799daa3](https://github.com/BYKHD/ui-syncup/commit/799daa30411c163b8920ca0ffd5443344ef841ce))
+* minor bug and git workflow ([c178579](https://github.com/BYKHD/ui-syncup/commit/c1785798fe8d158fc193341a2361629f29f3a3cc))
+* retrigger minor release ([6ceabd4](https://github.com/BYKHD/ui-syncup/commit/6ceabd43d33b133f029436ddf2f2ae322cd561c2))
+* update release workflow to fetch semantic-release notes ([b663941](https://github.com/BYKHD/ui-syncup/commit/b6639419fce56b405868d435e01aaedd11a897c9))
+
 ## [0.7.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.0...v0.7.1) (2026-04-03)
 
 
