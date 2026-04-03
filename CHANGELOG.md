@@ -1,3 +1,31 @@
+## [0.7.3](https://github.com/BYKHD/ui-syncup/compare/v0.7.2...v0.7.3) (2026-04-03)
+
+
+### Bug Fixes
+
+* improve sidebar active state logic, simplify team invitation UI ([2b55189](https://github.com/BYKHD/ui-syncup/commit/2b551890bc436f5b7e40e411f8bef3b7ba46fd1d))
+* improve sidebar active state logic, simplify team invitation UI, prevent redundant verification emails, and update email template links ([9267977](https://github.com/BYKHD/ui-syncup/commit/9267977f804914b8095eec93d08c08a5f22f37dd))
+* retrigger minor fix ([0a60361](https://github.com/BYKHD/ui-syncup/commit/0a60361e7f2f1a4133d103f3f38df3b5c97ae87a))
+
+## [0.7.3-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.2...v0.7.3-beta.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* improve sidebar active state logic, simplify team invitation UI, prevent redundant verification emails, and update email template links ([9267977](https://github.com/BYKHD/ui-syncup/commit/9267977f804914b8095eec93d08c08a5f22f37dd))
+
+## [0.7.2-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.1...v0.7.2-beta.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* add version number to sidebar ([68e6d1d](https://github.com/BYKHD/ui-syncup/commit/68e6d1d2dd35a1285a3f86806d23980d0566b4ff))
+* fix invitation bug ([#114](https://github.com/BYKHD/ui-syncup/issues/114)) ([799daa3](https://github.com/BYKHD/ui-syncup/commit/799daa30411c163b8920ca0ffd5443344ef841ce))
+* improve sidebar active state logic, simplify team invitation UI, prevent redundant verification emails, and update email template links ([9267977](https://github.com/BYKHD/ui-syncup/commit/9267977f804914b8095eec93d08c08a5f22f37dd))
+* minor bug and git workflow ([c178579](https://github.com/BYKHD/ui-syncup/commit/c1785798fe8d158fc193341a2361629f29f3a3cc))
+* retrigger minor release ([6ceabd4](https://github.com/BYKHD/ui-syncup/commit/6ceabd43d33b133f029436ddf2f2ae322cd561c2))
+* update release workflow to fetch semantic-release notes ([b663941](https://github.com/BYKHD/ui-syncup/commit/b6639419fce56b405868d435e01aaedd11a897c9))
+
 ## [0.7.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.0...v0.7.1) (2026-04-03)
 
 
