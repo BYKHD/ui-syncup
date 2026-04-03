@@ -6,6 +6,9 @@ import "./src/lib/env"
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  env: {
+    NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version,
+  },
   experimental: {
     // Enable automatic tree-shaking for common libraries
     // This helps reduce bundle size by only including used exports

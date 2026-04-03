@@ -35,8 +35,19 @@ import { isSingleWorkspaceMode } from '@/config/workspace';
 // Mock navigation data for mockup UI
 // const MOCK_NAV_ITEMS: NavItem[] = [ ... ] - Moved inside component for dynamic permissions
 
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? '';
+
+function getPrereleaseLabel(version: string): string | null {
+  const match = version.match(/-([a-zA-Z]+)/);
+  if (!match) return null;
+  const channel = match[1].toLowerCase();
+  if (channel === 'rc') return 'RC';
+  return channel.charAt(0).toUpperCase() + channel.slice(1);
+}
+
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const prereleaseLabel = getPrereleaseLabel(APP_VERSION);
   const { currentTeam } = useTeam();
   const teamSlug = currentTeam?.slug;
   const teamId = currentTeam?.id;
@@ -120,7 +131,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <div className="flex items-center gap-2">
                     <span className="truncate font-semibold">UI Syncup</span>
-                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px] h-4 leading-none font-mono">Alpha</Badge>
+                    {prereleaseLabel && (
+                      <Badge variant="secondary" className="px-1.5 py-0 text-[10px] h-4 leading-none font-mono">{prereleaseLabel}</Badge>
+                    )}
                   </div>
                   <span className="truncate text-xs text-muted-foreground">Design Feedback Tracker</span>
                 </div>
@@ -135,6 +148,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={recentProjects} isLoading={!isRecentProjectsLoaded} />
       </SidebarContent>
       <SidebarFooter>
+        {APP_VERSION && (
+          <span className="px-2 py-1 text-[11px] text-muted-foreground/60 group-data-[collapsible=icon]:hidden">
+            v{APP_VERSION}
+          </span>
+        )}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
