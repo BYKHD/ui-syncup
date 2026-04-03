@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MoreHorizontal, Mail, RefreshCw, X, Plus, Copy, Link } from "lucide-react";
+import { MoreHorizontal, Mail, RefreshCw, X, Plus, Copy } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,6 @@ import {
 } from "@/features/teams";
 import type { Invitation } from "@/features/teams/api";
 import { ROLE_LABELS, ROLE_DESCRIPTIONS } from "@/config/roles";
-import { useServiceHealth } from "@/features/setup";
 import { SettingsCard } from "./settings-card";
 import { LoadingButton } from "./loading-states";
 
@@ -87,8 +86,6 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
   const { mutate: createInvitation, isPending: isCreating } = useCreateInvitation();
   const { mutate: resendInvitation, isPending: isResending } = useResendInvitation();
   const { mutate: cancelInvitation, isPending: isCanceling } = useCancelInvitation();
-  const { data: serviceHealth } = useServiceHealth();
-
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [invitationToCancel, setInvitationToCancel] = useState<Invitation | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
@@ -105,9 +102,6 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
   const pendingInvitationsCount = invitations.filter(
     (inv) => inv.status === "pending"
   ).length;
-
-  // Check if email service is configured
-  const isEmailConfigured = serviceHealth?.email.status === 'connected';
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -255,10 +249,7 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
                 <DialogHeader>
                   <DialogTitle>Invite Team Member</DialogTitle>
                   <DialogDescription>
-                    {isEmailConfigured 
-                      ? "Send an invitation to join your team. They'll receive an email with instructions to accept."
-                      : "Create an invitation link to share with your team member. They can use this link to join your team."
-                    }
+                    Send an invitation email or copy the link to share directly.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -324,17 +315,23 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
                   >
                     Cancel
                   </Button>
-                  {isEmailConfigured ? (
-                    <LoadingButton onClick={handleSendInvitation} isLoading={isCreating}>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Send Invitation
-                    </LoadingButton>
-                  ) : (
-                    <LoadingButton onClick={handleCopyInvitationLink} isLoading={isCopyingLink}>
-                      <Link className="mr-2 h-4 w-4" />
-                      Copy Invitation Link
-                    </LoadingButton>
-                  )}
+                  <LoadingButton
+                    variant="outline"
+                    onClick={handleCopyInvitationLink}
+                    isLoading={isCopyingLink}
+                    disabled={isCreating}
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy Link
+                  </LoadingButton>
+                  <LoadingButton
+                    onClick={handleSendInvitation}
+                    isLoading={isCreating}
+                    disabled={isCopyingLink}
+                  >
+                    <Mail className="mr-2 h-4 w-4" />
+                    Send Invitation
+                  </LoadingButton>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
