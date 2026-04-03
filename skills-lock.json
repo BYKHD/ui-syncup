@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "vercel-react-view-transitions": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "4fea9144f604256d0a21faaea904b7e205e7676e316721ba5fdd68c2600c7d42"
+    }
+  }
+}
