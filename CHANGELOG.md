@@ -1,3 +1,12 @@
+## [0.7.3](https://github.com/BYKHD/ui-syncup/compare/v0.7.2...v0.7.3) (2026-04-03)
+
+
+### Bug Fixes
+
+* improve sidebar active state logic, simplify team invitation UI ([2b55189](https://github.com/BYKHD/ui-syncup/commit/2b551890bc436f5b7e40e411f8bef3b7ba46fd1d))
+* improve sidebar active state logic, simplify team invitation UI, prevent redundant verification emails, and update email template links ([9267977](https://github.com/BYKHD/ui-syncup/commit/9267977f804914b8095eec93d08c08a5f22f37dd))
+* retrigger minor fix ([0a60361](https://github.com/BYKHD/ui-syncup/commit/0a60361e7f2f1a4133d103f3f38df3b5c97ae87a))
+
 ## [0.7.3-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.2...v0.7.3-beta.1) (2026-04-03)
 
 
