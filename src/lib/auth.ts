@@ -74,6 +74,12 @@ export const auth = betterAuth({
    */
   emailVerification: {
     sendVerificationEmail: async ({ user, url, token }) => {
+      // Skip for OAuth/social login users — their email is already verified by
+      // the provider. better-auth still calls this hook even for trusted
+      // providers when sendOnSignUp is true, but the token is immediately
+      // invalid because emailVerified is already set to true.
+      if (user.emailVerified) return;
+
       // Import enqueueEmail dynamically to avoid circular dependencies
       const { enqueueEmail } = await import('@/server/email/queue');
 
