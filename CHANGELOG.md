@@ -1,3 +1,10 @@
+## [0.7.1-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.0...v0.7.1-beta.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* fix invitation bug ([#114](https://github.com/BYKHD/ui-syncup/issues/114)) ([799daa3](https://github.com/BYKHD/ui-syncup/commit/799daa30411c163b8920ca0ffd5443344ef841ce))
+
 ## [0.7.1-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.0...v0.7.1-beta.1) (2026-04-02)
 
 
