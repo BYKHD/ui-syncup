@@ -1,6 +1,6 @@
 {
   "name": "ui-syncup",
-  "version": "0.7.1-beta.1",
+  "version": "0.7.1-beta.2",
   "scripts": {
     "dev": "next dev",
     "dev:stack": "docker compose --env-file .env.local -f docker/compose.local.yml up -d",
