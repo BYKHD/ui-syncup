@@ -33,8 +33,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Fetch all tags
-        run: git fetch --tags --force
+      - name: Fetch all tags and semantic-release notes
+        run: |
+          git fetch --tags --force
+          git fetch origin 'refs/notes/*:refs/notes/*' --force
 
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
