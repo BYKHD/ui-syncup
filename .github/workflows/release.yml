@@ -2,14 +2,15 @@ name: Release
 
 on:
   push:
-    branches: [main, develop]
-  pull_request:
-    types: [closed]
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
+      - alpha
+      - "release/**"
   workflow_dispatch:
 
 concurrency:
-  group: release-${{ github.sha }}
+  group: release-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -17,8 +18,7 @@ jobs:
     name: Semantic Release
     runs-on: ubuntu-latest
     if: |
-      (github.event_name != 'pull_request' || github.event.pull_request.merged == true) &&
-      (github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip ci]'))
+      github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip ci]')
     permissions:
       contents: write
       issues: write
@@ -33,14 +33,19 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Fetch all tags and semantic-release notes
+        run: |
+          git fetch --tags --force
+          git fetch origin 'refs/notes/*:refs/notes/*' --force
+
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
-          bun-version: latest
+          bun-version: "1.3.11"
 
       - name: Install root dependencies
         run: bun install --frozen-lockfile
@@ -53,6 +58,17 @@ jobs:
         working-directory: ./cli
         run: bun run build
 
+      - name: Check if CLI source changed since last release
+        id: cli_diff
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ] && git diff --quiet "$PREV_TAG" HEAD -- cli/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # TODO: Add "bun run test" here once CI test environment supports it (requires db/env vars)
       - name: Run semantic-release
         id: semantic
         uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
@@ -62,6 +78,21 @@ jobs:
             @semantic-release/git
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish CLI to npm
+        if: steps.semantic.outputs.new_release_published == 'true' && steps.cli_diff.outputs.changed == 'true'
+        working-directory: ./cli
+        run: |
+          VERSION="${{ steps.semantic.outputs.new_release_version }}"
+          if [[ "$VERSION" == *"-"* ]]; then
+            CHANNEL="${VERSION#*-}"
+            CHANNEL="${CHANNEL%%.*}"
+          else
+            CHANNEL="latest"
+          fi
+          npm publish --access public --tag "$CHANNEL"
+        env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   docker-prerelease:
@@ -91,6 +122,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract pre-release channel
+        id: channel
+        run: |
+          VERSION="${{ needs.release.outputs.new_release_version }}"
+          CHANNEL="${VERSION#*-}"
+          CHANNEL="${CHANNEL%%.*}"
+          echo "name=${CHANNEL}" >> "$GITHUB_OUTPUT"
+
       - name: Build and push pre-release image
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
@@ -98,7 +137,7 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ghcr.io/bykhd/ui-syncup:beta
+            ghcr.io/bykhd/ui-syncup:${{ steps.channel.outputs.name }}
             ghcr.io/bykhd/ui-syncup:v${{ needs.release.outputs.new_release_version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -122,14 +161,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout develop
-          git merge main -m "chore: sync main into develop [skip ci]"
+          git merge main --no-ff -m "chore: sync main into develop [skip ci]"
           git push origin develop
 
   docker:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
     needs: release
-    if: needs.release.outputs.new_release_published == 'true' && !contains(needs.release.outputs.new_release_version, '-')
+    if: |
+      needs.release.outputs.new_release_published == 'true' &&
+      !contains(needs.release.outputs.new_release_version, '-') &&
+      github.ref_name == 'main'
     permissions:
       contents: read
       packages: write

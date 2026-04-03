@@ -159,7 +159,7 @@ export async function POST(
     }
 
     // 2. Accept the invitation
-    const { projectId, projectSlug } = await acceptProjectInvitation(token, user.id);
+    const { projectId, projectSlug } = await acceptProjectInvitation(token, user.id, user.email);
 
     logger.info("api.invite.accept.success", {
       requestId,

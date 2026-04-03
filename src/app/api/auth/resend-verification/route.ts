@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { users } from '@/server/db/schema';
+import { users, signupIntents } from '@/server/db/schema';
 import { z } from 'zod';
 import { generateToken, invalidateUserTokens } from '@/server/auth/tokens';
 import { enqueueEmail } from '@/server/email/queue';
@@ -175,8 +175,19 @@ export async function POST(request: NextRequest) {
       24 * 60 * 60 * 1000 // 24 hours
     );
 
-    // Construct verification URL
-    const verificationUrl = `${env.BETTER_AUTH_URL}/verify-email-confirm?token=${encodeURIComponent(tokenResult.token)}`;
+    // Construct verification URL, embedding callbackUrl if a signup intent exists
+    let verificationUrl = `${env.BETTER_AUTH_URL}/verify-email-confirm?token=${encodeURIComponent(tokenResult.token)}`;
+
+    const [intent] = await db
+      .select({ callbackUrl: signupIntents.callbackUrl })
+      .from(signupIntents)
+      .where(eq(signupIntents.email, normalizedEmail))
+      .limit(1);
+
+    if (intent?.callbackUrl) {
+      verificationUrl += `&callbackUrl=${encodeURIComponent(intent.callbackUrl)}`;
+      await db.delete(signupIntents).where(eq(signupIntents.email, normalizedEmail));
+    }
 
     // Validate URL before sending (prevents localhost URLs in production)
     validateEmailUrl(verificationUrl, 'resend-verification-email');

@@ -1,35 +1,71 @@
-# [0.7.0](https://github.com/BYKHD/ui-syncup/compare/v0.6.0...v0.7.0) (2026-03-30)
+## [0.7.1-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.0...v0.7.1-beta.1) (2026-04-03)
 
 
 ### Bug Fixes
 
-* add migrationHash to migrate.property.test.ts callback parameters ([fc656ad](https://github.com/BYKHD/ui-syncup/commit/fc656ad0abd07bd3a5e4585502281b5f6bce013c))
-* fix onboarding and acc creation  ([#101](https://github.com/BYKHD/ui-syncup/issues/101)) ([aac4535](https://github.com/BYKHD/ui-syncup/commit/aac453503abb009a27421d3e78bf641caedae2f0))
-* Implement dynamic auth client baseURL based on environment. ([e9f4400](https://github.com/BYKHD/ui-syncup/commit/e9f44008335bb66ec822f6c5a9f667901fe89a17))
-* Implement server-side proxy uploads for media and attachments, replacing direct-to-S3 presigned URL uploads. ([#108](https://github.com/BYKHD/ui-syncup/issues/108)) ([f1d2cc9](https://github.com/BYKHD/ui-syncup/commit/f1d2cc94fdab5185bf1241342e7d1eb331ac5a35))
-* **lint:** resolve no-explicit-any, unescaped-entities, and set-state-in-effect warnings ([d2c40c3](https://github.com/BYKHD/ui-syncup/commit/d2c40c3bfabeffb7d48d8252a3f87e3bfa850407))
-* minor bug fix ([6d055ba](https://github.com/BYKHD/ui-syncup/commit/6d055ba9b725b21acda51c0fadd402676871989c))
+* fix invitation bug ([#114](https://github.com/BYKHD/ui-syncup/issues/114)) ([799daa3](https://github.com/BYKHD/ui-syncup/commit/799daa30411c163b8920ca0ffd5443344ef841ce))
+* retrigger minor release ([6ceabd4](https://github.com/BYKHD/ui-syncup/commit/6ceabd43d33b133f029436ddf2f2ae322cd561c2))
+* update release workflow to fetch semantic-release notes ([b663941](https://github.com/BYKHD/ui-syncup/commit/b6639419fce56b405868d435e01aaedd11a897c9))
+
+## [0.7.1-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.0...v0.7.1-beta.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* fix invitation bug ([#114](https://github.com/BYKHD/ui-syncup/issues/114)) ([799daa3](https://github.com/BYKHD/ui-syncup/commit/799daa30411c163b8920ca0ffd5443344ef841ce))
+* retrigger minor release ([6ceabd4](https://github.com/BYKHD/ui-syncup/commit/6ceabd43d33b133f029436ddf2f2ae322cd561c2))
+
+## [0.7.1-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.0...v0.7.1-beta.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* fix invitation bug ([#114](https://github.com/BYKHD/ui-syncup/issues/114)) ([799daa3](https://github.com/BYKHD/ui-syncup/commit/799daa30411c163b8920ca0ffd5443344ef841ce))
+* retrigger minor release ([6ceabd4](https://github.com/BYKHD/ui-syncup/commit/6ceabd43d33b133f029436ddf2f2ae322cd561c2))
+
+## [0.7.1-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.0...v0.7.1-beta.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* fix invitation bug ([#114](https://github.com/BYKHD/ui-syncup/issues/114)) ([799daa3](https://github.com/BYKHD/ui-syncup/commit/799daa30411c163b8920ca0ffd5443344ef841ce))
+* retrigger minor release ([6ceabd4](https://github.com/BYKHD/ui-syncup/commit/6ceabd43d33b133f029436ddf2f2ae322cd561c2))
+
+## [0.7.1-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.0...v0.7.1-beta.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* fix invitation bug ([#114](https://github.com/BYKHD/ui-syncup/issues/114)) ([799daa3](https://github.com/BYKHD/ui-syncup/commit/799daa30411c163b8920ca0ffd5443344ef841ce))
+* retrigger minor release ([6ceabd4](https://github.com/BYKHD/ui-syncup/commit/6ceabd43d33b133f029436ddf2f2ae322cd561c2))
+
+## [0.7.1-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.0...v0.7.1-beta.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* fix invitation bug ([#114](https://github.com/BYKHD/ui-syncup/issues/114)) ([799daa3](https://github.com/BYKHD/ui-syncup/commit/799daa30411c163b8920ca0ffd5443344ef841ce))
+
+## [0.7.1-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.0...v0.7.1-beta.1) (2026-04-02)
+
+
+### Bug Fixes
+
+* fix invitation bug ([#114](https://github.com/BYKHD/ui-syncup/issues/114)) ([799daa3](https://github.com/BYKHD/ui-syncup/commit/799daa30411c163b8920ca0ffd5443344ef841ce))
+
+# [0.7.0-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.7.0-beta.2...v0.7.0-beta.3) (2026-04-02)
+
+
+### Bug Fixes
+
+* fix invitation bug ([#114](https://github.com/BYKHD/ui-syncup/issues/114)) ([799daa3](https://github.com/BYKHD/ui-syncup/commit/799daa30411c163b8920ca0ffd5443344ef841ce))
+
+# [0.7.0-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.7.0-beta.1...v0.7.0-beta.2) (2026-03-30)
+
+
+### Bug Fixes
+
 * release workflow problems ([d42cb21](https://github.com/BYKHD/ui-syncup/commit/d42cb213ebdfaefe3c01a63685e0c4fe00dc2b80))
-* remove overflow-hidden and justify-center styles from setup screen and wizard container ([9f27e89](https://github.com/BYKHD/ui-syncup/commit/9f27e89764d16f2d4a50dc5f72e24eab29d58998))
-* reset password redirect ([df7633d](https://github.com/BYKHD/ui-syncup/commit/df7633dc034068d60555b555effff330180c62e0))
-* script paths ([6581607](https://github.com/BYKHD/ui-syncup/commit/65816074d1933cd5593ed5e4a52b6f7177135ec8))
-* update active team retrieval in settings pages to use direct Drizzle queries. ([8d650f5](https://github.com/BYKHD/ui-syncup/commit/8d650f546fff0a968ae230cea811dbbd33247d9a))
-* update release workflow to trigger on PR merge and improve concurrency handling [skip ci] ([0457dbd](https://github.com/BYKHD/ui-syncup/commit/0457dbd68186597a25554e0a28688c03c9ccaa75))
-* use `BETTER_AUTH_URL` for runtime app URL resolution. ([37234e2](https://github.com/BYKHD/ui-syncup/commit/37234e25ebac2608776cbe155cd30244625cc986))
-
-
-### Features
-
-* **api:** add SSE stream endpoint for push notifications ([8c29e9b](https://github.com/BYKHD/ui-syncup/commit/8c29e9bfef9f35b72d0ab31509c7303dd3f63dcf))
-* **db:** add pg_notify trigger on notifications INSERT ([823591b](https://github.com/BYKHD/ui-syncup/commit/823591bf940e5cede48e82e4691ac037c4fafd0f))
-* **dev:** add test notification button and dev-only API endpoint ([e34ffe3](https://github.com/BYKHD/ui-syncup/commit/e34ffe3970e5c320c7bc76f0a1f8ab18055a0a0a))
-* **env:** add optional REDIS_URL to env schema ([592301d](https://github.com/BYKHD/ui-syncup/commit/592301d9d35b1dc467c9d31f3a8194a8ae8dc290))
-* **infra:** add lazy Redis pub/sub client singletons ([3424c71](https://github.com/BYKHD/ui-syncup/commit/3424c71853673f86febeb3d1bb94bb47e971ba8e))
-* **infra:** add PostgreSQL LISTEN singleton with Redis fan-out ([a00ac1f](https://github.com/BYKHD/ui-syncup/commit/a00ac1f4bcc85763c625941ff172d5782a30d8ae))
-* Migrate team context management to user session and introduce slug-based routing for team settings. ([d261ccd](https://github.com/BYKHD/ui-syncup/commit/d261ccdef619dd7640999d673f4ce70049db0885))
-* **notifications:** replace Supabase Realtime with EventSource SSE ([0384807](https://github.com/BYKHD/ui-syncup/commit/038480791e055d655819ba71b4792e85757ffed7))
-* refactor role retrieval to prioritize dedicated member tables. ([6bf5703](https://github.com/BYKHD/ui-syncup/commit/6bf57038be260e4c2214e279ebb0c349b17248e2))
-* refactor storage to use a single bucket ([#106](https://github.com/BYKHD/ui-syncup/issues/106)) ([c41cb2c](https://github.com/BYKHD/ui-syncup/commit/c41cb2c5d623ba5f86414fe2cb2f7f6d79e6d7cf))
 
 # [0.7.0-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.6.0...v0.7.0-beta.1) (2026-03-30)
 

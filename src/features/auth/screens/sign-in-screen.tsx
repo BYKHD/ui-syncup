@@ -11,6 +11,7 @@ type SignInScreenProps = {
   /** Initial OAuth error from URL redirect */
   initialOAuthError?: string | null;
   onSuccess?: (data: SessionResponse) => void;
+  callbackUrl?: string;
 };
 
 export default function SignInScreen({
@@ -18,6 +19,7 @@ export default function SignInScreen({
   invitedEmail = "",
   initialOAuthError,
   onSuccess,
+  callbackUrl,
 }: SignInScreenProps) {
   const {
     form,
@@ -28,17 +30,21 @@ export default function SignInScreen({
     oauthError,
     handleSubmit,
     handleOAuthSignIn,
-  } = useSignIn({ defaultEmail: invitedEmail, onSuccess });
+  } = useSignIn({ defaultEmail: invitedEmail, onSuccess, redirectTo: callbackUrl });
 
   // Use initial error from URL if no runtime error
   const displayedOAuthError = oauthError || initialOAuthError || null;
+
+  const signUpHref = callbackUrl
+    ? `/sign-up?callbackUrl=${encodeURIComponent(callbackUrl)}`
+    : "/sign-up";
 
   return (
     <AuthCard
       footer={
         <>
           <p>Don&apos;t have an account?</p>
-          <a href="/sign-up" className="font-medium text-primary hover:underline">
+          <a href={signUpHref} className="font-medium text-primary hover:underline">
             Sign up
           </a>
         </>

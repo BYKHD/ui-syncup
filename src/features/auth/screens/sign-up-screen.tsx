@@ -1,10 +1,26 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 
 import { SignUpForm } from "../components/sign-up-form";
+import SignUpSuccessScreen from "./sign-up-success-screen";
 
-export default function SignUpScreen() {
+type SignUpScreenProps = {
+  callbackUrl?: string;
+};
+
+export default function SignUpScreen({ callbackUrl }: SignUpScreenProps) {
+  const [successEmail, setSuccessEmail] = useState<string | null>(null);
+
+  const signInHref = callbackUrl
+    ? `/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}`
+    : "/sign-in";
+
+  if (successEmail) {
+    return <SignUpSuccessScreen email={successEmail} signInHref={signInHref} />;
+  }
+
   return (
     <section className="bg-muted min-h-screen">
       <div className="flex min-h-screen items-center justify-center px-4 py-10">
@@ -19,12 +35,18 @@ export default function SignUpScreen() {
             </p>
           </div>
 
-          <SignUpForm />
+          <SignUpForm
+            callbackUrl={callbackUrl}
+            onSuccess={(data) => {
+              const email = (data.data as { email?: string } | undefined)?.email;
+              if (email) setSuccessEmail(email);
+            }}
+          />
 
           <div className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link
-              href="/sign-in"
+              href={signInHref}
               className="font-medium text-primary hover:underline"
             >
               Sign in

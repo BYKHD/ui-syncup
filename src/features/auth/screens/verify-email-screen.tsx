@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { useResendVerification } from "../hooks/use-resend-verification";
 
 type VerifyEmailScreenProps = {
   defaultEmail?: string;
+  callbackUrl?: string;
 };
 
 /**
@@ -25,18 +27,31 @@ type VerifyEmailScreenProps = {
  * - Success/error state handling
  * - Clean, centered layout with shadcn components
  */
-export default function VerifyEmailScreen({ defaultEmail = "" }: VerifyEmailScreenProps) {
+export default function VerifyEmailScreen({ defaultEmail = "", callbackUrl }: VerifyEmailScreenProps) {
   const searchParams = useSearchParams();
   const emailFromParams = searchParams?.get("email") || defaultEmail;
+  const callbackUrlFromParams = callbackUrl ?? searchParams?.get("callbackUrl") ?? undefined;
 
   const [email, setEmail] = useState(emailFromParams);
   const { resend, countdown, canResend, isLoading, isSuccess } = useResendVerification();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim() && canResend) {
-      resend(email.trim());
+    if (!email.trim() || !canResend) return;
+
+    // Re-store the signup intent so resend-verification/route.ts can embed
+    // the callbackUrl in the new verification email URL (cross-device safe).
+    if (callbackUrlFromParams) {
+      await fetch('/api/auth/signup-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), callbackUrl: callbackUrlFromParams }),
+      }).catch(() => {
+        // Silent fail — verification email will still be sent without callbackUrl
+      });
     }
+
+    resend(email.trim());
   };
 
   return (
@@ -44,9 +59,9 @@ export default function VerifyEmailScreen({ defaultEmail = "" }: VerifyEmailScre
       footer={
         <>
           <p>Already verified?</p>
-          <a href="/sign-in" className="font-medium text-primary hover:underline">
+          <Link href="/sign-in" className="font-medium text-primary hover:underline">
             Sign in
-          </a>
+          </Link>
         </>
       }
     >
@@ -70,7 +85,7 @@ export default function VerifyEmailScreen({ defaultEmail = "" }: VerifyEmailScre
             <RiCheckboxCircleLine className="h-4 w-4" />
             <AlertTitle>Email Sent</AlertTitle>
             <AlertDescription>
-              We've sent a verification link to <strong>{email}</strong>. Please check your inbox
+              We&apos;ve sent a verification link to <strong>{email}</strong>. Please check your inbox
               and spam folder.
             </AlertDescription>
           </Alert>
@@ -122,7 +137,7 @@ export default function VerifyEmailScreen({ defaultEmail = "" }: VerifyEmailScre
 
         {/* Info Box */}
         <div className="rounded-lg border border-muted bg-muted/30 p-4">
-          <h3 className="mb-2 text-sm font-medium">Didn't receive the email?</h3>
+          <h3 className="mb-2 text-sm font-medium">Didn&apos;t receive the email?</h3>
           <ul className="space-y-1 text-xs text-muted-foreground">
             <li>• Check your spam or junk folder</li>
             <li>• Make sure you entered the correct email address</li>
@@ -133,12 +148,12 @@ export default function VerifyEmailScreen({ defaultEmail = "" }: VerifyEmailScre
 
         {/* Back to Sign In */}
         <div className="text-center">
-          <a
+          <Link
             href="/sign-in"
             className="text-sm text-muted-foreground hover:text-primary hover:underline"
           >
             ← Back to sign in
-          </a>
+          </Link>
         </div>
       </div>
     </AuthCard>

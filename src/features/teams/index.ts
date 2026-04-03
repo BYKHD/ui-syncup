@@ -15,6 +15,9 @@
 // Components
 export { CreateTeamDialog } from './components/create-team-dialog'
 
+// Screens
+export { TeamInvitationAcceptanceScreen } from './screens/team-invitation-acceptance-screen'
+
 
 // Hooks - Query
 export {
