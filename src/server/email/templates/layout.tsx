@@ -51,7 +51,7 @@ export const EmailLayout = ({ preview, children }: EmailLayoutProps) => {
                 UI SyncUp - Visual Feedback & Issue Tracking Platform
               </Text>
               <Text className="text-[12px] text-text-muted leading-[24px]">
-                <Link href="https://uisyncup.com" className="text-brand underline">
+                <Link href={process.env.NEXT_PUBLIC_APP_URL ?? "https://uisyncup.com"} className="text-brand underline">
                   Visit Dashboard
                 </Link>
               </Text>
