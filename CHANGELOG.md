@@ -1,3 +1,10 @@
+## [0.7.4-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.7.4-beta.1...v0.7.4-beta.2) (2026-04-04)
+
+
+### Bug Fixes
+
+* update invitation acceptance redirect to use absolute app URL and correct return path ([#123](https://github.com/BYKHD/ui-syncup/issues/123)) ([da63bbc](https://github.com/BYKHD/ui-syncup/commit/da63bbcd6a1ec9e0b412c9606da80096fe257247))
+
 ## [0.7.4-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.3...v0.7.4-beta.1) (2026-04-03)
 
 
