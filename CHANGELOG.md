@@ -1,3 +1,10 @@
+# [0.8.0-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.4-beta.3...v0.8.0-beta.1) (2026-04-04)
+
+
+### Features
+
+* clean up legacy Drizzle migrations and update database schema snapshot ([d3b0de5](https://github.com/BYKHD/ui-syncup/commit/d3b0de55b720fd1f633d3dbf69b2ac328660a706))
+
 ## [0.7.4-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.7.4-beta.2...v0.7.4-beta.3) (2026-04-04)
 
 
