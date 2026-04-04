@@ -42,19 +42,19 @@ describe('POST /api/setup/complete', () => {
   });
 
   it('returns redirectUrl: /projects in response body', async () => {
-    const res = await POST(makeRequest({ workspaceId: '00000000-0000-0000-0000-000000000001', createSampleData: false }));
+    const res = await POST(makeRequest({ teamId: '00000000-0000-0000-0000-000000000001', createSampleData: false }));
     const data = await res.json();
     expect(data.redirectUrl).toBe('/projects');
   });
 
   it('sets setup-complete cookie on the response', async () => {
-    const res = await POST(makeRequest({ workspaceId: '00000000-0000-0000-0000-000000000001', createSampleData: false }));
+    const res = await POST(makeRequest({ teamId: '00000000-0000-0000-0000-000000000001', createSampleData: false }));
     const cookie = res.headers.get('set-cookie');
     expect(cookie).toContain('setup-complete=1');
   });
 
   it('returns 200 on success', async () => {
-    const res = await POST(makeRequest({ workspaceId: '00000000-0000-0000-0000-000000000001', createSampleData: false }));
+    const res = await POST(makeRequest({ teamId: '00000000-0000-0000-0000-000000000001', createSampleData: false }));
     expect(res.status).toBe(200);
   });
 });

@@ -189,14 +189,14 @@ describe('Integration Test: Team Context Management', () => {
     await db.insert(teamMembers).values({
       teamId: team1.id,
       userId: member.id,
-      operationalRole: 'WORKSPACE_MEMBER',
+      operationalRole: 'TEAM_MEMBER',
       invitedBy: owner.id,
     });
     
     await db.insert(teamMembers).values({
       teamId: team2.id,
       userId: member.id,
-      operationalRole: 'WORKSPACE_MEMBER',
+      operationalRole: 'TEAM_MEMBER',
       invitedBy: owner.id,
     });
     
@@ -389,7 +389,7 @@ describe('Integration Test: Team Context Management', () => {
       .limit(1);
     
     expect(member).toBeTruthy();
-    expect(member.managementRole).toBe('WORKSPACE_OWNER');
-    expect(member.operationalRole).toBe('WORKSPACE_EDITOR');
+    expect(member.managementRole).toBe('TEAM_OWNER');
+    expect(member.operationalRole).toBe('TEAM_EDITOR');
   });
 });

@@ -23,12 +23,12 @@ Instance
 
 ## Team Modes
 
-UI SyncUp supports two operational modes controlled by the `MULTI_WORKSPACE_MODE` environment variable:
+UI SyncUp supports two operational modes controlled by the `MULTI_TEAM_MODE` environment variable:
 
 ### Single-Team Mode (Default)
 
 ```bash
-MULTI_WORKSPACE_MODE=false  # or not set
+MULTI_TEAM_MODE=false  # or not set
 ```
 
 **Behavior:**
@@ -50,7 +50,7 @@ MULTI_WORKSPACE_MODE=false  # or not set
 ### Multi-Team Mode
 
 ```bash
-MULTI_WORKSPACE_MODE=true
+MULTI_TEAM_MODE=true
 ```
 
 **Behavior:**
@@ -106,28 +106,28 @@ Team roles follow a **two-tier hierarchy**:
 
 | Role | Description |
 |------|-------------|
-| **WORKSPACE_OWNER** | Full control over team and members. Can delete team and transfer ownership. |
-| **WORKSPACE_ADMIN** | Manage members, projects, integrations. Cannot delete team or transfer ownership. |
+| **TEAM_OWNER** | Full control over team and members. Can delete team and transfer ownership. |
+| **TEAM_ADMIN** | Manage members, projects, integrations. Cannot delete team or transfer ownership. |
 
 ### Operational Roles (Content Access)
 
 | Role | Level | Description |
 |------|-------|-------------|
-| **WORKSPACE_EDITOR** | 3 | Create and manage issues and annotations. |
-| **WORKSPACE_MEMBER** | 2 | View projects and comment on issues. |
-| **WORKSPACE_VIEWER** | 1 | View-only access to projects and issues. |
+| **TEAM_EDITOR** | 3 | Create and manage issues and annotations. |
+| **TEAM_MEMBER** | 2 | View projects and comment on issues. |
+| **TEAM_VIEWER** | 1 | View-only access to projects and issues. |
 
 ### Role Assignment
 
 Users have **one management role** (optional) + **one operational role** (required):
 
-- `WORKSPACE_OWNER` + `WORKSPACE_EDITOR` → Owner who creates content
-- `WORKSPACE_OWNER` + `WORKSPACE_MEMBER` → Owner who only manages
-- `WORKSPACE_ADMIN` + `WORKSPACE_VIEWER` → Admin with read-only content access
-- `WORKSPACE_EDITOR` (no management role) → Content creator
-- `WORKSPACE_MEMBER` (no management role) → Collaborator
+- `TEAM_OWNER` + `TEAM_EDITOR` → Owner who creates content
+- `TEAM_OWNER` + `TEAM_MEMBER` → Owner who only manages
+- `TEAM_ADMIN` + `TEAM_VIEWER` → Admin with read-only content access
+- `TEAM_EDITOR` (no management role) → Content creator
+- `TEAM_MEMBER` (no management role) → Collaborator
 
-> **Note:** Role enum values (`WORKSPACE_OWNER`, `WORKSPACE_EDITOR`, etc.) are internal identifiers kept for backwards compatibility. The user-facing label for these is "Team Owner", "Team Admin", etc.
+> **Note:** Role enum values (`TEAM_OWNER`, `TEAM_EDITOR`, etc.) are internal identifiers kept for backwards compatibility. The user-facing label for these is "Team Owner", "Team Admin", etc.
 
 ---
 
@@ -137,12 +137,12 @@ The system detects team mode at runtime:
 
 ```typescript
 // src/config/workspace.ts
-export const WORKSPACE_CONFIG = {
-  multiWorkspaceMode: process.env.MULTI_WORKSPACE_MODE === 'true',
+export const TEAM_CONFIG = {
+  multiTeamMode: process.env.MULTI_TEAM_MODE === 'true',
 };
 
-export function isMultiWorkspaceMode(): boolean {
-  return WORKSPACE_CONFIG.multiWorkspaceMode;
+export function isMultiTeamMode(): boolean {
+  return TEAM_CONFIG.multiTeamMode;
 }
 ```
 
@@ -150,10 +150,10 @@ export function isMultiWorkspaceMode(): boolean {
 
 | Feature | Check Function |
 |---------|----------------|
-| Show team switcher | `isMultiWorkspaceMode()` |
-| Allow team creation | `isMultiWorkspaceMode()` |
-| Show "Create team" in onboarding | `isMultiWorkspaceMode()` |
-| Require team selection on login | `isMultiWorkspaceMode() && userHasMultipleTeams` |
+| Show team switcher | `isMultiTeamMode()` |
+| Allow team creation | `isMultiTeamMode()` |
+| Show "Create team" in onboarding | `isMultiTeamMode()` |
+| Require team selection on login | `isMultiTeamMode() && userHasMultipleTeams` |
 
 ---
 
@@ -208,7 +208,7 @@ Same as single-team, but after setup:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MULTI_WORKSPACE_MODE` | `false` | Enable multi-team features |
+| `MULTI_TEAM_MODE` | `false` | Enable multi-team features |
 
 ---
 
@@ -234,12 +234,12 @@ Accessible via team dropdown or settings navigation:
 ## Best Practices
 
 ### Single-Team Deployments
-- Set `MULTI_WORKSPACE_MODE=false` (or leave unset)
+- Set `MULTI_TEAM_MODE=false` (or leave unset)
 - Choose a descriptive team name during setup
 - All users will automatically be part of this team
 
 ### Multi-Team Deployments
-- Set `MULTI_WORKSPACE_MODE=true`
+- Set `MULTI_TEAM_MODE=true`
 - Consider naming conventions for teams
 - Use team-based access control for department separation
 

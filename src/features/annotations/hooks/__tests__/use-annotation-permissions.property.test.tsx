@@ -90,11 +90,11 @@ function setMockSession(user: MockUser | undefined, isLoading = false) {
 
 // Team roles
 const teamRoleArb = fc.constantFrom(
-  'WORKSPACE_OWNER',
-  'WORKSPACE_ADMIN',
-  'WORKSPACE_EDITOR',
-  'WORKSPACE_MEMBER',
-  'WORKSPACE_VIEWER'
+  'TEAM_OWNER',
+  'TEAM_ADMIN',
+  'TEAM_EDITOR',
+  'TEAM_MEMBER',
+  'TEAM_VIEWER'
 );
 
 // Project roles
@@ -213,7 +213,7 @@ describe('useAnnotationPermissions - Property Tests (Property 16)', () => {
               {
                 id: roleId,
                 userId,
-                role: 'WORKSPACE_VIEWER',
+                role: 'TEAM_VIEWER',
                 resourceType: 'team',
                 resourceId,
                 createdAt: new Date().toISOString(),
@@ -269,7 +269,7 @@ describe('useAnnotationPermissions - Property Tests (Property 16)', () => {
               {
                 id: roleId,
                 userId,
-                role: 'WORKSPACE_MEMBER',
+                role: 'TEAM_MEMBER',
                 resourceType: 'team',
                 resourceId,
                 createdAt: new Date().toISOString(),
@@ -309,7 +309,7 @@ describe('useAnnotationPermissions - Property Tests (Property 16)', () => {
    */
   it('Property 16.4: Editor+ roles get full permissions', () => {
     // Team editor roles
-    const teamEditorRoles = ['WORKSPACE_OWNER', 'WORKSPACE_ADMIN', 'WORKSPACE_EDITOR'];
+    const teamEditorRoles = ['TEAM_OWNER', 'TEAM_ADMIN', 'TEAM_EDITOR'];
     // Project editor roles
     const projectEditorRoles = ['PROJECT_OWNER', 'PROJECT_EDITOR'];
 
@@ -402,7 +402,7 @@ describe('useAnnotationPermissions - Property Tests (Property 16)', () => {
               {
                 id: roleId1,
                 userId,
-                role: 'WORKSPACE_EDITOR', // Higher role first
+                role: 'TEAM_EDITOR', // Higher role first
                 resourceType: 'team',
                 resourceId,
                 createdAt: new Date().toISOString(),
@@ -410,7 +410,7 @@ describe('useAnnotationPermissions - Property Tests (Property 16)', () => {
               {
                 id: roleId2,
                 userId,
-                role: 'WORKSPACE_VIEWER', // Lower role second
+                role: 'TEAM_VIEWER', // Lower role second
                 resourceType: 'team',
                 resourceId,
                 createdAt: new Date().toISOString(),

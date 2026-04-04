@@ -318,7 +318,7 @@ describe.skip("Project Member Service - Property Tests (requires migrations)", (
           const teamEditorRole = await db.query.userRoles.findFirst({
             where: and(
               eq(userRoles.userId, user.id),
-              eq(userRoles.role, "WORKSPACE_EDITOR"),
+              eq(userRoles.role, "TEAM_EDITOR"),
               eq(userRoles.resourceType, "team"),
               eq(userRoles.resourceId, testTeamId)
             ),

@@ -20,7 +20,7 @@ import { logger } from "@/lib/logger";
  * Request body schema
  */
 const CompleteSetupSchema = z.object({
-  workspaceId: z.string().uuid("Invalid workspace ID"),
+  teamId: z.string().uuid("Invalid team ID"),
   createSampleData: z.boolean().optional().default(false),
 });
 
@@ -29,19 +29,19 @@ type CompleteSetupInput = z.infer<typeof CompleteSetupSchema>;
 /**
  * POST /api/setup/complete
  * 
- * Marks setup as complete for an existing workspace.
- * The workspace should have been created in a previous step.
- * 
+ * Marks setup as complete for an existing team.
+ * The team should have been created in a previous step.
+ *
  * Request body:
  * {
- *   "workspaceId": "uuid",
+ *   "teamId": "uuid",
  *   "createSampleData": true  // optional, defaults to false
  * }
- * 
+ *
  * Success response (200):
  * {
  *   "success": true,
- *   "workspaceId": "uuid",
+ *   "teamId": "uuid",
  *   "sampleDataCreated": boolean,
  *   "message": "Setup completed successfully"
  * }
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
       await db.update(instanceSettings)
         .set({
           setupCompletedAt: new Date(),
-          defaultWorkspaceId: body.workspaceId,
+          defaultWorkspaceId: body.teamId,
           updatedAt: new Date(),
         })
         .where(eq(instanceSettings.id, settings.id));
@@ -176,20 +176,20 @@ export async function POST(request: NextRequest) {
     if (body.createSampleData) {
       try {
         await createSampleProject({
-          workspaceId: body.workspaceId,
+          teamId: body.teamId,
           userId: session.id,
         });
         sampleDataCreated = true;
         
         logger.info("setup.complete.sample_data_created", {
           requestId,
-          workspaceId: body.workspaceId,
+          teamId: body.teamId,
         });
       } catch (sampleError) {
         // Log but don't fail the setup if sample data creation fails
         logger.warn("setup.complete.sample_data_failed", {
           requestId,
-          workspaceId: body.workspaceId,
+          teamId: body.teamId,
           error: sampleError instanceof Error ? sampleError.message : "Unknown error",
         });
       }
@@ -198,20 +198,20 @@ export async function POST(request: NextRequest) {
     // Activate the workspace as the admin's active team so /team/* routes work immediately
     await db
       .update(users)
-      .set({ lastActiveTeamId: body.workspaceId })
+      .set({ lastActiveTeamId: body.teamId })
       .where(eq(users.id, session.id));
 
     logger.info("setup.complete.success", {
       requestId,
       userId: session.id,
-      workspaceId: body.workspaceId,
+      teamId: body.teamId,
       sampleDataCreated,
     });
 
     const response = NextResponse.json(
       {
         success: true,
-        workspaceId: body.workspaceId,
+        teamId: body.teamId,
         sampleDataCreated,
         redirectUrl: "/projects",
         message: "Setup completed successfully",
@@ -230,7 +230,7 @@ export async function POST(request: NextRequest) {
 
     // Set active team cookie so /team/settings and other protected routes
     // resolve immediately without redirecting to /onboarding
-    response.cookies.set("team_id", body.workspaceId, {
+    response.cookies.set("team_id", body.teamId, {
       httpOnly: false,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",

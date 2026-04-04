@@ -11,7 +11,7 @@
 
 import { NextResponse } from "next/server";
 import { checkAllServicesHealth } from "@/server/setup";
-import { isMultiWorkspaceMode } from "@/config/workspace";
+import { isMultiTeamMode } from "@/config/team";
 import { logger } from "@/lib/logger";
 
 /**
@@ -25,7 +25,7 @@ import { logger } from "@/lib/logger";
  *   "email": { "status": "connected" | "not_configured" | "error", "message": string, "degradedBehavior"?: string },
  *   "storage": { "status": "connected" | "not_configured" | "error", "message": string, "degradedBehavior"?: string },
  *   "redis": { "status": "connected" | "not_configured" | "error", "message": string, "degradedBehavior"?: string },
- *   "isMultiWorkspaceMode": boolean
+ *   "isMultiTeamMode": boolean
  * }
  * 
  * Error responses:
@@ -48,7 +48,7 @@ export async function GET() {
     return NextResponse.json(
       {
         ...health,
-        isMultiWorkspaceMode: isMultiWorkspaceMode(),
+        isMultiTeamMode: isMultiTeamMode(),
       },
       { status: 200 }
     );

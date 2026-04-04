@@ -263,7 +263,7 @@ CREATE TABLE "instance_settings" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"instance_name" varchar(100) DEFAULT 'UI SyncUp' NOT NULL,
 	"default_workspace_id" uuid,
-	"default_member_role" varchar(50) DEFAULT 'WORKSPACE_MEMBER' NOT NULL,
+	"default_member_role" varchar(50) DEFAULT 'TEAM_MEMBER' NOT NULL,
 	"setup_completed_at" timestamp with time zone,
 	"admin_user_id" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,

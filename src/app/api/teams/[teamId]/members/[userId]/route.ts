@@ -22,8 +22,8 @@ import { eq, and } from 'drizzle-orm';
  * Zod schema for member role update
  */
 const UpdateMemberRolesSchema = z.object({
-  managementRole: z.enum(['WORKSPACE_OWNER', 'WORKSPACE_ADMIN']).nullable().optional(),
-  operationalRole: z.enum(['WORKSPACE_EDITOR', 'WORKSPACE_MEMBER', 'WORKSPACE_VIEWER']).optional(),
+  managementRole: z.enum(['TEAM_OWNER', 'TEAM_ADMIN']).nullable().optional(),
+  operationalRole: z.enum(['TEAM_EDITOR', 'TEAM_MEMBER', 'TEAM_VIEWER']).optional(),
 });
 
 /**
@@ -33,8 +33,8 @@ const UpdateMemberRolesSchema = z.object({
  * 
  * Request body:
  * {
- *   "managementRole": "WORKSPACE_ADMIN" | null,
- *   "operationalRole": "WORKSPACE_EDITOR" | "WORKSPACE_MEMBER" | "WORKSPACE_VIEWER"
+ *   "managementRole": "TEAM_ADMIN" | null,
+ *   "operationalRole": "TEAM_EDITOR" | "TEAM_MEMBER" | "TEAM_VIEWER"
  * }
  * 
  * Success response (200):
@@ -42,8 +42,8 @@ const UpdateMemberRolesSchema = z.object({
  *   "member": {
  *     "id": "uuid",
  *     "userId": "uuid",
- *     "managementRole": "WORKSPACE_ADMIN",
- *     "operationalRole": "WORKSPACE_EDITOR",
+ *     "managementRole": "TEAM_ADMIN",
+ *     "operationalRole": "TEAM_EDITOR",
  *     ...
  *   }
  * }
@@ -80,8 +80,8 @@ export async function PATCH(
     }
     
     // Check permissions (TEAM_OWNER or TEAM_ADMIN)
-    const isOwner = await hasRole(user.id, 'WORKSPACE_OWNER', 'team', teamId);
-    const isAdmin = await hasRole(user.id, 'WORKSPACE_ADMIN', 'team', teamId);
+    const isOwner = await hasRole(user.id, 'TEAM_OWNER', 'team', teamId);
+    const isAdmin = await hasRole(user.id, 'TEAM_ADMIN', 'team', teamId);
     
     if (!isOwner && !isAdmin) {
       return NextResponse.json(
@@ -257,8 +257,8 @@ export async function DELETE(
     }
     
     // Check permissions (TEAM_OWNER or TEAM_ADMIN)
-    const isOwner = await hasRole(user.id, 'WORKSPACE_OWNER', 'team', teamId);
-    const isAdmin = await hasRole(user.id, 'WORKSPACE_ADMIN', 'team', teamId);
+    const isOwner = await hasRole(user.id, 'TEAM_OWNER', 'team', teamId);
+    const isAdmin = await hasRole(user.id, 'TEAM_ADMIN', 'team', teamId);
     
     if (!isOwner && !isAdmin) {
       return NextResponse.json(

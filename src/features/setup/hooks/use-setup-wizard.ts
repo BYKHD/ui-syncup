@@ -20,7 +20,7 @@ const INITIAL_STATE: SetupWizardState = {
   completedSteps: [],
   adminData: null,
   instanceData: null,
-  workspaceData: null,
+  teamData: null,
   includeSampleData: false,
 };
 
@@ -78,9 +78,9 @@ export function useSetupWizard(initialStep?: SetupWizardStep) {
     []
   );
 
-  const setWorkspaceData = useCallback(
-    (data: SetupWizardState['workspaceData']) => {
-      setState((prev) => ({ ...prev, workspaceData: data }));
+  const setTeamData = useCallback(
+    (data: SetupWizardState['teamData']) => {
+      setState((prev) => ({ ...prev, teamData: data }));
     },
     []
   );
@@ -141,7 +141,7 @@ export function useSetupWizard(initialStep?: SetupWizardStep) {
     goToPreviousStep,
     setAdminData,
     setInstanceData,
-    setWorkspaceData,
+    setTeamData,
     setIncludeSampleData,
     markStepComplete,
     resetWizard,

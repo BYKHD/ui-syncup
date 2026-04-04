@@ -23,9 +23,9 @@ export const ServiceHealthSchema = z.object({
 
 // Instance Status Schema
 export const DefaultMemberRoleSchema = z.enum([
-  'WORKSPACE_VIEWER',
-  'WORKSPACE_MEMBER',
-  'WORKSPACE_EDITOR',
+  'TEAM_VIEWER',
+  'TEAM_MEMBER',
+  'TEAM_EDITOR',
 ]);
 
 export const InstanceStatusSchema = z.object({
@@ -34,7 +34,7 @@ export const InstanceStatusSchema = z.object({
   adminEmail: z.string().nullable(),
   defaultWorkspaceId: z.string().nullable(),
   defaultMemberRole: DefaultMemberRoleSchema,
-  isMultiWorkspaceMode: z.boolean(),
+  isMultiTeamMode: z.boolean(),
   skipEmailVerification: z.boolean(),
 });
 
@@ -80,24 +80,24 @@ export const InstanceConfigResponseSchema = z.object({
   error: z.string().optional(),
 });
 
-// First Workspace Schemas
-export const FirstWorkspaceRequestSchema = z.object({
-  workspaceName: z
+// First Team Schemas
+export const FirstTeamRequestSchema = z.object({
+  teamName: z
     .string()
-    .min(2, 'Workspace name must be at least 2 characters')
-    .max(50, 'Workspace name must be at most 50 characters'),
+    .min(2, 'Team name must be at least 2 characters')
+    .max(50, 'Team name must be at most 50 characters'),
 });
 
-export const FirstWorkspaceResponseSchema = z.object({
+export const FirstTeamResponseSchema = z.object({
   success: z.boolean(),
-  workspaceId: z.string().optional(),
-  workspaceSlug: z.string().optional(),
+  teamId: z.string().optional(),
+  teamSlug: z.string().optional(),
   error: z.string().optional(),
 });
 
 // Setup Complete Schemas
 export const SetupCompleteRequestSchema = z.object({
-  workspaceId: z.string(),
+  teamId: z.string(),
   createSampleData: z.boolean().default(false),
 });
 
@@ -116,7 +116,7 @@ export type AdminAccountRequestDTO = z.infer<typeof AdminAccountRequestSchema>;
 export type AdminAccountResponseDTO = z.infer<typeof AdminAccountResponseSchema>;
 export type InstanceConfigRequestDTO = z.infer<typeof InstanceConfigRequestSchema>;
 export type InstanceConfigResponseDTO = z.infer<typeof InstanceConfigResponseSchema>;
-export type FirstWorkspaceRequestDTO = z.infer<typeof FirstWorkspaceRequestSchema>;
-export type FirstWorkspaceResponseDTO = z.infer<typeof FirstWorkspaceResponseSchema>;
+export type FirstTeamRequestDTO = z.infer<typeof FirstTeamRequestSchema>;
+export type FirstTeamResponseDTO = z.infer<typeof FirstTeamResponseSchema>;
 export type SetupCompleteRequestDTO = z.infer<typeof SetupCompleteRequestSchema>;
 export type SetupCompleteResponseDTO = z.infer<typeof SetupCompleteResponseSchema>;

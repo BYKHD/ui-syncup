@@ -30,7 +30,7 @@ import { Separator } from '@/components/ui/separator';
 
 import { useTeam } from '@/hooks/use-team';
 import { useCanManageTeam } from '@/features/teams/hooks/use-can-manage-team';
-import { isSingleWorkspaceMode } from '@/config/workspace';
+import { isSingleTeamMode } from '@/config/team';
 
 // Mock navigation data for mockup UI
 // const MOCK_NAV_ITEMS: NavItem[] = [ ... ] - Moved inside component for dynamic permissions
@@ -72,9 +72,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     // Only add settings nav when slug is resolved — prevents /team/undefined/settings
     if (canManageTeam && teamSlug) {
       items.push({
-        // In single-workspace mode: Use "Settings" label (Requirement 12.4)
-        // In multi-workspace mode: Use "Team Settings" label
-        title: isSingleWorkspaceMode() ? 'Settings' : 'Team Settings',
+        // In single-team mode: Use "Settings" label (Requirement 12.4)
+        // In multi-team mode: Use "Team Settings" label
+        title: isSingleTeamMode() ? 'Settings' : 'Team Settings',
         url: `/team/${teamSlug}/settings`,
         icon: RiListSettingsLine,
         items: [

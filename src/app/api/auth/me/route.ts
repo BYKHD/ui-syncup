@@ -31,7 +31,7 @@ import { logger } from '@/lib/logger';
  *       {
  *         "id": "uuid",
  *         "userId": "uuid",
- *         "role": "WORKSPACE_OWNER",
+ *         "role": "TEAM_OWNER",
  *         "resourceType": "team",
  *         "resourceId": "team_uuid",
  *         "createdAt": "2024-01-01T00:00:00.000Z"

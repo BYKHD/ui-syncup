@@ -70,7 +70,7 @@ function getClientIP(request: NextRequest): string {
 /**
  * POST /api/setup/admin
  * 
- * Creates the first admin user with WORKSPACE_OWNER role.
+ * Creates the first admin user with TEAM_OWNER role.
  * 
  * Request body:
  * {

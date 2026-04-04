@@ -205,8 +205,8 @@ export async function POST(request: NextRequest) {
  *       "slug": "team-name",
 
  *       "memberCount": 5,
- *       "myManagementRole": "WORKSPACE_OWNER",
- *       "myOperationalRole": "WORKSPACE_EDITOR",
+ *       "myManagementRole": "TEAM_OWNER",
+ *       "myOperationalRole": "TEAM_EDITOR",
  *       ...
  *     }
  *   ]

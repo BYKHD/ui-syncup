@@ -73,11 +73,11 @@ export async function GET(
     }
 
     // Check if user is a member of the team
-    const isMember = await hasRole(user.id, 'WORKSPACE_VIEWER', 'team', teamId) ||
-                     await hasRole(user.id, 'WORKSPACE_MEMBER', 'team', teamId) ||
-                     await hasRole(user.id, 'WORKSPACE_EDITOR', 'team', teamId) ||
-                     await hasRole(user.id, 'WORKSPACE_ADMIN', 'team', teamId) ||
-                     await hasRole(user.id, 'WORKSPACE_OWNER', 'team', teamId);
+    const isMember = await hasRole(user.id, 'TEAM_VIEWER', 'team', teamId) ||
+                     await hasRole(user.id, 'TEAM_MEMBER', 'team', teamId) ||
+                     await hasRole(user.id, 'TEAM_EDITOR', 'team', teamId) ||
+                     await hasRole(user.id, 'TEAM_ADMIN', 'team', teamId) ||
+                     await hasRole(user.id, 'TEAM_OWNER', 'team', teamId);
     
     if (!isMember) {
       return NextResponse.json(

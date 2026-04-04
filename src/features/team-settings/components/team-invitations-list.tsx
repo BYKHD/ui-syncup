@@ -93,7 +93,7 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
 
   const [formData, setFormData] = useState<InviteMemberFormData>({
     email: "",
-    role: "WORKSPACE_MEMBER",
+    role: "TEAM_MEMBER",
     message: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -136,7 +136,7 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
         onSuccess: () => {
           toast.success("Invitation sent successfully");
           setIsInviteDialogOpen(false);
-          setFormData({ email: "", role: "WORKSPACE_MEMBER", message: "" });
+          setFormData({ email: "", role: "TEAM_MEMBER", message: "" });
           setFormErrors({});
         },
         onError: (error) => {
@@ -165,7 +165,7 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
             () => {
               toast.success("Invitation link copied to clipboard!");
               setIsInviteDialogOpen(false);
-              setFormData({ email: "", role: "WORKSPACE_MEMBER", message: "" });
+              setFormData({ email: "", role: "TEAM_MEMBER", message: "" });
               setFormErrors({});
             },
             () => {
@@ -280,9 +280,9 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="WORKSPACE_EDITOR">Editor</SelectItem>
-                        <SelectItem value="WORKSPACE_MEMBER">Member</SelectItem>
-                        <SelectItem value="WORKSPACE_VIEWER">Viewer</SelectItem>
+                        <SelectItem value="TEAM_EDITOR">Editor</SelectItem>
+                        <SelectItem value="TEAM_MEMBER">Member</SelectItem>
+                        <SelectItem value="TEAM_VIEWER">Viewer</SelectItem>
                       </SelectContent>
                     </Select>
                     {formErrors.role && (

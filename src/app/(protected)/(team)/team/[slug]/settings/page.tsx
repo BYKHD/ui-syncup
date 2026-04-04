@@ -32,13 +32,13 @@ export default async function TeamSettingsPage({
   if (!team) redirect("/team");
 
   const hasSettingsAccess =
-    team.myManagementRole === "WORKSPACE_OWNER" ||
-    team.myManagementRole === "WORKSPACE_ADMIN";
+    team.myManagementRole === "TEAM_OWNER" ||
+    team.myManagementRole === "TEAM_ADMIN";
 
   if (!hasSettingsAccess) redirect("/team");
 
   const userRole: UserRole =
-    team.myManagementRole === "WORKSPACE_OWNER" ? "owner" : "admin";
+    team.myManagementRole === "TEAM_OWNER" ? "owner" : "admin";
 
   const serializedTeam = {
     ...team,

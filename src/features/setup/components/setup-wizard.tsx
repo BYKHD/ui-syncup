@@ -8,7 +8,7 @@ import { ServiceHealthStep } from './service-health-step';
 import { AdminAccountStep } from './admin-account-step';
 import { InstanceConfigStep } from './instance-config-step';
 import { MailConfigStep } from './mail-config-step';
-import { FirstWorkspaceStep } from './first-workspace-step';
+import { FirstTeamStep } from './first-team-step';
 import { SampleDataStep } from './sample-data-step';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
@@ -64,16 +64,16 @@ export function SetupWizard() {
   useEffect(() => {
     if (status && startingStep !== 'health-check') {
       // Mark previous steps as complete
-      const stepsOrder: SetupWizardStep[] = ['health-check', 'admin-account', 'instance-config', 'mail-config', 'first-workspace', 'sample-data', 'complete'];
+      const stepsOrder: SetupWizardStep[] = ['health-check', 'admin-account', 'instance-config', 'mail-config', 'first-team', 'sample-data', 'complete'];
       const startingIndex = stepsOrder.indexOf(startingStep);
 
       stepsOrder.slice(0, startingIndex).forEach(step => {
         wizard.markStepComplete(step);
       });
 
-      // Rehydrate workspaceData from DB so SampleDataStep has the workspaceId on resume
-      if (status.defaultWorkspaceId && !wizard.workspaceData) {
-        wizard.setWorkspaceData({
+      // Rehydrate teamData from DB so SampleDataStep has the teamId on resume
+      if (status.defaultWorkspaceId && !wizard.teamData) {
+        wizard.setTeamData({
           id: status.defaultWorkspaceId,
           name: '',
           slug: '',
@@ -106,8 +106,8 @@ export function SetupWizard() {
         );
       case 'mail-config':
         return <MailConfigStep wizard={wizard} />;
-      case 'first-workspace':
-        return <FirstWorkspaceStep wizard={wizard} />;
+      case 'first-team':
+        return <FirstTeamStep wizard={wizard} />;
       case 'sample-data':
         return <SampleDataStep wizard={wizard} />;
       case 'complete': // Should have redirected by now

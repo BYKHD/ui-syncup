@@ -22,7 +22,7 @@ const STEP_ICONS: Partial<Record<SetupWizardStep, React.ElementType>> = {
   'admin-account': UserCog,
   'instance-config': Settings2,
   'mail-config': Mail,
-  'first-workspace': Building2,
+  'first-team': Building2,
   'sample-data': Database,
 };
 
@@ -31,7 +31,7 @@ const STEP_LABELS: Partial<Record<SetupWizardStep, string>> = {
   'admin-account': 'Admin',
   'instance-config': 'Instance',
   'mail-config': 'Email',
-  'first-workspace': 'Team',
+  'first-team': 'Team',
   'sample-data': 'Data',
 };
 

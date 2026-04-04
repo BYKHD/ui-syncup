@@ -20,7 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { isSingleWorkspaceMode, isMultiWorkspaceMode } from '@/config/workspace';
+import { isSingleTeamMode } from '@/config/team';
 
 export type SelfRegistrationPath = 'create-workspace' | 'join-with-code';
 
@@ -43,13 +43,13 @@ export function SelfRegistrationChoice({
 }: SelfRegistrationChoiceProps) {
   // In single-workspace mode, auto-join default workspace
   useEffect(() => {
-    if (isSingleWorkspaceMode()) {
+    if (isSingleTeamMode()) {
       onAutoJoin();
     }
   }, [onAutoJoin]);
 
   // In single-workspace mode, show loading while auto-joining
-  if (isSingleWorkspaceMode()) {
+  if (isSingleTeamMode()) {
     return (
       <div className="flex min-h-[200px] flex-col items-center justify-center space-y-4">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

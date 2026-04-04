@@ -14,7 +14,7 @@ import { db } from "@/lib/db";
 import { instanceSettings, users, teams, teamMembers, account } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { hashPassword } from "@/server/auth/password";
-import { isMultiWorkspaceMode } from "@/config/workspace";
+import { isMultiTeamMode } from "@/config/team";
 import { isEmailVerificationSkipped } from "@/config/auth";
 import { logger } from "@/lib/logger";
 import type {
@@ -41,8 +41,8 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
         instanceName: null,
         adminEmail: null,
         defaultWorkspaceId: null,
-        defaultMemberRole: "WORKSPACE_MEMBER",
-        isMultiWorkspaceMode: isMultiWorkspaceMode(),
+        defaultMemberRole: "TEAM_MEMBER",
+        isMultiTeamMode: isMultiTeamMode(),
         skipEmailVerification: isEmailVerificationSkipped(),
       };
     }
@@ -62,8 +62,8 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
       instanceName: settings.instanceName,
       adminEmail,
       defaultWorkspaceId: settings.defaultWorkspaceId,
-      defaultMemberRole: settings.defaultMemberRole as "WORKSPACE_VIEWER" | "WORKSPACE_MEMBER" | "WORKSPACE_EDITOR",
-      isMultiWorkspaceMode: isMultiWorkspaceMode(),
+      defaultMemberRole: settings.defaultMemberRole as "TEAM_VIEWER" | "TEAM_MEMBER" | "TEAM_EDITOR",
+      isMultiTeamMode: isMultiTeamMode(),
       skipEmailVerification: isEmailVerificationSkipped(),
     };
   } catch (error) {
@@ -77,8 +77,8 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
         instanceName: null,
         adminEmail: null,
         defaultWorkspaceId: null,
-        defaultMemberRole: "WORKSPACE_MEMBER",
-        isMultiWorkspaceMode: isMultiWorkspaceMode(),
+        defaultMemberRole: "TEAM_MEMBER",
+        isMultiTeamMode: isMultiTeamMode(),
         skipEmailVerification: isEmailVerificationSkipped(),
       };
     }
@@ -180,7 +180,7 @@ export async function saveInstanceConfig(input: InstanceConfigInput): Promise<vo
     // Create new settings
     await db.insert(instanceSettings).values({
       instanceName,
-      defaultMemberRole: defaultMemberRole || "WORKSPACE_MEMBER",
+      defaultMemberRole: defaultMemberRole || "TEAM_MEMBER",
     });
   } else {
     // Update existing settings
@@ -206,28 +206,28 @@ export async function saveInstanceConfig(input: InstanceConfigInput): Promise<vo
 export async function completeSetup(
   adminUserId: string,
   input: CompleteSetupInput
-): Promise<{ workspaceId: string }> {
-  const { workspaceName, workspaceSlug } = input;
+): Promise<{ teamId: string }> {
+  const { teamName, teamSlug } = input;
 
   // Generate slug if not provided
-  const slug = workspaceSlug || generateSlug(workspaceName);
+  const slug = teamSlug || generateSlug(teamName);
 
-  // Create the first workspace
-  const [workspace] = await db.insert(teams).values({
-    name: workspaceName,
+  // Create the first team
+  const [team] = await db.insert(teams).values({
+    name: teamName,
     slug,
   }).returning({ id: teams.id });
 
-  if (!workspace) {
-    throw new Error("Failed to create workspace");
+  if (!team) {
+    throw new Error("Failed to create team");
   }
 
-  // Add admin as WORKSPACE_OWNER with WORKSPACE_EDITOR operational role
+  // Add admin as TEAM_OWNER with TEAM_EDITOR operational role
   await db.insert(teamMembers).values({
-    teamId: workspace.id,
+    teamId: team.id,
     userId: adminUserId,
-    managementRole: "WORKSPACE_OWNER",
-    operationalRole: "WORKSPACE_EDITOR",
+    managementRole: "TEAM_OWNER",
+    operationalRole: "TEAM_EDITOR",
   });
 
   // Update instance settings to mark setup complete
@@ -236,15 +236,15 @@ export async function completeSetup(
     await db.update(instanceSettings)
       .set({
         setupCompletedAt: new Date(),
-        defaultWorkspaceId: workspace.id,
+        defaultWorkspaceId: team.id,
         updatedAt: new Date(),
       })
       .where(eq(instanceSettings.id, settings.id));
   }
 
-  logger.info("Setup completed", { workspaceId: workspace.id, workspaceName });
+  logger.info("Setup completed", { teamId: team.id, teamName });
 
-  return { workspaceId: workspace.id };
+  return { teamId: team.id };
 }
 
 /**

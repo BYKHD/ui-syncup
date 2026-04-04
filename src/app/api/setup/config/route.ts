@@ -24,7 +24,7 @@ const SaveConfigSchema = z.object({
     .min(2, "Instance name must be at least 2 characters")
     .max(100, "Instance name must be less than 100 characters"),
   defaultMemberRole: z
-    .enum(["WORKSPACE_VIEWER", "WORKSPACE_MEMBER", "WORKSPACE_EDITOR"])
+    .enum(["TEAM_VIEWER", "TEAM_MEMBER", "TEAM_EDITOR"])
     .optional(),
 });
 
@@ -39,7 +39,7 @@ type SaveConfigInput = z.infer<typeof SaveConfigSchema>;
  * Request body:
  * {
  *   "instanceName": "My UI SyncUp",
- *   "defaultMemberRole": "WORKSPACE_MEMBER"  // optional
+ *   "defaultMemberRole": "TEAM_MEMBER"  // optional
  * }
  * 
  * Success response (200):

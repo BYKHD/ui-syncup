@@ -1,10 +1,10 @@
 /**
- * POST /api/setup/workspace
- * 
- * Creates the first workspace during instance setup.
+ * POST /api/setup/team
+ *
+ * Creates the first team during instance setup.
  * Requires authentication (admin only).
- * 
- * @module api/setup/workspace
+ *
+ * @module api/setup/team
  * @requirements 5.1, 5.2, 5.3, 5.4, 5.5
  */
 
@@ -20,14 +20,14 @@ import { logger } from "@/lib/logger";
 /**
  * Request body schema
  */
-const CreateWorkspaceSchema = z.object({
-  workspaceName: z
+const CreateTeamSchema = z.object({
+  teamName: z
     .string()
     .min(2, "Team name must be at least 2 characters")
     .max(50, "Team name must be less than 50 characters"),
 });
 
-type CreateWorkspaceInput = z.infer<typeof CreateWorkspaceSchema>;
+type CreateTeamInput = z.infer<typeof CreateTeamSchema>;
 
 /**
  * Generate a URL-safe slug from a name.
@@ -42,28 +42,28 @@ function generateSlug(name: string): string {
 }
 
 /**
- * POST /api/setup/workspace
- * 
- * Creates the first workspace with admin as WORKSPACE_OWNER.
- * Updates instance settings with the default workspace ID.
- * 
+ * POST /api/setup/team
+ *
+ * Creates the first team with admin as TEAM_OWNER.
+ * Updates instance settings with the default team ID.
+ *
  * Request body:
  * {
- *   "workspaceName": "My Workspace"
+ *   "teamName": "My Team"
  * }
- * 
+ *
  * Success response (201):
  * {
  *   "success": true,
- *   "workspaceId": "uuid",
- *   "workspaceSlug": "my-workspace"
+ *   "teamId": "uuid",
+ *   "teamSlug": "my-team"
  * }
- * 
+ *
  * Error responses:
  * - 400: Validation error
  * - 401: Unauthorized
  * - 403: Forbidden (not admin)
- * - 409: Workspace already exists
+ * - 409: Team already exists
  * - 500: Internal server error
  */
 export async function POST(request: NextRequest) {
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     // Require authentication
     const session = await getSession();
     if (!session) {
-      logger.warn("setup.workspace.unauthorized", { requestId });
+      logger.warn("setup.team.unauthorized", { requestId });
 
       return NextResponse.json(
         {
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     // Check if user is the admin
     const status = await getInstanceStatus();
     if (status.adminEmail && status.adminEmail !== session.email) {
-      logger.warn("setup.workspace.forbidden", {
+      logger.warn("setup.team.forbidden", {
         requestId,
         userId: session.id,
         adminEmail: status.adminEmail,
@@ -106,17 +106,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if workspace already exists
+    // Check if team already exists
     if (status.defaultWorkspaceId) {
-      logger.warn("setup.workspace.already_exists", {
+      logger.warn("setup.team.already_exists", {
         requestId,
-        workspaceId: status.defaultWorkspaceId,
+        teamId: status.defaultWorkspaceId,
       });
 
       return NextResponse.json(
         {
           error: {
-            code: "WORKSPACE_ALREADY_EXISTS",
+            code: "TEAM_ALREADY_EXISTS",
             message: "First team has already been created",
           },
         },
@@ -125,10 +125,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate request body
-    let body: CreateWorkspaceInput;
+    let body: CreateTeamInput;
     try {
       const rawBody = await request.json();
-      body = CreateWorkspaceSchema.parse(rawBody);
+      body = CreateTeamSchema.parse(rawBody);
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fieldErrors = error.issues.map((err) => ({
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
           message: err.message,
         }));
 
-        logger.info("setup.workspace.validation_error", {
+        logger.info("setup.team.validation_error", {
           requestId,
           errors: fieldErrors,
         });
@@ -165,50 +165,50 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate slug
-    const slug = generateSlug(body.workspaceName);
+    const slug = generateSlug(body.teamName);
 
-    // Create the workspace (team)
-    const [workspace] = await db.insert(teams).values({
-      name: body.workspaceName,
+    // Create the team
+    const [team] = await db.insert(teams).values({
+      name: body.teamName,
       slug,
     }).returning({ id: teams.id });
 
-    if (!workspace) {
+    if (!team) {
       throw new Error("Failed to create team");
     }
 
-    // Add admin as WORKSPACE_OWNER with WORKSPACE_EDITOR operational role
+    // Add admin as TEAM_OWNER with TEAM_EDITOR operational role
     await db.insert(teamMembers).values({
-      teamId: workspace.id,
+      teamId: team.id,
       userId: session.id,
-      managementRole: "WORKSPACE_OWNER",
-      operationalRole: "WORKSPACE_EDITOR",
+      managementRole: "TEAM_OWNER",
+      operationalRole: "TEAM_EDITOR",
     });
 
-    // Update instance settings with default workspace ID
+    // Update instance settings with default team ID
     const settings = await db.query.instanceSettings.findFirst();
     if (settings) {
       await db.update(instanceSettings)
         .set({
-          defaultWorkspaceId: workspace.id,
+          defaultWorkspaceId: team.id,
           updatedAt: new Date(),
         })
         .where(eq(instanceSettings.id, settings.id));
     }
 
-    logger.info("setup.workspace.success", {
+    logger.info("setup.team.success", {
       requestId,
       userId: session.id,
-      workspaceId: workspace.id,
-      workspaceName: body.workspaceName,
-      workspaceSlug: slug,
+      teamId: team.id,
+      teamName: body.teamName,
+      teamSlug: slug,
     });
 
     return NextResponse.json(
       {
         success: true,
-        workspaceId: workspace.id,
-        workspaceSlug: slug,
+        teamId: team.id,
+        teamSlug: slug,
       },
       { status: 201 }
     );
@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
 
     // Handle duplicate slug error
     if (errorMessage.includes("duplicate") || errorMessage.includes("unique")) {
-      logger.warn("setup.workspace.duplicate_slug", {
+      logger.warn("setup.team.duplicate_slug", {
         requestId,
         error: errorMessage,
       });
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: {
-            code: "DUPLICATE_WORKSPACE",
+            code: "DUPLICATE_TEAM",
             message: "A team with this name already exists",
           },
         },
@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    logger.error("setup.workspace.error", {
+    logger.error("setup.team.error", {
       requestId,
       error: errorMessage,
       stack: error instanceof Error ? error.stack : undefined,

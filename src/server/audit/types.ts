@@ -18,10 +18,10 @@ export type AdminAuditEventType =
   | 'member.invitation.revoked'
   | 'member.removed'
   | 'member.role.changed'
-  // Workspace management
-  | 'workspace.created'
-  | 'workspace.updated'
-  | 'workspace.deleted';
+  // Team management
+  | 'team.created'
+  | 'team.updated'
+  | 'team.deleted';
 
 /**
  * Change record showing before and after values

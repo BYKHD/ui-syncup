@@ -44,7 +44,7 @@ export function TransferOwnershipModal({ teamId, teamName }: TransferOwnershipMo
 
   // Filter for admins only
   const adminMembers = membersData?.members.filter(
-    (member) => member.managementRole === "WORKSPACE_ADMIN"
+    (member) => member.managementRole === "TEAM_ADMIN"
   ) ?? [];
 
   const handleTransfer = () => {

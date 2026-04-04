@@ -126,9 +126,9 @@ export function useAcceptInvitation(token: string): UseAcceptInvitationReturn {
           throw new Error(data.error || 'Failed to accept invitation');
         }
 
-        const { workspaceSlug } = await acceptResponse.json();
+        const { teamSlug } = await acceptResponse.json();
 
-        toast.success(`Welcome to ${invitation?.workspaceName}!`);
+        toast.success(`Welcome to ${invitation?.teamName}!`);
         router.push(`/projects`);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -136,7 +136,7 @@ export function useAcceptInvitation(token: string): UseAcceptInvitationReturn {
         setIsAccepting(false);
       }
     },
-    [token, invitation?.workspaceName, router]
+    [token, invitation?.teamName, router]
   );
 
   const acceptExistingUser = useCallback(async () => {
@@ -163,14 +163,14 @@ export function useAcceptInvitation(token: string): UseAcceptInvitationReturn {
         throw new Error(data.error || 'Failed to accept invitation');
       }
 
-      toast.success(`Welcome to ${invitation?.workspaceName}!`);
+      toast.success(`Welcome to ${invitation?.teamName}!`);
       router.push(`/projects`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsAccepting(false);
     }
-  }, [token, invitation?.workspaceName, router]);
+  }, [token, invitation?.teamName, router]);
 
   const declineInvitation = useCallback(() => {
     router.push('/');

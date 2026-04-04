@@ -19,7 +19,7 @@ const DEMO_PROJECT_KEY = "DEMO";
  * Options for sample data creation
  */
 export interface CreateSampleDataOptions {
-  workspaceId: string;
+  teamId: string;
   userId: string;
 }
 
@@ -44,12 +44,12 @@ export interface CreateSampleDataResult {
 export async function createSampleProject(
   options: CreateSampleDataOptions
 ): Promise<CreateSampleDataResult> {
-  const { workspaceId, userId } = options;
+  const { teamId, userId } = options;
 
   // Check if demo project already exists
   const existingProject = await db.query.projects.findFirst({
     where: and(
-      eq(projects.teamId, workspaceId),
+      eq(projects.teamId, teamId),
       eq(projects.slug, DEMO_PROJECT_SLUG)
     ),
   });
@@ -57,7 +57,7 @@ export async function createSampleProject(
   if (existingProject) {
     logger.info("Demo project already exists, skipping creation", {
       projectId: existingProject.id,
-      workspaceId,
+      teamId,
     });
 
     // Count existing issues
@@ -75,7 +75,7 @@ export async function createSampleProject(
 
   // Create demo project
   const [project] = await db.insert(projects).values({
-    teamId: workspaceId,
+    teamId: teamId,
     name: "Demo Project",
     slug: DEMO_PROJECT_SLUG,
     key: DEMO_PROJECT_KEY,
@@ -95,7 +95,7 @@ export async function createSampleProject(
   });
 
   // Create sample issues
-  const sampleIssues = getSampleIssues(project.id, workspaceId, userId);
+  const sampleIssues = getSampleIssues(project.id, teamId, userId);
   
   if (sampleIssues.length > 0) {
     await db.insert(issues).values(sampleIssues);
@@ -103,7 +103,7 @@ export async function createSampleProject(
 
   logger.info("Demo project created with sample data", {
     projectId: project.id,
-    workspaceId,
+    teamId,
     issueCount: sampleIssues.length,
   });
 
@@ -117,13 +117,13 @@ export async function createSampleProject(
 /**
  * Check if sample data exists for a workspace.
  * 
- * @param workspaceId - Workspace ID to check
+ * @param teamId - Workspace ID to check
  * @returns true if demo project exists
  */
-export async function hasSampleData(workspaceId: string): Promise<boolean> {
+export async function hasSampleData(teamId: string): Promise<boolean> {
   const existingProject = await db.query.projects.findFirst({
     where: and(
-      eq(projects.teamId, workspaceId),
+      eq(projects.teamId, teamId),
       eq(projects.slug, DEMO_PROJECT_SLUG)
     ),
     columns: { id: true },
@@ -135,12 +135,12 @@ export async function hasSampleData(workspaceId: string): Promise<boolean> {
 /**
  * Delete sample data for a workspace.
  * 
- * @param workspaceId - Workspace ID
+ * @param teamId - Workspace ID
  */
-export async function deleteSampleData(workspaceId: string): Promise<void> {
+export async function deleteSampleData(teamId: string): Promise<void> {
   const existingProject = await db.query.projects.findFirst({
     where: and(
-      eq(projects.teamId, workspaceId),
+      eq(projects.teamId, teamId),
       eq(projects.slug, DEMO_PROJECT_SLUG)
     ),
     columns: { id: true },
@@ -152,7 +152,7 @@ export async function deleteSampleData(workspaceId: string): Promise<void> {
     
     logger.info("Demo project deleted", {
       projectId: existingProject.id,
-      workspaceId,
+      teamId,
     });
   }
 }

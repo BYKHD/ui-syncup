@@ -48,15 +48,15 @@ import { SettingsCard } from "./settings-card";
 import { TeamMembersLoadingSkeleton } from "./loading-states";
 
 const operationalRoleIcons: Record<string, any> = {
-  WORKSPACE_EDITOR: RiUserLine,
-  WORKSPACE_MEMBER: RiUserLine,
-  WORKSPACE_VIEWER: RiEyeLine,
+  TEAM_EDITOR: RiUserLine,
+  TEAM_MEMBER: RiUserLine,
+  TEAM_VIEWER: RiEyeLine,
 };
 
 const operationalRoleLabels: Record<string, string> = {
-  WORKSPACE_EDITOR: "Editor",
-  WORKSPACE_MEMBER: "Member",
-  WORKSPACE_VIEWER: "Viewer",
+  TEAM_EDITOR: "Editor",
+  TEAM_MEMBER: "Member",
+  TEAM_VIEWER: "Viewer",
 };
 
 interface TeamMembersListProps {
@@ -100,7 +100,7 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
       {
         teamId,
         userId: memberId,
-        input: { managementRole: isAdmin ? 'WORKSPACE_ADMIN' : null },
+        input: { managementRole: isAdmin ? 'TEAM_ADMIN' : null },
       },
       {
         onSuccess: () => {
@@ -193,8 +193,8 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
               {members.map((member) => {
                 const RoleIcon = operationalRoleIcons[member.operationalRole] || RiUserLine;
                 const isCurrentUser = member.userId === currentUserId;
-                const isOwner = member.managementRole === 'WORKSPACE_OWNER';
-                const isAdmin = member.managementRole === 'WORKSPACE_ADMIN';
+                const isOwner = member.managementRole === 'TEAM_OWNER';
+                const isAdmin = member.managementRole === 'TEAM_ADMIN';
                 const canModify = canManageMembers && !isCurrentUser && !isOwner;
 
                 return (
@@ -245,19 +245,19 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="WORKSPACE_EDITOR">
+                            <SelectItem value="TEAM_EDITOR">
                               <div className="flex items-center gap-2">
                                 <RiUserLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Editor</span>
                               </div>
                             </SelectItem>
-                            <SelectItem value="WORKSPACE_MEMBER">
+                            <SelectItem value="TEAM_MEMBER">
                               <div className="flex items-center gap-2">
                                 <RiUserLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Member</span>
                               </div>
                             </SelectItem>
-                            <SelectItem value="WORKSPACE_VIEWER">
+                            <SelectItem value="TEAM_VIEWER">
                               <div className="flex items-center gap-2">
                                 <RiEyeLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Viewer</span>

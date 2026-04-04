@@ -26,7 +26,7 @@ export interface UpdateMemberRolesVariables {
  * mutate({
  *   teamId: 'team-123',
  *   userId: 'user-456',
- *   input: { operationalRole: 'WORKSPACE_EDITOR' }
+ *   input: { operationalRole: 'TEAM_EDITOR' }
  * }, {
  *   onSuccess: (data) => {
  *     console.log('Member roles updated:', data.member);

@@ -107,8 +107,8 @@ describe('Integration Test: Complete Team Creation Flow', () => {
     
     expect(memberRecord).toBeTruthy();
     expect(memberRecord.userId).toBe(user.id);
-    expect(memberRecord.managementRole).toBe('WORKSPACE_OWNER');
-    expect(memberRecord.operationalRole).toBe('WORKSPACE_EDITOR');
+    expect(memberRecord.managementRole).toBe('TEAM_OWNER');
+    expect(memberRecord.operationalRole).toBe('TEAM_EDITOR');
     
     // Step 4: Verify lastActiveTeamId was updated during team creation
     const [updatedUser] = await db
@@ -132,7 +132,7 @@ describe('Integration Test: Complete Team Creation Flow', () => {
       await addMember({
         teamId: team.id,
         userId: newUser.id,
-        operationalRole: 'WORKSPACE_MEMBER',
+        operationalRole: 'TEAM_MEMBER',
         invitedBy: user.id,
       });
     }
@@ -289,7 +289,7 @@ describe('Integration Test: Complete Team Creation Flow', () => {
     await addMember({
       teamId: team.id,
       userId: member1.id,
-      operationalRole: 'WORKSPACE_MEMBER',
+      operationalRole: 'TEAM_MEMBER',
       invitedBy: user.id,
     });
     
@@ -302,7 +302,7 @@ describe('Integration Test: Complete Team Creation Flow', () => {
     await addMember({
       teamId: team.id,
       userId: member2.id,
-      operationalRole: 'WORKSPACE_EDITOR',
+      operationalRole: 'TEAM_EDITOR',
       invitedBy: user.id,
     });
   });

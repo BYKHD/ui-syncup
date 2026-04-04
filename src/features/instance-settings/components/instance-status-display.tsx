@@ -98,12 +98,12 @@ export function InstanceStatusDisplay({ instanceStatus }: InstanceStatusDisplayP
               <span className="text-sm font-medium">Team Mode</span>
             </div>
             <Badge variant="outline">
-              {instanceStatus.isMultiWorkspaceMode ? "Multi-Team" : "Single-Team"}
+              {instanceStatus.isMultiTeamMode ? "Multi-Team" : "Single-Team"}
             </Badge>
           </div>
 
           <p className="text-xs text-muted-foreground ml-6">
-            {instanceStatus.isMultiWorkspaceMode
+            {instanceStatus.isMultiTeamMode
               ? "Users can create and manage multiple teams"
               : "All users share a single default team"}
           </p>

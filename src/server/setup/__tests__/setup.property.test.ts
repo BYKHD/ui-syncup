@@ -6,7 +6,7 @@ import {
   saveInstanceConfig, 
   completeSetup 
 } from '../setup-service';
-import { isMultiWorkspaceMode } from '@/config/workspace';
+import { isMultiTeamMode } from '@/config/team';
 
 // Mock dependencies
 vi.mock('@/lib/db', () => ({
@@ -36,8 +36,8 @@ vi.mock('@/server/auth/password', () => ({
   hashPassword: vi.fn((pwd) => Promise.resolve(`hashed_${pwd}`)),
 }));
 
-vi.mock('@/config/workspace', () => ({
-  isMultiWorkspaceMode: vi.fn(() => false),
+vi.mock('@/config/team', () => ({
+  isMultiTeamMode: vi.fn(() => false),
 }));
 
 vi.mock('@/config/auth', () => ({
@@ -60,13 +60,13 @@ describe('Setup Service Properties', () => {
           instanceName: fc.string(),
           adminUserId: fc.uuid(),
           defaultWorkspaceId: fc.option(fc.uuid()),
-          defaultMemberRole: fc.constantFrom('WORKSPACE_MEMBER', 'WORKSPACE_VIEWER', 'WORKSPACE_EDITOR'),
+          defaultMemberRole: fc.constantFrom('TEAM_MEMBER', 'TEAM_VIEWER', 'TEAM_EDITOR'),
         })),
-        fc.boolean(), // isMultiWorkspaceMode
+        fc.boolean(), // isMultiTeamMode
         async (mockSettings, isMultiMode) => {
           // Setup mock
           vi.mocked(db.query.instanceSettings.findFirst).mockResolvedValue(mockSettings as any);
-          vi.mocked(isMultiWorkspaceMode).mockReturnValue(isMultiMode);
+          vi.mocked(isMultiTeamMode).mockReturnValue(isMultiMode);
           
           if (mockSettings?.adminUserId) {
              vi.mocked(db.query.users.findFirst).mockResolvedValue({ email: 'admin@example.com' } as any);

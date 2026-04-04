@@ -17,7 +17,7 @@ import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
-import { useWorkspaceMode } from '@/features/setup/hooks/use-workspace-mode';
+import { useTeamMode } from '@/features/setup/hooks/use-team-mode';
 import { useInstanceStatus } from '@/features/setup/hooks/use-instance-status';
 import { useCreateTeam } from '@/features/teams';
 import type { SelfRegistrationPath } from '../components/self-registration-choice';
@@ -36,10 +36,10 @@ interface UseSelfRegistrationReturn {
   isLoading: boolean;
   /** Error message if any operation failed */
   error: string | null;
-  /** Whether in multi-workspace mode */
-  isMultiWorkspaceMode: boolean;
-  /** Whether in single-workspace mode */
-  isSingleWorkspaceMode: boolean;
+  /** Whether in multi-team mode */
+  isMultiTeamMode: boolean;
+  /** Whether in single-team mode */
+  isSingleTeamMode: boolean;
   /** Handle path selection (create workspace or enter invite code) */
   selectPath: (path: SelfRegistrationPath) => void;
   /** Go back to choice step */
@@ -56,7 +56,7 @@ interface UseSelfRegistrationReturn {
 
 export function useSelfRegistration(): UseSelfRegistrationReturn {
   const router = useRouter();
-  const { isMultiWorkspaceMode, isSingleWorkspaceMode, isLoading: isLoadingMode } = useWorkspaceMode();
+  const { isMultiTeamMode, isSingleTeamMode, isLoading: isLoadingMode } = useTeamMode();
   const { data: instanceStatus } = useInstanceStatus();
   const { mutateAsync: createTeamAsync, isPending: isCreatingTeam } = useCreateTeam();
 
@@ -86,7 +86,7 @@ export function useSelfRegistration(): UseSelfRegistrationReturn {
   }, [clearError]);
 
   const autoJoinDefaultWorkspace = useCallback(async () => {
-    if (!isSingleWorkspaceMode) {
+    if (!isSingleTeamMode) {
       return;
     }
 
@@ -130,7 +130,7 @@ export function useSelfRegistration(): UseSelfRegistrationReturn {
     } finally {
       setIsAutoJoining(false);
     }
-  }, [isSingleWorkspaceMode, instanceStatus?.defaultWorkspaceId, router]);
+  }, [isSingleTeamMode, instanceStatus?.defaultWorkspaceId, router]);
 
   const createWorkspace = useCallback(async (name: string) => {
     setError(null);
@@ -190,8 +190,8 @@ export function useSelfRegistration(): UseSelfRegistrationReturn {
     step,
     isLoading,
     error,
-    isMultiWorkspaceMode,
-    isSingleWorkspaceMode,
+    isMultiTeamMode,
+    isSingleTeamMode,
     selectPath,
     goBack,
     autoJoinDefaultWorkspace,

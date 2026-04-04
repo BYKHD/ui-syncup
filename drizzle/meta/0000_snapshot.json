@@ -2895,7 +2895,7 @@
           "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true,
-          "default": "'WORKSPACE_MEMBER'"
+          "default": "'TEAM_MEMBER'"
         },
         "setup_completed_at": {
           "name": "setup_completed_at",

@@ -13,7 +13,7 @@ export const SETUP_WIZARD_STEPS: SetupWizardStep[] = [
   'admin-account',
   'instance-config',
   'mail-config',
-  'first-workspace',
+  'first-team',
   'sample-data',
   'complete',
 ];

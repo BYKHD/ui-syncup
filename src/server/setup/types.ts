@@ -42,10 +42,10 @@ export interface InstanceStatus {
   adminEmail: string | null;
   /** Default workspace ID for single-workspace mode */
   defaultWorkspaceId: string | null;
-  /** Default role for new users in single-workspace mode */
-  defaultMemberRole: "WORKSPACE_VIEWER" | "WORKSPACE_MEMBER" | "WORKSPACE_EDITOR";
-  /** Whether multi-workspace mode is enabled */
-  isMultiWorkspaceMode: boolean;
+  /** Default role for new users in single-team mode */
+  defaultMemberRole: "TEAM_VIEWER" | "TEAM_MEMBER" | "TEAM_EDITOR";
+  /** Whether multi-team mode is enabled */
+  isMultiTeamMode: boolean;
   /** Whether email verification is skipped */
   skipEmailVerification: boolean;
 }
@@ -64,15 +64,15 @@ export interface CreateAdminInput {
  */
 export interface InstanceConfigInput {
   instanceName: string;
-  defaultMemberRole?: "WORKSPACE_VIEWER" | "WORKSPACE_MEMBER" | "WORKSPACE_EDITOR";
+  defaultMemberRole?: "TEAM_VIEWER" | "TEAM_MEMBER" | "TEAM_EDITOR";
 }
 
 /**
  * Setup completion input
  */
 export interface CompleteSetupInput {
-  workspaceName: string;
-  workspaceSlug?: string;
+  teamName: string;
+  teamSlug?: string;
   createSampleData?: boolean;
 }
 
@@ -83,7 +83,7 @@ export type SetupWizardStep =
   | "health-check"
   | "admin-account"
   | "instance-config"
-  | "first-workspace"
+  | "first-team"
   | "sample-data"
   | "complete";
 

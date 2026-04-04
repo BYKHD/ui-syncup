@@ -5,7 +5,7 @@ import { SetupProgress } from '../setup-progress';
 import { ServiceHealthStep } from '../service-health-step';
 import { AdminAccountStep } from '../admin-account-step';
 import { InstanceConfigStep } from '../instance-config-step';
-import { FirstWorkspaceStep } from '../first-workspace-step';
+import { FirstTeamStep } from '../first-team-step';
 import { SampleDataStep } from '../sample-data-step';
 import { SetupScreen } from '../../screens/setup-screen';
 import type { UseSetupWizardReturn } from '../../hooks';
@@ -15,8 +15,8 @@ const mockUseSetupWizard = vi.fn();
 const mockUseServiceHealth = vi.fn();
 const mockUseCreateAdmin = vi.fn();
 const mockUseSaveInstanceConfig = vi.fn();
-const mockUseCreateFirstWorkspace = vi.fn();
-const mockUseWorkspaceMode = vi.fn();
+const mockUseCreateFirstTeam = vi.fn();
+const mockUseTeamMode = vi.fn();
 const mockUseCompleteSetup = vi.fn();
 const mockPush = vi.fn();
 
@@ -26,8 +26,8 @@ vi.mock('../../hooks', () => ({
   useServiceHealth: () => mockUseServiceHealth(),
   useCreateAdmin: () => mockUseCreateAdmin(),
   useSaveInstanceConfig: () => mockUseSaveInstanceConfig(),
-  useCreateFirstWorkspace: () => mockUseCreateFirstWorkspace(),
-  useWorkspaceMode: () => mockUseWorkspaceMode(),
+  useCreateFirstTeam: () => mockUseCreateFirstTeam(),
+  useTeamMode: () => mockUseTeamMode(),
   useCompleteSetup: () => mockUseCompleteSetup(),
 }));
 
@@ -41,10 +41,10 @@ const createWizardStub = (): UseSetupWizardReturn =>
     completedSteps: [],
     adminData: null,
     instanceData: null,
-    workspaceData: {
-      id: 'workspace-1',
-      name: 'Workspace',
-      slug: 'workspace',
+    teamData: {
+      id: 'team-1',
+      name: 'Team',
+      slug: 'team',
     },
     includeSampleData: false,
     steps: [],
@@ -56,7 +56,7 @@ const createWizardStub = (): UseSetupWizardReturn =>
     goToPreviousStep: vi.fn(),
     setAdminData: vi.fn(),
     setInstanceData: vi.fn(),
-    setWorkspaceData: vi.fn(),
+    setTeamData: vi.fn(),
     setIncludeSampleData: vi.fn(),
     markStepComplete: vi.fn(),
     resetWizard: vi.fn(),
@@ -86,12 +86,12 @@ beforeEach(() => {
     isPending: false,
     error: null,
   });
-  mockUseCreateFirstWorkspace.mockReturnValue({
+  mockUseCreateFirstTeam.mockReturnValue({
     mutate: vi.fn(),
     isPending: false,
     error: null,
   });
-  mockUseWorkspaceMode.mockReturnValue({ isMultiWorkspaceMode: true });
+  mockUseTeamMode.mockReturnValue({ isMultiTeamMode: true });
   mockUseCompleteSetup.mockReturnValue({
     mutate: vi.fn(),
     isPending: false,
@@ -288,31 +288,31 @@ describe('InstanceConfigStep', () => {
   });
 });
 
-describe('FirstWorkspaceStep', () => {
+describe('FirstTeamStep', () => {
   it('adds balanced heading text and form autofill metadata', () => {
-    render(<FirstWorkspaceStep wizard={createWizardStub()} />);
+    render(<FirstTeamStep wizard={createWizardStub()} />);
 
     expect(
       screen.getByRole('heading', { name: /create your team/i })
     ).toHaveClass('text-balance');
 
-    const workspaceName = screen.getByLabelText('Team Name');
-    expect(workspaceName).toHaveAttribute('autocomplete', 'off');
-    expect(workspaceName).toHaveAttribute(
+    const teamName = screen.getByLabelText('Team Name');
+    expect(teamName).toHaveAttribute('autocomplete', 'off');
+    expect(teamName).toHaveAttribute(
       'placeholder',
       'Engineering Team\u2026'
     );
   });
 
   it('disables motion for the submit spinner', () => {
-    mockUseCreateFirstWorkspace.mockReturnValue({
+    mockUseCreateFirstTeam.mockReturnValue({
       mutate: vi.fn(),
       isPending: true,
       error: null,
     });
 
     const { container } = render(
-      <FirstWorkspaceStep wizard={createWizardStub()} />
+      <FirstTeamStep wizard={createWizardStub()} />
     );
     const spinner = container.querySelector('svg.animate-spin');
     expect(spinner).toHaveClass('motion-reduce:animate-none');
@@ -353,7 +353,7 @@ describe('SampleDataStep redirect', () => {
       error: null,
     });
 
-    const wizard = { ...createWizardStub(), workspaceData: { id: 'ws-1', name: 'Test', slug: 'test' } };
+    const wizard = { ...createWizardStub(), teamData: { id: 'ws-1', name: 'Test', slug: 'test' } };
     render(<SampleDataStep wizard={wizard} />);
     fireEvent.click(screen.getByRole('button', { name: /complete setup/i }));
 

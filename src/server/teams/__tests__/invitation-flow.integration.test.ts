@@ -98,14 +98,14 @@ describe('Integration Test: Complete Invitation Flow', () => {
     const { invitation, token } = await createInvitation({
       teamId: team.id,
       email: inviteeEmail,
-      operationalRole: 'WORKSPACE_MEMBER',
+      operationalRole: 'TEAM_MEMBER',
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
     
     expect(invitation.id).toBeTruthy();
     expect(invitation.email).toBe(inviteeEmail.toLowerCase());
-    expect(invitation.operationalRole).toBe('WORKSPACE_MEMBER');
+    expect(invitation.operationalRole).toBe('TEAM_MEMBER');
     expect(invitation.managementRole).toBeNull();
     expect(invitation.invitedBy).toBe(owner.id);
     expect(invitation.expiresAt).toBeTruthy();
@@ -144,7 +144,7 @@ describe('Integration Test: Complete Invitation Flow', () => {
     
     expect(member).toBeTruthy();
     expect(member.teamId).toBe(team.id);
-    expect(member.operationalRole).toBe('WORKSPACE_MEMBER');
+    expect(member.operationalRole).toBe('TEAM_MEMBER');
     expect(member.managementRole).toBeNull();
     expect(member.invitedBy).toBe(owner.id);
   });
@@ -168,7 +168,7 @@ describe('Integration Test: Complete Invitation Flow', () => {
     const { invitation, token } = await createInvitation({
       teamId: team.id,
       email: inviteeEmail,
-      operationalRole: 'WORKSPACE_MEMBER',
+      operationalRole: 'TEAM_MEMBER',
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -207,7 +207,7 @@ describe('Integration Test: Complete Invitation Flow', () => {
     const { invitation, token } = await createInvitation({
       teamId: team.id,
       email: inviteeEmail,
-      operationalRole: 'WORKSPACE_MEMBER',
+      operationalRole: 'TEAM_MEMBER',
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -243,7 +243,7 @@ describe('Integration Test: Complete Invitation Flow', () => {
     const { invitation, token: originalToken } = await createInvitation({
       teamId: team.id,
       email: inviteeEmail,
-      operationalRole: 'WORKSPACE_MEMBER',
+      operationalRole: 'TEAM_MEMBER',
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -298,7 +298,7 @@ describe('Integration Test: Complete Invitation Flow', () => {
     const { invitation, token } = await createInvitation({
       teamId: team.id,
       email: inviteeEmail,
-      operationalRole: 'WORKSPACE_MEMBER',
+      operationalRole: 'TEAM_MEMBER',
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -342,7 +342,7 @@ describe('Integration Test: Complete Invitation Flow', () => {
       const { invitation } = await createInvitation({
         teamId: team.id,
         email: `invitee-${i}-${Date.now()}@example.com`,
-        operationalRole: 'WORKSPACE_MEMBER',
+        operationalRole: 'TEAM_MEMBER',
         invitedBy: owner.id,
       });
       testInvitationIds.push(invitation.id);
@@ -353,7 +353,7 @@ describe('Integration Test: Complete Invitation Flow', () => {
       createInvitation({
         teamId: team.id,
         email: `invitee-11-${Date.now()}@example.com`,
-        operationalRole: 'WORKSPACE_MEMBER',
+        operationalRole: 'TEAM_MEMBER',
         invitedBy: owner.id,
       })
     ).rejects.toThrow('Invitation rate limit exceeded');
@@ -378,8 +378,8 @@ describe('Integration Test: Complete Invitation Flow', () => {
     const { invitation, token } = await createInvitation({
       teamId: team.id,
       email: inviteeEmail,
-      managementRole: 'WORKSPACE_ADMIN',
-      operationalRole: 'WORKSPACE_EDITOR',
+      managementRole: 'TEAM_ADMIN',
+      operationalRole: 'TEAM_EDITOR',
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -395,7 +395,7 @@ describe('Integration Test: Complete Invitation Flow', () => {
       .where(eq(teamMembers.userId, invitee.id))
       .limit(1);
     
-    expect(member.managementRole).toBe('WORKSPACE_ADMIN');
-    expect(member.operationalRole).toBe('WORKSPACE_EDITOR');
+    expect(member.managementRole).toBe('TEAM_ADMIN');
+    expect(member.operationalRole).toBe('TEAM_EDITOR');
   });
 });

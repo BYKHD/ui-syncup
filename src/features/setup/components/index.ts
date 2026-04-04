@@ -5,5 +5,5 @@ export * from './service-health-step';
 export * from './admin-account-step';
 export * from './instance-config-step';
 export * from './mail-config-step';
-export * from './first-workspace-step';
+export * from './first-team-step';
 export * from './sample-data-step';

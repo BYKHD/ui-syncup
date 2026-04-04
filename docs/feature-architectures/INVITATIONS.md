@@ -318,8 +318,8 @@ flowchart LR
 | `teamId` | UUID FK | → teams |
 | `email` | varchar(320) | Invitee email |
 | `tokenHash` | varchar(64) UNIQUE | SHA-256 of raw token |
-| `managementRole` | varchar(20) nullable | Optional: WORKSPACE_OWNER/ADMIN |
-| `operationalRole` | varchar(20) | Required: WORKSPACE_EDITOR/MEMBER/VIEWER |
+| `managementRole` | varchar(20) nullable | Optional: TEAM_OWNER/ADMIN |
+| `operationalRole` | varchar(20) | Required: TEAM_EDITOR/MEMBER/VIEWER |
 | `invitedBy` | UUID FK | → users |
 | `expiresAt` | timestamp | +7 days from creation |
 | `usedAt` | timestamp nullable | Set on acceptance |
@@ -355,9 +355,9 @@ Each team invitation carries two orthogonal role dimensions:
 ```
 operationalRole (required)        managementRole (optional)
 ─────────────────────────         ──────────────────────────
-WORKSPACE_EDITOR → "Editor"       WORKSPACE_OWNER → "Owner"
-WORKSPACE_MEMBER → "Member"       WORKSPACE_ADMIN → "Admin"
-WORKSPACE_VIEWER → "Viewer"
+TEAM_EDITOR → "Editor"       TEAM_OWNER → "Owner"
+TEAM_MEMBER → "Member"       TEAM_ADMIN → "Admin"
+TEAM_VIEWER → "Viewer"
 ```
 
 On acceptance, `addMember()` sets both on the `teamMembers` row.
@@ -367,8 +367,8 @@ On acceptance, `addMember()` sets both on the `teamMembers` row.
 Single `role` field (ProjectRole):
 
 ```
-owner → PROJECT_OWNER  (auto-promotes team role to WORKSPACE_EDITOR)
-editor → PROJECT_EDITOR (auto-promotes team role to WORKSPACE_EDITOR)
+owner → PROJECT_OWNER  (auto-promotes team role to TEAM_EDITOR)
+editor → PROJECT_EDITOR (auto-promotes team role to TEAM_EDITOR)
 developer → PROJECT_DEVELOPER
 viewer → PROJECT_VIEWER
 ```

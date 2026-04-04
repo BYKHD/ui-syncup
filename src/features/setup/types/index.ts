@@ -18,7 +18,7 @@ export interface ServiceHealth {
   redis: ServiceHealthItem;
 }
 
-export type DefaultMemberRole = 'WORKSPACE_VIEWER' | 'WORKSPACE_MEMBER' | 'WORKSPACE_EDITOR';
+export type DefaultMemberRole = 'TEAM_VIEWER' | 'TEAM_MEMBER' | 'TEAM_EDITOR';
 
 export interface InstanceStatus {
   isSetupComplete: boolean;
@@ -26,7 +26,7 @@ export interface InstanceStatus {
   adminEmail: string | null;
   defaultWorkspaceId: string | null;
   defaultMemberRole: DefaultMemberRole;
-  isMultiWorkspaceMode: boolean;
+  isMultiTeamMode: boolean;
   skipEmailVerification: boolean;
 }
 
@@ -35,7 +35,7 @@ export type SetupWizardStep =
   | 'admin-account'
   | 'instance-config'
   | 'mail-config'
-  | 'first-workspace'
+  | 'first-team'
   | 'sample-data'
   | 'complete';
 
@@ -44,7 +44,7 @@ export interface SetupWizardState {
   completedSteps: SetupWizardStep[];
   adminData: { email: string; name: string } | null;
   instanceData: { name: string } | null;
-  workspaceData: { id: string; name: string; slug: string } | null;
+  teamData: { id: string; name: string; slug: string } | null;
   includeSampleData: boolean;
 }
 
@@ -59,11 +59,11 @@ export interface InstanceConfigData {
   instanceName: string;
 }
 
-export interface FirstWorkspaceData {
-  workspaceName: string;
+export interface FirstTeamData {
+  teamName: string;
 }
 
 export interface SetupCompleteData {
-  workspaceId: string;
+  teamId: string;
   createSampleData: boolean;
 }

@@ -18,8 +18,8 @@ export const instanceSettings = pgTable("instance_settings", {
   /** Default workspace ID for single-workspace mode */
   defaultWorkspaceId: uuid("default_workspace_id").references(() => teams.id, { onDelete: "set null" }),
   
-  /** Default role for new users in single-workspace mode */
-  defaultMemberRole: varchar("default_member_role", { length: 50 }).notNull().default("WORKSPACE_MEMBER"),
+  /** Default role for new users in single-team mode */
+  defaultMemberRole: varchar("default_member_role", { length: 50 }).notNull().default("TEAM_MEMBER"),
   
   /** Timestamp when setup was completed; NULL means setup is required */
   setupCompletedAt: timestamp("setup_completed_at", { withTimezone: true }),

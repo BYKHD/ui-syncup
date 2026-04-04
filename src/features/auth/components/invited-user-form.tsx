@@ -61,8 +61,8 @@ type AccountCreationData = z.infer<typeof accountCreationSchema>;
 
 export interface InvitationDetails {
   token: string;
-  workspaceName: string;
-  workspaceSlug: string;
+  teamName: string;
+  teamSlug: string;
   inviterName: string;
   inviterEmail: string;
   role: string;
@@ -127,7 +127,7 @@ export function InvitedUserForm({
       <div className="text-center">
         <h1 className="text-3xl font-bold">You&apos;re invited!</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Join {invitation.workspaceName} to start collaborating
+          Join {invitation.teamName} to start collaborating
         </p>
       </div>
 
@@ -137,7 +137,7 @@ export function InvitedUserForm({
             <UserPlus className="h-8 w-8" />
           </div>
           <CardTitle className="text-center text-xl">
-            {invitation.workspaceName}
+            {invitation.teamName}
           </CardTitle>
           <CardDescription className="text-center">
             <span className="font-medium text-foreground">

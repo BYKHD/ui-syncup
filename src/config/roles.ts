@@ -2,77 +2,39 @@
 
 /**
  * Role-Based Access Control (RBAC) Configuration
- * 
+ *
  * This file defines the canonical roles and permissions for UI SyncUp.
  * Keep this file in sync with product.md and RBAC.md documentation.
- * 
- * NOTE: WORKSPACE_* roles are the canonical names. TEAM_* roles are
- * backwards-compatible aliases and will be deprecated in a future version.
  */
 
 // ============================================================================
-// WORKSPACE ROLES (Two-Tier Hierarchy) - Canonical Names
+// TEAM ROLES (Two-Tier Hierarchy) - Canonical Names
 // ============================================================================
 
 /**
- * Management roles control workspace settings and administration.
- */
-export const WORKSPACE_MANAGEMENT_ROLES = {
-  WORKSPACE_OWNER: "WORKSPACE_OWNER",
-  WORKSPACE_ADMIN: "WORKSPACE_ADMIN",
-} as const;
-
-export type WorkspaceManagementRole = (typeof WORKSPACE_MANAGEMENT_ROLES)[keyof typeof WORKSPACE_MANAGEMENT_ROLES];
-
-/**
- * Operational roles determine content access.
- * Every user must have exactly one operational role.
- */
-export const WORKSPACE_OPERATIONAL_ROLES = {
-  WORKSPACE_EDITOR: "WORKSPACE_EDITOR",
-  WORKSPACE_MEMBER: "WORKSPACE_MEMBER",
-  WORKSPACE_VIEWER: "WORKSPACE_VIEWER",
-} as const;
-
-export type WorkspaceOperationalRole = (typeof WORKSPACE_OPERATIONAL_ROLES)[keyof typeof WORKSPACE_OPERATIONAL_ROLES];
-
-/**
- * All workspace roles (management + operational).
- */
-export const WORKSPACE_ROLES = {
-  ...WORKSPACE_MANAGEMENT_ROLES,
-  ...WORKSPACE_OPERATIONAL_ROLES,
-} as const;
-
-export type WorkspaceRole = (typeof WORKSPACE_ROLES)[keyof typeof WORKSPACE_ROLES];
-
-// ============================================================================
-// TEAM ROLES - Backwards Compatible Aliases (Deprecated)
-// ============================================================================
-
-/**
- * @deprecated Use WORKSPACE_MANAGEMENT_ROLES instead
+ * Management roles control team settings and administration.
  */
 export const TEAM_MANAGEMENT_ROLES = {
-  TEAM_OWNER: "WORKSPACE_OWNER",
-  TEAM_ADMIN: "WORKSPACE_ADMIN",
+  TEAM_OWNER: "TEAM_OWNER",
+  TEAM_ADMIN: "TEAM_ADMIN",
 } as const;
 
 export type TeamManagementRole = (typeof TEAM_MANAGEMENT_ROLES)[keyof typeof TEAM_MANAGEMENT_ROLES];
 
 /**
- * @deprecated Use WORKSPACE_OPERATIONAL_ROLES instead
+ * Operational roles determine content access.
+ * Every user must have exactly one operational role.
  */
 export const TEAM_OPERATIONAL_ROLES = {
-  TEAM_EDITOR: "WORKSPACE_EDITOR",
-  TEAM_MEMBER: "WORKSPACE_MEMBER",
-  TEAM_VIEWER: "WORKSPACE_VIEWER",
+  TEAM_EDITOR: "TEAM_EDITOR",
+  TEAM_MEMBER: "TEAM_MEMBER",
+  TEAM_VIEWER: "TEAM_VIEWER",
 } as const;
 
 export type TeamOperationalRole = (typeof TEAM_OPERATIONAL_ROLES)[keyof typeof TEAM_OPERATIONAL_ROLES];
 
 /**
- * @deprecated Use WORKSPACE_ROLES instead
+ * All team roles (management + operational).
  */
 export const TEAM_ROLES = {
   ...TEAM_MANAGEMENT_ROLES,
@@ -104,6 +66,20 @@ export const ALL_ROLES = {
   ...TEAM_ROLES,
   ...PROJECT_ROLES,
 } as const;
+
+// Backwards-compatible aliases (deprecated — use TEAM_* instead)
+/** @deprecated Use TEAM_MANAGEMENT_ROLES */
+export const WORKSPACE_MANAGEMENT_ROLES = TEAM_MANAGEMENT_ROLES;
+/** @deprecated Use TeamManagementRole */
+export type WorkspaceManagementRole = TeamManagementRole;
+/** @deprecated Use TEAM_OPERATIONAL_ROLES */
+export const WORKSPACE_OPERATIONAL_ROLES = TEAM_OPERATIONAL_ROLES;
+/** @deprecated Use TeamOperationalRole */
+export type WorkspaceOperationalRole = TeamOperationalRole;
+/** @deprecated Use TEAM_ROLES */
+export const WORKSPACE_ROLES = TEAM_ROLES;
+/** @deprecated Use TeamRole */
+export type WorkspaceRole = TeamRole;
 
 // ============================================================================
 // PERMISSIONS
