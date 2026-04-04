@@ -21,7 +21,7 @@ import type { SetupWizardStep } from '../types';
 function determineStartingStep(status: {
   adminEmail: string | null;
   instanceName: string | null;
-  defaultWorkspaceId: string | null;
+  defaultTeamId: string | null;
   isSetupComplete: boolean;
 }): SetupWizardStep {
   // If setup is complete, this shouldn't be shown (proxy should redirect)
@@ -40,8 +40,8 @@ function determineStartingStep(status: {
     return 'instance-config';
   }
 
-  // Instance configured, show mail config before workspace creation
-  if (!status.defaultWorkspaceId) {
+  // Instance configured, show mail config before team creation
+  if (!status.defaultTeamId) {
     return 'mail-config';
   }
 
@@ -72,9 +72,9 @@ export function SetupWizard() {
       });
 
       // Rehydrate teamData from DB so SampleDataStep has the teamId on resume
-      if (status.defaultWorkspaceId && !wizard.teamData) {
+      if (status.defaultTeamId && !wizard.teamData) {
         wizard.setTeamData({
-          id: status.defaultWorkspaceId,
+          id: status.defaultTeamId,
           name: '',
           slug: '',
         });

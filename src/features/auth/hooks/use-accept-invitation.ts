@@ -7,7 +7,7 @@
  * Features:
  * - Fetch invitation details from token
  * - Handle account creation for new users
- * - Handle workspace joining for existing users
+ * - Handle team joining for existing users
  * - Error handling for invalid/expired tokens
  * 
  * @requirements 7.6, 7.7

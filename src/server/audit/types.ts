@@ -46,7 +46,7 @@ export interface AdminAuditEvent {
   userId: string;
   /** Optional user email (hashed for PII protection) */
   userEmail?: string;
-  /** Resource type affected (e.g., 'instance', 'member', 'workspace') */
+  /** Resource type affected (e.g., 'instance', 'member', 'team') */
   resourceType?: string;
   /** Resource identifier */
   resourceId?: string;

@@ -29,7 +29,7 @@ describe('Sample Data Service Properties', () => {
   });
 
   it('Property 8: Sample Data Creation is Idempotent', async () => {
-    // For any workspace/user, calling createSampleProject multiple times should behave idempotently
+    // For any team/user, calling createSampleProject multiple times should behave idempotently
     await fc.assert(
       fc.asyncProperty(
         fc.uuid(), // teamId

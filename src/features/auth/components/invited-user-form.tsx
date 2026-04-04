@@ -5,7 +5,7 @@
  * @description Displays invitation details and handles acceptance for invited users
  * 
  * Features:
- * - Display invitation details (workspace, inviter, role)
+ * - Display invitation details (team, inviter, role)
  * - Inline account creation if user doesn't exist
  * - Sign-in prompt if user exists
  * - Accept/decline buttons

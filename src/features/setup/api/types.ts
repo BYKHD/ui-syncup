@@ -32,7 +32,7 @@ export const InstanceStatusSchema = z.object({
   isSetupComplete: z.boolean(),
   instanceName: z.string().nullable(),
   adminEmail: z.string().nullable(),
-  defaultWorkspaceId: z.string().nullable(),
+  defaultTeamId: z.string().nullable(),
   defaultMemberRole: DefaultMemberRoleSchema,
   isMultiTeamMode: z.boolean(),
   skipEmailVerification: z.boolean(),

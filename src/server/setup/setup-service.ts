@@ -40,7 +40,7 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
         isSetupComplete: false,
         instanceName: null,
         adminEmail: null,
-        defaultWorkspaceId: null,
+        defaultTeamId: null,
         defaultMemberRole: "TEAM_MEMBER",
         isMultiTeamMode: isMultiTeamMode(),
         skipEmailVerification: isEmailVerificationSkipped(),
@@ -61,7 +61,7 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
       isSetupComplete: settings.setupCompletedAt !== null,
       instanceName: settings.instanceName,
       adminEmail,
-      defaultWorkspaceId: settings.defaultWorkspaceId,
+      defaultTeamId: settings.defaultTeamId,
       defaultMemberRole: settings.defaultMemberRole as "TEAM_VIEWER" | "TEAM_MEMBER" | "TEAM_EDITOR",
       isMultiTeamMode: isMultiTeamMode(),
       skipEmailVerification: isEmailVerificationSkipped(),
@@ -76,7 +76,7 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
         isSetupComplete: false,
         instanceName: null,
         adminEmail: null,
-        defaultWorkspaceId: null,
+        defaultTeamId: null,
         defaultMemberRole: "TEAM_MEMBER",
         isMultiTeamMode: isMultiTeamMode(),
         skipEmailVerification: isEmailVerificationSkipped(),
@@ -197,11 +197,11 @@ export async function saveInstanceConfig(input: InstanceConfigInput): Promise<vo
 }
 
 /**
- * Create the first workspace and mark setup as complete.
+ * Create the first team and mark setup as complete.
  * 
  * @param adminUserId - Admin user ID
  * @param input - Setup completion input
- * @returns Created workspace ID
+ * @returns Created team ID
  */
 export async function completeSetup(
   adminUserId: string,
@@ -236,7 +236,7 @@ export async function completeSetup(
     await db.update(instanceSettings)
       .set({
         setupCompletedAt: new Date(),
-        defaultWorkspaceId: team.id,
+        defaultTeamId: team.id,
         updatedAt: new Date(),
       })
       .where(eq(instanceSettings.id, settings.id));

@@ -26,7 +26,6 @@ import {
 } from '@/components/shared/sidebar';
 import { useRecentProjects } from '@/features/projects/hooks';
 import type { NavItem } from '@/components/shared/sidebar';
-import { Separator } from '@/components/ui/separator';
 
 import { useTeam } from '@/hooks/use-team';
 import { useCanManageTeam } from '@/features/teams/hooks/use-can-manage-team';

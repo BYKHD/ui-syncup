@@ -24,7 +24,7 @@ export interface InstanceStatus {
   isSetupComplete: boolean;
   instanceName: string | null;
   adminEmail: string | null;
-  defaultWorkspaceId: string | null;
+  defaultTeamId: string | null;
   defaultMemberRole: DefaultMemberRole;
   isMultiTeamMode: boolean;
   skipEmailVerification: boolean;

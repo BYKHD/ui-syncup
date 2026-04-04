@@ -1,8 +1,8 @@
 /**
  * POST /api/setup/complete
  * 
- * Creates the first workspace and marks setup as complete.
- * Optionally creates sample data for the workspace.
+ * Creates the first team and marks setup as complete.
+ * Optionally creates sample data for the team.
  * Requires authentication (admin only).
  * 
  * @module api/setup/complete
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mark setup as complete (workspace should already exist from previous step)
+    // Mark setup as complete (team should already exist from previous step)
     const { db } = await import("@/lib/db");
     const { instanceSettings } = await import("@/server/db/schema");
     const { users } = await import("@/server/db/schema/users");
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
       await db.update(instanceSettings)
         .set({
           setupCompletedAt: new Date(),
-          defaultWorkspaceId: body.teamId,
+          defaultTeamId: body.teamId,
           updatedAt: new Date(),
         })
         .where(eq(instanceSettings.id, settings.id));
@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Activate the workspace as the admin's active team so /team/* routes work immediately
+    // Activate the team as the admin's active team so /team/* routes work immediately
     await db
       .update(users)
       .set({ lastActiveTeamId: body.teamId })

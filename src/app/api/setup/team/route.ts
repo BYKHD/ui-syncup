@@ -107,10 +107,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if team already exists
-    if (status.defaultWorkspaceId) {
+    if (status.defaultTeamId) {
       logger.warn("setup.team.already_exists", {
         requestId,
-        teamId: status.defaultWorkspaceId,
+        teamId: status.defaultTeamId,
       });
 
       return NextResponse.json(
@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
     if (settings) {
       await db.update(instanceSettings)
         .set({
-          defaultWorkspaceId: team.id,
+          defaultTeamId: team.id,
           updatedAt: new Date(),
         })
         .where(eq(instanceSettings.id, settings.id));

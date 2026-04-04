@@ -40,8 +40,8 @@ export interface InstanceStatus {
   instanceName: string | null;
   /** Admin user email */
   adminEmail: string | null;
-  /** Default workspace ID for single-workspace mode */
-  defaultWorkspaceId: string | null;
+  /** Default team ID for single-team mode */
+  defaultTeamId: string | null;
   /** Default role for new users in single-team mode */
   defaultMemberRole: "TEAM_VIEWER" | "TEAM_MEMBER" | "TEAM_EDITOR";
   /** Whether multi-team mode is enabled */
@@ -90,7 +90,7 @@ export type SetupWizardStep =
 /**
  * Mapped instance settings for external use
  */
-export type MappedInstanceSettings = Omit<InstanceSettings, "adminUserId" | "defaultWorkspaceId"> & {
+export type MappedInstanceSettings = Omit<InstanceSettings, "adminUserId" | "defaultTeamId"> & {
   adminUserId: string | null;
-  defaultWorkspaceId: string | null;
+  defaultTeamId: string | null;
 };

@@ -1,5 +1,5 @@
 {
-  "id": "7182b6f1-26fb-4706-84a5-1c3db1222aa6",
+  "id": "922dd889-e7d5-4ba9-b60b-44616d098e38",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2884,8 +2884,8 @@
           "notNull": true,
           "default": "'UI SyncUp'"
         },
-        "default_workspace_id": {
-          "name": "default_workspace_id",
+        "default_team_id": {
+          "name": "default_team_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
@@ -2942,12 +2942,12 @@
         }
       },
       "foreignKeys": {
-        "instance_settings_default_workspace_id_teams_id_fk": {
-          "name": "instance_settings_default_workspace_id_teams_id_fk",
+        "instance_settings_default_team_id_teams_id_fk": {
+          "name": "instance_settings_default_team_id_teams_id_fk",
           "tableFrom": "instance_settings",
           "tableTo": "teams",
           "columnsFrom": [
-            "default_workspace_id"
+            "default_team_id"
           ],
           "columnsTo": [
             "id"

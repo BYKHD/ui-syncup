@@ -15,8 +15,8 @@ export const instanceSettings = pgTable("instance_settings", {
   /** Display name for the instance (shown in UI) */
   instanceName: varchar("instance_name", { length: 100 }).notNull().default("UI SyncUp"),
   
-  /** Default workspace ID for single-workspace mode */
-  defaultWorkspaceId: uuid("default_workspace_id").references(() => teams.id, { onDelete: "set null" }),
+  /** Default team ID for single-team mode */
+  defaultTeamId: uuid("default_team_id").references(() => teams.id, { onDelete: "set null" }),
   
   /** Default role for new users in single-team mode */
   defaultMemberRole: varchar("default_member_role", { length: 50 }).notNull().default("TEAM_MEMBER"),

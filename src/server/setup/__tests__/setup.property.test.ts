@@ -59,7 +59,7 @@ describe('Setup Service Properties', () => {
           setupCompletedAt: fc.option(fc.date()),
           instanceName: fc.string(),
           adminUserId: fc.uuid(),
-          defaultWorkspaceId: fc.option(fc.uuid()),
+          defaultTeamId: fc.option(fc.uuid()),
           defaultMemberRole: fc.constantFrom('TEAM_MEMBER', 'TEAM_VIEWER', 'TEAM_EDITOR'),
         })),
         fc.boolean(), // isMultiTeamMode

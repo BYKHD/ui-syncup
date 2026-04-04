@@ -35,10 +35,10 @@ export interface CreateSampleDataResult {
 /**
  * Create a sample project with demo data.
  * 
- * Idempotent: If a demo project already exists in the workspace,
+ * Idempotent: If a demo project already exists in the team,
  * returns the existing project without creating duplicates.
  * 
- * @param options - Options including workspace and user IDs
+ * @param options - Options including team and user IDs
  * @returns Result with project ID and whether it was newly created
  */
 export async function createSampleProject(
@@ -115,9 +115,9 @@ export async function createSampleProject(
 }
 
 /**
- * Check if sample data exists for a workspace.
+ * Check if sample data exists for a team.
  * 
- * @param teamId - Workspace ID to check
+ * @param teamId - Team ID to check
  * @returns true if demo project exists
  */
 export async function hasSampleData(teamId: string): Promise<boolean> {
@@ -133,9 +133,9 @@ export async function hasSampleData(teamId: string): Promise<boolean> {
 }
 
 /**
- * Delete sample data for a workspace.
+ * Delete sample data for a team.
  * 
- * @param teamId - Workspace ID
+ * @param teamId - Team ID
  */
 export async function deleteSampleData(teamId: string): Promise<void> {
   const existingProject = await db.query.projects.findFirst({

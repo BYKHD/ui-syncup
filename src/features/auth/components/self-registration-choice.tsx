@@ -2,9 +2,9 @@
 
 /**
  * SelfRegistrationChoice Component
- * @description Displays self-registration options based on workspace mode.
- * - Single-workspace mode: Auto-join default workspace (no choice UI)
- * - Multi-workspace mode: Show "Create a new workspace" and "I have an invite code" options
+ * @description Displays self-registration options based on team mode.
+ * - Single-team mode: Auto-join default team (no choice UI)
+ * - Multi-team mode: Show "Create a new team" and "I have an invite code" options
  * 
  * @requirements 8.1, 8.2, 8.3, 12.3, 13.5
  */
@@ -22,12 +22,12 @@ import {
 } from '@/components/ui/card';
 import { isSingleTeamMode } from '@/config/team';
 
-export type SelfRegistrationPath = 'create-workspace' | 'join-with-code';
+export type SelfRegistrationPath = 'create-team' | 'join-with-code';
 
 interface SelfRegistrationChoiceProps {
-  /** Called when user selects a path in multi-workspace mode */
+  /** Called when user selects a path in multi-team mode */
   onSelectPath: (path: SelfRegistrationPath) => void;
-  /** Called when auto-joining default workspace in single-workspace mode */
+  /** Called when auto-joining default team in single-team mode */
   onAutoJoin: () => void;
   /** Whether auto-join or path selection is in progress */
   isLoading?: boolean;
@@ -41,14 +41,14 @@ export function SelfRegistrationChoice({
   isLoading = false,
   error = null,
 }: SelfRegistrationChoiceProps) {
-  // In single-workspace mode, auto-join default workspace
+  // In single-team mode, auto-join default team
   useEffect(() => {
     if (isSingleTeamMode()) {
       onAutoJoin();
     }
   }, [onAutoJoin]);
 
-  // In single-workspace mode, show loading while auto-joining
+  // In single-team mode, show loading while auto-joining
   if (isSingleTeamMode()) {
     return (
       <div className="flex min-h-[200px] flex-col items-center justify-center space-y-4">
@@ -63,7 +63,7 @@ export function SelfRegistrationChoice({
     );
   }
 
-  // Multi-workspace mode: Show choice UI
+  // Multi-team mode: Show choice UI
   return (
     <div className="w-full max-w-2xl space-y-6">
       <div className="text-center">
@@ -83,7 +83,7 @@ export function SelfRegistrationChoice({
         {/* Create Workspace Option */}
         <Card
           className="cursor-pointer transition-all hover:border-primary hover:shadow-md"
-          onClick={() => !isLoading && onSelectPath('create-workspace')}
+          onClick={() => !isLoading && onSelectPath('create-team')}
         >
           <CardHeader className="pb-3">
             <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
@@ -100,7 +100,7 @@ export function SelfRegistrationChoice({
               disabled={isLoading}
               onClick={(e) => {
                 e.stopPropagation();
-                onSelectPath('create-workspace');
+                onSelectPath('create-team');
               }}
             >
               {isLoading ? (

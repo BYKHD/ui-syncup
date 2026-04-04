@@ -65,7 +65,7 @@ export function isStepCompleted(
 }
 
 /**
- * Generate a URL-safe slug from a workspace name
+ * Generate a URL-safe slug from a team name
  */
 export function generateSlug(name: string): string {
   return name

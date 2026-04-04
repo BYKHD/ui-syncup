@@ -262,7 +262,7 @@ CREATE TABLE "notifications" (
 CREATE TABLE "instance_settings" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"instance_name" varchar(100) DEFAULT 'UI SyncUp' NOT NULL,
-	"default_workspace_id" uuid,
+	"default_team_id" uuid,
 	"default_member_role" varchar(50) DEFAULT 'TEAM_MEMBER' NOT NULL,
 	"setup_completed_at" timestamp with time zone,
 	"admin_user_id" uuid,
@@ -315,7 +315,7 @@ ALTER TABLE "annotation_read_status" ADD CONSTRAINT "annotation_read_status_user
 ALTER TABLE "annotation_read_status" ADD CONSTRAINT "annotation_read_status_attachment_id_issue_attachments_id_fk" FOREIGN KEY ("attachment_id") REFERENCES "public"."issue_attachments"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_recipient_id_users_id_fk" FOREIGN KEY ("recipient_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "instance_settings" ADD CONSTRAINT "instance_settings_default_workspace_id_teams_id_fk" FOREIGN KEY ("default_workspace_id") REFERENCES "public"."teams"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "instance_settings" ADD CONSTRAINT "instance_settings_default_team_id_teams_id_fk" FOREIGN KEY ("default_team_id") REFERENCES "public"."teams"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "instance_settings" ADD CONSTRAINT "instance_settings_admin_user_id_users_id_fk" FOREIGN KEY ("admin_user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "projects_team_id_idx" ON "projects" USING btree ("team_id");--> statement-breakpoint
 CREATE INDEX "projects_status_idx" ON "projects" USING btree ("status");--> statement-breakpoint

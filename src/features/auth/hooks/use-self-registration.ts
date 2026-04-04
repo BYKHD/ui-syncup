@@ -5,9 +5,9 @@
  * @description Manages self-registration flow state for new users without invitations
  * 
  * Handles:
- * - Workspace mode detection (single vs multi)
- * - Auto-join to default workspace in single-workspace mode
- * - Workspace creation with WORKSPACE_OWNER role assignment
+ * - Team mode detection (single vs multi)
+ * - Auto-join to default team in single-team mode
+ * - Team creation with TEAM_OWNER role assignment
  * - Navigation flow management
  * 
  * @requirements 8.3, 8.6, 12.3
@@ -22,12 +22,12 @@ import { useInstanceStatus } from '@/features/setup/hooks/use-instance-status';
 import { useCreateTeam } from '@/features/teams';
 import type { SelfRegistrationPath } from '../components/self-registration-choice';
 
-export type SelfRegistrationStep = 
-  | 'choice'           // Show create/join choice (multi-workspace only)
-  | 'enter-code'       // Enter invite code
-  | 'create-workspace' // Create workspace form
-  | 'auto-joining'     // Auto-joining default workspace (single-workspace only)
-  | 'complete';        // Registration complete
+export type SelfRegistrationStep =
+  | 'choice'        // Show create/join choice (multi-team only)
+  | 'enter-code'    // Enter invite code
+  | 'create-team'   // Create team form
+  | 'auto-joining'  // Auto-joining default team (single-team only)
+  | 'complete';     // Registration complete
 
 interface UseSelfRegistrationReturn {
   /** Current step in the self-registration flow */
@@ -40,14 +40,14 @@ interface UseSelfRegistrationReturn {
   isMultiTeamMode: boolean;
   /** Whether in single-team mode */
   isSingleTeamMode: boolean;
-  /** Handle path selection (create workspace or enter invite code) */
+  /** Handle path selection (create team or enter invite code) */
   selectPath: (path: SelfRegistrationPath) => void;
   /** Go back to choice step */
   goBack: () => void;
-  /** Auto-join default workspace (single-workspace mode) */
-  autoJoinDefaultWorkspace: () => Promise<void>;
-  /** Create a new workspace with the given name */
-  createWorkspace: (name: string) => Promise<void>;
+  /** Auto-join default team (single-team mode) */
+  autoJoinDefaultTeam: () => Promise<void>;
+  /** Create a new team with the given name */
+  createTeam: (name: string) => Promise<void>;
   /** Validate and proceed with invite code */
   submitInviteCode: (code: string) => Promise<void>;
   /** Clear any error state */
@@ -73,8 +73,8 @@ export function useSelfRegistration(): UseSelfRegistrationReturn {
 
   const selectPath = useCallback((path: SelfRegistrationPath) => {
     clearError();
-    if (path === 'create-workspace') {
-      setStep('create-workspace');
+    if (path === 'create-team') {
+      setStep('create-team');
     } else {
       setStep('enter-code');
     }
@@ -85,7 +85,7 @@ export function useSelfRegistration(): UseSelfRegistrationReturn {
     setStep('choice');
   }, [clearError]);
 
-  const autoJoinDefaultWorkspace = useCallback(async () => {
+  const autoJoinDefaultTeam = useCallback(async () => {
     if (!isSingleTeamMode) {
       return;
     }
@@ -95,14 +95,14 @@ export function useSelfRegistration(): UseSelfRegistrationReturn {
     setError(null);
 
     try {
-      const defaultWorkspaceId = instanceStatus?.defaultWorkspaceId;
+      const defaultTeamId = instanceStatus?.defaultTeamId;
       
-      if (!defaultWorkspaceId) {
-        throw new Error('Default workspace not configured. Please contact your administrator.');
+      if (!defaultTeamId) {
+        throw new Error('Default team not configured. Please contact your administrator.');
       }
 
-      // Call API to join the default workspace
-      const response = await fetch(`/api/teams/${defaultWorkspaceId}/join`, {
+      // Call API to join the default team
+      const response = await fetch(`/api/teams/${defaultTeamId}/join`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -112,33 +112,33 @@ export function useSelfRegistration(): UseSelfRegistrationReturn {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to join workspace');
+        throw new Error(data.error || 'Failed to join team');
       }
 
-      // Switch to the joined workspace context
-      await fetch(`/api/teams/${defaultWorkspaceId}/switch`, {
+      // Switch to the joined team context
+      await fetch(`/api/teams/${defaultTeamId}/switch`, {
         method: 'POST',
         credentials: 'include',
       });
 
-      toast.success('Welcome! You have been added to the workspace.');
+      toast.success('Welcome! You've been added to the team.');
       setStep('complete');
       router.push('/projects');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to join workspace');
+      setError(err instanceof Error ? err.message : 'Failed to join team');
       setStep('choice');
     } finally {
       setIsAutoJoining(false);
     }
-  }, [isSingleTeamMode, instanceStatus?.defaultWorkspaceId, router]);
+  }, [isSingleTeamMode, instanceStatus?.defaultTeamId, router]);
 
-  const createWorkspace = useCallback(async (name: string) => {
+  const createTeam = useCallback(async (name: string) => {
     setError(null);
 
     try {
       const result = await createTeamAsync({ name, description: '' });
 
-      // Switch to the new workspace
+      // Switch to the new team
       await fetch(`/api/teams/${result.team.id}/switch`, {
         method: 'POST',
         credentials: 'include',
@@ -147,11 +147,11 @@ export function useSelfRegistration(): UseSelfRegistrationReturn {
         },
       });
 
-      toast.success('Workspace created successfully!');
+      toast.success('Team created successfully!');
       setStep('complete');
       router.push('/projects');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create workspace');
+      setError(err instanceof Error ? err.message : 'Failed to create team');
     }
   }, [createTeamAsync, router]);
 
@@ -194,8 +194,8 @@ export function useSelfRegistration(): UseSelfRegistrationReturn {
     isSingleTeamMode,
     selectPath,
     goBack,
-    autoJoinDefaultWorkspace,
-    createWorkspace,
+    autoJoinDefaultTeam,
+    createTeam,
     submitInviteCode,
     clearError,
   };
