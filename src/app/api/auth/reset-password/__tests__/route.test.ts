@@ -10,8 +10,8 @@
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { POST } from '../route';
 import { db } from '@/lib/db';
-import { users, sessions } from '@/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { users, sessions, account } from '@/server/db/schema';
+import { eq, and } from 'drizzle-orm';
 import { hashPassword } from '@/server/auth/password';
 import { generateToken } from '@/server/auth/tokens';
 import { createSession } from '@/server/auth/session';
@@ -33,12 +33,19 @@ beforeEach(async () => {
     .values({
       email: testUserEmail,
       emailVerified: true,
-      passwordHash: await hashPassword('OldPassword123!'),
       name: 'Test User',
     })
     .returning({ id: users.id });
-  
+
   testUserId = user.id;
+
+  // Create credential account so the reset route can update it
+  await db.insert(account).values({
+    accountId: testUserId,
+    providerId: 'credential',
+    userId: testUserId,
+    password: await hashPassword('OldPassword123!'),
+  });
 });
 
 /**
@@ -46,6 +53,8 @@ beforeEach(async () => {
  */
 afterEach(async () => {
   await db.delete(sessions).where(eq(sessions.userId, testUserId));
+  // account rows cascade-delete with the user, but delete explicitly for clarity
+  await db.delete(account).where(eq(account.userId, testUserId));
   await db.delete(users).where(eq(users.id, testUserId));
 });
 
@@ -75,20 +84,17 @@ describe('POST /api/auth/reset-password', () => {
     expect(response.status).toBe(200);
     expect(data.message).toBe('Password reset successfully. You can now sign in with your new password.');
 
-    // Verify password was updated in database
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, testUserId))
-    .limit(1);
+    // Verify password was updated in the credential account
+    const credAccount = await db.query.account.findFirst({
+      where: and(eq(account.userId, testUserId), eq(account.providerId, 'credential')),
+    });
 
-  expect(user.passwordHash).not.toBe('dummy-hash');
-  expect(typeof user.passwordHash).toBe('string');
-  
-  // Verify we can verify the new password
-  const { verifyPassword } = await import('@/server/auth/password');
-  const isValid = await verifyPassword('NewPassword123!', user.passwordHash as string);
-  expect(isValid).toBe(true);
+    expect(typeof credAccount?.password).toBe('string');
+
+    // Verify we can verify the new password
+    const { verifyPassword } = await import('@/server/auth/password');
+    const isValid = await verifyPassword('NewPassword123!', credAccount!.password as string);
+    expect(isValid).toBe(true);
 });
 
   test('should invalidate all sessions after password reset', async () => {
@@ -180,7 +186,7 @@ describe('POST /api/auth/reset-password', () => {
 
   test('should reject already used token', async () => {
     // Generate token
-    const { token, tokenId } = await generateToken(testUserId, 'password_reset', 60 * 60 * 1000);
+    const { token } = await generateToken(testUserId, 'password_reset', 60 * 60 * 1000);
 
     // Use token once
     const request1 = new Request('http://localhost:3000/api/auth/reset-password', {

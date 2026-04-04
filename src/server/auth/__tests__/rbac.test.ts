@@ -8,7 +8,7 @@
  * @module server/auth/__tests__/rbac
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, afterEach } from 'vitest';
 import * as fc from 'fast-check';
 import { db } from '@/lib/db';
 import { users } from '@/server/db/schema/users';
@@ -24,7 +24,6 @@ import {
   TEAM_ROLES,
   PROJECT_ROLES,
 } from '@/config/roles';
-import { hashPassword } from '@/server/auth/password';
 
 /**
  * Property test configuration
@@ -50,14 +49,11 @@ let createdRoleIds: string[] = [];
  * Helper: Create a test user
  */
 async function createTestUser(email: string, name: string, emailVerified: boolean = false): Promise<string> {
-  const passwordHash = await hashPassword('TestPassword123!');
-  
   const [user] = await db
     .insert(users)
     .values({
       email,
       emailVerified,
-      passwordHash,
       name,
     })
     .returning();

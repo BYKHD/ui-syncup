@@ -310,19 +310,29 @@ async function main() {
           name: seed.name,
           emailVerified: true,
           image: seed.image,
-          passwordHash,
         })
         .onConflictDoUpdate({
           target: schema.users.email,
           set: {
             name: seed.name,
             image: seed.image,
-            passwordHash,
             emailVerified: true,
             updatedAt: new Date(),
           },
         })
         .returning();
+
+      // Upsert credential account so email/password login works for seed users.
+      // Delete first to handle re-runs cleanly (no unique constraint on the table).
+      await db
+        .delete(schema.account)
+        .where(and(eq(schema.account.userId, user.id), eq(schema.account.providerId, "credential")));
+      await db.insert(schema.account).values({
+        accountId: user.id,
+        providerId: "credential",
+        userId: user.id,
+        password: passwordHash,
+      });
 
       usersByEmail.set(seed.email, user);
     }

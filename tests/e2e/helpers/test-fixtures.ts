@@ -5,7 +5,7 @@
  */
 
 import { db } from '@/lib/db';
-import { users, sessions, verificationTokens } from '@/server/db/schema';
+import { users, sessions, verificationTokens, account } from '@/server/db/schema';
 import { hashPassword } from '@/server/auth/password';
 import { generateToken } from '@/server/auth/tokens';
 import { eq } from 'drizzle-orm';
@@ -18,7 +18,6 @@ export interface TestUserFixture {
   id: string;
   email: string;
   password: string;
-  passwordHash: string | null;
   name: string;
   emailVerified: boolean;
 }
@@ -41,14 +40,13 @@ export async function createVerifiedTestUser(
   
   // Hash password
   const passwordHash = await hashPassword(userData.password);
-  
+
   // Create user in database
   const [user] = await db
     .insert(users)
     .values({
       email: userData.email,
       name: userData.name,
-      passwordHash,
       emailVerified: true, // Pre-verified for testing
     })
     .returning({
@@ -56,12 +54,19 @@ export async function createVerifiedTestUser(
       email: users.email,
       name: users.name,
     });
-  
+
+  // Create credential account record so email/password login works
+  await db.insert(account).values({
+    accountId: user.id,
+    providerId: 'credential',
+    userId: user.id,
+    password: passwordHash,
+  });
+
   return {
     id: user.id,
     email: user.email,
     password: userData.password,
-    passwordHash,
     name: user.name,
     emailVerified: true,
   };
@@ -84,14 +89,13 @@ export async function createUnverifiedTestUser(
   
   // Hash password
   const passwordHash = await hashPassword(userData.password);
-  
+
   // Create user in database
   const [user] = await db
     .insert(users)
     .values({
       email: userData.email,
       name: userData.name,
-      passwordHash,
       emailVerified: false,
     })
     .returning({
@@ -99,12 +103,19 @@ export async function createUnverifiedTestUser(
       email: users.email,
       name: users.name,
     });
-  
+
+  // Create credential account record so email/password login works
+  await db.insert(account).values({
+    accountId: user.id,
+    providerId: 'credential',
+    userId: user.id,
+    password: passwordHash,
+  });
+
   return {
     id: user.id,
     email: user.email,
     password: userData.password,
-    passwordHash,
     name: user.name,
     emailVerified: false,
   };
@@ -190,24 +201,22 @@ export async function getTestUserByEmail(email: string): Promise<TestUserFixture
       id: users.id,
       email: users.email,
       name: users.name,
-      passwordHash: users.passwordHash,
       emailVerified: users.emailVerified,
     })
     .from(users)
     .where(eq(users.email, email))
     .limit(1);
-  
+
   const user = result[0];
-  
+
   if (!user) {
     return null;
   }
-  
+
   return {
     id: user.id,
     email: user.email,
     password: '', // Password not stored in plain text
-    passwordHash: user.passwordHash,
     name: user.name,
     emailVerified: user.emailVerified ?? false,
   };

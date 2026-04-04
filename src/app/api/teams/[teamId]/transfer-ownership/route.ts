@@ -12,8 +12,8 @@ import { hasRole } from '@/server/auth/rbac';
 import { transferOwnership } from '@/server/teams/team-service';
 import { verifyPassword } from '@/server/auth/password';
 import { db } from '@/lib/db';
-import { users } from '@/server/db/schema/users';
-import { eq } from 'drizzle-orm';
+import { account } from '@/server/db/schema';
+import { eq, and } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
 
@@ -107,11 +107,12 @@ export async function POST(
     const { newOwnerId, password } = validation.data;
     
     // Re-authenticate user (Requirement 6.1)
-    const userRecord = await db.query.users.findFirst({
-      where: eq(users.id, user.id),
+    const credentialAccount = await db.query.account.findFirst({
+      where: and(eq(account.userId, user.id), eq(account.providerId, "credential")),
+      columns: { password: true },
     });
-    
-    if (!userRecord || !userRecord.passwordHash) {
+
+    if (!credentialAccount?.password) {
       logger.warn('api.teams.transfer_ownership.no_password', {
         requestId,
         userId: user.id,
@@ -127,8 +128,8 @@ export async function POST(
         { status: 401 }
       );
     }
-    
-    const isPasswordValid = await verifyPassword(password, userRecord.passwordHash);
+
+    const isPasswordValid = await verifyPassword(password, credentialAccount.password);
     
     if (!isPasswordValid) {
       logger.warn('api.teams.transfer_ownership.invalid_password', {

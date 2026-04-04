@@ -43,7 +43,6 @@ async function createTestUser(): Promise<string> {
     .insert(users)
     .values({
       email: `test-${Date.now()}-${Math.random()}@example.com`,
-      passwordHash: 'dummy-hash',
       name: 'Test User',
       emailVerified: false,
     })
