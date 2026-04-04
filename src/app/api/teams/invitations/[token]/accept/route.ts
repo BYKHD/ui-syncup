@@ -10,7 +10,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/server/auth/session';
 import { acceptInvitation } from '@/server/teams/invitation-service';
 import { logger } from '@/lib/logger';
-import { redirect } from 'next/navigation';
 
 /**
  * GET /api/teams/invitations/:token/accept
@@ -37,25 +36,27 @@ export async function GET(
   try {
     // Authenticate user
     const user = await getSession();
-    
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
+
     if (!user) {
       // Redirect to sign-in with return URL
-      const returnUrl = encodeURIComponent(request.url);
+      const returnUrl = encodeURIComponent(`/api/teams/invitations/${token}/accept`);
       return NextResponse.redirect(
-        new URL(`/sign-in?returnUrl=${returnUrl}`, request.url)
+        new URL(`/sign-in?returnUrl=${returnUrl}`, appUrl)
       );
     }
-    
+
     // Accept invitation
     await acceptInvitation(token, user.id);
-    
+
     logger.info('api.teams.invitations.accept.success', {
       requestId,
       userId: user.id,
     });
-    
+
     // Redirect to teams page (or could redirect to specific team)
-    return NextResponse.redirect(new URL('/teams', request.url));
+    return NextResponse.redirect(new URL('/teams', appUrl));
     
   } catch (error) {
     logger.error('api.teams.invitations.accept.error', {
