@@ -1,3 +1,10 @@
+## [0.7.4-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.7.4-beta.2...v0.7.4-beta.3) (2026-04-04)
+
+
+### Bug Fixes
+
+* redandant database table ([#124](https://github.com/BYKHD/ui-syncup/issues/124)) ([389274d](https://github.com/BYKHD/ui-syncup/commit/389274d962f01cf3e746ef2580534d9b15f5ffdf))
+
 ## [0.7.4-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.7.4-beta.1...v0.7.4-beta.2) (2026-04-04)
 
 
