@@ -1,3 +1,10 @@
+# [0.8.0-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.1...v0.8.0-beta.2) (2026-04-04)
+
+
+### Bug Fixes
+
+* rename workspace terminology to team throughout authentication and setup flows ([af7333a](https://github.com/BYKHD/ui-syncup/commit/af7333a0893e18041754efc311c907d042a1883c))
+
 # [0.8.0-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.4-beta.3...v0.8.0-beta.1) (2026-04-04)
 
 
