@@ -183,15 +183,6 @@ export const auth = betterAuth({
   },
   secret: authConfig.session.secret,
   baseURL: authConfig.session.baseUrl,
-  user: {
-    additionalFields: {
-        passwordHash: {
-            type: "string",
-            required: false,
-            input: false // Don't allow user to set this directly via API
-        }
-    }
-  },
   /**
    * Database configuration
    * 

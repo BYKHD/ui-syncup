@@ -8,8 +8,8 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import fc from 'fast-check';
 import { db } from '@/lib/db';
-import { users, sessions } from '@/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { users, sessions, account } from '@/server/db/schema';
+import { eq, and } from 'drizzle-orm';
 import { createSession } from '@/server/auth/session';
 import { hashPassword, verifyPassword } from '@/server/auth/password';
 import { generateToken } from '@/server/auth/tokens';
@@ -35,7 +35,6 @@ const ensurePasswordHash = (hash: string | null) => {
 
 // Test user data
 let testUserId: string;
-let testUserEmail: string;
 let testUserPasswordHash: string;
 
 /**
@@ -47,14 +46,20 @@ async function createTestUser() {
     .insert(users)
     .values({
       email: `test-reset-${Date.now()}-${Math.random().toString(16).slice(2)}@example.com`,
-      passwordHash: testUserPasswordHash,
       name: 'Test Reset User',
       emailVerified: true,
     })
     .returning();
 
   testUserId = user.id;
-  testUserEmail = user.email;
+
+  // Create credential account so the reset route can update it
+  await db.insert(account).values({
+    accountId: testUserId,
+    providerId: 'credential',
+    userId: testUserId,
+    password: testUserPasswordHash,
+  });
 }
 
 /**
@@ -198,24 +203,22 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
             expect(session).toBeUndefined();
           }
 
-          // Verify password was actually changed
-          const [updatedUser] = await db
-            .select()
-            .from(users)
-          .where(eq(users.id, testUserId))
-          .limit(1);
+          // Verify password was actually changed in the credential account
+          const updatedCredAccount = await db.query.account.findFirst({
+            where: and(eq(account.userId, testUserId), eq(account.providerId, 'credential')),
+          });
 
-        expect(updatedUser).toBeDefined();
-        const updatedHash = ensurePasswordHash(updatedUser.passwordHash);
-        expect(updatedHash).not.toBe(testUserPasswordHash);
+          expect(updatedCredAccount).toBeDefined();
+          const updatedHash = ensurePasswordHash(updatedCredAccount?.password ?? null);
+          expect(updatedHash).not.toBe(testUserPasswordHash);
 
-        // Verify new password works
-        const isNewPasswordValid = await verifyPassword(newPassword, updatedHash);
-        expect(isNewPasswordValid).toBe(true);
+          // Verify new password works
+          const isNewPasswordValid = await verifyPassword(newPassword, updatedHash);
+          expect(isNewPasswordValid).toBe(true);
 
-        // Verify old password no longer works
-        const isOldPasswordValid = await verifyPassword('OldPassword123!', updatedHash);
-        expect(isOldPasswordValid).toBe(false);
+          // Verify old password no longer works
+          const isOldPasswordValid = await verifyPassword('OldPassword123!', updatedHash);
+          expect(isOldPasswordValid).toBe(false);
       }
     ),
     PROPERTY_CONFIG
@@ -253,15 +256,13 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
           // Verify response status is 200 OK
           expect(response.status).toBe(200);
 
-          // Verify password was changed
-        const [updatedUser] = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, testUserId))
-          .limit(1);
+          // Verify password was changed in the credential account
+          const updatedCredAccount = await db.query.account.findFirst({
+            where: and(eq(account.userId, testUserId), eq(account.providerId, 'credential')),
+          });
 
-        const updatedHash = ensurePasswordHash(updatedUser.passwordHash);
-        const isNewPasswordValid = await verifyPassword(newPassword, updatedHash);
+          const updatedHash = ensurePasswordHash(updatedCredAccount?.password ?? null);
+          const isNewPasswordValid = await verifyPassword(newPassword, updatedHash);
         expect(isNewPasswordValid).toBe(true);
       }
     ),
@@ -304,13 +305,11 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
           expect(body.error.message).toBe('Invalid or expired password reset token');
 
           // Verify password was NOT changed
-          const [user] = await db
-            .select()
-            .from(users)
-            .where(eq(users.id, testUserId))
-            .limit(1);
+          const credAccount = await db.query.account.findFirst({
+            where: and(eq(account.userId, testUserId), eq(account.providerId, 'credential')),
+          });
 
-          expect(user.passwordHash).toBe(testUserPasswordHash);
+          expect(credAccount?.password).toBe(testUserPasswordHash);
         }
       ),
       PROPERTY_CONFIG
@@ -356,13 +355,11 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
     expect(body.error.code).toBe('INVALID_TOKEN');
 
     // Verify password was NOT changed
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, testUserId))
-      .limit(1);
+    const credAccount = await db.query.account.findFirst({
+      where: and(eq(account.userId, testUserId), eq(account.providerId, 'credential')),
+    });
 
-    expect(user.passwordHash).toBe(testUserPasswordHash);
+    expect(credAccount?.password).toBe(testUserPasswordHash);
   });
 
   /**
@@ -377,14 +374,11 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
     ];
 
     for (const [password1, password2] of testCases) {
-      // Get current password hash before test
-      const [userBefore] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, testUserId))
-        .limit(1);
-      
-      const passwordHashBefore = ensurePasswordHash(userBefore.passwordHash);
+      // Get current password hash from credential account before test
+      const credBefore = await db.query.account.findFirst({
+        where: and(eq(account.userId, testUserId), eq(account.providerId, 'credential')),
+      });
+      const passwordHashBefore = ensurePasswordHash(credBefore?.password ?? null);
 
       // Generate password reset token
       const { token } = await generateToken(
@@ -417,13 +411,11 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
       expect(body.error.code).toBe('VALIDATION_ERROR');
 
       // Verify password was NOT changed
-      const [userAfter] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, testUserId))
-        .limit(1);
+      const credAfter = await db.query.account.findFirst({
+        where: and(eq(account.userId, testUserId), eq(account.providerId, 'credential')),
+      });
 
-      expect(userAfter.passwordHash).toBe(passwordHashBefore);
+      expect(credAfter?.password).toBe(passwordHashBefore);
     }
   });
 
@@ -441,14 +433,11 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
     ];
 
     for (const weakPassword of weakPasswords) {
-      // Get current password hash before test
-      const [userBefore] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, testUserId))
-        .limit(1);
-      
-      const passwordHashBefore = ensurePasswordHash(userBefore.passwordHash);
+      // Get current password hash from credential account before test
+      const credBefore = await db.query.account.findFirst({
+        where: and(eq(account.userId, testUserId), eq(account.providerId, 'credential')),
+      });
+      const passwordHashBefore = ensurePasswordHash(credBefore?.password ?? null);
 
       // Generate password reset token
       const { token } = await generateToken(
@@ -481,13 +470,11 @@ describe('POST /api/auth/reset-password - Property-Based Tests', () => {
       expect(body.error.code).toBe('VALIDATION_ERROR');
 
       // Verify password was NOT changed
-      const [userAfter] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, testUserId))
-        .limit(1);
+      const credAfter = await db.query.account.findFirst({
+        where: and(eq(account.userId, testUserId), eq(account.providerId, 'credential')),
+      });
 
-      expect(userAfter.passwordHash).toBe(passwordHashBefore);
+      expect(credAfter?.password).toBe(passwordHashBefore);
     }
   });
 });

@@ -11,8 +11,8 @@
  */
 
 import { db } from "@/lib/db";
-import { users } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { users, account } from "@/server/db/schema";
+import { eq, and } from "drizzle-orm";
 import { hashPassword } from "@/server/auth/password";
 import { randomBytes } from "crypto";
 
@@ -65,13 +65,11 @@ async function resetPassword(email: string): Promise<void> {
   console.log("Generating new password...");
   const hashedPassword = await hashPassword(tempPassword);
 
-  // Update user password
-  await db.update(users)
-    .set({
-      passwordHash: hashedPassword,
-      updatedAt: new Date(),
-    })
-    .where(eq(users.id, user.id));
+  // Update the credential account record — this is what better-auth uses for login
+  await db
+    .update(account)
+    .set({ password: hashedPassword, updatedAt: new Date() })
+    .where(and(eq(account.userId, user.id), eq(account.providerId, "credential")));
 
   // Output success
   console.log("");

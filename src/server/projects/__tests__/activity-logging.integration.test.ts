@@ -41,7 +41,6 @@ async function createTestUser(email: string, name: string) {
       email: email.toLowerCase().trim(),
       name: name.trim(),
       emailVerified: true,
-      passwordHash: 'test-hash',
     })
     .returning();
 

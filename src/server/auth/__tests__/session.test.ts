@@ -12,7 +12,6 @@ import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import * as fc from 'fast-check';
 import {
   createSession,
-  getSession,
   extendSession,
   deleteSession,
   deleteAllUserSessions,
@@ -20,7 +19,6 @@ import {
 import { db } from '@/lib/db';
 import { sessions, users } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { hashPassword } from '../password';
 
 /**
  * Property test configuration
@@ -54,7 +52,6 @@ beforeEach(async () => {
     .values({
       email: testUserEmail,
       emailVerified: true,
-      passwordHash: await hashPassword('TestPassword123!'),
       name: 'Test User',
     })
     .returning({ id: users.id });

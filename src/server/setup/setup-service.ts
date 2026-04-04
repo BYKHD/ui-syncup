@@ -130,7 +130,6 @@ export async function createAdmin(input: CreateAdminInput): Promise<{ userId: st
   const [newUser] = await db.insert(users).values({
     email: email.toLowerCase(),
     name: displayName,
-    passwordHash: hashedPassword,
     emailVerified: true,
   }).returning({ id: users.id });
 
