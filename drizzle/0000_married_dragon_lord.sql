@@ -12,7 +12,6 @@ CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"email" varchar(320) NOT NULL,
 	"email_verified" boolean DEFAULT false NOT NULL,
-	"password_hash" varchar(255),
 	"name" varchar(120) NOT NULL,
 	"image" text,
 	"last_active_team_id" uuid,
@@ -263,13 +262,19 @@ CREATE TABLE "notifications" (
 CREATE TABLE "instance_settings" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"instance_name" varchar(100) DEFAULT 'UI SyncUp' NOT NULL,
-	"public_url" varchar(255),
 	"default_workspace_id" uuid,
 	"default_member_role" varchar(50) DEFAULT 'WORKSPACE_MEMBER' NOT NULL,
 	"setup_completed_at" timestamp with time zone,
 	"admin_user_id" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "signup_intents" (
+	"email" varchar(320) PRIMARY KEY NOT NULL,
+	"callback_url" varchar(2048) NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_last_active_team_id_teams_id_fk" FOREIGN KEY ("last_active_team_id") REFERENCES "public"."teams"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -357,4 +362,5 @@ CREATE INDEX "idx_notifications_recipient_unread" ON "notifications" USING btree
 CREATE INDEX "idx_notifications_entity" ON "notifications" USING btree ("entity_type","entity_id");--> statement-breakpoint
 CREATE INDEX "idx_notifications_grouping" ON "notifications" USING btree ("recipient_id","type","entity_type","entity_id","created_at");--> statement-breakpoint
 CREATE INDEX "idx_notifications_dedup" ON "notifications" USING btree ("recipient_id","actor_id","type","entity_type","entity_id","created_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "instance_settings_singleton" ON "instance_settings" USING btree ((TRUE));
+CREATE UNIQUE INDEX "instance_settings_singleton" ON "instance_settings" USING btree ((TRUE));--> statement-breakpoint
+CREATE INDEX "signup_intents_expires_idx" ON "signup_intents" USING btree ("expires_at");
