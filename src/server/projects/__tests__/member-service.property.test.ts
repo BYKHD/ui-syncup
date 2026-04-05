@@ -9,9 +9,9 @@ import * as fc from "fast-check";
 import { db } from "@/lib/db";
 import { projects } from "@/server/db/schema/projects";
 import { projectMembers } from "@/server/db/schema/project-members";
+import { teamMembers } from "@/server/db/schema/team-members";
 import { users } from "@/server/db/schema/users";
 import { teams } from "@/server/db/schema/teams";
-import { userRoles } from "@/server/db/schema/user-roles";
 import { eq, and } from "drizzle-orm";
 import {
   joinProject,
@@ -68,7 +68,6 @@ async function createTestProject(
 // Cleanup helper
 async function cleanupTestData(teamId: string) {
   // Delete in correct order due to foreign keys
-  await db.delete(userRoles).where(eq(userRoles.resourceId, teamId));
   await db.delete(projectMembers);
   await db.delete(projects).where(eq(projects.teamId, teamId));
   await db.delete(users);
@@ -220,16 +219,6 @@ describe.skip("Project Member Service - Property Tests (requires migrations)", (
           });
           expect(afterLeave).toBeUndefined();
 
-          // Verify user_roles entry is also removed
-          const roleEntry = await db.query.userRoles.findFirst({
-            where: and(
-              eq(userRoles.userId, user.id),
-              eq(userRoles.resourceType, "project"),
-              eq(userRoles.resourceId, project.id)
-            ),
-          });
-          expect(roleEntry).toBeUndefined();
-
           // Verify owner is still there
           const ownerStillExists = await db.query.projectMembers.findFirst({
             where: and(
@@ -287,13 +276,6 @@ describe.skip("Project Member Service - Property Tests (requires migrations)", (
             role: startRole,
           });
 
-          await db.insert(userRoles).values({
-            userId: user.id,
-            role: startRole,
-            resourceType: "project",
-            resourceId: project.id,
-          });
-
           // Update role
           const updated = await updateMemberRole(
             project.id,
@@ -314,16 +296,15 @@ describe.skip("Project Member Service - Property Tests (requires migrations)", (
           });
           expect(dbMember?.role).toBe(targetRole);
 
-          // Verify auto-promotion to TEAM_EDITOR
-          const teamEditorRole = await db.query.userRoles.findFirst({
+          // Verify auto-promotion to TEAM_EDITOR via team_members
+          const teamMember = await db.query.teamMembers.findFirst({
             where: and(
-              eq(userRoles.userId, user.id),
-              eq(userRoles.role, "TEAM_EDITOR"),
-              eq(userRoles.resourceType, "team"),
-              eq(userRoles.resourceId, testTeamId)
+              eq(teamMembers.userId, user.id),
+              eq(teamMembers.teamId, testTeamId)
             ),
           });
-          expect(teamEditorRole).toBeDefined();
+          expect(teamMember).toBeDefined();
+          expect(teamMember?.operationalRole).toBe("TEAM_EDITOR");
         }
       ),
       { ...propertyConfig, numRuns: 10 } // Reduce runs for database tests

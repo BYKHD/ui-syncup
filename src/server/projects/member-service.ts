@@ -9,7 +9,6 @@ import { db } from "@/lib/db";
 import { projectMembers } from "@/server/db/schema/project-members";
 import { projects } from "@/server/db/schema/projects";
 import { users } from "@/server/db/schema/users";
-import { userRoles } from "@/server/db/schema/user-roles";
 import { teams } from "@/server/db/schema/teams";
 import { eq, and, isNull, count } from "drizzle-orm";
 import { logger } from "@/lib/logger";
@@ -80,7 +79,6 @@ export async function addMember(
 
   // Add member in transaction
   const result = await db.transaction(async (tx) => {
-    // Insert project member
     const [member] = await tx
       .insert(projectMembers)
       .values({
@@ -89,14 +87,6 @@ export async function addMember(
         role,
       })
       .returning();
-
-    // Also add to user_roles for RBAC
-    await tx.insert(userRoles).values({
-      userId,
-      role,
-      resourceType: "project",
-      resourceId: projectId,
-    });
 
     return member;
   });
@@ -182,7 +172,6 @@ export async function updateMemberRole(
 
   // Update role in transaction
   const result = await db.transaction(async (tx) => {
-    // Update project member role
     const [updated] = await tx
       .update(projectMembers)
       .set({ role: newRole })
@@ -193,18 +182,6 @@ export async function updateMemberRole(
         )
       )
       .returning();
-
-    // Update user_roles for RBAC
-    await tx
-      .update(userRoles)
-      .set({ role: newRole })
-      .where(
-        and(
-          eq(userRoles.userId, userId),
-          eq(userRoles.resourceType, "project"),
-          eq(userRoles.resourceId, projectId)
-        )
-      );
 
     return updated;
   });
@@ -331,29 +308,14 @@ export async function removeMember(
     }
   }
 
-  // Remove member in transaction
-  await db.transaction(async (tx) => {
-    // Remove from project_members
-    await tx
-      .delete(projectMembers)
-      .where(
-        and(
-          eq(projectMembers.projectId, projectId),
-          eq(projectMembers.userId, userId)
-        )
-      );
-
-    // Remove from user_roles
-    await tx
-      .delete(userRoles)
-      .where(
-        and(
-          eq(userRoles.userId, userId),
-          eq(userRoles.resourceType, "project"),
-          eq(userRoles.resourceId, projectId)
-        )
-      );
-  });
+  await db
+    .delete(projectMembers)
+    .where(
+      and(
+        eq(projectMembers.projectId, projectId),
+        eq(projectMembers.userId, userId)
+      )
+    );
 
   logger.info("project.member.removed", {
     projectId,
