@@ -1,3 +1,10 @@
+# [0.8.0-beta.4](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.3...v0.8.0-beta.4) (2026-04-05)
+
+
+### Bug Fixes
+
+* replace dedicated user_roles table with team_members and project_members for RBAC ([2cbe9c4](https://github.com/BYKHD/ui-syncup/commit/2cbe9c4e9f4bc950e04a7fe7eb5b5d7563a3020c))
+
 # [0.8.0-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.2...v0.8.0-beta.3) (2026-04-05)
 
 
