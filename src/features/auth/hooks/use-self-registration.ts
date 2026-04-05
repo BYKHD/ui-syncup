@@ -121,7 +121,7 @@ export function useSelfRegistration(): UseSelfRegistrationReturn {
         credentials: 'include',
       });
 
-      toast.success('Welcome! You've been added to the team.');
+      toast.success("Welcome! You've been added to the team.");
       setStep('complete');
       router.push('/projects');
     } catch (err) {
