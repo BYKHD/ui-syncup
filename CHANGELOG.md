@@ -1,3 +1,10 @@
+# [0.8.0-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.2...v0.8.0-beta.3) (2026-04-05)
+
+
+### Bug Fixes
+
+* correct quote usage in self-registration success toast message ([a56b047](https://github.com/BYKHD/ui-syncup/commit/a56b047b240057a7ecc71858444a1fabe2bb6e09))
+
 # [0.8.0-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.1...v0.8.0-beta.2) (2026-04-04)
 
 
