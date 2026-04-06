@@ -24,7 +24,6 @@ import {
   updateAnnotation as apiUpdateAnnotation,
   deleteAnnotation as apiDeleteAnnotation,
   transformToAttachmentAnnotation,
-  type AnnotationWithAuthor,
 } from '../api/annotations-api';
 
 // ============================================================================

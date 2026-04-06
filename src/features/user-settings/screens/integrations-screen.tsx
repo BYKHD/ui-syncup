@@ -10,10 +10,11 @@ interface IntegrationsScreenProps {
 export default function IntegrationsScreen({
   integrations,
 }: IntegrationsScreenProps) {
+  // TODO: [MOCKUP] Wire this component up to the actual API endpoint for user settings
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold">Integrations</h2>
+        <h2 className="text-xl font-semibold">Integrations</h2>
         <p className="text-muted-foreground mt-1">
           Connect third-party services
         </p>

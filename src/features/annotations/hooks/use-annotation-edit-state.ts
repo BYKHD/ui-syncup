@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import type { AttachmentAnnotation, AnnotationAuthor } from '../types';
 import { calculateCommentInputPosition } from '../utils/position-comment-input';
 

@@ -57,8 +57,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navItems = React.useMemo(() => {
     const items: NavItem[] = [
       {
-        title: 'Home',
-        url: '/',
+        title: 'Dashboard',
+        url: '/dashboard',
         icon: RiHome3Line,
       },
       {

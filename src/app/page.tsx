@@ -11,7 +11,7 @@ export default async function HomePage() {
     const sessionToken = await getSessionCookie()
     if (sessionToken) {
       const session = await getSession()
-      if (session) redirect("/projects")
+      if (session) redirect("/dashboard")
     }
 
     redirect("/sign-in")

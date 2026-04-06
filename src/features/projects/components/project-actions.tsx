@@ -127,7 +127,7 @@ export function ProjectActions({
       <div className="flex items-center gap-2">
         {/* Primary Action */}
         {renderIssueDialog(
-          <Button size="sm" className="h-8 shadow-sm">
+          <Button>
             <RiAddLine className="mr-1.5 h-3.5 w-3.5" />
             Add Issue
           </Button>
@@ -137,7 +137,7 @@ export function ProjectActions({
         {hasSecondaryActions && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+              <Button variant="outline">
                 <RiMore2Line className="h-4 w-4" />
                 <span className="sr-only">More actions</span>
               </Button>

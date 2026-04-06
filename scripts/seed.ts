@@ -375,19 +375,11 @@ async function main() {
       await db
         .delete(schema.teamInvitations)
         .where(inArray(schema.teamInvitations.teamId, teamIds));
-      await db
-        .delete(schema.userRoles)
-        .where(
-          and(
-            eq(schema.userRoles.resourceType, "team"),
-            inArray(schema.userRoles.resourceId, teamIds)
-          )
-        );
+      // userRoles are no longer a separate table
     }
 
     const lastActiveTeamByUser = new Map<string, string>();
     const teamMemberCounts = new Map<string, number>();
-    const roleAssignments: typeof schema.userRoles.$inferInsert[] = [];
 
     for (const seed of MEMBERSHIP_SEEDS) {
       const team = ensure(
@@ -423,21 +415,6 @@ async function main() {
         lastActiveTeamByUser.set(user.id, team.id);
       }
 
-      if (seed.managementRole) {
-        roleAssignments.push({
-          userId: user.id,
-          role: seed.managementRole,
-          resourceType: "team",
-          resourceId: team.id,
-        });
-      }
-
-      roleAssignments.push({
-        userId: user.id,
-        role: seed.operationalRole,
-        resourceType: "team",
-        resourceId: team.id,
-      });
     }
 
 
@@ -466,13 +443,8 @@ async function main() {
         const existingProjectIds = existingProjects.map((project) => project.id);
         if (existingProjectIds.length > 0) {
           await db
-            .delete(schema.userRoles)
-            .where(
-              and(
-                eq(schema.userRoles.resourceType, "project"),
-                inArray(schema.userRoles.resourceId, existingProjectIds)
-              )
-            );
+            .delete(schema.projectMembers)
+            .where(inArray(schema.projectMembers.projectId, existingProjectIds));
         }
 
         await db
@@ -509,11 +481,10 @@ async function main() {
           .returning();
 
         summary.projects += 1;
-        roleAssignments.push({
+        await db.insert(schema.projectMembers).values({
+          projectId: project.id,
           userId: owner.id,
-          role: PROJECT_ROLES.PROJECT_OWNER,
-          resourceType: "project",
-          resourceId: project.id,
+          role: "owner",
         });
       }
     }
@@ -557,11 +528,8 @@ async function main() {
       }
     }
 
-    // Insert role assignments for teams + projects
-    if (roleAssignments.length > 0) {
-      await db.insert(schema.userRoles).values(roleAssignments);
-      summary.roles = roleAssignments.length;
-    }
+    // Role assignments are handled directly in teamMembers and projectMembers
+    summary.roles = summary.teamMembers + summary.projects;
 
     console.log("✅ Seed complete!");
     console.log(`👥 Users ensured: ${summary.users} (password: ${DEFAULT_PASSWORD})`);
