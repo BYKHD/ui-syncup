@@ -15,7 +15,7 @@ export default function NotificationsScreen({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold">Notifications</h2>
+        <h2 className="text-xl font-semibold">Notifications</h2>
         <p className="text-muted-foreground mt-1">
           Manage your notification preferences
         </p>
