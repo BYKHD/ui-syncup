@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { AnnotationDraft, AnnotationPosition } from '../types';
+import type { AnnotationDraft } from '../types';
 
 export interface UseAnnotationDraftsOptions {
   onCommit?: (draft: AnnotationDraft, message?: string) => void;
