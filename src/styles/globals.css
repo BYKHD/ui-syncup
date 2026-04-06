@@ -121,7 +121,7 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.87 0.00 0);
+  --primary: oklch(81.152% 0.04466 251.617);
   --primary-foreground: oklch(0.205 0 0);
   --primary-gradient-t: linear-gradient(0deg, color-mix(in oklab, var(--primary) 80%, black) 0%, var(--primary) 100%);
   --secondary: oklch(0.269 0 0);
@@ -180,16 +180,33 @@
     box-shadow: 0 -1px 0 0 color-mix(in srgb, var(--color-border) 80%, transparent);
   }
 
+  .dark .border-t-3d {
+    box-shadow: 0 -1px 0 0 color-mix(in srgb, var(--color-white) 2%, transparent);
+  }
+
   .border-b-3d {
     /* 1px primary border */
     border-bottom: 1px solid var(--color-border);
     /* 2px secondary 3D drop line (shadow) below the border */
-    box-shadow: 0 1px 0 0 color-mix(in srgb, var(--color-card) 80%, transparent);
+    box-shadow: 0 1px 0 0 color-mix(in srgb, var(--color-white) 80%, transparent);
   }
 
   /* Override just the shadow when dark mode is active */
   .dark .border-b-3d {
-    box-shadow: 0 1px 0 0 color-mix(in srgb, var(--color-white) 2%, transparent);
+    box-shadow: 0 1px 0 0 color-mix(in srgb, var(--color-white) 4%, transparent);
+  }
+}
+
+@utility text-shadow-debossed {
+  /* Note: text-shadow only takes 3 lengths (x, y, blur) before the color */
+  text-shadow:
+    0 -1px 0 color-mix(in srgb, var(--color-black) 20%, transparent),
+    0 1px 0 color-mix(in srgb, var(--color-white) 20%, transparent);
+
+  /* Apply equivalent effect to SVG shapes inside elements with this utility */
+  & svg {
+    filter:
+      drop-shadow(0 -1px 0 color-mix(in srgb, var(--color-black) 20%, transparent)) drop-shadow(0 1px 0 color-mix(in srgb, var(--color-white) 20%, transparent));
   }
 }
 

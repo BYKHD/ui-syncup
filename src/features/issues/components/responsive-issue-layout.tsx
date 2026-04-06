@@ -248,7 +248,7 @@ export default function ResponsiveIssueLayout({
   };
 
   const handleBackToIssues = () => {
-    window.location.href = "/issues";
+    window.history.back();
   };
 
   // Mobile layout with tabs
