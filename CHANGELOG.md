@@ -1,3 +1,10 @@
+# [0.8.0-beta.5](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.4...v0.8.0-beta.5) (2026-04-06)
+
+
+### Bug Fixes
+
+* core UI improvement 1 ([#125](https://github.com/BYKHD/ui-syncup/issues/125)) ([a0d6b8e](https://github.com/BYKHD/ui-syncup/commit/a0d6b8e66364412229c5ef6341feb9f00622e37e))
+
 # [0.8.0-beta.4](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.3...v0.8.0-beta.4) (2026-04-05)
 
 
