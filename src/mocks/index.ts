@@ -16,6 +16,7 @@ export * from './team-member.fixtures';
 export * from './user.fixtures';
 export * from './share.fixtures';
 export * from './landing.fixtures';
+export * from './dashboard.fixtures';
 
 // Re-export with explicit naming to avoid conflicts
 export {

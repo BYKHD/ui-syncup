@@ -15,6 +15,7 @@ import { useAnnotationComments } from '../hooks/use-annotation-comments';
 import { useSession } from '@/features/auth/hooks/use-session';
 import type { PopoverMode } from '../hooks/use-annotation-popover';
 
+
 const PREVIEW_WIDTH = 240;
 const EXPANDED_WIDTH = 320;
 const PREVIEW_HEIGHT = 80; // Estimated preview height
@@ -83,18 +84,18 @@ function calculateBestPlacement(
   const requiredHorizontal = popoverWidth + OFFSET;
 
   // Define placement order based on preference
-  const placements: Placement[] = preferredPlacement === 'top' 
+  const placements: Placement[] = preferredPlacement === 'top'
     ? ['top', 'bottom', 'right', 'left']
     : preferredPlacement === 'bottom'
-    ? ['bottom', 'top', 'right', 'left']
-    : preferredPlacement === 'left'
-    ? ['left', 'right', 'top', 'bottom']
-    : ['right', 'left', 'top', 'bottom'];
+      ? ['bottom', 'top', 'right', 'left']
+      : preferredPlacement === 'left'
+        ? ['left', 'right', 'top', 'bottom']
+        : ['right', 'left', 'top', 'bottom'];
 
   // Check each placement and find the first one that fits
   for (const placement of placements) {
     let fits = false;
-    
+
     switch (placement) {
       case 'top':
         fits = spaceTop >= requiredVertical;
@@ -123,7 +124,7 @@ function calculateBestPlacement(
     { placement: 'right' as Placement, space: spaceRight },
   ];
   const best = spaces.sort((a, b) => b.space - a.space)[0];
-  
+
   return calculatePosition(best.placement, anchorX, anchorY, popoverWidth, popoverHeight, containerWidth, containerHeight);
 }
 
@@ -168,10 +169,10 @@ function calculatePosition(
   return { placement, left, top };
 }
 
-function CommentItem<T extends AnnotationAuthor = AnnotationAuthor>({ 
+function CommentItem<T extends AnnotationAuthor = AnnotationAuthor>({
   comment,
   style,
-}: { 
+}: {
   comment: AnnotationComment<T>;
   style?: React.CSSProperties;
 }) {
@@ -310,7 +311,7 @@ function ExpandedContent<T extends AnnotationAuthor = AnnotationAuthor>({
 
   const handleSubmit = useCallback(async () => {
     if (!newComment.trim() || isAddingComment) return;
-    
+
     await addComment(newComment.trim());
     setNewComment('');
     textareaRef.current?.focus();
@@ -393,8 +394,8 @@ function ExpandedContent<T extends AnnotationAuthor = AnnotationAuthor>({
           <span className="text-[10px] text-muted-foreground">
             {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+Enter
           </span>
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             className="h-7 text-xs"
             onClick={handleSubmit}
             disabled={isAddingComment || !newComment.trim()}
@@ -448,7 +449,7 @@ export function AnnotationPopover<T extends AnnotationAuthor = AnnotationAuthor>
     const containerHeight = overlay.offsetHeight;
     const popoverWidth = mode === 'preview' ? PREVIEW_WIDTH : EXPANDED_WIDTH;
     const popoverHeight = mode === 'preview' ? PREVIEW_HEIGHT : EXPANDED_HEIGHT;
-    
+
     // Convert percentage anchor to pixel position within overlay
     const anchorX = anchorPosition.x * containerWidth;
     const anchorY = anchorPosition.y * containerHeight;
@@ -463,7 +464,7 @@ export function AnnotationPopover<T extends AnnotationAuthor = AnnotationAuthor>
       containerHeight,
       'top' // Prefer top placement
     );
-    
+
     setPosition(result);
   }, [open, anchorPosition, overlayRef, mode]);
 
@@ -477,13 +478,13 @@ export function AnnotationPopover<T extends AnnotationAuthor = AnnotationAuthor>
 
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      
+
       // Don't close if clicking inside the popover
       if (popoverRef.current?.contains(target)) return;
-      
+
       // Don't close if clicking on annotation elements
       if (target.closest('[data-annotation-pin]') || target.closest('[data-annotation-box]')) return;
-      
+
       onClose();
     };
 
@@ -520,18 +521,18 @@ export function AnnotationPopover<T extends AnnotationAuthor = AnnotationAuthor>
         ref={popoverRef}
         // No entrance animation - appear instantly
         initial={false}
-        animate={{ 
+        animate={{
           // Smooth morphing when mode changes (preview → expanded)
           width: mode === 'preview' ? PREVIEW_WIDTH : EXPANDED_WIDTH,
           height: 'auto',
         }}
-        transition={{ 
+        transition={{
           // Smooth morphing transition for size changes
           width: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
           height: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
         }}
         className={cn(
-          "absolute bg-popover text-popover-foreground rounded-lg border shadow-lg p-3 z-50",
+          "dark absolute bg-popover text-popover-foreground rounded-lg border shadow-lg p-3 z-50",
           "pointer-events-auto overflow-hidden"
         )}
         style={{
@@ -542,10 +543,14 @@ export function AnnotationPopover<T extends AnnotationAuthor = AnnotationAuthor>
         data-placement={position.placement}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
+        onPointerDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {mode === 'preview' ? (
-          <PreviewContent 
-            annotation={annotation} 
+          <PreviewContent
+            annotation={annotation}
             onClick={handleExpandClick}
           />
         ) : (
