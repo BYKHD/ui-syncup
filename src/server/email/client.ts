@@ -13,7 +13,14 @@ export interface EmailJob {
   id: string;
   userId: string;
   tokenId?: string;
-  type: 'verification' | 'password_reset' | 'welcome' | 'security_alert';
+  type: 
+    | 'verification' 
+    | 'password_reset' 
+    | 'welcome' 
+    | 'security_alert' 
+    | 'team_invitation' 
+    | 'project_invitation' 
+    | 'ownership_transfer';
   to: string;
   subject: string;
   template: EmailTemplate;

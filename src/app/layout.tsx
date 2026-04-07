@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/lib/query";
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +32,7 @@ export default function RootLayout({
       {/* suppressHydrationWarning: next-themes injects a <script> for SSR theme
           detection which React 19 warns about. Workaround until next-themes
           ships a React 19-compatible release (currently 0.4.6 is latest). */}
+      <meta name="apple-mobile-web-app-title" content="UI Syncup" />
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen overflow-hidden`}
         suppressHydrationWarning

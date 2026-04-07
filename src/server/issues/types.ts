@@ -41,7 +41,7 @@ export interface IssueWithDetails extends Issue {
     id: string;
     name: string;
     email: string;
-    avatarUrl: string | null;
+    image: string | null;
   };
   attachmentCount?: number;
 }

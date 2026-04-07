@@ -114,7 +114,7 @@ export default function DevAuthPage() {
             No session found. Please sign in first.
           </AlertDescription>
         </Alert>
-        
+
         {/* Debug Information */}
         <Card>
           <CardHeader>
@@ -330,9 +330,8 @@ export default function DevAuthPage() {
                 return (
                   <div
                     key={sess.id}
-                    className={`p-4 border rounded-lg space-y-2 ${
-                      sess.isCurrent ? "border-primary bg-primary/5" : ""
-                    }`}
+                    className={`p-4 border rounded-lg space-y-2 ${sess.isCurrent ? "border-primary bg-primary/5" : ""
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -606,7 +605,7 @@ export default function DevAuthPage() {
                 deleteAccount();
                 setShowDeleteDialog(false);
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
             >
               Delete Account
             </AlertDialogAction>

@@ -255,7 +255,6 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
             onClick={handleJoin}
             disabled={isJoining}
             size="lg"
-            className="shadow-lg"
           >
             <RiUserAddLine className="h-4 w-4 mr-2" />
             {isJoining ? "Joining..." : "Join"}

@@ -73,7 +73,7 @@ export function IssueDeleteDialog({
 
     try {
       await onConfirm();
-      
+
       // Success feedback is handled by the parent component
       // since it typically involves navigation
       onOpenChange(false);
@@ -106,13 +106,13 @@ export function IssueDeleteDialog({
             Are you sure?
           </AlertDialogTitle>
           <AlertDialogDescription className="space-y-2">
-              You are going to delete <strong>{issueKey}</strong>. 
-              This action cannot be undone. The issue will be permanently removed
-              along with all its attachments, comments, and activity history.
+            You are going to delete <strong>{issueKey}</strong>.
+            This action cannot be undone. The issue will be permanently removed
+            along with all its attachments, comments, and activity history.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel 
+          <AlertDialogCancel
             onClick={handleCancel}
             disabled={isDeleting}
           >
@@ -121,7 +121,7 @@ export function IssueDeleteDialog({
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={isDeleting}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            variant="destructive"
           >
             {isDeleting ? (
               <div className="flex items-center gap-2 text-destructive-foreground">

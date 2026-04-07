@@ -31,7 +31,7 @@ export function VerificationEmail({ name, verificationUrl }: VerificationEmailPr
       
       <Section className="text-center mt-[32px] mb-[32px]">
         <Button
-          className="bg-[#2563eb] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
+          className="bg-[#18181b] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
           href={verificationUrl}
         >
           Verify Email Address
@@ -52,7 +52,7 @@ export function VerificationEmail({ name, verificationUrl }: VerificationEmailPr
       </Section>
       
       <Text className="text-gray-500 text-[14px] leading-[24px]">
-        This verification link will expire in 24 hours. If you didn't create an account with UI SyncUp, you can safely ignore this email.
+        This verification link will expire in 24 hours. If you didn&rsquo;t create an account with UI SyncUp, you can safely ignore this email.
       </Text>
       
       <Hr className="border border-solid border-[#eaeaea] my-[26px] mx-0 w-full" />

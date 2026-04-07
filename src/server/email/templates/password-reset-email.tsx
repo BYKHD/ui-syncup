@@ -31,7 +31,7 @@ export function PasswordResetEmail({ name, resetUrl }: PasswordResetEmailProps) 
       
       <Section className="text-center mt-[32px] mb-[32px]">
         <Button
-          className="bg-[#2563eb] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
+          className="bg-[#18181b] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
           href={resetUrl}
         >
           Reset Password
@@ -52,7 +52,7 @@ export function PasswordResetEmail({ name, resetUrl }: PasswordResetEmailProps) 
       </Section>
       
       <Text className="text-gray-500 text-[14px] leading-[24px]">
-        This password reset link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
+        This password reset link will expire in 1 hour. If you didn&rsquo;t request a password reset, you can safely ignore this email. Your password will remain unchanged.
       </Text>
       
       <Section className="bg-yellow-50 border border-yellow-200 rounded p-4 my-4">

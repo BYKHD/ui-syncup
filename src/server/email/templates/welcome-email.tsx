@@ -25,11 +25,11 @@ export function WelcomeEmail({ name, dashboardUrl }: WelcomeEmailProps) {
       </Text>
       
       <Text className="text-black text-[14px] leading-[24px]">
-        Your email has been verified and your account is now active! We're excited to have you on board.
+        Your email has been verified and your account is now active! We&rsquo;re excited to have you on board.
       </Text>
       
       <Text className="text-black text-[14px] leading-[24px]">
-        UI SyncUp is a visual feedback and issue tracking platform designed to streamline collaboration between designers, developers, and QA teams. Here's what you can do:
+        UI SyncUp is a visual feedback and issue tracking platform designed to streamline collaboration between designers, developers, and QA teams. Here&rsquo;s what you can do:
       </Text>
       
       <Section className="bg-gray-50 rounded-lg p-4 my-4">
@@ -43,7 +43,7 @@ export function WelcomeEmail({ name, dashboardUrl }: WelcomeEmailProps) {
       
       <Section className="text-center mt-[32px] mb-[32px]">
         <Button
-          className="bg-[#2563eb] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
+          className="bg-[#18181b] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
           href={dashboardUrl}
         >
           Go to Dashboard

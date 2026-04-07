@@ -46,6 +46,6 @@ export async function leaveProject(projectId: string): Promise<LeaveMemberRespon
     throw new Error(`Failed to leave project: ${response.statusText}`)
   }
 
-  const data = await response.json()
-  return LeaveMemberResponseSchema.parse(data)
+  // API returns 204 No Content on success
+  return { success: true, message: 'Left project successfully' }
 }
