@@ -1,3 +1,10 @@
+# [0.8.0-beta.8](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.7...v0.8.0-beta.8) (2026-04-07)
+
+
+### Bug Fixes
+
+* invitation acceptance redirect flow ([aa91de7](https://github.com/BYKHD/ui-syncup/commit/aa91de724c2d09d5cff512267eab673cc5eed33c))
+
 # [0.8.0-beta.7](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.6...v0.8.0-beta.7) (2026-04-07)
 
 
