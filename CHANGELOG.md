@@ -1,3 +1,10 @@
+# [0.8.0-beta.6](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.5...v0.8.0-beta.6) (2026-04-07)
+
+
+### Bug Fixes
+
+* persistent invitation flow during OAuth ([ca3d78a](https://github.com/BYKHD/ui-syncup/commit/ca3d78a75cad5fe66048daa206be2709b2cf8807))
+
 # [0.8.0-beta.5](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.4...v0.8.0-beta.5) (2026-04-06)
 
 
