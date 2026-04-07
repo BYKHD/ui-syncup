@@ -51,9 +51,9 @@ export function ProjectLeaveButton({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              variant="destructive"
               onClick={onLeave}
               disabled={isLeaving || userRole === 'owner'}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isLeaving ? 'Leaving...' : 'Leave Project'}
             </AlertDialogAction>

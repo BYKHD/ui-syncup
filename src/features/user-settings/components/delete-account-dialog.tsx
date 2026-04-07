@@ -174,7 +174,7 @@ export function DeleteAccountDialog({
               handleConfirm()
             }}
             disabled={!isValid || isDeleting}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            variant="destructive"
           >
             {isDeleting ? 'Deleting...' : 'Delete account permanently'}
           </AlertDialogAction>

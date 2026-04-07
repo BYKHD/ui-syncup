@@ -77,7 +77,7 @@ export async function renderTemplate(template: EmailTemplate): Promise<string> {
       component = <OwnershipTransferEmail {...template.data} />;
       break;
     default:
-      throw new Error(`Unknown template type: ${(template as any).type}`);
+      throw new Error(`Unknown template type: ${(template as { type: string }).type}`);
   }
 
   return await render(component);

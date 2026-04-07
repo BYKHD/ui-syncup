@@ -62,7 +62,7 @@ export function OwnershipTransferEmail({
       
       <Section className="text-center mt-[32px] mb-[32px]">
         <Button
-          className="bg-[#2563eb] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
+          className="bg-[#18181b] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
           href={teamUrl}
         >
           Go to Team Settings

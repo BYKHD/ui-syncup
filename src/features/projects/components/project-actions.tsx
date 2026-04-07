@@ -229,7 +229,7 @@ export function ProjectActions({
                 handleDelete();
               }}
               disabled={deleteConfirmName !== projectName || isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
             >
               {isDeleting ? (
                 <span className="flex items-center gap-2">

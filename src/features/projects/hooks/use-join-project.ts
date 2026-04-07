@@ -20,7 +20,7 @@ export function useJoinProject(options?: UseJoinProjectOptions) {
       queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
 
       // Show success message
-      toast.success(data.message)
+      toast.success('Successfully joined project')
 
       // Call optional success callback
       options?.onSuccess?.()

@@ -15,6 +15,7 @@ import { logger } from '@/lib/logger';
 import { eq, and, lte, or, isNull } from 'drizzle-orm';
 import type { EmailTemplate } from './render-template';
 import { renderTemplate, getEmailSubject } from './render-template';
+import type { EmailJob } from './client';
 import { sendEmail } from './client';
 
 /**
@@ -103,7 +104,7 @@ export async function enqueueEmail(job: EmailJobInput): Promise<void> {
         to: job.to,
         subject,
         template: job.template.type,
-        data: job.template.data as any,
+        data: job.template.data as Record<string, unknown>,
         attempts: 0,
         maxAttempts: 4,
         status: 'pending',
@@ -147,10 +148,10 @@ async function processJob(job: typeof emailJobs.$inferSelect): Promise<boolean> 
       .where(eq(emailJobs.id, job.id));
 
     // Reconstruct template from stored data
-    const template: EmailTemplate = {
-      type: job.template as any,
-      data: job.data as any,
-    };
+    const template = {
+      type: job.template,
+      data: job.data,
+    } as unknown as EmailTemplate;
 
     // Render template to HTML
     const htmlContent = await renderTemplate(template);
@@ -161,7 +162,7 @@ async function processJob(job: typeof emailJobs.$inferSelect): Promise<boolean> 
         id: job.id,
         userId: job.userId,
         tokenId: job.tokenId || undefined,
-        type: job.type as any,
+        type: job.type as EmailJob['type'],
         to: job.to,
         subject: job.subject,
         template,

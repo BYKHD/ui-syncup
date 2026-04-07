@@ -34,7 +34,8 @@ const generateTestUUID = () => randomUUID();
 
 async function createTestUser(overrides: Partial<typeof users.$inferInsert> = {}) {
   const userId = overrides.id ?? generateTestUUID();
-  const { id: _ignored, email, name, ...rest } = overrides;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id: _, email, name, ...rest } = overrides;
 
   const [user] = await db
     .insert(users)
@@ -259,7 +260,7 @@ describe('Email Queue System', () => {
       const user = await createTestUser();
       
       // Mock failed email sending
-      const sendEmailMock = vi.spyOn(emailClient, 'sendEmail').mockRejectedValue(new Error('Network error'));
+      vi.spyOn(emailClient, 'sendEmail').mockRejectedValue(new Error('Network error'));
 
       // Create a pending job
       const [job] = await db
@@ -298,7 +299,7 @@ describe('Email Queue System', () => {
       const user = await createTestUser();
       
       // Mock failed email sending
-      const sendEmailMock = vi.spyOn(emailClient, 'sendEmail').mockRejectedValue(new Error('Permanent failure'));
+      vi.spyOn(emailClient, 'sendEmail').mockRejectedValue(new Error('Permanent failure'));
 
       // Create a job that has already failed twice
       const [job] = await db
