@@ -133,7 +133,7 @@ export function SetupWizard() {
                 animate={{ rotate: 360 }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
               >
-                <Loader2 className="h-10 w-10 text-primary" />
+                <RiLoader4Line className="h-10 w-10 text-primary" />
               </motion.div>
               <div className="space-y-2 text-center animate-pulse">
                 <p className="text-lg font-medium">Checking setup status</p>
