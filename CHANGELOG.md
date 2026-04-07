@@ -1,3 +1,10 @@
+# [0.8.0-beta.9](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.8...v0.8.0-beta.9) (2026-04-07)
+
+
+### Bug Fixes
+
+*  PWA manifest and icons, standardize user avatar field, and update project join/leave API responses and UI components. ([#126](https://github.com/BYKHD/ui-syncup/issues/126)) ([10d7779](https://github.com/BYKHD/ui-syncup/commit/10d77790c2e20859744abc2d94d7275cf51829f0))
+
 # [0.8.0-beta.8](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.7...v0.8.0-beta.8) (2026-04-07)
 
 
