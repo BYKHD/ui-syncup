@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { TEAMS_QUERY_KEY } from "@/features/teams/hooks/use-teams";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +36,15 @@ export function TeamInvitationAcceptanceScreen({
   currentUserEmail,
 }: TeamInvitationAcceptanceScreenProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  // Clear the OAuth invitation callback key once the user has reached this
+  // page — it was only needed to survive the OAuth redirect in case better-auth
+  // didn't honor callbackURL for a first-time social sign-up.
+  useEffect(() => {
+    localStorage.removeItem("invitation_callback_url");
+  }, []);
+
   const [isAccepting, setIsAccepting] = useState(false);
   const [isDeclining, setIsDeclining] = useState(false);
   const [isDeclined, setIsDeclined] = useState(false);
@@ -65,6 +76,7 @@ export function TeamInvitationAcceptanceScreen({
       if (response.redirected) {
         setShowSuccess(true);
         toast.success("Invitation accepted successfully");
+        queryClient.removeQueries({ queryKey: [TEAMS_QUERY_KEY] });
         setTimeout(() => {
           router.push("/projects");
         }, 1500);
@@ -76,6 +88,7 @@ export function TeamInvitationAcceptanceScreen({
       }
       setShowSuccess(true);
       toast.success("Invitation accepted successfully");
+      queryClient.removeQueries({ queryKey: [TEAMS_QUERY_KEY] });
       setTimeout(() => {
         router.push("/projects");
       }, 1500);

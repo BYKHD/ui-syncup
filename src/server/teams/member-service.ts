@@ -173,7 +173,7 @@ export async function updateMemberRoles(
     }
 
     // Update member
-    const [updatedMember] = await db
+    await db
       .update(teamMembers)
       .set({
         managementRole: newManagementRole,
@@ -182,8 +182,31 @@ export async function updateMemberRoles(
       .where(and(
         eq(teamMembers.teamId, teamId),
         eq(teamMembers.userId, userId)
-      ))
-      .returning();
+      ));
+
+    // Re-fetch with user join so the response includes member.user
+    const [updatedMember] = await db
+      .select({
+        id: teamMembers.id,
+        teamId: teamMembers.teamId,
+        userId: teamMembers.userId,
+        managementRole: teamMembers.managementRole,
+        operationalRole: teamMembers.operationalRole,
+        joinedAt: teamMembers.joinedAt,
+        invitedBy: teamMembers.invitedBy,
+        user: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          image: users.image,
+        },
+      })
+      .from(teamMembers)
+      .innerJoin(users, eq(teamMembers.userId, users.id))
+      .where(and(
+        eq(teamMembers.teamId, teamId),
+        eq(teamMembers.userId, userId)
+      ));
 
     // Log role change (Requirement 3.4, 14.2)
     logTeamEvent("team.member.role_change.success", {

@@ -206,6 +206,14 @@ export function useSignIn(options: UseSignInOptions = {}) {
     setOauthStatus("loading");
     setOauthError(null);
 
+    // Persist the invitation callbackUrl before leaving for OAuth.
+    // better-auth may not honor callbackURL for brand-new users (first-time
+    // social sign-up vs sign-in), so we store it independently and consume it
+    // in AppShell after the user lands on a protected route.
+    if (redirectTo && redirectTo !== "/projects") {
+      localStorage.setItem("invitation_callback_url", redirectTo);
+    }
+
     try {
       await authClient.signIn.social({
         provider: "google",
@@ -213,6 +221,7 @@ export function useSignIn(options: UseSignInOptions = {}) {
       });
       // Redirect is handled by better-auth
     } catch (error) {
+      localStorage.removeItem("invitation_callback_url");
       setOauthStatus("error");
       setOauthError(
         error instanceof Error ? error.message : "Failed to sign in with Google"

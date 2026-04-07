@@ -11,7 +11,7 @@ import { MailConfigStep } from './mail-config-step';
 import { FirstTeamStep } from './first-team-step';
 import { SampleDataStep } from './sample-data-step';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { RiLoader4Line } from '@remixicon/react';
 import type { SetupWizardStep } from '../types';
 
 /**
@@ -113,7 +113,7 @@ export function SetupWizard() {
       case 'complete': // Should have redirected by now
         return (
           <div className="flex flex-col items-center justify-center p-8 space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary motion-reduce:animate-none" />
+            <RiLoader4Line className="h-8 w-8 animate-spin text-primary motion-reduce:animate-none" />
             <p className="text-muted-foreground">{'Redirecting\u2026'}</p>
           </div>
         );

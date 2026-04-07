@@ -29,7 +29,7 @@ export default async function TeamSettingsLayout({
   });
 
   if (!team) {
-    redirect("/onboarding");
+    redirect("/dashboard");
   }
 
   // Validate membership

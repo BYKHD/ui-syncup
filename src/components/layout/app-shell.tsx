@@ -83,13 +83,14 @@ export function AppShell({
 
   const isOnboarding = pathname?.startsWith("/onboarding")
   const isTeamRoute = pathname?.startsWith("/team/")
+  const isInvitationRoute = pathname?.startsWith("/join-team") || pathname?.startsWith("/invite/")
   const effectiveVariant = isOnboarding ? "blank" : variant
 
   React.useEffect(() => {
-    if (!isLoading && teamsData?.teams && teamsData.teams.length === 0 && !isOnboarding && !isTeamRoute) {
+    if (!isLoading && teamsData?.teams && teamsData.teams.length === 0 && !isOnboarding && !isTeamRoute && !isInvitationRoute) {
       router.push("/onboarding")
     }
-  }, [isLoading, teamsData, isOnboarding, isTeamRoute, router])
+  }, [isLoading, teamsData, isOnboarding, isTeamRoute, isInvitationRoute, router])
 
   if (effectiveVariant === "blank") return <>{children}</>
 

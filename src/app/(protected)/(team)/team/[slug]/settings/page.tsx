@@ -24,7 +24,7 @@ export default async function TeamSettingsPage({
     columns: { id: true },
   });
 
-  if (!teamRow) redirect("/onboarding");
+  if (!teamRow) redirect("/dashboard");
 
   // Fetch full team with member info (required by TeamSettingsGeneral)
   const team = await getTeam(teamRow.id, session.id);
