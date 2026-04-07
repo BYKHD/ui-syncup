@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, X } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { NotificationItem } from './notification-item'
 import { formatTimestamp, NotificationIcon, getInitials } from './utils'
 import { formatActorNames, type NotificationGroup } from '@/features/notifications/utils/group-notifications'
-import { useMarkAsRead } from '@/features/notifications/hooks'
+import { useMarkAsRead, useDeleteNotification } from '@/features/notifications/hooks'
 
 // ============================================================================
 // NOTIFICATION GROUP ITEM COMPONENT
@@ -30,6 +30,7 @@ export function NotificationGroupItem({ group, teamId }: NotificationGroupItemPr
   const router = useRouter()
   const [isExpanded, setIsExpanded] = useState(false)
   const { mutate: markAsRead } = useMarkAsRead()
+  const { mutate: deleteNotification } = useDeleteNotification()
 
   const { latest, notifications, actorNames, hasUnread, type } = group
   const timestamp = formatTimestamp(latest.createdAt)
@@ -120,11 +121,25 @@ export function NotificationGroupItem({ group, teamId }: NotificationGroupItemPr
 
         {/* Unread indicator */}
         {hasUnread && (
-          <div 
-            className="absolute left-1.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-blue-500" 
+          <div
+            className="absolute left-1.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-blue-500"
             aria-label="Unread"
           />
         )}
+
+        {/* Clear button — visible on hover, clears all notifications in group */}
+        <button
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
+          aria-label="Dismiss all notifications in group"
+          onClick={(e) => {
+            e.stopPropagation()
+            notifications.forEach((n) =>
+              deleteNotification(n.id, { wasUnread: !n.readAt })
+            )
+          }}
+        >
+          <X className="h-3.5 w-3.5 text-muted-foreground" />
+        </button>
       </div>
 
       {/* Expanded view */}

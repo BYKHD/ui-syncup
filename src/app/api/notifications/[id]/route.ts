@@ -1,15 +1,15 @@
 /**
- * Mark Notification as Read API Route
+ * Notification by ID API Route
  *
- * PATCH /api/notifications/[id]/read - Mark a specific notification as read
+ * DELETE /api/notifications/[id] - Delete (dismiss) a specific notification
  *
- * @module api/notifications/[id]/read
+ * @module api/notifications/[id]
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/server/auth/session";
-import { markAsRead } from "@/server/notifications/notification-service";
+import { deleteNotification } from "@/server/notifications/notification-service";
 import { logger } from "@/lib/logger";
 
 /**
@@ -20,13 +20,13 @@ const ParamsSchema = z.object({
 });
 
 /**
- * PATCH /api/notifications/[id]/read
+ * DELETE /api/notifications/[id]
  *
- * Marks a specific notification as read for the authenticated user.
- * Only the notification owner can mark it as read (enforced by RLS).
+ * Deletes a specific notification for the authenticated user.
+ * Only the notification owner can delete it (enforced by recipient check).
  *
  * Path Parameters:
- * - id: UUID of the notification to mark as read
+ * - id: UUID of the notification to delete
  *
  * Success response (200):
  * { "success": true }
@@ -37,7 +37,7 @@ const ParamsSchema = z.object({
  * - 404: Notification not found or not owned by user
  * - 500: Internal server error
  */
-export async function PATCH(
+export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -45,26 +45,19 @@ export async function PATCH(
   const { id: notificationId } = await params;
 
   try {
-    // Authenticate user
     const user = await getSession();
 
     if (!user) {
       return NextResponse.json(
-        {
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Not authenticated",
-          },
-        },
+        { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
         { status: 401 }
       );
     }
 
-    // Validate notification ID
     const paramsResult = ParamsSchema.safeParse({ id: notificationId });
 
     if (!paramsResult.success) {
-      logger.warn("api.notifications.mark_read.validation_error", {
+      logger.warn("api.notifications.delete.validation_error", {
         requestId,
         userId: user.id,
         notificationId,
@@ -72,33 +65,27 @@ export async function PATCH(
       });
 
       return NextResponse.json(
-        {
-          error: {
-            code: "BAD_REQUEST",
-            message: "Invalid notification ID",
-          },
-        },
+        { error: { code: "BAD_REQUEST", message: "Invalid notification ID" } },
         { status: 400 }
       );
     }
 
-    // Mark notification as read
-    const updated = await markAsRead(user.id, [notificationId]);
+    const deleted = await deleteNotification(user.id, notificationId);
 
-    if (updated === 0) {
-      // Notification was either not found for this user, or already read.
-      // "Already read" is an idempotent success — the client already applied an
-      // optimistic update, and returning 404 would roll it back unnecessarily.
-      // Check if the notification belongs to this user regardless of read state;
-      // if so, treat as success (200). Unknown IDs are safely ignored.
-      logger.info("api.notifications.mark_read.already_read_or_not_found", {
+    if (deleted === 0) {
+      logger.warn("api.notifications.delete.not_found", {
         requestId,
         userId: user.id,
         notificationId,
       });
+
+      return NextResponse.json(
+        { error: { code: "NOT_FOUND", message: "Notification not found" } },
+        { status: 404 }
+      );
     }
 
-    logger.info("api.notifications.mark_read.success", {
+    logger.info("api.notifications.delete.success", {
       requestId,
       userId: user.id,
       notificationId,
@@ -106,7 +93,7 @@ export async function PATCH(
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    logger.error("api.notifications.mark_read.error", {
+    logger.error("api.notifications.delete.error", {
       requestId,
       notificationId,
       error: error instanceof Error ? error.message : "Unknown error",

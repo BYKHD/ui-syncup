@@ -1,11 +1,12 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { X } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { NotificationActions } from './notification-actions'
 import { formatTimestamp, NotificationIcon } from './utils'
-import { useMarkAsRead } from '@/features/notifications/hooks'
+import { useMarkAsRead, useDeleteNotification } from '@/features/notifications/hooks'
 import type { Notification } from '@/features/notifications/api'
 
 // ============================================================================
@@ -29,6 +30,7 @@ interface NotificationItemProps {
 export function NotificationItem({ notification, teamId }: NotificationItemProps) {
   const router = useRouter()
   const { mutate: markAsRead } = useMarkAsRead()
+  const { mutate: deleteNotification } = useDeleteNotification()
 
   const handleClick = () => {
     // Don't navigate or mark as read for invitation notifications
@@ -112,11 +114,23 @@ export function NotificationItem({ notification, teamId }: NotificationItemProps
 
       {/* Unread indicator */}
       {!notification.readAt && (
-        <div 
-          className="absolute left-1.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-blue-500" 
+        <div
+          className="absolute left-1.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-blue-500"
           aria-label="Unread"
         />
       )}
+
+      {/* Clear button — visible on hover */}
+      <button
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
+        aria-label="Dismiss notification"
+        onClick={(e) => {
+          e.stopPropagation()
+          deleteNotification(notification.id, { wasUnread: !notification.readAt })
+        }}
+      >
+        <X className="h-3.5 w-3.5 text-muted-foreground" />
+      </button>
     </div>
   )
 }

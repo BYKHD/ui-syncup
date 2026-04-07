@@ -41,6 +41,7 @@ export const NotificationMetadataSchema = z.object({
   old_status: z.string().optional(),
   new_status: z.string().optional(),
   invitation_id: z.string().optional(),
+  invitation_status: z.enum(['accepted', 'declined']).optional(),
   actor_name: z.string().optional(),
   actor_avatar_url: z.string().optional(),
 });

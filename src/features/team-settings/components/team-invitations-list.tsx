@@ -307,21 +307,12 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
                   </div>
                 </div>
                 <DialogFooter className="flex-col sm:flex-row gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsInviteDialogOpen(false)}
-                    disabled={isCreating || isCopyingLink}
-                  >
-                    Cancel
-                  </Button>
                   <LoadingButton
                     variant="outline"
                     onClick={handleCopyInvitationLink}
                     isLoading={isCopyingLink}
                     disabled={isCreating}
                   >
-                    <Copy className="mr-2 h-4 w-4" />
                     Copy Link
                   </LoadingButton>
                   <LoadingButton
@@ -407,9 +398,8 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
                                   disabled={resendingId === invitation.id || isResending}
                                 >
                                   <RefreshCw
-                                    className={`mr-2 h-4 w-4 ${
-                                      resendingId === invitation.id ? "animate-spin" : ""
-                                    }`}
+                                    className={`mr-2 h-4 w-4 ${resendingId === invitation.id ? "animate-spin" : ""
+                                      }`}
                                   />
                                   Resend Invitation
                                 </DropdownMenuItem>
@@ -452,9 +442,9 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
               Keep Invitation
             </AlertDialogCancel>
             <AlertDialogAction
+              variant="destructive"
               onClick={handleCancelInvitation}
               disabled={isCanceling}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isCanceling ? "Canceling..." : "Cancel Invitation"}
             </AlertDialogAction>

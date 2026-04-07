@@ -7,6 +7,8 @@ export { getNotifications } from "./get-notifications";
 export { getUnreadCount } from "./get-unread-count";
 export { markAsRead } from "./mark-as-read";
 export { markAllAsRead } from "./mark-all-as-read";
+export { deleteNotification } from "./delete-notification";
+export type { DeleteNotificationResponse } from "./delete-notification";
 
 // Types
 export type {

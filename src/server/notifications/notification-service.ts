@@ -17,7 +17,7 @@
 
 import { db } from "@/lib/db";
 import { notifications } from "@/server/db/schema/notifications";
-import { eq, and, desc, lt, isNull, gt, inArray, count } from "drizzle-orm";
+import { eq, and, desc, lt, isNull, gt, inArray, count, sql } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import type {
   Notification,
@@ -478,9 +478,129 @@ export async function markAllAsRead(userId: string): Promise<number> {
   }
 }
 
+/**
+ * Mark an invitation notification as responded by updating its metadata.
+ *
+ * Persists the accepted/declined state so it survives refetches and page reloads.
+ * Fire-and-forget: logs errors but does not throw.
+ *
+ * @param userId - The notification recipient
+ * @param invitationId - The invitation ID stored in metadata.invitation_id
+ * @param status - The response status ('accepted' or 'declined')
+ */
+export async function markInvitationNotificationAsResponded(
+  userId: string,
+  invitationId: string,
+  status: 'accepted' | 'declined'
+): Promise<void> {
+  try {
+    // Filter by invitation_id alone (globally unique per invitation) rather than
+    // combining with recipientId — avoids missed updates when the accepting user's
+    // session ID differs from the notification's recipientId (e.g. email-mismatch
+    // token acceptance where the invited email differs from the logged-in account).
+    const updated = await db
+      .update(notifications)
+      .set({
+        metadata: sql`${notifications.metadata} || ${JSON.stringify({ invitation_status: status })}::jsonb`,
+        readAt: sql`COALESCE(${notifications.readAt}, now())`,
+      })
+      .where(
+        sql`${notifications.metadata}->>'invitation_id' = ${invitationId}`
+      )
+      .returning({ id: notifications.id });
+
+    if (updated.length === 0) {
+      logger.warn("markInvitationNotificationAsResponded: no notification found", {
+        userId,
+        invitationId,
+        status,
+      });
+    }
+  } catch (error) {
+    logger.error("Failed to mark invitation notification as responded", {
+      error,
+      userId,
+      invitationId,
+      status,
+    });
+  }
+}
+
 // ============================================================================
 // DELETE OPERATIONS
 // ============================================================================
+
+/**
+ * Delete a single notification by ID for a specific user.
+ *
+ * Enforces ownership — only the recipient can delete their own notification.
+ *
+ * @param userId - The authenticated user's ID
+ * @param notificationId - The notification UUID to delete
+ * @returns Number of rows deleted (0 = not found or not owned)
+ */
+export async function deleteNotification(
+  userId: string,
+  notificationId: string
+): Promise<number> {
+  try {
+    const result = await db
+      .delete(notifications)
+      .where(
+        and(
+          eq(notifications.id, notificationId),
+          eq(notifications.recipientId, userId)
+        )
+      )
+      .returning({ id: notifications.id });
+
+    if (result.length > 0) {
+      logger.info("notification-service.delete.success", {
+        userId,
+        notificationId,
+      });
+    }
+
+    return result.length;
+  } catch (error) {
+    logger.error("notification-service.delete.error", {
+      error,
+      userId,
+      notificationId,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Delete a notification by its invitation_id metadata field.
+ *
+ * Used when an invitation is accepted — removes the notification entirely
+ * rather than leaving a "You accepted this invitation" tombstone.
+ *
+ * @param invitationId - The invitation ID stored in metadata.invitation_id
+ * @returns Number of rows deleted (0 if no matching notification exists)
+ */
+export async function deleteInvitationNotification(
+  invitationId: string
+): Promise<number> {
+  try {
+    const result = await db
+      .delete(notifications)
+      .where(sql`${notifications.metadata}->>'invitation_id' = ${invitationId}`)
+      .returning({ id: notifications.id });
+
+    return result.length;
+  } catch (error) {
+    logger.error("notification-service.deleteInvitationNotification.error", {
+      error,
+      invitationId,
+    });
+    // Non-fatal: acceptance already succeeded; worst case the notification
+    // stays in the DB and the client fallback badge will show.
+    return 0;
+  }
+}
 
 /**
  * Delete notifications by entity.

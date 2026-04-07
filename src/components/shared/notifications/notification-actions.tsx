@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { formatTimestamp } from './utils'
-import { useMarkAsRead, notificationKeys } from '@/features/notifications/hooks'
+import { useMarkAsRead, useDeleteNotification, notificationKeys } from '@/features/notifications/hooks'
 import type { Notification } from '@/features/notifications/api'
 
 // ============================================================================
@@ -49,6 +49,7 @@ export function NotificationActions({
   const router = useRouter()
   const queryClient = useQueryClient()
   const { mutate: markAsReadMutation } = useMarkAsRead()
+  const { mutate: deleteNotificationMutation } = useDeleteNotification()
   const [pendingAction, setPendingAction] = useState<InvitationAction | null>(null)
   const [localStatus, setLocalStatus] = useState<InvitationState | null>(null)
 
@@ -104,16 +105,6 @@ export function NotificationActions({
       // Parse response for redirect info
       const responseData = await response.json().catch(() => ({}))
 
-      // Update local state
-      setLocalStatus({
-        status: action === 'accept' ? 'accepted' : 'declined',
-        respondedAt: new Date().toISOString(),
-        message:
-          action === 'accept'
-            ? 'You accepted this invitation'
-            : 'You declined this invitation',
-      })
-
       // Show success toast
       toast.success(
         action === 'accept'
@@ -121,9 +112,20 @@ export function NotificationActions({
           : 'Invitation declined'
       )
 
-      // Mark notification as read and invalidate cache
-      markAsReadMutation(notification.id)
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all })
+      if (action === 'accept') {
+        // Delete the notification so it clears from the inbox immediately.
+        // useDeleteNotification handles optimistic removal + rollback on error.
+        deleteNotificationMutation(notification.id, { wasUnread: !notification.readAt })
+      } else {
+        // Decline: keep the notification with a "declined" badge.
+        setLocalStatus({
+          status: 'declined',
+          respondedAt: new Date().toISOString(),
+          message: 'You declined this invitation',
+        })
+        markAsReadMutation(notification.id)
+        queryClient.invalidateQueries({ queryKey: notificationKeys.all })
+      }
 
       // Navigate to the project/team if accepted
       if (action === 'accept') {
@@ -141,22 +143,13 @@ export function NotificationActions({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : ''
       
-      // Handle "Already used" as a success state (user already joined)
+      // Handle "Already used" — invitation was already accepted (e.g. via join-team link).
+      // The server's acceptInvitationById already deleted the notification from DB.
+      // Optimistically remove it here so the UI clears instantly without waiting
+      // for the cache invalidation round-trip.
       if (errorMessage.includes('already been used') || errorMessage.includes('already used')) {
-        setLocalStatus({
-          status: 'accepted',
-          message: 'You have already accepted this invitation',
-        })
         toast.info('You have already joined this team')
-        
-        // Mark as read to clean up
-        markAsReadMutation(notification.id)
-        queryClient.invalidateQueries({ queryKey: notificationKeys.all })
-        
-        // Optional: Redirect if target URL exists
-        if (action === 'accept' && notification.metadata.target_url) {
-          router.push(notification.metadata.target_url)
-        }
+        deleteNotificationMutation(notification.id, { wasUnread: !notification.readAt })
         return
       }
 
@@ -266,30 +259,17 @@ export function NotificationActions({
 // ============================================================================
 
 /**
- * Derive invitation state from notification metadata
+ * Derive invitation state from notification metadata.
+ * invitation_status is written by the server when the user accepts/declines,
+ * so it survives refetches and page reloads.
  */
 function deriveInvitationState(notification: Notification): InvitationState {
-  // If notification has been read, treat as already responded
-  // (invitation notifications are only marked read after accept/decline)
-  // If notification has been read, treat as already responded
-  // (invitation notifications are only marked read after accept/decline)
-  /* 
-  We are removing this check because "Read" != "Responded".
-  A user might read the notification but decide to act later.
-  We always default to pending and let the API decide if it's still valid.
-  */
-  // if (notification.readAt) {
-  //   return {
-  //     status: 'accepted', // Generic "responded" status
-  //     message: 'You responded to this invitation',
-  //     disabledReason: undefined,
-  //   }
-  // }
-
-  // Otherwise, invitation is still pending
-  return {
-    status: 'pending',
-    message: undefined,
-    disabledReason: undefined,
+  const status = notification.metadata.invitation_status;
+  if (status === 'accepted') {
+    return { status: 'accepted', message: 'You accepted this invitation' };
   }
+  if (status === 'declined') {
+    return { status: 'declined', message: 'You declined this invitation' };
+  }
+  return { status: 'pending', message: undefined, disabledReason: undefined };
 }

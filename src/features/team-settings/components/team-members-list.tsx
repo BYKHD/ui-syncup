@@ -151,7 +151,7 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
   };
 
   // Use real permission checks
-  const { canManageMembers } = useTeamPermissions(teamId); 
+  const { canManageMembers } = useTeamPermissions(teamId);
 
   if (isLoading) {
     return <TeamMembersLoadingSkeleton />;
@@ -328,7 +328,7 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
               onClick={handleRemoveMember}
             >
               Remove

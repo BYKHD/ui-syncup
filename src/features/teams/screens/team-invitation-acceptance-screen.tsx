@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { TEAMS_QUERY_KEY } from "@/features/teams/hooks/use-teams";
+import { notificationKeys } from "@/features/notifications/hooks";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,11 +73,13 @@ export function TeamInvitationAcceptanceScreen({
     setIsAccepting(true);
     setError(null);
     try {
-      const response = await fetch(`/api/teams/invitations/${token}/accept`);
-      if (response.redirected) {
+      const response = await fetch(`/api/teams/invitations/${token}/accept`, { redirect: 'manual' });
+      // A redirect response means the server accepted the invitation successfully
+      if (response.type === 'opaqueredirect' || response.redirected) {
         setShowSuccess(true);
         toast.success("Invitation accepted successfully");
         queryClient.removeQueries({ queryKey: [TEAMS_QUERY_KEY] });
+        queryClient.invalidateQueries({ queryKey: notificationKeys.all });
         setTimeout(() => {
           router.push("/projects");
         }, 1500);
@@ -89,6 +92,7 @@ export function TeamInvitationAcceptanceScreen({
       setShowSuccess(true);
       toast.success("Invitation accepted successfully");
       queryClient.removeQueries({ queryKey: [TEAMS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
       setTimeout(() => {
         router.push("/projects");
       }, 1500);
@@ -186,7 +190,7 @@ export function TeamInvitationAcceptanceScreen({
           )}
 
           <CardContent className="space-y-6">
-            <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+            <div className="rounded-lg border bg-card p-4 text-card-foreground">
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <span className="text-muted-foreground">Invited by:</span>
                 <span className="font-medium text-right">{inviterName}</span>

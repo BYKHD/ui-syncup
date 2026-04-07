@@ -10,7 +10,7 @@ import { addMember } from "./member-service";
 import { enqueueEmail } from "@/server/email";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { createNotification, buildTargetUrl } from "@/server/notifications";
+import { createNotification, buildTargetUrl, markInvitationNotificationAsResponded, deleteInvitationNotification } from "@/server/notifications";
 import type { CreateInvitationInput, Invitation } from "./types";
 import { logAdminAction } from "@/server/audit";
 
@@ -287,6 +287,12 @@ export async function acceptInvitation(token: string, userId: string): Promise<v
       .set({ usedAt: new Date() })
       .where(eq(teamInvitations.id, invitation.id));
 
+    // Delete the notification so it clears from the user's inbox after acceptance.
+    // Must be awaited — the route handler redirects immediately after this, and the
+    // client invalidates the notification cache on receipt. A fire-and-forget delete
+    // would race with that refetch and leave the notification visible.
+    await deleteInvitationNotification(invitation.id);
+
     // Log acceptance (Requirement 2.4, 14.2)
     logTeamEvent("team.invitation.accept.success", {
       outcome: "success",
@@ -557,6 +563,12 @@ export async function acceptInvitationById(
     }
 
     if (invitation.usedAt) {
+      // Invitation was already accepted (e.g. via /join-team email link).
+      // Delete the notification so it clears from the inbox on the next refetch.
+      // Must be awaited so the delete completes before the error is thrown and
+      // the client refetches — otherwise the notification still appears with buttons.
+      await deleteInvitationNotification(invitation.id);
+
       logTeamEvent("team.invitation.accept.failure", {
         outcome: "failure",
         userId,
@@ -569,6 +581,9 @@ export async function acceptInvitationById(
     }
 
     if (invitation.cancelledAt) {
+      // Persist the cancelled state on the notification similarly.
+      markInvitationNotificationAsResponded(userId, invitation.id, 'declined').catch(() => {});
+
       logTeamEvent("team.invitation.accept.failure", {
         outcome: "failure",
         userId,
@@ -606,6 +621,11 @@ export async function acceptInvitationById(
       .update(teamInvitations)
       .set({ usedAt: new Date() })
       .where(eq(teamInvitations.id, invitation.id));
+
+    // Persist accepted state on the notification so the UI doesn't re-show buttons.
+    // Must be awaited — the client invalidates the cache immediately after receiving
+    // the 200 response; a fire-and-forget update races with that refetch.
+    await markInvitationNotificationAsResponded(userId, invitation.id, 'accepted');
 
     logTeamEvent("team.invitation.accept.success", {
       outcome: "success",
@@ -705,6 +725,10 @@ export async function declineInvitationById(
       .update(teamInvitations)
       .set({ cancelledAt: new Date() })
       .where(eq(teamInvitations.id, invitation.id));
+
+    // Persist declined state on the notification so the UI doesn't re-show buttons.
+    // Must be awaited for the same reason as the accept path.
+    await markInvitationNotificationAsResponded(userId, invitation.id, 'declined');
 
     logTeamEvent("team.invitation.cancel.success", {
       outcome: "success",

@@ -55,8 +55,7 @@ export async function GET(
       userId: user.id,
     });
 
-    // Redirect to teams page (or could redirect to specific team)
-    return NextResponse.redirect(new URL('/teams', appUrl));
+    return NextResponse.redirect(new URL('/projects', appUrl));
     
   } catch (error) {
     logger.error('api.teams.invitations.accept.error', {
