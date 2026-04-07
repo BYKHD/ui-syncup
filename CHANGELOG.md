@@ -1,3 +1,11 @@
+# [0.8.0-beta.7](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.6...v0.8.0-beta.7) (2026-04-07)
+
+
+### Bug Fixes
+
+* replace Loader2 icon with RiLoader4Line in setup wizard ([0b3b07a](https://github.com/BYKHD/ui-syncup/commit/0b3b07ac0dd8765f7d24cf57fd6ce6f0dc93899f))
+* retrigger ([3b23d2e](https://github.com/BYKHD/ui-syncup/commit/3b23d2ef5e18f5a62c343a38600308874ef3d07e))
+
 # [0.8.0-beta.6](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.5...v0.8.0-beta.6) (2026-04-07)
 
 
