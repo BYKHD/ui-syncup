@@ -5,6 +5,7 @@ import {
   Head,
   Hr,
   Html,
+  Img,
   Preview,
   Section,
   Text,
@@ -16,21 +17,7 @@ interface EmailLayoutProps {
   children: React.ReactNode;
 }
 
-const LogoMark = () => (
-  <svg
-    width="22"
-    height="22"
-    viewBox="0 0 220 218"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    style={{ display: 'inline-block', verticalAlign: 'middle' }}
-  >
-    <path
-      d="M119.001 109.071V209.071H99.001V132.879L14.002 216.212L0 201.931L84.5166 119.071H9.00098V99.0713H109.001L119.001 109.071ZM186.782 172.711L179.711 179.782L172.641 186.854L132.234 146.447L139.306 139.376L146.376 132.305L186.782 172.711ZM209.001 119.071H151.857V99.0713H209.001V119.071ZM85.7676 71.6953L71.625 85.8379L31.2188 45.4316L45.3613 31.2891L85.7676 71.6953ZM209.001 9.07129L216.071 16.1426L146.376 85.8379L139.306 78.7666L132.234 71.6953L201.93 2L209.001 9.07129ZM119.001 66.2139H99.001V9.07129H119.001V66.2139Z"
-      fill="#18181b"
-    />
-  </svg>
-);
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
 export const EmailLayout = ({ preview, children }: EmailLayoutProps) => {
   return (
@@ -59,7 +46,13 @@ export const EmailLayout = ({ preview, children }: EmailLayoutProps) => {
                 <tbody>
                   <tr>
                     <td style={{ textAlign: 'center', paddingBottom: '4px' }}>
-                      <LogoMark />
+                      <Img
+                        src={`${appUrl}/web-app-manifest-192x192.png`}
+                        width="32"
+                        height="32"
+                        alt="UI SyncUp"
+                        style={{ display: 'inline-block', verticalAlign: 'middle' }}
+                      />
                       <span
                         style={{
                           fontSize: '15px',

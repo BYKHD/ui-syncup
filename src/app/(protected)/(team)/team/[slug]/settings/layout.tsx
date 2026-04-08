@@ -55,7 +55,7 @@ export default async function TeamSettingsLayout({
   };
 
   return (
-    <TeamSettingsScreen initialTeam={initialTeam} userRole={userRole}>
+    <TeamSettingsScreen initialTeam={initialTeam} userRole={userRole} slug={slug}>
       {children}
     </TeamSettingsScreen>
   );
