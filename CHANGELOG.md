@@ -1,3 +1,10 @@
+# [0.8.0-beta.10](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.9...v0.8.0-beta.10) (2026-04-08)
+
+
+### Bug Fixes
+
+* update team settings navigation to use slug-based paths ([2ab0ce9](https://github.com/BYKHD/ui-syncup/commit/2ab0ce9c1365b1987d447d927103ace14ae4ea6f))
+
 # [0.8.0-beta.9](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.8...v0.8.0-beta.9) (2026-04-07)
 
 
