@@ -31,6 +31,7 @@ import {
   RiLoader4Line,
 } from '@remixicon/react';
 import { toast } from 'sonner';
+import { PermissionTooltip } from '@/components/shared/permission-guard/permission-tooltip';
 
 interface ProjectActionsProps {
   projectId: string;
@@ -63,6 +64,7 @@ interface ProjectActionsProps {
 export function ProjectActions({
   projectId,
   projectName,
+  userRole,
   canManageMembers,
   canEditSettings,
   canLeaveProject,
@@ -126,11 +128,23 @@ export function ProjectActions({
     <>
       <div className="flex items-center gap-2">
         {/* Primary Action */}
-        {renderIssueDialog(
-          <Button>
-            <RiAddLine className="mr-1.5 h-3.5 w-3.5" />
-            Add Issue
-          </Button>
+        {userRole === 'viewer' ? (
+          <PermissionTooltip
+            tooltipContent="You don't have permission to create issues"
+            asChild
+          >
+            <Button disabled className="opacity-60 cursor-not-allowed">
+              <RiAddLine className="mr-1.5 h-3.5 w-3.5" />
+              Add Issue
+            </Button>
+          </PermissionTooltip>
+        ) : (
+          renderIssueDialog(
+            <Button>
+              <RiAddLine className="mr-1.5 h-3.5 w-3.5" />
+              Add Issue
+            </Button>
+          )
         )}
 
         {/* Secondary Actions Menu */}
