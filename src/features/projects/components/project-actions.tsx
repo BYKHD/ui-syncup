@@ -127,8 +127,15 @@ export function ProjectActions({
   return (
     <>
       <div className="flex items-center gap-2">
-        {/* Primary Action */}
-        {userRole === 'viewer' ? (
+        {/* Primary Action — only owner/editor can create issues per RBAC */}
+        {userRole === 'owner' || userRole === 'editor' ? (
+          renderIssueDialog(
+            <Button>
+              <RiAddLine className="mr-1.5 h-3.5 w-3.5" />
+              Add Issue
+            </Button>
+          )
+        ) : (
           <PermissionTooltip
             tooltipContent="You don't have permission to create issues"
             asChild
@@ -138,13 +145,6 @@ export function ProjectActions({
               Add Issue
             </Button>
           </PermissionTooltip>
-        ) : (
-          renderIssueDialog(
-            <Button>
-              <RiAddLine className="mr-1.5 h-3.5 w-3.5" />
-              Add Issue
-            </Button>
-          )
         )}
 
         {/* Secondary Actions Menu */}
