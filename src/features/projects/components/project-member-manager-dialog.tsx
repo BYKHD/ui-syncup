@@ -16,6 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip'
 import { RiTeamLine, RiMore2Line, RiUserLine, RiDeleteBinLine, RiAddLine, RiVipCrownLine, RiMailSendLine, RiAlertLine } from '@remixicon/react'
+import { getRoleDisplayName, getRoleBadgeVariant, getRoleDescription } from '@/features/projects/utils/role-helpers'
 
 interface User {
   id: string
@@ -135,26 +136,6 @@ export function ProjectMemberManagerDialog({
     setRoleChangeData(null)
   }
 
-  const getRoleDisplayName = (role: string) => {
-    const roleNames = {
-      owner: 'Owner',
-      editor: 'Editor',
-      member: 'Member',
-      viewer: 'Viewer'
-    }
-    return roleNames[role as keyof typeof roleNames] || role
-  }
-
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'owner': return 'default'
-      case 'editor': return 'secondary'
-      case 'member': return 'outline'
-      case 'viewer': return 'outline'
-      default: return 'outline'
-    }
-  }
-
   const canChangeRole = (member: ProjectMember) => {
     if (!canManageMembers) return false
     if (member.role === 'owner' && userRole !== 'owner') return false
@@ -250,20 +231,40 @@ export function ProjectMemberManagerDialog({
                                 {canChangeRole(member) && (
                                   <>
                                     <DropdownMenuItem onClick={() => handleRoleChange(member, 'owner')}>
-                                      <RiVipCrownLine className="h-4 w-4" />
-                                      Make Owner
+                                      <RiVipCrownLine className="h-4 w-4 shrink-0" />
+                                      <div className="flex flex-col">
+                                        <span>Make Owner</span>
+                                        <span className="text-xs text-muted-foreground font-normal">
+                                          {getRoleDescription('owner')}
+                                        </span>
+                                      </div>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleRoleChange(member, 'editor')}>
-                                      <RiUserLine className="h-4 w-4" />
-                                      Make Editor
+                                      <RiUserLine className="h-4 w-4 shrink-0" />
+                                      <div className="flex flex-col">
+                                        <span>Make Editor</span>
+                                        <span className="text-xs text-muted-foreground font-normal">
+                                          {getRoleDescription('editor')}
+                                        </span>
+                                      </div>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleRoleChange(member, 'member')}>
-                                      <RiUserLine className="h-4 w-4" />
-                                      Make Member
+                                      <RiUserLine className="h-4 w-4 shrink-0" />
+                                      <div className="flex flex-col">
+                                        <span>Make Member</span>
+                                        <span className="text-xs text-muted-foreground font-normal">
+                                          {getRoleDescription('member')}
+                                        </span>
+                                      </div>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleRoleChange(member, 'viewer')}>
-                                      <RiUserLine className="h-4 w-4" />
-                                      Make Viewer
+                                      <RiUserLine className="h-4 w-4 shrink-0" />
+                                      <div className="flex flex-col">
+                                        <span>Make Viewer</span>
+                                        <span className="text-xs text-muted-foreground font-normal">
+                                          {getRoleDescription('viewer')}
+                                        </span>
+                                      </div>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                   </>

@@ -10,6 +10,16 @@ export function getRoleDisplayName(role: ProjectRole): string {
   return roleNames[role]
 }
 
+export function getRoleDescription(role: ProjectRole): string {
+  const descriptions: Record<ProjectRole, string> = {
+    owner: 'Full control: manage members, settings, and all content',
+    editor: 'Create and edit issues, manage members',
+    member: 'Create issues, comment, and collaborate',
+    viewer: 'Read-only access — cannot create or edit content',
+  }
+  return descriptions[role]
+}
+
 export function getRoleBadgeVariant(
   role: ProjectRole
 ): 'default' | 'secondary' | 'outline' {
