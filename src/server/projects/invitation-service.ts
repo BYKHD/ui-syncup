@@ -242,7 +242,7 @@ export async function createProjectInvitation(
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
       const invitationUrl = `${baseUrl}/invite/project/${token}`;
       
-      // Format role for display (e.g., "PROJECT_DEVELOPER" -> "Developer")
+      // Format role for display (e.g., "PROJECT_MEMBER" -> "Member")
       const roleDisplay = role.replace('PROJECT_', '').toLowerCase()
         .split('_')
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
