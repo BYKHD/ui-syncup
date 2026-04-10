@@ -1,3 +1,10 @@
+# [0.8.0-beta.11](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.10...v0.8.0-beta.11) (2026-04-10)
+
+
+### Bug Fixes
+
+* add PROJECT_MEMBER role and fix PATCH member role assignment ([#128](https://github.com/BYKHD/ui-syncup/issues/128)) ([#132](https://github.com/BYKHD/ui-syncup/issues/132)) ([4c4ef9f](https://github.com/BYKHD/ui-syncup/commit/4c4ef9fd8fca7af339740201e84a3f4dcdd17f9f))
+
 # [0.8.0-beta.10](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.9...v0.8.0-beta.10) (2026-04-08)
 
 
