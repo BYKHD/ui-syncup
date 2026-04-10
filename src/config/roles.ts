@@ -50,7 +50,6 @@ export type TeamRole = (typeof TEAM_ROLES)[keyof typeof TEAM_ROLES];
 export const PROJECT_ROLES = {
   PROJECT_OWNER: "owner",
   PROJECT_EDITOR: "editor",
-  PROJECT_DEVELOPER: "developer",
   PROJECT_MEMBER: "member",
   PROJECT_VIEWER: "viewer",
 } as const;
@@ -258,26 +257,13 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     PERMISSIONS.ANNOTATION_COMMENT,
   ],
 
-  [PROJECT_ROLES.PROJECT_DEVELOPER]: [
+  [PROJECT_ROLES.PROJECT_MEMBER]: [
     // Project permissions (view only)
     PERMISSIONS.PROJECT_VIEW,
 
     // Issue permissions (view, update status, comment)
     PERMISSIONS.ISSUE_VIEW,
-    PERMISSIONS.ISSUE_UPDATE,
-    PERMISSIONS.ISSUE_COMMENT,
-
-    // Annotation permissions (view and comment)
-    PERMISSIONS.ANNOTATION_VIEW,
-    PERMISSIONS.ANNOTATION_COMMENT,
-  ],
-
-  [PROJECT_ROLES.PROJECT_MEMBER]: [
-    // Project permissions (view only)
-    PERMISSIONS.PROJECT_VIEW,
-
-    // Issue permissions (view and comment)
-    PERMISSIONS.ISSUE_VIEW,
+    PERMISSIONS.ISSUE_UPDATE,   // keep — matches what developer could do
     PERMISSIONS.ISSUE_COMMENT,
 
     // Annotation permissions (view and comment)
@@ -352,7 +338,6 @@ export const TEAM_OPERATIONAL_ROLE_HIERARCHY: Record<TeamOperationalRole, number
  */
 export const PROJECT_ROLE_HIERARCHY: Record<ProjectRole, number> = {
   [PROJECT_ROLES.PROJECT_VIEWER]: 1,
-  [PROJECT_ROLES.PROJECT_DEVELOPER]: 2,
   [PROJECT_ROLES.PROJECT_MEMBER]: 2,
   [PROJECT_ROLES.PROJECT_EDITOR]: 3,
   [PROJECT_ROLES.PROJECT_OWNER]: 4,
@@ -420,7 +405,6 @@ export const ROLE_LABELS: Record<Role, string> = {
   // Project roles
   [PROJECT_ROLES.PROJECT_OWNER]: "Owner",
   [PROJECT_ROLES.PROJECT_EDITOR]: "Editor",
-  [PROJECT_ROLES.PROJECT_DEVELOPER]: "Developer",
   [PROJECT_ROLES.PROJECT_MEMBER]: "Member",
   [PROJECT_ROLES.PROJECT_VIEWER]: "Viewer",
 };
@@ -448,8 +432,6 @@ export const ROLE_DESCRIPTIONS: Record<Role, string> = {
     "Full control over project and its issues. Auto-promotes to TEAM_EDITOR.",
   [PROJECT_ROLES.PROJECT_EDITOR]:
     "Create and manage issues and annotations. Auto-promotes to TEAM_EDITOR.",
-  [PROJECT_ROLES.PROJECT_DEVELOPER]:
-    "Update issue status and comment.",
   [PROJECT_ROLES.PROJECT_MEMBER]:
     "View issues and leave comments. Cannot create or edit issues.",
   [PROJECT_ROLES.PROJECT_VIEWER]:
