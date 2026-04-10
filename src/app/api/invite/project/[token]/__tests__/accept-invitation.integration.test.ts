@@ -206,7 +206,7 @@ describe('POST /api/invite/project/[token]', () => {
     const { invitation, token } = await createProjectInvitation({
       projectId: project.id,
       email: inviteeEmail,
-      role: PROJECT_ROLES.PROJECT_DEVELOPER,
+      role: PROJECT_ROLES.PROJECT_MEMBER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -306,7 +306,7 @@ describe('POST /api/invite/project/[token]', () => {
     const { invitation, token } = await createProjectInvitation({
       projectId: project.id,
       email: inviteeEmail,
-      role: PROJECT_ROLES.PROJECT_DEVELOPER,
+      role: PROJECT_ROLES.PROJECT_MEMBER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);

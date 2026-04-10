@@ -128,7 +128,7 @@ describe('Integration Test: Project Invitation Service', () => {
     const { invitation, token } = await createProjectInvitation({
       projectId: project.id,
       email: inviteeEmail,
-      role: PROJECT_ROLES.PROJECT_DEVELOPER,
+      role: PROJECT_ROLES.PROJECT_MEMBER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -136,7 +136,7 @@ describe('Integration Test: Project Invitation Service', () => {
     // Verify invitation details
     expect(invitation.id).toBeTruthy();
     expect(invitation.email).toBe(inviteeEmail);
-    expect(invitation.role).toBe(PROJECT_ROLES.PROJECT_DEVELOPER);
+    expect(invitation.role).toBe(PROJECT_ROLES.PROJECT_MEMBER);
     expect(invitation.status).toBe('pending');
     expect(invitation.invitedBy).toBe(owner.id);
     expect(invitation.expiresAt).toBeTruthy();
@@ -235,7 +235,7 @@ describe('Integration Test: Project Invitation Service', () => {
     const { invitation } = await createProjectInvitation({
       projectId: project.id,
       email: inviteeEmail,
-      role: PROJECT_ROLES.PROJECT_DEVELOPER,
+      role: PROJECT_ROLES.PROJECT_MEMBER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -343,7 +343,7 @@ describe('Integration Test: Project Invitation Service', () => {
     const { invitation } = await createProjectInvitation({
       projectId: project.id,
       email: inviteeEmail,
-      role: PROJECT_ROLES.PROJECT_DEVELOPER,
+      role: PROJECT_ROLES.PROJECT_MEMBER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -383,7 +383,7 @@ describe('Integration Test: Project Invitation Service', () => {
       const { invitation } = await createProjectInvitation({
         projectId: project.id,
         email: `invitee-${i}-${Date.now()}@example.com`,
-        role: PROJECT_ROLES.PROJECT_DEVELOPER,
+        role: PROJECT_ROLES.PROJECT_MEMBER,
         invitedBy: owner.id,
       });
       testInvitationIds.push(invitation.id);
@@ -394,7 +394,7 @@ describe('Integration Test: Project Invitation Service', () => {
       createProjectInvitation({
         projectId: project.id,
         email: `invitee-11-${Date.now()}@example.com`,
-        role: PROJECT_ROLES.PROJECT_DEVELOPER,
+        role: PROJECT_ROLES.PROJECT_MEMBER,
         invitedBy: owner.id,
       })
     ).rejects.toThrow('Invitation rate limit exceeded');
@@ -487,7 +487,7 @@ describe('Integration Test: Project Invitation Service', () => {
     const { invitation, token } = await createProjectInvitation({
       projectId: project.id,
       email: inviteeEmail,
-      role: PROJECT_ROLES.PROJECT_DEVELOPER,
+      role: PROJECT_ROLES.PROJECT_MEMBER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -532,7 +532,7 @@ describe('Integration Test: Project Invitation Service', () => {
     const { invitation: inv1 } = await createProjectInvitation({
       projectId: project.id,
       email: `pending-${Date.now()}@example.com`,
-      role: PROJECT_ROLES.PROJECT_DEVELOPER,
+      role: PROJECT_ROLES.PROJECT_MEMBER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(inv1.id);
@@ -588,7 +588,7 @@ describe('Integration Test: Project Invitation Service', () => {
     const { invitation } = await createProjectInvitation({
       projectId: project.id,
       email: inviteeEmail,
-      role: PROJECT_ROLES.PROJECT_DEVELOPER,
+      role: PROJECT_ROLES.PROJECT_MEMBER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -634,7 +634,7 @@ describe('Integration Test: Project Invitation Service', () => {
     await db.insert(projectMembers).values({
       projectId: project.id,
       userId: member.id,
-      role: PROJECT_ROLES.PROJECT_DEVELOPER,
+      role: PROJECT_ROLES.PROJECT_MEMBER,
     });
     
     // Try to invite existing member - should fail
