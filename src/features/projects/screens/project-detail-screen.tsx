@@ -171,7 +171,7 @@ export default function ProjectDetailScreen({
     return invitationsData.map((inv) => ({
       id: inv.id,
       invitedUserId: inv.invitedUser?.id || '', // Get from invitedUser object if exists
-      role: inv.role as 'editor' | 'developer' | 'viewer',
+      role: inv.role as 'editor' | 'member' | 'viewer',
       status: inv.status,
       createdAt: new Date(inv.createdAt),
       expiresAt: new Date(inv.expiresAt),

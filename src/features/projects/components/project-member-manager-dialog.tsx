@@ -36,7 +36,7 @@ interface ProjectMember {
 interface ProjectInvitation {
   id: string
   invitedUserId: string
-  role: 'editor' | 'developer' | 'viewer'
+  role: 'editor' | 'member' | 'viewer'
   status: 'pending' | 'accepted' | 'declined' | 'expired'
   createdAt: Date
   expiresAt: Date
@@ -140,7 +140,6 @@ export function ProjectMemberManagerDialog({
       owner: 'Owner',
       editor: 'Editor',
       member: 'Member',
-      developer: 'Developer',
       viewer: 'Viewer'
     }
     return roleNames[role as keyof typeof roleNames] || role
