@@ -27,7 +27,7 @@ describe('ProjectMemberManagerDialog', () => {
   const mockPendingInvitation = {
     id: 'invite-1',
     invitedUserId: 'user-2',
-    role: 'developer' as const,
+    role: 'member' as const,
     status: 'pending' as const,
     createdAt: new Date(),
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -112,8 +112,8 @@ describe('ProjectMemberManagerDialog', () => {
     it('should show role badge', () => {
       render(<ProjectMemberManagerDialog {...defaultProps} />);
       
-      // Developer role badge should be visible for the pending invitation
-      const badges = screen.getAllByText('Developer');
+      // Member role badge should be visible for the pending invitation
+      const badges = screen.getAllByText('Member');
       expect(badges.length).toBeGreaterThan(0);
     });
 

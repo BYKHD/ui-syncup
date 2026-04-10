@@ -107,10 +107,10 @@ describe('ProjectInvitationDialog', () => {
   });
 
   describe('Role selection', () => {
-    it('should default to developer role', () => {
+    it('should default to member role', () => {
       render(<ProjectInvitationDialog {...defaultProps} />);
-      
-      expect(screen.getByText('Developer')).toBeInTheDocument();
+
+      expect(screen.getByText('Member')).toBeInTheDocument();
     });
 
     it('should show role description', () => {
@@ -140,7 +140,7 @@ describe('ProjectInvitationDialog', () => {
             method: 'POST',
             body: JSON.stringify({
               email: 'test@example.com',
-              role: 'developer',
+              role: 'member',
             }),
           })
         );
