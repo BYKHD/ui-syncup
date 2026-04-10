@@ -26,7 +26,7 @@ function getRoleDescription(role: string) {
   switch (role) {
     case 'editor':
       return 'Can invite members, create and edit issues, and comment'
-    case 'developer':
+    case 'member':
       return 'Can update issue status and comment on issues'
     case 'viewer':
       return 'Can only view project content (read-only access)'
@@ -49,7 +49,7 @@ function validateRole(role: string): string | null {
   if (!role) {
     return 'Role is required'
   }
-  if (!['editor', 'developer', 'viewer'].includes(role)) {
+  if (!['editor', 'member', 'viewer'].includes(role)) {
     return 'Invalid role selected'
   }
   return null
@@ -73,7 +73,7 @@ export function ProjectInvitationDialog({
   onInvitationSent
 }: ProjectInvitationDialogProps) {
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState<'editor' | 'developer' | 'viewer'>('developer')
+  const [role, setRole] = useState<'editor' | 'member' | 'viewer'>('member')
   const [errors, setErrors] = useState<{ email?: string; role?: string }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -94,7 +94,7 @@ export function ProjectInvitationDialog({
   useEffect(() => {
     if (!open) {
       setEmail('')
-      setRole('developer')
+      setRole('member')
       setErrors({})
       setSubmitError(null)
       setShowSuggestions(false)
@@ -148,7 +148,7 @@ export function ProjectInvitationDialog({
     }
   }
 
-  const handleRoleChange = (value: 'editor' | 'developer' | 'viewer') => {
+  const handleRoleChange = (value: 'editor' | 'member' | 'viewer') => {
     setRole(value)
     if (errors.role) {
       setErrors(prev => ({ ...prev, role: undefined }))
@@ -329,9 +329,9 @@ export function ProjectInvitationDialog({
                       <span className="text-xs text-muted-foreground">Can invite members and edit content</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="developer">
+                  <SelectItem value="member">
                     <div className="flex flex-col items-start">
-                      <span className="font-medium">Developer</span>
+                      <span className="font-medium">Member</span>
                       <span className="text-xs text-muted-foreground">Can update status and comment</span>
                     </div>
                   </SelectItem>
