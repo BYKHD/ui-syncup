@@ -99,7 +99,15 @@ export async function apiClient<TResponse>(
         }, null, 2)
       )
     }
-    throw new ApiError(response.status, response.statusText, payload)
+    const errorMessage =
+      isJson &&
+      payload !== null &&
+      typeof payload === 'object' &&
+      'error' in payload &&
+      typeof (payload as { error?: { message?: unknown } }).error?.message === 'string'
+        ? (payload as { error: { message: string } }).error.message
+        : response.statusText
+    throw new ApiError(response.status, errorMessage, payload)
   }
 
   return payload as TResponse

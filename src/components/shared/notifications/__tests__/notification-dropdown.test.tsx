@@ -21,22 +21,6 @@ vi.mock('@/features/notifications/hooks', () => ({
   }),
 }))
 
-// Mock the groupNotifications utility
-vi.mock('@/features/notifications/utils/group-notifications', () => ({
-  groupNotifications: (notifications: Notification[]) =>
-    notifications.map((n) => ({
-      key: n.id,
-      type: n.type,
-      entityType: n.entityType,
-      entityId: n.entityId,
-      notifications: [n],
-      latest: n,
-      latestAt: new Date(n.createdAt),
-      actorNames: [n.metadata.actor_name || 'Someone'],
-      hasUnread: !n.readAt,
-    })),
-}))
-
 // Mock child components
 vi.mock('../notification-item', () => ({
   NotificationItem: ({ notification }: { notification: Notification }) => (
@@ -44,10 +28,6 @@ vi.mock('../notification-item', () => ({
       {notification.metadata.actor_name}
     </div>
   ),
-}))
-
-vi.mock('../notification-group-item', () => ({
-  NotificationGroupItem: () => <div data-testid="group-item">Group</div>,
 }))
 
 describe('NotificationDropdown', () => {
