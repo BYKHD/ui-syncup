@@ -31,18 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-import { useTeamMembers, useUpdateMemberRoles, useRemoveMember, useTeamPermissions } from "@/features/teams";
+import { useTeamMembers, useUpdateMemberRoles, useTeamPermissions } from "@/features/teams";
+import { RemoveMemberDialog } from './remove-member-dialog';
 import type { TeamMember } from "@/features/teams/api";
 import { SettingsCard } from "./settings-card";
 import { TeamMembersLoadingSkeleton } from "./loading-states";
@@ -67,7 +57,6 @@ interface TeamMembersListProps {
 export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps) {
   const { data, isLoading, error, isError } = useTeamMembers(teamId);
   const { mutate: updateRole, isPending: isUpdating } = useUpdateMemberRoles();
-  const { mutate: removeMember, isPending: isRemoving } = useRemoveMember();
 
   const [memberToRemove, setMemberToRemove] = useState<TeamMember | null>(null);
 
@@ -108,26 +97,6 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
         },
         onError: (error) => {
           toast.error(error.message || "Failed to update admin rights");
-        },
-      }
-    );
-  };
-
-  const handleRemoveMember = () => {
-    if (!memberToRemove) return;
-
-    removeMember(
-      {
-        teamId,
-        userId: memberToRemove.userId,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Member removed successfully");
-          setMemberToRemove(null);
-        },
-        onError: (error) => {
-          toast.error(error.message || "Failed to remove member");
         },
       }
     );
@@ -316,26 +285,15 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
         </div>
       </SettingsCard>
 
-      <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove team member?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to remove {memberToRemove?.user.name} from the team?
-              They will lose access to all team resources.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={handleRemoveMember}
-            >
-              Remove
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {memberToRemove && (
+        <RemoveMemberDialog
+          member={memberToRemove}
+          teamId={teamId}
+          open={!!memberToRemove}
+          onOpenChange={(open) => { if (!open) setMemberToRemove(null); }}
+          onSuccess={() => setMemberToRemove(null)}
+        />
+      )}
     </>
   );
 }
