@@ -86,8 +86,9 @@ export async function apiClient<TResponse>(
 
   if (!response.ok) {
     // Log the error for debugging
-    // Skip 401 errors to avoid noise in the console (expected for unauthenticated users)
-    if (process.env.NODE_ENV === 'development' && response.status !== 401) {
+    // Skip 401 (unauthenticated) and 409 (conflict / expected flow like ownership transfer)
+    // as these are handled intentionally by the caller.
+    if (process.env.NODE_ENV === 'development' && response.status !== 401 && response.status !== 409) {
       console.error(
         '[API Error]', 
         JSON.stringify({
