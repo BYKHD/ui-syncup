@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/server/auth/session';
-import { updateMemberRoles, removeMember } from '@/server/teams/member-service';
+import { updateMemberRoles, removeWithOwnershipTransfer } from '@/server/teams/member-service';
 import { hasRole } from '@/server/auth/rbac';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
@@ -24,6 +24,15 @@ import { eq, and } from 'drizzle-orm';
 const UpdateMemberRolesSchema = z.object({
   managementRole: z.enum(['TEAM_OWNER', 'TEAM_ADMIN']).nullable().optional(),
   operationalRole: z.enum(['TEAM_EDITOR', 'TEAM_MEMBER', 'TEAM_VIEWER']).optional(),
+});
+
+const RemoveMemberSchema = z.object({
+  ownershipTransfers: z.array(
+    z.object({
+      projectId: z.string().uuid(),
+      newOwnerId: z.string().uuid(),
+    })
+  ).optional().default([]),
 });
 
 /**
@@ -272,8 +281,17 @@ export async function DELETE(
       );
     }
     
-    // Remove member
-    await removeMember(teamId, userId, user.id);
+    // Parse optional body for ownership transfers
+    let ownershipTransfers: { projectId: string; newOwnerId: string }[] = [];
+    try {
+      const body = await request.json().catch(() => ({}));
+      const parsed = RemoveMemberSchema.safeParse(body);
+      if (parsed.success) ownershipTransfers = parsed.data.ownershipTransfers;
+    } catch {
+      // Body is optional — proceed with empty transfers
+    }
+
+    await removeWithOwnershipTransfer(teamId, userId, ownershipTransfers, user.id);
     
     // Audit log removal
     logAdminAction('member.removed', {
@@ -309,19 +327,14 @@ export async function DELETE(
     
     // Handle specific errors
     if (error instanceof Error) {
-      if (error.message.includes('owns projects')) {
+      if (error.message.includes('OWNERSHIP_TRANSFER_REQUIRED') || error.message.includes('owns projects')) {
         return NextResponse.json(
-          {
-            error: {
-              code: 'MEMBER_OWNS_PROJECTS',
-              message: error.message,
-            },
-          },
+          { error: { code: 'MEMBER_OWNS_PROJECTS', message: 'Member owns projects. Transfer ownership first.' } },
           { status: 409 }
         );
       }
     }
-    
+
     return NextResponse.json(
       {
         error: {
