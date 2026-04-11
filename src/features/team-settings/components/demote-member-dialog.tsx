@@ -11,52 +11,63 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useOwnedProjects, useRemoveMember } from '@/features/teams/hooks';
-import { OwnershipTransferSection } from './ownership-transfer-section';
+import { useOwnedProjects, useUpdateMemberRoles } from '@/features/teams/hooks';
 import type { TeamMember } from '@/features/teams/api';
+import { OwnershipTransferSection } from './ownership-transfer-section';
 
-interface RemoveMemberDialogProps {
+const ROLE_LABELS: Record<string, string> = {
+  TEAM_MEMBER: 'Member',
+  TEAM_VIEWER: 'Viewer',
+};
+
+interface DemoteMemberDialogProps {
   member: TeamMember;
   teamId: string;
+  newRole: 'TEAM_MEMBER' | 'TEAM_VIEWER';
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
 
-export function RemoveMemberDialog({
+export function DemoteMemberDialog({
   member,
   teamId,
+  newRole,
   open,
   onOpenChange,
   onSuccess,
-}: RemoveMemberDialogProps) {
+}: DemoteMemberDialogProps) {
   const [transfers, setTransfers] = useState<Record<string, string>>({});
 
   const { data, isLoading } = useOwnedProjects(teamId, member.userId, { enabled: open });
-  const { mutate: removeMember, isPending } = useRemoveMember();
+  const { mutate: updateRoles, isPending } = useUpdateMemberRoles();
 
   const ownedProjects = data?.ownedProjects ?? [];
   const eligibleOwners = data?.eligibleOwners ?? [];
-  const hasProjects = ownedProjects.length > 0;
-  const allAssigned = !hasProjects || ownedProjects.every(p => !!transfers[p.id]);
+  const allAssigned = ownedProjects.every(p => !!transfers[p.id]);
 
-  function handleRemove() {
+  function handleDemote() {
     const ownershipTransfers = ownedProjects.map(p => ({
       projectId: p.id,
       newOwnerId: transfers[p.id],
     }));
 
-    removeMember(
-      { teamId, userId: member.userId, ownershipTransfers },
+    updateRoles(
+      {
+        teamId,
+        userId: member.userId,
+        input: { operationalRole: newRole },
+        ownershipTransfers,
+      },
       {
         onSuccess: () => {
-          toast.success(`${member.user.name} removed from the team`);
+          toast.success(`${member.user.name} demoted to ${ROLE_LABELS[newRole]}`);
           setTransfers({});
           onOpenChange(false);
           onSuccess();
         },
         onError: (error) => {
-          toast.error(error.message || 'Failed to remove member');
+          toast.error(error.message || 'Failed to update member role');
         },
       }
     );
@@ -71,23 +82,16 @@ export function RemoveMemberDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {hasProjects ? 'Transfer ownership before removing' : 'Remove team member?'}
-          </DialogTitle>
+          <DialogTitle>Transfer ownership before demoting</DialogTitle>
           <DialogDescription>
             {isLoading ? (
               'Checking project ownership\u2026'
-            ) : hasProjects ? (
+            ) : (
               <>
                 <span className="font-medium">{member.user.name}</span> owns{' '}
                 {ownedProjects.length} project{ownedProjects.length !== 1 ? 's' : ''}.
-                Assign a new owner for each before removing them from the team.
-              </>
-            ) : (
-              <>
-                Are you sure you want to remove{' '}
-                <span className="font-medium">{member.user.name}</span> from the team?
-                They will lose access to all team resources.
+                Assign a new owner for each before changing their role to{' '}
+                {ROLE_LABELS[newRole]}.
               </>
             )}
           </DialogDescription>
@@ -113,10 +117,10 @@ export function RemoveMemberDialog({
           </Button>
           <Button
             variant="destructive"
-            onClick={handleRemove}
+            onClick={handleDemote}
             disabled={!allAssigned || isPending || isLoading}
           >
-            {hasProjects ? 'Remove Member' : 'Remove'}
+            Demote to {ROLE_LABELS[newRole]}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/server/auth/session';
-import { updateMemberRoles, removeWithOwnershipTransfer } from '@/server/teams/member-service';
+import { updateMemberRoles, removeWithOwnershipTransfer, demoteWithOwnershipTransfer } from '@/server/teams/member-service';
 import { hasRole } from '@/server/auth/rbac';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
@@ -24,6 +24,12 @@ import { eq, and } from 'drizzle-orm';
 const UpdateMemberRolesSchema = z.object({
   managementRole: z.enum(['TEAM_OWNER', 'TEAM_ADMIN']).nullable().optional(),
   operationalRole: z.enum(['TEAM_EDITOR', 'TEAM_MEMBER', 'TEAM_VIEWER']).optional(),
+  ownershipTransfers: z.array(
+    z.object({
+      projectId: z.string().uuid(),
+      newOwnerId: z.string().uuid(),
+    })
+  ).optional(),
 });
 
 const RemoveMemberSchema = z.object({
@@ -129,8 +135,22 @@ export async function PATCH(
       ),
     });
 
-    // Update member roles
-    const member = await updateMemberRoles(teamId, userId, validation.data, user.id);
+    const { ownershipTransfers, ...roleInput } = validation.data;
+    const isDemotion =
+      roleInput.operationalRole === 'TEAM_MEMBER' ||
+      roleInput.operationalRole === 'TEAM_VIEWER';
+
+    // When ownership transfers are provided for a demotion, use the transfer-aware path
+    const member =
+      ownershipTransfers && ownershipTransfers.length > 0 && isDemotion
+        ? await demoteWithOwnershipTransfer(
+            teamId,
+            userId,
+            roleInput.operationalRole as 'TEAM_MEMBER' | 'TEAM_VIEWER',
+            ownershipTransfers,
+            user.id
+          )
+        : await updateMemberRoles(teamId, userId, roleInput, user.id);
 
     // Audit log role changes
     if (currentMember) {
@@ -188,7 +208,7 @@ export async function PATCH(
         );
       }
       
-      if (error.message.includes('owns projects')) {
+      if (error.message.includes('OWNERSHIP_TRANSFER_REQUIRED') || error.message.includes('owns projects')) {
         return NextResponse.json(
           {
             error: {
@@ -199,7 +219,7 @@ export async function PATCH(
           { status: 409 }
         );
       }
-      
+
       if (error.message.includes('not found')) {
         return NextResponse.json(
           {

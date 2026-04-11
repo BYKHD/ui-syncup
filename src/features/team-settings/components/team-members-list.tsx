@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { useTeamMembers, useUpdateMemberRoles, useTeamPermissions } from "@/features/teams";
 import { RemoveMemberDialog } from './remove-member-dialog';
+import { DemoteMemberDialog } from './demote-member-dialog';
 import type { TeamMember } from "@/features/teams/api";
 import { SettingsCard } from "./settings-card";
 import { TeamMembersLoadingSkeleton } from "./loading-states";
@@ -59,6 +60,7 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
   const { mutate: updateRole, isPending: isUpdating } = useUpdateMemberRoles();
 
   const [memberToRemove, setMemberToRemove] = useState<TeamMember | null>(null);
+  const [demoteIntent, setDemoteIntent] = useState<{ member: TeamMember; newRole: 'TEAM_MEMBER' | 'TEAM_VIEWER' } | null>(null);
 
   const members = data?.members ?? [];
 
@@ -66,11 +68,11 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
     console.error("Failed to load team members:", error);
   }
 
-  const handleOperationalRoleChange = (memberId: string, newRole: string) => {
+  const handleOperationalRoleChange = (member: TeamMember, newRole: string) => {
     updateRole(
       {
         teamId,
-        userId: memberId,
+        userId: member.userId,
         input: { operationalRole: newRole },
       },
       {
@@ -78,7 +80,17 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
           toast.success("Member role updated successfully");
         },
         onError: (error) => {
-          toast.error(error.message || "Failed to update member role");
+          if (
+            error.message.includes('owns projects') ||
+            error.message.includes('OWNERSHIP_TRANSFER_REQUIRED')
+          ) {
+            setDemoteIntent({
+              member,
+              newRole: newRole as 'TEAM_MEMBER' | 'TEAM_VIEWER',
+            });
+          } else {
+            toast.error(error.message || "Failed to update member role");
+          }
         },
       }
     );
@@ -201,7 +213,7 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
                         <Select
                           value={member.operationalRole}
                           onValueChange={(newRole) => {
-                            handleOperationalRoleChange(member.userId, newRole);
+                            handleOperationalRoleChange(member, newRole);
                           }}
                           disabled={isUpdating}
                         >
@@ -292,6 +304,17 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
           open={!!memberToRemove}
           onOpenChange={(open) => { if (!open) setMemberToRemove(null); }}
           onSuccess={() => setMemberToRemove(null)}
+        />
+      )}
+
+      {demoteIntent && (
+        <DemoteMemberDialog
+          member={demoteIntent.member}
+          teamId={teamId}
+          newRole={demoteIntent.newRole}
+          open={!!demoteIntent}
+          onOpenChange={(open) => { if (!open) setDemoteIntent(null); }}
+          onSuccess={() => setDemoteIntent(null)}
         />
       )}
     </>
