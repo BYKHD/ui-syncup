@@ -776,3 +776,182 @@ export async function declineProjectInvitation(token: string): Promise<void> {
     });
   }
 }
+
+/**
+ * Accept a project invitation by its UUID (used from notification actions)
+ */
+export async function acceptProjectInvitationById(
+  invitationId: string,
+  userId: string,
+  userEmail: string
+): Promise<{ projectId: string; projectSlug: string }> {
+  const invitationResult = await db
+    .select()
+    .from(projectInvitations)
+    .where(eq(projectInvitations.id, invitationId))
+    .limit(1);
+
+  const invitation = invitationResult[0];
+
+  if (!invitation) {
+    throw new Error("Invitation not found");
+  }
+
+  if (invitation.email.toLowerCase() !== userEmail.toLowerCase()) {
+    throw new Error("This invitation was sent to a different email address");
+  }
+
+  if (invitation.usedAt) {
+    throw new Error("Invitation already used");
+  }
+
+  if (invitation.cancelledAt) {
+    throw new Error("Invitation cancelled");
+  }
+
+  if (new Date() > invitation.expiresAt) {
+    throw new Error("Invitation expired");
+  }
+
+  const projectResult = await db
+    .select()
+    .from(projects)
+    .where(eq(projects.id, invitation.projectId))
+    .limit(1);
+
+  const project = projectResult[0];
+
+  if (!project) {
+    throw new Error("Project not found");
+  }
+
+  await addMember(
+    invitation.projectId,
+    userId,
+    invitation.role as ProjectRole,
+    project.teamId
+  );
+
+  await db
+    .update(projectInvitations)
+    .set({ usedAt: new Date() })
+    .where(eq(projectInvitations.id, invitation.id));
+
+  logger.info("project.invitation.accepted_by_id", {
+    invitationId: invitation.id,
+    projectId: invitation.projectId,
+    userId,
+  });
+
+  try {
+    const userResult = await db
+      .select({ name: users.name })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    const userName = userResult[0]?.name ?? 'Unknown User';
+
+    await logInvitationAccepted(
+      project.teamId,
+      invitation.projectId,
+      userId,
+      {
+        invitationId: invitation.id,
+        userId,
+        userName,
+        role: invitation.role,
+      }
+    );
+
+    await logMemberAdded(
+      project.teamId,
+      invitation.projectId,
+      userId,
+      {
+        userId,
+        userName,
+        role: invitation.role,
+        addedVia: "invitation",
+      }
+    );
+  } catch (activityError) {
+    logger.error("project.invitation.activity_log_failed", {
+      invitationId: invitation.id,
+      error: activityError instanceof Error ? activityError.message : 'Unknown error',
+    });
+  }
+
+  return {
+    projectId: project.id,
+    projectSlug: project.slug,
+  };
+}
+
+/**
+ * Decline a project invitation by its UUID (used from notification actions)
+ */
+export async function declineProjectInvitationById(
+  invitationId: string,
+  userId: string,
+  userEmail: string
+): Promise<void> {
+  const invitationResult = await db
+    .select()
+    .from(projectInvitations)
+    .where(eq(projectInvitations.id, invitationId))
+    .limit(1);
+
+  const invitation = invitationResult[0];
+
+  if (!invitation) {
+    throw new Error("Invitation not found");
+  }
+
+  if (invitation.email.toLowerCase() !== userEmail.toLowerCase()) {
+    throw new Error("This invitation was sent to a different email address");
+  }
+
+  if (invitation.usedAt || invitation.cancelledAt) {
+    throw new Error("Invitation is no longer active");
+  }
+
+  if (new Date() > invitation.expiresAt) {
+    throw new Error("Invitation has expired");
+  }
+
+  await db
+    .update(projectInvitations)
+    .set({ cancelledAt: new Date() })
+    .where(eq(projectInvitations.id, invitation.id));
+
+  logger.info("project.invitation.declined_by_id", {
+    invitationId: invitation.id,
+    projectId: invitation.projectId,
+    userId,
+  });
+
+  try {
+    const projectResult = await db
+      .select({ teamId: projects.teamId })
+      .from(projects)
+      .where(eq(projects.id, invitation.projectId))
+      .limit(1);
+
+    if (projectResult[0]) {
+      await logInvitationDeclined(
+        projectResult[0].teamId,
+        invitation.projectId,
+        {
+          invitationId: invitation.id,
+          email: invitation.email,
+        }
+      );
+    }
+  } catch (activityError) {
+    logger.error("project.invitation.activity_log_failed", {
+      invitationId: invitation.id,
+      error: activityError instanceof Error ? activityError.message : 'Unknown error',
+    });
+  }
+}
