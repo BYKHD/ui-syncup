@@ -3,6 +3,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -38,6 +39,9 @@ export function KeyboardShortcutsModal({ open, onOpenChange }: KeyboardShortcuts
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Keyboard Shortcuts</DialogTitle>
+          <DialogDescription className="sr-only">
+            List of available keyboard shortcuts
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-6">
           {SHORTCUTS.map((section) => (

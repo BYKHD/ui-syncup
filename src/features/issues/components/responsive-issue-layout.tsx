@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -247,7 +248,7 @@ export default function ResponsiveIssueLayout({
   };
 
   const handleBackToIssues = () => {
-    window.location.href = "/issues";
+    window.history.back();
   };
 
   // Mobile layout with tabs
@@ -428,6 +429,9 @@ export default function ResponsiveIssueLayout({
                 <Keyboard className="h-5 w-5" />
                 Keyboard Shortcuts
               </DialogTitle>
+              <DialogDescription className="sr-only">
+                Keyboard shortcuts for navigating and editing issues
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
@@ -577,6 +581,9 @@ export default function ResponsiveIssueLayout({
               <Keyboard className="h-5 w-5" />
               Keyboard Shortcuts
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Keyboard shortcuts for navigating and editing issues
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="text-sm text-muted-foreground">

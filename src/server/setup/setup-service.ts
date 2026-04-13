@@ -14,7 +14,7 @@ import { db } from "@/lib/db";
 import { instanceSettings, users, teams, teamMembers, account } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { hashPassword } from "@/server/auth/password";
-import { isMultiWorkspaceMode } from "@/config/workspace";
+import { isMultiTeamMode } from "@/config/team";
 import { isEmailVerificationSkipped } from "@/config/auth";
 import { logger } from "@/lib/logger";
 import type {
@@ -40,9 +40,9 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
         isSetupComplete: false,
         instanceName: null,
         adminEmail: null,
-        defaultWorkspaceId: null,
-        defaultMemberRole: "WORKSPACE_MEMBER",
-        isMultiWorkspaceMode: isMultiWorkspaceMode(),
+        defaultTeamId: null,
+        defaultMemberRole: "TEAM_MEMBER",
+        isMultiTeamMode: isMultiTeamMode(),
         skipEmailVerification: isEmailVerificationSkipped(),
       };
     }
@@ -61,9 +61,9 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
       isSetupComplete: settings.setupCompletedAt !== null,
       instanceName: settings.instanceName,
       adminEmail,
-      defaultWorkspaceId: settings.defaultWorkspaceId,
-      defaultMemberRole: settings.defaultMemberRole as "WORKSPACE_VIEWER" | "WORKSPACE_MEMBER" | "WORKSPACE_EDITOR",
-      isMultiWorkspaceMode: isMultiWorkspaceMode(),
+      defaultTeamId: settings.defaultTeamId,
+      defaultMemberRole: settings.defaultMemberRole as "TEAM_VIEWER" | "TEAM_MEMBER" | "TEAM_EDITOR",
+      isMultiTeamMode: isMultiTeamMode(),
       skipEmailVerification: isEmailVerificationSkipped(),
     };
   } catch (error) {
@@ -76,9 +76,9 @@ export async function getInstanceStatus(): Promise<InstanceStatus> {
         isSetupComplete: false,
         instanceName: null,
         adminEmail: null,
-        defaultWorkspaceId: null,
-        defaultMemberRole: "WORKSPACE_MEMBER",
-        isMultiWorkspaceMode: isMultiWorkspaceMode(),
+        defaultTeamId: null,
+        defaultMemberRole: "TEAM_MEMBER",
+        isMultiTeamMode: isMultiTeamMode(),
         skipEmailVerification: isEmailVerificationSkipped(),
       };
     }
@@ -130,7 +130,6 @@ export async function createAdmin(input: CreateAdminInput): Promise<{ userId: st
   const [newUser] = await db.insert(users).values({
     email: email.toLowerCase(),
     name: displayName,
-    passwordHash: hashedPassword,
     emailVerified: true,
   }).returning({ id: users.id });
 
@@ -181,7 +180,7 @@ export async function saveInstanceConfig(input: InstanceConfigInput): Promise<vo
     // Create new settings
     await db.insert(instanceSettings).values({
       instanceName,
-      defaultMemberRole: defaultMemberRole || "WORKSPACE_MEMBER",
+      defaultMemberRole: defaultMemberRole || "TEAM_MEMBER",
     });
   } else {
     // Update existing settings
@@ -198,37 +197,37 @@ export async function saveInstanceConfig(input: InstanceConfigInput): Promise<vo
 }
 
 /**
- * Create the first workspace and mark setup as complete.
+ * Create the first team and mark setup as complete.
  * 
  * @param adminUserId - Admin user ID
  * @param input - Setup completion input
- * @returns Created workspace ID
+ * @returns Created team ID
  */
 export async function completeSetup(
   adminUserId: string,
   input: CompleteSetupInput
-): Promise<{ workspaceId: string }> {
-  const { workspaceName, workspaceSlug } = input;
+): Promise<{ teamId: string }> {
+  const { teamName, teamSlug } = input;
 
   // Generate slug if not provided
-  const slug = workspaceSlug || generateSlug(workspaceName);
+  const slug = teamSlug || generateSlug(teamName);
 
-  // Create the first workspace
-  const [workspace] = await db.insert(teams).values({
-    name: workspaceName,
+  // Create the first team
+  const [team] = await db.insert(teams).values({
+    name: teamName,
     slug,
   }).returning({ id: teams.id });
 
-  if (!workspace) {
-    throw new Error("Failed to create workspace");
+  if (!team) {
+    throw new Error("Failed to create team");
   }
 
-  // Add admin as WORKSPACE_OWNER with WORKSPACE_EDITOR operational role
+  // Add admin as TEAM_OWNER with TEAM_EDITOR operational role
   await db.insert(teamMembers).values({
-    teamId: workspace.id,
+    teamId: team.id,
     userId: adminUserId,
-    managementRole: "WORKSPACE_OWNER",
-    operationalRole: "WORKSPACE_EDITOR",
+    managementRole: "TEAM_OWNER",
+    operationalRole: "TEAM_EDITOR",
   });
 
   // Update instance settings to mark setup complete
@@ -237,15 +236,15 @@ export async function completeSetup(
     await db.update(instanceSettings)
       .set({
         setupCompletedAt: new Date(),
-        defaultWorkspaceId: workspace.id,
+        defaultTeamId: team.id,
         updatedAt: new Date(),
       })
       .where(eq(instanceSettings.id, settings.id));
   }
 
-  logger.info("Setup completed", { workspaceId: workspace.id, workspaceName });
+  logger.info("Setup completed", { teamId: team.id, teamName });
 
-  return { workspaceId: workspace.id };
+  return { teamId: team.id };
 }
 
 /**

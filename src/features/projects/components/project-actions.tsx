@@ -31,6 +31,7 @@ import {
   RiLoader4Line,
 } from '@remixicon/react';
 import { toast } from 'sonner';
+import { PermissionTooltip } from '@/components/shared/permission-guard/permission-tooltip';
 
 interface ProjectActionsProps {
   projectId: string;
@@ -63,6 +64,7 @@ interface ProjectActionsProps {
 export function ProjectActions({
   projectId,
   projectName,
+  userRole,
   canManageMembers,
   canEditSettings,
   canLeaveProject,
@@ -125,19 +127,31 @@ export function ProjectActions({
   return (
     <>
       <div className="flex items-center gap-2">
-        {/* Primary Action */}
-        {renderIssueDialog(
-          <Button size="sm" className="h-8 shadow-sm">
-            <RiAddLine className="mr-1.5 h-3.5 w-3.5" />
-            Add Issue
-          </Button>
+        {/* Primary Action — only owner/editor can create issues per RBAC */}
+        {userRole === 'owner' || userRole === 'editor' ? (
+          renderIssueDialog(
+            <Button>
+              <RiAddLine className="mr-1.5 h-3.5 w-3.5" />
+              Add Issue
+            </Button>
+          )
+        ) : (
+          <PermissionTooltip
+            tooltipContent="You don't have permission to create issues"
+            asChild
+          >
+            <Button disabled className="opacity-60 cursor-not-allowed">
+              <RiAddLine className="mr-1.5 h-3.5 w-3.5" />
+              Add Issue
+            </Button>
+          </PermissionTooltip>
         )}
 
         {/* Secondary Actions Menu */}
         {hasSecondaryActions && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+              <Button variant="outline">
                 <RiMore2Line className="h-4 w-4" />
                 <span className="sr-only">More actions</span>
               </Button>
@@ -229,7 +243,7 @@ export function ProjectActions({
                 handleDelete();
               }}
               disabled={deleteConfirmName !== projectName || isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
             >
               {isDeleting ? (
                 <span className="flex items-center gap-2">

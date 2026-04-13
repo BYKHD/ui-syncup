@@ -22,7 +22,7 @@ import { useTeams, useSwitchTeam } from "@/features/teams";
 import { useTeam } from "@/hooks/use-team";
 import { TeamAvatar } from "./sidebar-team-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { isSingleWorkspaceMode } from "@/config/workspace";
+import { isSingleTeamMode } from "@/config/team";
 
 // ============================================================================
 // TEAM SWITCHER DESIGN CONSTANTS
@@ -52,8 +52,8 @@ export function TeamSwitcher() {
     [teams]
   );
 
-  // Hide workspace switcher in single-workspace mode (Requirement 12.1)
-  if (isSingleWorkspaceMode()) {
+  // Hide team switcher in single-team mode (Requirement 12.1)
+  if (isSingleTeamMode()) {
     return null;
   }
 

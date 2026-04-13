@@ -14,6 +14,7 @@ export { useSwitchTeam } from './use-switch-team';
 export { useUpdateMemberRoles } from './use-update-member-roles';
 export { useRemoveMember } from './use-remove-member';
 export { useLeaveTeam } from './use-leave-team';
+export { useOwnedProjects } from './use-owned-projects';
 
 // Mutation hooks - Invitations
 export { useCreateInvitation } from './use-create-invitation';

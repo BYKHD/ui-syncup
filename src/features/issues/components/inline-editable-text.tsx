@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { RiLoader4Line } from '@remixicon/react';
 import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -143,21 +142,14 @@ export function InlineEditableText({
 
   if (!canEdit) {
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div 
-            className={cn('text-sm cursor-not-allowed opacity-75', displayClassName)}
-            role="textbox"
-            aria-readonly="true"
-            aria-label={`${placeholder} (read-only)`}
-          >
-            {value || <span className="text-muted-foreground">{placeholder}</span>}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="top">
-          <p>You don&apos;t have permission to edit this field</p>
-        </TooltipContent>
-      </Tooltip>
+      <div
+        className={cn('text-sm cursor-not-allowed opacity-75', displayClassName)}
+        role="textbox"
+        aria-readonly="true"
+        aria-label={`${placeholder} (read-only)`}
+      >
+        {value || <span className="text-muted-foreground">{placeholder}</span>}
+      </div>
     );
   }
 

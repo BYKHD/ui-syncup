@@ -23,8 +23,8 @@ import { logAdminAction } from '@/server/audit';
  */
 const CreateInvitationSchema = z.object({
   email: z.string().email(),
-  managementRole: z.enum(['WORKSPACE_ADMIN']).nullable().optional(),
-  operationalRole: z.enum(['WORKSPACE_EDITOR', 'WORKSPACE_MEMBER', 'WORKSPACE_VIEWER']),
+  managementRole: z.enum(['TEAM_ADMIN']).nullable().optional(),
+  operationalRole: z.enum(['TEAM_EDITOR', 'TEAM_MEMBER', 'TEAM_VIEWER']),
 });
 
 /**
@@ -35,8 +35,8 @@ const CreateInvitationSchema = z.object({
  * Request body:
  * {
  *   "email": "user@example.com",
- *   "managementRole": "WORKSPACE_ADMIN" | null,
- *   "operationalRole": "WORKSPACE_EDITOR" | "WORKSPACE_MEMBER" | "WORKSPACE_VIEWER"
+ *   "managementRole": "TEAM_ADMIN" | null,
+ *   "operationalRole": "TEAM_EDITOR" | "TEAM_MEMBER" | "TEAM_VIEWER"
  * }
  * 
  * Success response (201):
@@ -44,8 +44,8 @@ const CreateInvitationSchema = z.object({
  *   "invitation": {
  *     "id": "uuid",
  *     "email": "user@example.com",
- *     "managementRole": "WORKSPACE_ADMIN",
- *     "operationalRole": "WORKSPACE_EDITOR",
+ *     "managementRole": "TEAM_ADMIN",
+ *     "operationalRole": "TEAM_EDITOR",
  *     "expiresAt": "2024-01-08T00:00:00.000Z",
  *     ...
  *   }
@@ -83,8 +83,8 @@ export async function POST(
     }
 
     // Check permissions (TEAM_OWNER or TEAM_ADMIN)
-    const isOwner = await hasRole(user.id, 'WORKSPACE_OWNER', 'team', teamId);
-    const isAdmin = await hasRole(user.id, 'WORKSPACE_ADMIN', 'team', teamId);
+    const isOwner = await hasRole(user.id, 'TEAM_OWNER', 'team', teamId);
+    const isAdmin = await hasRole(user.id, 'TEAM_ADMIN', 'team', teamId);
     
     if (!isOwner && !isAdmin) {
       return NextResponse.json(
@@ -236,8 +236,8 @@ export async function POST(
  *     {
  *       "id": "uuid",
  *       "email": "user@example.com",
- *       "managementRole": "WORKSPACE_ADMIN",
- *       "operationalRole": "WORKSPACE_EDITOR",
+ *       "managementRole": "TEAM_ADMIN",
+ *       "operationalRole": "TEAM_EDITOR",
  *       "expiresAt": "2024-01-08T00:00:00.000Z",
  *       "createdAt": "2024-01-01T00:00:00.000Z",
  *       ...
@@ -274,8 +274,8 @@ export async function GET(
     }
     
     // Check permissions (TEAM_OWNER or TEAM_ADMIN)
-    const isOwner = await hasRole(user.id, 'WORKSPACE_OWNER', 'team', teamId);
-    const isAdmin = await hasRole(user.id, 'WORKSPACE_ADMIN', 'team', teamId);
+    const isOwner = await hasRole(user.id, 'TEAM_OWNER', 'team', teamId);
+    const isAdmin = await hasRole(user.id, 'TEAM_ADMIN', 'team', teamId);
     
     if (!isOwner && !isAdmin) {
       return NextResponse.json(

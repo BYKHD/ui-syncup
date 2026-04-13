@@ -66,7 +66,7 @@ export function TeamDangerZone({
         "Export queued successfully. You will receive an email with the download link.",
         { duration: 5000 }
       );
-      
+
       return true;
     } catch (error) {
       console.error("Error exporting team data:", error);
@@ -117,7 +117,7 @@ export function TeamDangerZone({
       // Determine redirect path
       // Filter out the deleted team from the current list
       const remainingTeams = teamsData?.teams.filter(t => t.id !== teamId) || [];
-      
+
       if (remainingTeams.length > 0) {
         // Redirect to projects page - the app will auto-switch to the next available team
         toast.success("Team deleted successfully. Redirecting...");
@@ -180,8 +180,8 @@ export function TeamDangerZone({
 
           <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
             <AlertDialogTrigger asChild>
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 size="sm"
                 disabled={isDeletingTeam || userRole !== "owner"}
               >
@@ -199,7 +199,7 @@ export function TeamDangerZone({
                     {isLastTeam ? (
                       <>
                         <p className="mb-2">
-                          This is your last team. Deleting it will remove all your data and 
+                          This is your last team. Deleting it will remove all your data and
                           redirect you to create a new team.
                         </p>
                         <p className="font-medium text-destructive">
@@ -218,7 +218,7 @@ export function TeamDangerZone({
                       <li>All uploaded files and attachments</li>
                       <li>All team settings and preferences</li>
                     </ul>
-                    
+
                     {/* Export option */}
                     <div className="mt-4 p-3 border rounded-md bg-muted/50">
                       <div className="flex items-start space-x-2">
@@ -251,7 +251,7 @@ export function TeamDangerZone({
                 <AlertDialogAction
                   onClick={handleDeleteTeam}
                   disabled={isDeletingTeam || isExporting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  variant="destructive"
                 >
                   {isDeletingTeam || isExporting ? (
                     <>

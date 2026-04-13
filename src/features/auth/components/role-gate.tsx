@@ -57,7 +57,7 @@ export interface RoleGateProps {
  * 
  * @example
  * // Show content only to team owners and admins
- * <RoleGate roles={["WORKSPACE_OWNER", "WORKSPACE_ADMIN"]}>
+ * <RoleGate roles={["TEAM_OWNER", "TEAM_ADMIN"]}>
  *   <TeamSettingsButton />
  * </RoleGate>
  * 
@@ -74,7 +74,7 @@ export interface RoleGateProps {
  * @example
  * // Show fallback content if unauthorized
  * <RoleGate 
- *   roles={["WORKSPACE_EDITOR"]} 
+ *   roles={["TEAM_EDITOR"]} 
  *   fallback={<p>You need editor access to view this content.</p>}
  * >
  *   <IssueCreateButton />

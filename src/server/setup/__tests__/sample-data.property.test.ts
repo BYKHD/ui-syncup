@@ -29,13 +29,13 @@ describe('Sample Data Service Properties', () => {
   });
 
   it('Property 8: Sample Data Creation is Idempotent', async () => {
-    // For any workspace/user, calling createSampleProject multiple times should behave idempotently
+    // For any team/user, calling createSampleProject multiple times should behave idempotently
     await fc.assert(
       fc.asyncProperty(
-        fc.uuid(), // workspaceId
+        fc.uuid(), // teamId
         fc.uuid(), // userId
         fc.boolean(), // existingProject (does demo project already exist?)
-        async (workspaceId, userId, existingProjectExists) => {
+        async (teamId, userId, existingProjectExists) => {
            // Reset mocks for iteration
            vi.clearAllMocks();
 
@@ -64,7 +64,7 @@ describe('Sample Data Service Properties', () => {
              } as any);
            }
 
-           const result = await createSampleProject({ workspaceId, userId });
+           const result = await createSampleProject({ teamId, userId });
 
            if (existingProjectExists) {
              expect(result.alreadyExisted).toBe(true);

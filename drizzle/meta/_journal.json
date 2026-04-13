@@ -5,36 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1768745196770,
-      "tag": "0000_purple_wilson_fisk",
+      "when": 1775413109217,
+      "tag": "0000_fluffy_wrecker",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1768831596770,
-      "tag": "0001_drop_instance_public_url",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1768917996770,
-      "tag": "0002_storage_single_bucket_keys",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1769004396770,
-      "tag": "0003_notifications_pg_listen_trigger",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1775150073549,
-      "tag": "0004_violet_mandroid",
+      "when": 1744243200000,
+      "tag": "0001_consolidate_developer_to_member",
       "breakpoints": true
     }
   ]

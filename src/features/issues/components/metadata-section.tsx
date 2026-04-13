@@ -23,14 +23,14 @@ import { TYPE_OPTIONS, PRIORITY_OPTIONS } from '@/features/issues/config';
 // Types
 import type { IssueDetailData, IssuePermissions } from '@/features/issues/types';
 
+// Hooks
+import { useProjectMembers } from '@/features/projects/hooks/use-project-members';
+
 interface MetadataSectionProps {
   issue: IssueDetailData;
   onUpdate: (field: string, value: any) => Promise<void>;
   isLoading?: boolean;
   permissions?: IssuePermissions;
-  // Team members for assignee selection
-  // TODO: Wire to real team members API when available
-  teamMembers?: { id: string; name: string; email: string; image: string | null }[];
   // Editing state props for keyboard shortcuts
   isEditingTitle?: boolean;
   isEditingDescription?: boolean;
@@ -45,10 +45,6 @@ const DEFAULT_PERMISSIONS = {
   canChangeStatus: true,
   canDelete: true,
 };
-
-// Default empty team members
-// TODO: Remove fallback when team members API is wired
-const DEFAULT_TEAM_MEMBERS: { id: string; name: string; email: string; image: string | null }[] = [];
 
 // Simple date formatter until date-fns is added
 function formatTimestamp(date: Date | string): string {
@@ -90,10 +86,10 @@ function MetadataField({
   id?: string;
 }) {
   const fieldId = id || `field-${label.toLowerCase().replace(/\s+/g, '-')}`;
-  
+
   return (
     <div className="space-y-1.5 w-full max-w-full">
-      <label 
+      <label
         htmlFor={fieldId}
         id={`${fieldId}-label`}
         className={labelVisible ? 'text-xs font-medium text-muted-foreground' : 'sr-only'}
@@ -154,22 +150,33 @@ export function MetadataSection({
   onEditingTitleChange,
   onEditingDescriptionChange,
   permissions,
-  teamMembers = DEFAULT_TEAM_MEMBERS,
 }: MetadataSectionProps) {
+  const { data: membersData, isLoading: membersLoading } = useProjectMembers({
+    projectId: issue.projectId,
+    enabled: !isLoading,
+  });
+
+  const teamMembers = (membersData?.members ?? []).map((m) => ({
+    id: m.userId,
+    name: m.userName,
+    email: m.userEmail,
+    image: m.userAvatar,
+  }));
+
   // Use provided permissions or default to read-write
   const resolvedPermissions = permissions
     ? {
-        canEdit: permissions.canEdit,
-        canEditField: (_field: string) => permissions.canEdit,
-        canChangeStatus: permissions.canChangeStatus ?? false,
-        canDelete: permissions.canDelete ?? false,
-      }
+      canEdit: permissions.canEdit,
+      canEditField: (_field: string) => permissions.canEdit,
+      canChangeStatus: permissions.canChangeStatus ?? false,
+      canDelete: permissions.canDelete ?? false,
+    }
     : DEFAULT_PERMISSIONS;
 
   const isReadOnly = !resolvedPermissions.canEdit;
   if (isLoading) {
     return (
-      <div className="space-y-4 w-full max-w-full overflow-hidden">
+      <div className="space-y-4 w-full max-w-full overflow-visible">
         <MetadataField label="Title" isLoading />
         <MetadataField label="Description" isLoading />
         <Separator />
@@ -188,7 +195,7 @@ export function MetadataSection({
   }
 
   return (
-    <div className="space-y-4 w-full max-w-full overflow-hidden" role="region" aria-label="Issue metadata">
+    <div className="space-y-4 w-full max-w-full overflow-visible" role="region" aria-label="Issue metadata">
       {/* Title */}
       <MetadataField label="Title" id="title-field" labelVisible={false}>
         <InlineEditableText
@@ -274,7 +281,7 @@ export function MetadataSection({
           value={issue.assignee?.id || 'unassigned'}
           users={teamMembers}
           onSave={(userId) => onUpdate('assigneeId', userId)}
-          canEdit={resolvedPermissions.canEditField('assigneeId')}
+          canEdit={resolvedPermissions.canEditField('assigneeId') && !membersLoading}
           placeholder="Select assignee"
         />
       </MetadataField>
@@ -306,7 +313,7 @@ export function MetadataSection({
       {(issue.page || issue.figmaLink || !isReadOnly) && (
         <>
           <Separator />
-          
+
           {/* Page */}
           <MetadataField label="Page">
             <InlineEditableText
@@ -319,13 +326,13 @@ export function MetadataSection({
               displayClassName="text-sm break-words"
               renderView={({ value, placeholder, startEditing }) => {
                 const isUrl = value && (value.startsWith('http://') || value.startsWith('https://'));
-                
+
                 return (
                   <div className="group flex items-center justify-between gap-2 w-full min-h-[2rem] rounded px-2 py-1 -mx-2 hover:bg-accent/50 transition-colors">
                     {isUrl ? (
-                      <a 
-                        href={value} 
-                        target="_blank" 
+                      <a
+                        href={value}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-primary hover:underline truncate flex items-center gap-1.5"
                         onClick={(e) => e.stopPropagation()}
@@ -334,14 +341,14 @@ export function MetadataSection({
                         <ExternalLink className="h-3 w-3 shrink-0" />
                       </a>
                     ) : (
-                      <span 
+                      <span
                         className={cn("text-sm cursor-text", !value && "text-muted-foreground")}
                         onClick={startEditing}
                       >
                         {value || placeholder}
                       </span>
                     )}
-                    
+
                     <Button
                       size="icon"
                       variant="ghost"

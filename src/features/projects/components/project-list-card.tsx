@@ -97,7 +97,7 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
             <div className="relative flex-1 min-h-[20px] flex items-center justify-center p-6">
               <div className="relative w-full max-w-[200px] h-[10px]">
                 <motion.div
-                  className="absolute w-[85%] h-[80px] rounded-xl bg-muted dark:bg-ring shadow-lg overflow-hidden"
+                  className="absolute w-[85%] h-[180px] rounded-xl bg-muted dark:bg-ring shadow-lg overflow-hidden"
                   initial={false}
                   animate={{
                     y: isHovered ? -10 : 0,
@@ -119,7 +119,7 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
                   />
                 </motion.div>
                 <motion.div
-                  className="absolute w-[85%] h-[80px] rounded-xl bg-muted dark:bg-ring shadow-lg overflow-hidden"
+                  className="absolute w-[85%] h-[180px] rounded-xl bg-muted dark:bg-ring shadow-lg overflow-hidden"
                   initial={false}
                   animate={{
                     y: isHovered ? -14 : 0,
@@ -141,7 +141,7 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
                   />
                 </motion.div>
                 <motion.div
-                  className="absolute w-[85%] h-[80px] rounded-xl bg-muted dark:bg-ring shadow-lg overflow-hidden opacity-[0.98]"
+                  className="absolute w-[85%] h-[180px] rounded-xl bg-muted dark:bg-ring shadow-lg overflow-hidden opacity-[0.98]"
                   initial={false}
                   animate={{
                     y: isHovered ? -18 : 0,
@@ -255,7 +255,6 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
             onClick={handleJoin}
             disabled={isJoining}
             size="lg"
-            className="shadow-lg"
           >
             <RiUserAddLine className="h-4 w-4 mr-2" />
             {isJoining ? "Joining..." : "Join"}

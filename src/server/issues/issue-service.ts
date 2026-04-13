@@ -88,7 +88,7 @@ export async function getIssueById(
       id: reporter.id,
       name: reporter.name,
       email: reporter.email,
-      avatarUrl: reporter.image,
+      image: reporter.image,
     },
     attachmentCount: attachmentCountResult[0]?.count ?? 0,
   };
@@ -425,7 +425,9 @@ export async function updateIssue(
 
   // Log activities for tracked changes
   for (const change of changes) {
-    const activityType = `${change.field}_changed` as
+    // Map field names to their activity type counterparts
+    const fieldName = change.field === "assigneeId" ? "assignee" : change.field;
+    const activityType = `${fieldName}_changed` as
       | "status_changed"
       | "priority_changed"
       | "type_changed"

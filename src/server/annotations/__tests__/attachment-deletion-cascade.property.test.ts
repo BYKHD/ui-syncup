@@ -23,9 +23,7 @@ const PROPERTY_CONFIG = {
 // ============================================================================
 
 // Mock database operations
-const mockDeleteAttachment = vi.fn();
 const mockFindFirst = vi.fn();
-const mockDeleteReadStatus = vi.fn();
 
 vi.mock('@/lib/db', () => ({
   db: {
@@ -125,19 +123,6 @@ const attachmentWithAnnotationsArb = fc.record({
   createdAt: fc.constant(new Date()),
 });
 
-/**
- * Generate annotation read status records for an attachment
- */
-const readStatusRecordsArb = (attachmentId: string, annotationIds: string[]) =>
-  fc.array(
-    fc.record({
-      userId: fc.uuid(),
-      attachmentId: fc.constant(attachmentId),
-      annotationId: fc.constantFrom(...(annotationIds.length > 0 ? annotationIds : ['dummy-id'])),
-      lastReadAt: fc.constant(new Date()),
-    }),
-    { minLength: 0, maxLength: Math.min(annotationIds.length * 3, 20) }
-  );
 
 // ============================================================================
 // Property Tests
@@ -331,12 +316,6 @@ describe('Attachment Deletion Cascade - Property-Based Tests', () => {
       fc.asyncProperty(
         fc.uuid(),
         async (attachmentId) => {
-          // Attachment with no annotations
-          const emptyAnnotationsAttachment = {
-            id: attachmentId,
-            annotations: [],
-          };
-
           // Deletion should still succeed
           const simulateDeletion = () => {
             return {

@@ -24,9 +24,9 @@ const ImportSettingsSchema = z.object({
   instanceSettings: z.object({
     instanceName: z.string().min(1).max(100),
     defaultMemberRole: z.enum([
-      "WORKSPACE_VIEWER",
-      "WORKSPACE_MEMBER",
-      "WORKSPACE_EDITOR",
+      "TEAM_VIEWER",
+      "TEAM_MEMBER",
+      "TEAM_EDITOR",
     ]),
   }),
 });

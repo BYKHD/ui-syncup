@@ -41,7 +41,6 @@ async function createTestUser(email: string, name: string) {
       email: email.toLowerCase().trim(),
       name: name.trim(),
       emailVerified: true,
-      passwordHash: 'test-hash',
     })
     .returning();
 
@@ -128,7 +127,7 @@ describe('Integration Test: Project Activity Logging', () => {
     const { invitation } = await createProjectInvitation({
       projectId: project.id,
       email: inviteeEmail,
-      role: PROJECT_ROLES.PROJECT_DEVELOPER,
+      role: PROJECT_ROLES.PROJECT_MEMBER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -151,7 +150,7 @@ describe('Integration Test: Project Activity Logging', () => {
     const metadata = activity.metadata as any;
     expect(metadata.invitationId).toBe(invitation.id);
     expect(metadata.email).toBe(inviteeEmail);
-    expect(metadata.role).toBe(PROJECT_ROLES.PROJECT_DEVELOPER);
+    expect(metadata.role).toBe(PROJECT_ROLES.PROJECT_MEMBER);
   });
 
   test('should log invitation_revoked activity when revoking invitation', async () => {
@@ -293,7 +292,7 @@ describe('Integration Test: Project Activity Logging', () => {
     const { invitation, token } = await createProjectInvitation({
       projectId: project.id,
       email: inviteeEmail,
-      role: PROJECT_ROLES.PROJECT_DEVELOPER,
+      role: PROJECT_ROLES.PROJECT_MEMBER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);

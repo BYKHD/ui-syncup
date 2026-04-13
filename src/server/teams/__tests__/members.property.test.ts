@@ -26,8 +26,8 @@ const validTeamNameArb = fc
   .filter((name) => !name.includes("\\"));
 
 // Arbitrary for roles
-const managementRoleArb = fc.constantFrom("WORKSPACE_OWNER", "WORKSPACE_ADMIN", null);
-const operationalRoleArb = fc.constantFrom("WORKSPACE_EDITOR", "WORKSPACE_MEMBER", "WORKSPACE_VIEWER");
+const managementRoleArb = fc.constantFrom("TEAM_OWNER", "TEAM_ADMIN", null);
+const operationalRoleArb = fc.constantFrom("TEAM_EDITOR", "TEAM_MEMBER", "TEAM_VIEWER");
 
 describe("Team Member Management Properties", () => {
   const testUserIds: string[] = [];
@@ -139,7 +139,7 @@ describe("Team Member Management Properties", () => {
         await addMember({
           teamId: team.id,
           userId: projectOwner.id,
-          operationalRole: "WORKSPACE_EDITOR",
+          operationalRole: "TEAM_EDITOR",
           invitedBy: owner.id,
         });
 
@@ -162,7 +162,7 @@ describe("Team Member Management Properties", () => {
 
         // Action: Try to demote to TEAM_MEMBER
         await expect(
-          updateMemberRoles(team.id, projectOwner.id, { operationalRole: "WORKSPACE_MEMBER" }, owner.id)
+          updateMemberRoles(team.id, projectOwner.id, { operationalRole: "TEAM_MEMBER" }, owner.id)
         ).rejects.toThrow("Cannot demote member who owns projects");
 
         // Action: Try to remove member

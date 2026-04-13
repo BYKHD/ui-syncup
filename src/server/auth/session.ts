@@ -20,14 +20,13 @@
 
 import { randomBytes } from 'crypto';
 import { db } from '@/lib/db';
-import { sessions } from '@/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { sessions, account } from '@/server/db/schema';
+import { eq, and } from 'drizzle-orm';
 
 /**
  * Session configuration constants
  */
 const SESSION_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
-const SESSION_RENEWAL_THRESHOLD_MS = 24 * 60 * 60 * 1000; // Renew if < 24 hours remaining
 
 /**
  * User data returned from session validation
@@ -44,35 +43,12 @@ export interface SessionUser {
 }
 
 /**
- * Generate a cryptographically secure random session token
- * 
- * @returns A random hex string (32 bytes = 64 hex characters)
- */
-function generateSessionToken(): string {
-  return randomBytes(32).toString('hex');
-}
-
-/**
  * Calculate session expiration timestamp
- * 
+ *
  * @returns Date object representing when the session expires
  */
 function calculateExpiration(): Date {
   return new Date(Date.now() + SESSION_LIFETIME_MS);
-}
-
-/**
- * Check if a session should be renewed based on remaining lifetime
- * 
- * @param expiresAt - Current expiration timestamp
- * @returns True if session should be renewed
- */
-function shouldRenewSession(expiresAt: Date): boolean {
-  const now = Date.now();
-  const expiresAtMs = expiresAt.getTime();
-  const remainingMs = expiresAtMs - now;
-  
-  return remainingMs < SESSION_RENEWAL_THRESHOLD_MS;
 }
 
 /**
@@ -235,12 +211,21 @@ export async function getSession(
         sessionId: betterAuthSession.session.id,
         ...(await (async () => {
           try {
-            const dbUser = await db.query.users.findFirst({
-              where: (users, { eq }) => eq(users.id, betterAuthSession.user.id),
-              columns: { passwordHash: true, lastActiveTeamId: true },
-            });
+            const [dbUser, credentialAccount] = await Promise.all([
+              db.query.users.findFirst({
+                where: (users, { eq }) => eq(users.id, betterAuthSession.user.id),
+                columns: { lastActiveTeamId: true },
+              }),
+              db.query.account.findFirst({
+                where: (acc, { eq, and }) => and(
+                  eq(acc.userId, betterAuthSession.user.id),
+                  eq(acc.providerId, "credential")
+                ),
+                columns: { password: true },
+              }),
+            ]);
             return {
-              hasPassword: !!dbUser?.passwordHash,
+              hasPassword: !!credentialAccount?.password,
               lastActiveTeamId: dbUser?.lastActiveTeamId ?? null,
             };
           } catch {
@@ -272,6 +257,10 @@ export async function getSession(
         });
         
         if (user) {
+          const credentialAccount = await db.query.account.findFirst({
+            where: and(eq(account.userId, user.id), eq(account.providerId, "credential")),
+            columns: { password: true },
+          });
           return {
             id: user.id,
             email: user.email,
@@ -279,7 +268,7 @@ export async function getSession(
             name: user.name,
             image: user.image ?? null,
             sessionId: sessionRecord.id,
-            hasPassword: !!user.passwordHash,
+            hasPassword: !!credentialAccount?.password,
             lastActiveTeamId: user.lastActiveTeamId ?? null,
           };
         }

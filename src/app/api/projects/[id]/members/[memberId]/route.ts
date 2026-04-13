@@ -27,7 +27,7 @@ const UpdateMemberRoleSchema = z.object({
   role: z.enum([
     PROJECT_ROLES.PROJECT_OWNER,
     PROJECT_ROLES.PROJECT_EDITOR,
-    PROJECT_ROLES.PROJECT_DEVELOPER,
+    PROJECT_ROLES.PROJECT_MEMBER,
     PROJECT_ROLES.PROJECT_VIEWER,
   ]),
 });
@@ -157,7 +157,7 @@ export async function PATCH(
       };
 
       return NextResponse.json(
-        { member: serializedMember },
+        { success: true, member: serializedMember },
         { status: 200 }
       );
     } catch (error) {
@@ -300,7 +300,10 @@ export async function DELETE(
         memberId,
       });
 
-      return new NextResponse(null, { status: 204 });
+      return NextResponse.json(
+        { success: true, message: 'Member removed successfully' },
+        { status: 200 }
+      );
     } catch (error) {
       if (error instanceof Error) {
         if (error.message === "Member not found") {

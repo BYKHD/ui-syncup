@@ -21,9 +21,6 @@ export {
   notificationKeys,
 } from "./hooks";
 
-// Utils
-export { groupNotifications, formatActorNames } from "./utils";
-
 // Types
 export type {
   Notification,
@@ -33,8 +30,6 @@ export type {
   GetNotificationsParams,
   GetNotificationsResponse,
 } from "./api";
-
-export type { NotificationGroup } from "./utils";
 
 export type {
   UseNotificationsParams,

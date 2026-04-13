@@ -11,13 +11,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { users } from '@/server/db/schema';
+import { users, account } from '@/server/db/schema';
 import { resetPasswordSchema } from '@/features/auth/utils/validators';
 import { verifyToken, markTokenAsUsed } from '@/server/auth/tokens';
 import { hashPassword } from '@/server/auth/password';
 import { deleteAllUserSessions } from '@/server/auth/session';
 import { logAuthEvent } from '@/lib/logger';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { ZodError } from 'zod';
 
 /**
@@ -153,15 +153,12 @@ export async function POST(request: NextRequest) {
     
     // Hash new password
     const passwordHash = await hashPassword(validatedData.password);
-    
-    // Update user password hash
+
+    // Update the credential account record — this is what better-auth uses for login
     await db
-      .update(users)
-      .set({ 
-        passwordHash,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, user.id));
+      .update(account)
+      .set({ password: passwordHash, updatedAt: new Date() })
+      .where(and(eq(account.userId, user.id), eq(account.providerId, "credential")));
     
     // Mark token as used
     await markTokenAsUsed(verifiedToken.tokenId);

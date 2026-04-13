@@ -10,9 +10,14 @@ import { z } from 'zod'
 // ============================================================================
 
 export const JoinProjectResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  role: z.enum(['owner', 'editor', 'member', 'viewer']),
+  member: z.object({
+    userId: z.string(),
+    userName: z.string(),
+    userEmail: z.string(),
+    userAvatar: z.string().nullable(),
+    role: z.enum(['owner', 'editor', 'member', 'viewer']),
+    joinedAt: z.string(),
+  }),
 })
 
 export type JoinProjectResponse = z.infer<typeof JoinProjectResponseSchema>

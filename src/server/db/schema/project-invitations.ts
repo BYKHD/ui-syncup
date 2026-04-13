@@ -15,7 +15,7 @@ export const projectInvitations = pgTable("project_invitations", {
   projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
   email: varchar("email", { length: 320 }).notNull(),
   tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(), // SHA-256 hash of token (64 hex chars)
-  role: varchar("role", { length: 20 }).notNull(), // PROJECT_EDITOR | PROJECT_DEVELOPER | PROJECT_VIEWER
+  role: varchar("role", { length: 20 }).notNull(), // editor | member | viewer
   invitedBy: uuid("invited_by").references(() => users.id).notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   usedAt: timestamp("used_at", { withTimezone: true }),

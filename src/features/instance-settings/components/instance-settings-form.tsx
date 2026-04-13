@@ -42,9 +42,9 @@ const instanceSettingsSchema = z.object({
     .min(2, "Instance name must be at least 2 characters")
     .max(100, "Instance name must be at most 100 characters"),
   defaultMemberRole: z.enum([
-    "WORKSPACE_VIEWER",
-    "WORKSPACE_MEMBER",
-    "WORKSPACE_EDITOR",
+    "TEAM_VIEWER",
+    "TEAM_MEMBER",
+    "TEAM_EDITOR",
   ]),
 });
 
@@ -55,9 +55,9 @@ interface InstanceSettingsFormProps {
 }
 
 const ROLE_OPTIONS = [
-  { value: "WORKSPACE_VIEWER", label: "Viewer (read-only access)" },
-  { value: "WORKSPACE_MEMBER", label: "Member (view and comment)" },
-  { value: "WORKSPACE_EDITOR", label: "Editor (create and manage content)" },
+  { value: "TEAM_VIEWER", label: "Viewer (read-only access)" },
+  { value: "TEAM_MEMBER", label: "Member (view and comment)" },
+  { value: "TEAM_EDITOR", label: "Editor (create and manage content)" },
 ] as const;
 
 export function InstanceSettingsForm({ instanceStatus }: InstanceSettingsFormProps) {

@@ -20,7 +20,7 @@ import { getSession, deleteAllUserSessions } from '@/server/auth/session';
 import { clearSessionCookie } from '@/server/auth/cookies';
 import { logAuthEvent } from '@/lib/logger';
 import { db } from '@/lib/db';
-import { users, verificationTokens, userRoles } from '@/server/db/schema';
+import { users, verificationTokens } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';
 
 /**
@@ -78,10 +78,7 @@ export async function DELETE(request: NextRequest) {
     // 2. Delete all verification tokens
     await db.delete(verificationTokens).where(eq(verificationTokens.userId, userId));
 
-    // 3. Delete all user roles
-    await db.delete(userRoles).where(eq(userRoles.userId, userId));
-
-    // 4. Delete user record
+    // 3. Delete user record (cascade removes team_members, project_members, sessions, etc.)
     await db.delete(users).where(eq(users.id, userId));
 
     // Log successful deletion

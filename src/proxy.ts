@@ -42,7 +42,7 @@ function shouldBypassSetupCheck(pathname: string): boolean {
 
 /**
  * Check if a pathname is a protected route that requires setup to be complete.
- * Protected routes include dashboard, workspace, projects, team settings, etc.
+ * Protected routes include dashboard, projects, team settings, etc.
  * 
  * @param pathname - The request pathname
  * @returns true if the route is protected
@@ -63,7 +63,6 @@ function isProtectedRoute(pathname: string): boolean {
     '/dashboard',
     '/projects',
     '/team',
-    '/workspace',
     '/settings',
     '/onboarding',
     '/issues',

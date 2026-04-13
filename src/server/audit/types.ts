@@ -18,10 +18,10 @@ export type AdminAuditEventType =
   | 'member.invitation.revoked'
   | 'member.removed'
   | 'member.role.changed'
-  // Workspace management
-  | 'workspace.created'
-  | 'workspace.updated'
-  | 'workspace.deleted';
+  // Team management
+  | 'team.created'
+  | 'team.updated'
+  | 'team.deleted';
 
 /**
  * Change record showing before and after values
@@ -46,7 +46,7 @@ export interface AdminAuditEvent {
   userId: string;
   /** Optional user email (hashed for PII protection) */
   userEmail?: string;
-  /** Resource type affected (e.g., 'instance', 'member', 'workspace') */
+  /** Resource type affected (e.g., 'instance', 'member', 'team') */
   resourceType?: string;
   /** Resource identifier */
   resourceId?: string;

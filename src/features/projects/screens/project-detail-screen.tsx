@@ -13,7 +13,7 @@ import { ProjectDetailHeader, ProjectIssues } from "../components";
 import { ProjectActivityFeed } from "../components/project-detail-activity-feed";
 import type { ProjectRole } from "../types";
 import type { IssuePriority, IssueType, IssueSummary } from "@/features/issues/types";
-import { useRecentProjects, useProjectMembers, useUpdateMemberRole, useRemoveMember, useProjectInvitations, useRevokeInvitation, useResendInvitation, useUpdateProject } from "../hooks";
+import { useRecentProjects, useProjectMembers, useUpdateMemberRole, useRemoveMember, useProjectInvitations, useRevokeInvitation, useResendInvitation, useUpdateProject, useLeaveProject } from "../hooks";
 
 interface ProjectStats {
   memberCount: number;
@@ -113,9 +113,11 @@ export default function ProjectDetailScreen({
     "private" | "public" | null
   >(null);
 
-  // Leave button state
-  const [isLeaving, setIsLeaving] = useState(false);
-  const [leaveError, setLeaveError] = useState<string | null>(null);
+  const { mutate: leaveProjectMutation, isPending: isLeaving } = useLeaveProject({
+    onSuccess: () => {
+      router.push('/projects');
+    },
+  });
 
   // Member dialog state - dialog open/close is managed by project-actions.tsx
   const [invitationDialogOpen, setInvitationDialogOpen] = useState(false);
@@ -169,7 +171,7 @@ export default function ProjectDetailScreen({
     return invitationsData.map((inv) => ({
       id: inv.id,
       invitedUserId: inv.invitedUser?.id || '', // Get from invitedUser object if exists
-      role: inv.role as 'editor' | 'developer' | 'viewer',
+      role: inv.role as 'editor' | 'member' | 'viewer',
       status: inv.status,
       createdAt: new Date(inv.createdAt),
       expiresAt: new Date(inv.expiresAt),
@@ -412,14 +414,8 @@ export default function ProjectDetailScreen({
     settingsFormData.description !== (project.description || "") ||
     settingsFormData.visibility !== project.visibility;
 
-  // Leave button handler
-  const handleLeave = async () => {
-    setIsLeaving(true);
-    setLeaveError(null);
-    // TODO: wire DELETE /api/projects/:id/members/me
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
-    setIsLeaving(false);
-    // TODO: redirect to projects list
+  const handleLeave = () => {
+    leaveProjectMutation(project.id);
   };
 
   // Member dialog handlers
@@ -623,7 +619,7 @@ export default function ProjectDetailScreen({
               (userRole || "member") as "owner" | "editor" | "member" | "viewer"
             }
             isLeaving={isLeaving}
-            error={leaveError}
+            error={null}
             onLeave={handleLeave}
             open={open}
             onOpenChange={onOpenChange}

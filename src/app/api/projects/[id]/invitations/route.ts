@@ -26,7 +26,7 @@ const CreateInvitationSchema = z.object({
   email: z.string().email("Invalid email address"),
   role: z.enum([
     PROJECT_ROLES.PROJECT_EDITOR,
-    PROJECT_ROLES.PROJECT_DEVELOPER,
+    PROJECT_ROLES.PROJECT_MEMBER,
     PROJECT_ROLES.PROJECT_VIEWER,
   ]),
 });

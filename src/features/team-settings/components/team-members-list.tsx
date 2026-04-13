@@ -31,32 +31,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-import { useTeamMembers, useUpdateMemberRoles, useRemoveMember, useTeamPermissions } from "@/features/teams";
+import { useTeamMembers, useUpdateMemberRoles, useTeamPermissions } from "@/features/teams";
+import { RemoveMemberDialog } from './remove-member-dialog';
+import { DemoteMemberDialog } from './demote-member-dialog';
 import type { TeamMember } from "@/features/teams/api";
 import { SettingsCard } from "./settings-card";
 import { TeamMembersLoadingSkeleton } from "./loading-states";
 
 const operationalRoleIcons: Record<string, any> = {
-  WORKSPACE_EDITOR: RiUserLine,
-  WORKSPACE_MEMBER: RiUserLine,
-  WORKSPACE_VIEWER: RiEyeLine,
+  TEAM_EDITOR: RiUserLine,
+  TEAM_MEMBER: RiUserLine,
+  TEAM_VIEWER: RiEyeLine,
 };
 
 const operationalRoleLabels: Record<string, string> = {
-  WORKSPACE_EDITOR: "Editor",
-  WORKSPACE_MEMBER: "Member",
-  WORKSPACE_VIEWER: "Viewer",
+  TEAM_EDITOR: "Editor",
+  TEAM_MEMBER: "Member",
+  TEAM_VIEWER: "Viewer",
 };
 
 interface TeamMembersListProps {
@@ -67,9 +58,9 @@ interface TeamMembersListProps {
 export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps) {
   const { data, isLoading, error, isError } = useTeamMembers(teamId);
   const { mutate: updateRole, isPending: isUpdating } = useUpdateMemberRoles();
-  const { mutate: removeMember, isPending: isRemoving } = useRemoveMember();
 
   const [memberToRemove, setMemberToRemove] = useState<TeamMember | null>(null);
+  const [demoteIntent, setDemoteIntent] = useState<{ member: TeamMember; newRole: 'TEAM_MEMBER' | 'TEAM_VIEWER' } | null>(null);
 
   const members = data?.members ?? [];
 
@@ -77,11 +68,11 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
     console.error("Failed to load team members:", error);
   }
 
-  const handleOperationalRoleChange = (memberId: string, newRole: string) => {
+  const handleOperationalRoleChange = (member: TeamMember, newRole: string) => {
     updateRole(
       {
         teamId,
-        userId: memberId,
+        userId: member.userId,
         input: { operationalRole: newRole },
       },
       {
@@ -89,7 +80,17 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
           toast.success("Member role updated successfully");
         },
         onError: (error) => {
-          toast.error(error.message || "Failed to update member role");
+          if (
+            error.message.includes('owns projects') ||
+            error.message.includes('OWNERSHIP_TRANSFER_REQUIRED')
+          ) {
+            setDemoteIntent({
+              member,
+              newRole: newRole as 'TEAM_MEMBER' | 'TEAM_VIEWER',
+            });
+          } else {
+            toast.error(error.message || "Failed to update member role");
+          }
         },
       }
     );
@@ -100,7 +101,7 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
       {
         teamId,
         userId: memberId,
-        input: { managementRole: isAdmin ? 'WORKSPACE_ADMIN' : null },
+        input: { managementRole: isAdmin ? 'TEAM_ADMIN' : null },
       },
       {
         onSuccess: () => {
@@ -108,26 +109,6 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
         },
         onError: (error) => {
           toast.error(error.message || "Failed to update admin rights");
-        },
-      }
-    );
-  };
-
-  const handleRemoveMember = () => {
-    if (!memberToRemove) return;
-
-    removeMember(
-      {
-        teamId,
-        userId: memberToRemove.userId,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Member removed successfully");
-          setMemberToRemove(null);
-        },
-        onError: (error) => {
-          toast.error(error.message || "Failed to remove member");
         },
       }
     );
@@ -151,7 +132,7 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
   };
 
   // Use real permission checks
-  const { canManageMembers } = useTeamPermissions(teamId); 
+  const { canManageMembers } = useTeamPermissions(teamId);
 
   if (isLoading) {
     return <TeamMembersLoadingSkeleton />;
@@ -193,8 +174,8 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
               {members.map((member) => {
                 const RoleIcon = operationalRoleIcons[member.operationalRole] || RiUserLine;
                 const isCurrentUser = member.userId === currentUserId;
-                const isOwner = member.managementRole === 'WORKSPACE_OWNER';
-                const isAdmin = member.managementRole === 'WORKSPACE_ADMIN';
+                const isOwner = member.managementRole === 'TEAM_OWNER';
+                const isAdmin = member.managementRole === 'TEAM_ADMIN';
                 const canModify = canManageMembers && !isCurrentUser && !isOwner;
 
                 return (
@@ -232,7 +213,7 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
                         <Select
                           value={member.operationalRole}
                           onValueChange={(newRole) => {
-                            handleOperationalRoleChange(member.userId, newRole);
+                            handleOperationalRoleChange(member, newRole);
                           }}
                           disabled={isUpdating}
                         >
@@ -245,19 +226,19 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="WORKSPACE_EDITOR">
+                            <SelectItem value="TEAM_EDITOR">
                               <div className="flex items-center gap-2">
                                 <RiUserLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Editor</span>
                               </div>
                             </SelectItem>
-                            <SelectItem value="WORKSPACE_MEMBER">
+                            <SelectItem value="TEAM_MEMBER">
                               <div className="flex items-center gap-2">
                                 <RiUserLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Member</span>
                               </div>
                             </SelectItem>
-                            <SelectItem value="WORKSPACE_VIEWER">
+                            <SelectItem value="TEAM_VIEWER">
                               <div className="flex items-center gap-2">
                                 <RiEyeLine className="h-4 w-4 text-muted-foreground" />
                                 <span>Viewer</span>
@@ -316,26 +297,26 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
         </div>
       </SettingsCard>
 
-      <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove team member?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to remove {memberToRemove?.user.name} from the team?
-              They will lose access to all team resources.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={handleRemoveMember}
-            >
-              Remove
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {memberToRemove && (
+        <RemoveMemberDialog
+          member={memberToRemove}
+          teamId={teamId}
+          open={!!memberToRemove}
+          onOpenChange={(open) => { if (!open) setMemberToRemove(null); }}
+          onSuccess={() => setMemberToRemove(null)}
+        />
+      )}
+
+      {demoteIntent && (
+        <DemoteMemberDialog
+          member={demoteIntent.member}
+          teamId={teamId}
+          newRole={demoteIntent.newRole}
+          open={!!demoteIntent}
+          onOpenChange={(open) => { if (!open) setDemoteIntent(null); }}
+          onSuccess={() => setDemoteIntent(null)}
+        />
+      )}
     </>
   );
 }

@@ -90,93 +90,93 @@ export function SecuritySettings({ hasPassword }: SecuritySettingsProps) {
       {/* Linked Accounts Section */}
       <div className="space-y-4">
         <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-            Connected Accounts
+          Connected Accounts
         </h4>
-        
+
         {isLoadingAccounts ? (
-             <div className="space-y-4">
-               <div className="h-24 w-full animate-pulse rounded-lg bg-muted" />
-               <div className="h-24 w-full animate-pulse rounded-lg bg-muted" />
-             </div>
+          <div className="space-y-4">
+            <div className="h-24 w-full animate-pulse rounded-lg bg-muted" />
+            <div className="h-24 w-full animate-pulse rounded-lg bg-muted" />
+          </div>
         ) : (
-            <div className="grid gap-3">
-              {providers.map((provider) => {
-                const config = OAUTH_PROVIDERS[provider];
-                const Icon = config.icon;
-                const linked = isLinked(provider);
-                const isLoading = isLinking || isUnlinking;
+          <div className="grid gap-3">
+            {providers.map((provider) => {
+              const config = OAUTH_PROVIDERS[provider];
+              const Icon = config.icon;
+              const linked = isLinked(provider);
+              const isLoading = isLinking || isUnlinking;
 
-                return (
-                  <Card key={provider}>
-                    <CardContent className="flex items-center justify-between px-6">
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary">
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{config.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {linked ? "Connected" : "Not connected"}
-                          </p>
-                        </div>
+              return (
+                <Card key={provider}>
+                  <CardContent className="flex items-center justify-between px-6">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary">
+                        <Icon className="h-5 w-5" />
                       </div>
+                      <div>
+                        <p className="font-medium">{config.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {linked ? "Connected" : "Not connected"}
+                        </p>
+                      </div>
+                    </div>
 
-                      {linked ? (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              disabled={isLoading}
-                              className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    {linked ? (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            disabled={isLoading}
+                            className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          >
+                            {isUnlinking ? (
+                              <RiLoader4Line className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              "Disconnect"
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Unlink {config.name} account?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to disconnect your {config.name} account?
+                              Make sure you have another way (like a password) to sign in.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleUnlink(provider)}
+                              variant="destructive"
                             >
-                              {isUnlinking ? (
-                                <RiLoader4Line className="mr-2 h-4 w-4 animate-spin" />
-                              ) : (
-                                "Disconnect"
-                              )}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Unlink {config.name} account?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to disconnect your {config.name} account? 
-                                Make sure you have another way (like a password) to sign in.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleUnlink(provider)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Disconnect
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      ) : (
-                        <Button
-                          variant="ghost" 
-                          onClick={() => handleLink(provider)}
-                          disabled={isLoading}
-                          className="border border-input"
-                        >
-                          {isLinking ? (
-                            <RiLoader4Line className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <RiLinkM className="mr-2 h-4 w-4" />
-                              Connect
-                            </>
-                          )}
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                              Disconnect
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleLink(provider)}
+                        disabled={isLoading}
+                        className="border border-input"
+                      >
+                        {isLinking ? (
+                          <RiLoader4Line className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <RiLinkM className="mr-2 h-4 w-4" />
+                            Connect
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

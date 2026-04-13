@@ -8,10 +8,10 @@ import { ServiceHealthStep } from './service-health-step';
 import { AdminAccountStep } from './admin-account-step';
 import { InstanceConfigStep } from './instance-config-step';
 import { MailConfigStep } from './mail-config-step';
-import { FirstWorkspaceStep } from './first-workspace-step';
+import { FirstTeamStep } from './first-team-step';
 import { SampleDataStep } from './sample-data-step';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { RiLoader4Line } from '@remixicon/react';
 import type { SetupWizardStep } from '../types';
 
 /**
@@ -21,7 +21,7 @@ import type { SetupWizardStep } from '../types';
 function determineStartingStep(status: {
   adminEmail: string | null;
   instanceName: string | null;
-  defaultWorkspaceId: string | null;
+  defaultTeamId: string | null;
   isSetupComplete: boolean;
 }): SetupWizardStep {
   // If setup is complete, this shouldn't be shown (proxy should redirect)
@@ -40,8 +40,8 @@ function determineStartingStep(status: {
     return 'instance-config';
   }
 
-  // Instance configured, show mail config before workspace creation
-  if (!status.defaultWorkspaceId) {
+  // Instance configured, show mail config before team creation
+  if (!status.defaultTeamId) {
     return 'mail-config';
   }
 
@@ -64,17 +64,17 @@ export function SetupWizard() {
   useEffect(() => {
     if (status && startingStep !== 'health-check') {
       // Mark previous steps as complete
-      const stepsOrder: SetupWizardStep[] = ['health-check', 'admin-account', 'instance-config', 'mail-config', 'first-workspace', 'sample-data', 'complete'];
+      const stepsOrder: SetupWizardStep[] = ['health-check', 'admin-account', 'instance-config', 'mail-config', 'first-team', 'sample-data', 'complete'];
       const startingIndex = stepsOrder.indexOf(startingStep);
 
       stepsOrder.slice(0, startingIndex).forEach(step => {
         wizard.markStepComplete(step);
       });
 
-      // Rehydrate workspaceData from DB so SampleDataStep has the workspaceId on resume
-      if (status.defaultWorkspaceId && !wizard.workspaceData) {
-        wizard.setWorkspaceData({
-          id: status.defaultWorkspaceId,
+      // Rehydrate teamData from DB so SampleDataStep has the teamId on resume
+      if (status.defaultTeamId && !wizard.teamData) {
+        wizard.setTeamData({
+          id: status.defaultTeamId,
           name: '',
           slug: '',
         });
@@ -106,14 +106,14 @@ export function SetupWizard() {
         );
       case 'mail-config':
         return <MailConfigStep wizard={wizard} />;
-      case 'first-workspace':
-        return <FirstWorkspaceStep wizard={wizard} />;
+      case 'first-team':
+        return <FirstTeamStep wizard={wizard} />;
       case 'sample-data':
         return <SampleDataStep wizard={wizard} />;
       case 'complete': // Should have redirected by now
         return (
           <div className="flex flex-col items-center justify-center p-8 space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary motion-reduce:animate-none" />
+            <RiLoader4Line className="h-8 w-8 animate-spin text-primary motion-reduce:animate-none" />
             <p className="text-muted-foreground">{'Redirecting\u2026'}</p>
           </div>
         );
@@ -133,7 +133,7 @@ export function SetupWizard() {
                 animate={{ rotate: 360 }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
               >
-                <Loader2 className="h-10 w-10 text-primary" />
+                <RiLoader4Line className="h-10 w-10 text-primary" />
               </motion.div>
               <div className="space-y-2 text-center animate-pulse">
                 <p className="text-lg font-medium">Checking setup status</p>

@@ -94,6 +94,7 @@ export interface NotificationMetadata {
 
   // Invitation metadata
   invitation_id?: string; // For Accept/Decline actions
+  invitation_status?: 'accepted' | 'declined'; // Set after user responds
 
   // Actor information (denormalized for display)
   actor_name?: string;
@@ -129,19 +130,6 @@ export interface CreateNotificationDTO {
   entityType: EntityType;
   entityId: string;
   metadata: NotificationMetadata;
-}
-
-/**
- * Grouped notifications for UI display
- * Groups by (type, entity_type, entity_id) within time window
- */
-export interface NotificationGroup {
-  type: NotificationType;
-  entityType: EntityType;
-  entityId: string;
-  notifications: Notification[];
-  latestAt: Date;
-  actorNames: string[]; // "User A and 3 others"
 }
 
 // ============================================================================
@@ -208,6 +196,7 @@ export const NotificationMetadataSchema = z.object({
   old_status: z.string().optional(),
   new_status: z.string().optional(),
   invitation_id: z.string().optional(),
+  invitation_status: z.enum(['accepted', 'declined']).optional(),
   actor_name: z.string().optional(),
   actor_avatar_url: z.string().optional(),
 });

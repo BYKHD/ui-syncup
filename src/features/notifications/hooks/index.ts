@@ -9,6 +9,7 @@ export { useUnreadCount } from "./use-unread-count";
 // Mutation hooks
 export { useMarkAsRead } from "./use-mark-as-read";
 export { useMarkAllAsRead } from "./use-mark-all-as-read";
+export { useDeleteNotification } from "./use-delete-notification";
 
 // Realtime subscription hook
 export { useNotificationSubscription } from "./use-notification-subscription";
@@ -21,6 +22,7 @@ export type { UseNotificationsParams, UseNotificationsResult } from "./use-notif
 export type { UseUnreadCountParams, UseUnreadCountResult } from "./use-unread-count";
 export type { UseMarkAsReadOptions, UseMarkAsReadResult } from "./use-mark-as-read";
 export type { UseMarkAllAsReadOptions, UseMarkAllAsReadResult } from "./use-mark-all-as-read";
+export type { UseDeleteNotificationOptions, UseDeleteNotificationResult } from "./use-delete-notification";
 export type {
   UseNotificationSubscriptionOptions,
   UseNotificationSubscriptionResult,

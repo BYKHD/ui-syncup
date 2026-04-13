@@ -66,11 +66,11 @@ export function useTeamPermissions(teamId: string | undefined): TeamPermissions 
     const operationalRole = team.myOperationalRole;
 
     // Role checks
-    const isOwner = managementRole === 'WORKSPACE_OWNER';
-    const isAdmin = managementRole === 'WORKSPACE_ADMIN';
-    const isEditor = operationalRole === 'WORKSPACE_EDITOR';
-    const isMember = operationalRole === 'WORKSPACE_MEMBER';
-    const isViewer = operationalRole === 'WORKSPACE_VIEWER';
+    const isOwner = managementRole === 'TEAM_OWNER';
+    const isAdmin = managementRole === 'TEAM_ADMIN';
+    const isEditor = operationalRole === 'TEAM_EDITOR';
+    const isMember = operationalRole === 'TEAM_MEMBER';
+    const isViewer = operationalRole === 'TEAM_VIEWER';
 
     // Permission derivations
     const canManageTeam = isOwner || isAdmin;

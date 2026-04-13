@@ -86,7 +86,6 @@ async function createTestUser(email: string, password: string, name: string, ver
     .insert(users)
     .values({
       email: email.toLowerCase().trim(),
-      passwordHash, // Keep legacy field if needed, but better-auth uses account table
       name: name.trim(),
       emailVerified: verified,
     })
@@ -173,10 +172,13 @@ describe('Integration Test: Complete Registration → Verification → Sign-in F
     expect(user.id).toBeTruthy();
     expect(user.email).toBe(email.toLowerCase());
     expect(user.emailVerified).toBe(false);
-    const initialPasswordHash = ensurePasswordHash(user.passwordHash);
+
+    // Verify password is hashed and stored in the credential account
+    const credAccount = await db.query.account.findFirst({
+      where: and(eq(account.userId, user.id), eq(account.providerId, 'credential')),
+    });
+    const initialPasswordHash = ensurePasswordHash(credAccount?.password ?? null);
     expect(initialPasswordHash).not.toBe(password);
-    
-    // Verify password is hashed correctly
     const passwordValid = await verifyPassword(password, initialPasswordHash);
     expect(passwordValid).toBe(true);
     
@@ -320,11 +322,14 @@ describe('Integration Test: Sign-in with Invalid Credentials', () => {
   // Create verified user
   const user = await createTestUser(email, correctPassword, name, true);
   
-  // Verify correct password works
-  const userPasswordHash = ensurePasswordHash(user.passwordHash);
+  // Verify correct password works via the credential account
+  const credAccount = await db.query.account.findFirst({
+    where: and(eq(account.userId, user.id), eq(account.providerId, 'credential')),
+  });
+  const userPasswordHash = ensurePasswordHash(credAccount?.password ?? null);
   const correctPasswordValid = await verifyPassword(correctPassword, userPasswordHash);
   expect(correctPasswordValid).toBe(true);
-  
+
   // Verify wrong password fails
   const wrongPasswordValid = await verifyPassword(wrongPassword, userPasswordHash);
   expect(wrongPasswordValid).toBe(false);
@@ -359,8 +364,11 @@ describe('Integration Test: Password Reset Flow', () => {
     // Step 1: Create verified user
     const user = await createTestUser(email, oldPassword, name, true);
 
-    // Verify old password works
-    const existingPasswordHash = ensurePasswordHash(user.passwordHash);
+    // Verify old password works via the credential account
+    const existingCredAccount = await db.query.account.findFirst({
+      where: and(eq(account.userId, user.id), eq(account.providerId, 'credential')),
+    });
+    const existingPasswordHash = ensurePasswordHash(existingCredAccount?.password ?? null);
     const oldPasswordValid = await verifyPassword(oldPassword, existingPasswordHash);
     expect(oldPasswordValid).toBe(true);
     
@@ -397,13 +405,13 @@ describe('Integration Test: Password Reset Flow', () => {
     expect(verifiedResetToken).not.toBeNull();
     expect(verifiedResetToken?.userId).toBe(user.id);
     
-    // Step 5: Update password
+    // Step 5: Update password in the credential account
     const newPasswordHash = await hashPassword(newPassword);
-    
+
     await db
-      .update(users)
-      .set({ passwordHash: newPasswordHash })
-      .where(eq(users.id, user.id));
+      .update(account)
+      .set({ password: newPasswordHash })
+      .where(and(eq(account.userId, user.id), eq(account.providerId, 'credential')));
     
     // Mark token as used
     await markTokenAsUsed(resetToken.tokenId);
@@ -418,16 +426,14 @@ describe('Integration Test: Password Reset Flow', () => {
     expect(oldSessionAfterReset).toBeNull();
     
     // Step 8: Verify old password no longer works
-    const [updatedUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, user.id))
-      .limit(1);
-    
-    const updatedPasswordHash = ensurePasswordHash(updatedUser.passwordHash);
+    const updatedCredAccount = await db.query.account.findFirst({
+      where: and(eq(account.userId, user.id), eq(account.providerId, 'credential')),
+    });
+
+    const updatedPasswordHash = ensurePasswordHash(updatedCredAccount?.password ?? null);
     const oldPasswordStillValid = await verifyPassword(oldPassword, updatedPasswordHash);
     expect(oldPasswordStillValid).toBe(false);
-    
+
     // Step 9: Verify new password works
     const newPasswordValid = await verifyPassword(newPassword, updatedPasswordHash);
     expect(newPasswordValid).toBe(true);

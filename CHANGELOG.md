@@ -1,3 +1,109 @@
+# [0.8.0-beta.12](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.11...v0.8.0-beta.12) (2026-04-13)
+
+
+### Bug Fixes
+
+* consolidate developer to member ([#133](https://github.com/BYKHD/ui-syncup/issues/133)) ([d319de8](https://github.com/BYKHD/ui-syncup/commit/d319de8f60fd7055cf7befcbb899380d55b6e2fd)), closes [#128](https://github.com/BYKHD/ui-syncup/issues/128) [#128](https://github.com/BYKHD/ui-syncup/issues/128)
+
+# [0.8.0-beta.11](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.10...v0.8.0-beta.11) (2026-04-10)
+
+
+### Bug Fixes
+
+* add PROJECT_MEMBER role and fix PATCH member role assignment ([#128](https://github.com/BYKHD/ui-syncup/issues/128)) ([#132](https://github.com/BYKHD/ui-syncup/issues/132)) ([4c4ef9f](https://github.com/BYKHD/ui-syncup/commit/4c4ef9fd8fca7af339740201e84a3f4dcdd17f9f))
+
+# [0.8.0-beta.10](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.9...v0.8.0-beta.10) (2026-04-08)
+
+
+### Bug Fixes
+
+* update team settings navigation to use slug-based paths ([2ab0ce9](https://github.com/BYKHD/ui-syncup/commit/2ab0ce9c1365b1987d447d927103ace14ae4ea6f))
+
+# [0.8.0-beta.9](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.8...v0.8.0-beta.9) (2026-04-07)
+
+
+### Bug Fixes
+
+*  PWA manifest and icons, standardize user avatar field, and update project join/leave API responses and UI components. ([#126](https://github.com/BYKHD/ui-syncup/issues/126)) ([10d7779](https://github.com/BYKHD/ui-syncup/commit/10d77790c2e20859744abc2d94d7275cf51829f0))
+
+# [0.8.0-beta.8](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.7...v0.8.0-beta.8) (2026-04-07)
+
+
+### Bug Fixes
+
+* invitation acceptance redirect flow ([aa91de7](https://github.com/BYKHD/ui-syncup/commit/aa91de724c2d09d5cff512267eab673cc5eed33c))
+
+# [0.8.0-beta.7](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.6...v0.8.0-beta.7) (2026-04-07)
+
+
+### Bug Fixes
+
+* replace Loader2 icon with RiLoader4Line in setup wizard ([0b3b07a](https://github.com/BYKHD/ui-syncup/commit/0b3b07ac0dd8765f7d24cf57fd6ce6f0dc93899f))
+* retrigger ([3b23d2e](https://github.com/BYKHD/ui-syncup/commit/3b23d2ef5e18f5a62c343a38600308874ef3d07e))
+
+# [0.8.0-beta.6](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.5...v0.8.0-beta.6) (2026-04-07)
+
+
+### Bug Fixes
+
+* persistent invitation flow during OAuth ([ca3d78a](https://github.com/BYKHD/ui-syncup/commit/ca3d78a75cad5fe66048daa206be2709b2cf8807))
+
+# [0.8.0-beta.5](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.4...v0.8.0-beta.5) (2026-04-06)
+
+
+### Bug Fixes
+
+* core UI improvement 1 ([#125](https://github.com/BYKHD/ui-syncup/issues/125)) ([a0d6b8e](https://github.com/BYKHD/ui-syncup/commit/a0d6b8e66364412229c5ef6341feb9f00622e37e))
+
+# [0.8.0-beta.4](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.3...v0.8.0-beta.4) (2026-04-05)
+
+
+### Bug Fixes
+
+* replace dedicated user_roles table with team_members and project_members for RBAC ([2cbe9c4](https://github.com/BYKHD/ui-syncup/commit/2cbe9c4e9f4bc950e04a7fe7eb5b5d7563a3020c))
+
+# [0.8.0-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.2...v0.8.0-beta.3) (2026-04-05)
+
+
+### Bug Fixes
+
+* correct quote usage in self-registration success toast message ([a56b047](https://github.com/BYKHD/ui-syncup/commit/a56b047b240057a7ecc71858444a1fabe2bb6e09))
+
+# [0.8.0-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.1...v0.8.0-beta.2) (2026-04-04)
+
+
+### Bug Fixes
+
+* rename workspace terminology to team throughout authentication and setup flows ([af7333a](https://github.com/BYKHD/ui-syncup/commit/af7333a0893e18041754efc311c907d042a1883c))
+
+# [0.8.0-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.4-beta.3...v0.8.0-beta.1) (2026-04-04)
+
+
+### Features
+
+* clean up legacy Drizzle migrations and update database schema snapshot ([d3b0de5](https://github.com/BYKHD/ui-syncup/commit/d3b0de55b720fd1f633d3dbf69b2ac328660a706))
+
+## [0.7.4-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.7.4-beta.2...v0.7.4-beta.3) (2026-04-04)
+
+
+### Bug Fixes
+
+* redandant database table ([#124](https://github.com/BYKHD/ui-syncup/issues/124)) ([389274d](https://github.com/BYKHD/ui-syncup/commit/389274d962f01cf3e746ef2580534d9b15f5ffdf))
+
+## [0.7.4-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.7.4-beta.1...v0.7.4-beta.2) (2026-04-04)
+
+
+### Bug Fixes
+
+* update invitation acceptance redirect to use absolute app URL and correct return path ([#123](https://github.com/BYKHD/ui-syncup/issues/123)) ([da63bbc](https://github.com/BYKHD/ui-syncup/commit/da63bbcd6a1ec9e0b412c9606da80096fe257247))
+
+## [0.7.4-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.7.3...v0.7.4-beta.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* minor bug part 2 ([#121](https://github.com/BYKHD/ui-syncup/issues/121)) ([e1e1fef](https://github.com/BYKHD/ui-syncup/commit/e1e1fefe9ba8ca88200611650e2c834cd4c46602))
+
 ## [0.7.3](https://github.com/BYKHD/ui-syncup/compare/v0.7.2...v0.7.3) (2026-04-03)
 
 

@@ -6,7 +6,6 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email", { length: 320 }).notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
-  passwordHash: varchar("password_hash", { length: 255 }),
   name: varchar("name", { length: 120 }).notNull(),
   image: text("image"),
   lastActiveTeamId: uuid("last_active_team_id").references(() => teams.id, { onDelete: "set null" }),

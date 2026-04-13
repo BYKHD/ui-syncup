@@ -23,7 +23,7 @@ export function useTeam(): UseTeamResult {
   // Priority:
   // 1. URL slug (authoritative — user is explicitly on this team's page)
   // 2. activeTeamId from API (DB-backed lastActiveTeamId, no cookie)
-  // 3. First team (fallback for single-workspace mode)
+  // 3. First team (fallback for single-team mode)
   const currentTeam = (
     slug
       ? teams.find(t => t.slug === slug)

@@ -19,17 +19,17 @@ export function SampleDataStep({ wizard }: SampleDataStepProps) {
   const includeSampleData = draft.includeSampleData ?? false;
 
   const handleComplete = () => {
-    const workspaceId = wizard.workspaceData?.id;
+    const teamId = wizard.teamData?.id;
 
-    if (!workspaceId) {
+    if (!teamId) {
       // Fallback or error - this shouldn't happen if flow is correct
-      console.error('Workspace ID missing');
+      console.error('Team ID missing');
       return;
     }
 
     completeSetup(
       {
-        workspaceId,
+        teamId,
         createSampleData: includeSampleData,
       },
       {

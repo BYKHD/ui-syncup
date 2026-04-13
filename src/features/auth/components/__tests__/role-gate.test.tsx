@@ -41,14 +41,14 @@ describe("RoleGate Component - Property-Based Tests", () => {
 
   // Generate valid role strings
   const roleArb = fc.constantFrom(
-    "WORKSPACE_OWNER",
-    "WORKSPACE_ADMIN",
-    "WORKSPACE_EDITOR",
-    "WORKSPACE_MEMBER",
-    "WORKSPACE_VIEWER",
+    "TEAM_OWNER",
+    "TEAM_ADMIN",
+    "TEAM_EDITOR",
+    "TEAM_MEMBER",
+    "TEAM_VIEWER",
     "PROJECT_OWNER",
     "PROJECT_EDITOR",
-    "PROJECT_DEVELOPER",
+    "PROJECT_MEMBER",
     "PROJECT_VIEWER"
   ) as fc.Arbitrary<Role>;
 

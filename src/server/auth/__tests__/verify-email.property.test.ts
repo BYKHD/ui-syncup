@@ -7,13 +7,12 @@
  * @module server/auth/__tests__/verify-email.property.test
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import fc from 'fast-check';
 import { db } from '@/lib/db';
 import { users, verificationTokens } from '@/server/db/schema';
 import { generateToken, verifyToken, markTokenAsUsed } from '@/server/auth/tokens';
-import { hashPassword } from '@/server/auth/password';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 /**
  * Property test configuration
@@ -56,7 +55,6 @@ const userDataArb = fc.record({
  * Helper function to create a test user
  */
 async function createTestUser(data: { email: string; password: string; name: string }) {
-  const passwordHash = await hashPassword(data.password);
   const uniqueEmail = `${Date.now()}-${Math.random()}-${data.email.toLowerCase().trim()}`;
   const trimmedName = data.name.trim();
   
@@ -65,7 +63,6 @@ async function createTestUser(data: { email: string; password: string; name: str
     .values({
       email: uniqueEmail,
       name: trimmedName,
-      passwordHash,
       emailVerified: false,
     })
     .returning({
@@ -109,7 +106,7 @@ describe('Property 5: Valid verification marks user as verified', () => {
     for (const userId of testUserIds) {
       try {
         await cleanupTestUser(userId);
-      } catch (error) {
+      } catch {
         // Ignore cleanup errors
       }
     }

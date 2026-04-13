@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/server/auth/session';
-import { updateMemberRoles, removeMember } from '@/server/teams/member-service';
+import { updateMemberRoles, removeWithOwnershipTransfer, demoteWithOwnershipTransfer } from '@/server/teams/member-service';
 import { hasRole } from '@/server/auth/rbac';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
@@ -22,8 +22,23 @@ import { eq, and } from 'drizzle-orm';
  * Zod schema for member role update
  */
 const UpdateMemberRolesSchema = z.object({
-  managementRole: z.enum(['WORKSPACE_OWNER', 'WORKSPACE_ADMIN']).nullable().optional(),
-  operationalRole: z.enum(['WORKSPACE_EDITOR', 'WORKSPACE_MEMBER', 'WORKSPACE_VIEWER']).optional(),
+  managementRole: z.enum(['TEAM_OWNER', 'TEAM_ADMIN']).nullable().optional(),
+  operationalRole: z.enum(['TEAM_EDITOR', 'TEAM_MEMBER', 'TEAM_VIEWER']).optional(),
+  ownershipTransfers: z.array(
+    z.object({
+      projectId: z.string().uuid(),
+      newOwnerId: z.string().uuid(),
+    })
+  ).optional(),
+});
+
+const RemoveMemberSchema = z.object({
+  ownershipTransfers: z.array(
+    z.object({
+      projectId: z.string().uuid(),
+      newOwnerId: z.string().uuid(),
+    })
+  ).optional().default([]),
 });
 
 /**
@@ -33,8 +48,8 @@ const UpdateMemberRolesSchema = z.object({
  * 
  * Request body:
  * {
- *   "managementRole": "WORKSPACE_ADMIN" | null,
- *   "operationalRole": "WORKSPACE_EDITOR" | "WORKSPACE_MEMBER" | "WORKSPACE_VIEWER"
+ *   "managementRole": "TEAM_ADMIN" | null,
+ *   "operationalRole": "TEAM_EDITOR" | "TEAM_MEMBER" | "TEAM_VIEWER"
  * }
  * 
  * Success response (200):
@@ -42,8 +57,8 @@ const UpdateMemberRolesSchema = z.object({
  *   "member": {
  *     "id": "uuid",
  *     "userId": "uuid",
- *     "managementRole": "WORKSPACE_ADMIN",
- *     "operationalRole": "WORKSPACE_EDITOR",
+ *     "managementRole": "TEAM_ADMIN",
+ *     "operationalRole": "TEAM_EDITOR",
  *     ...
  *   }
  * }
@@ -80,8 +95,8 @@ export async function PATCH(
     }
     
     // Check permissions (TEAM_OWNER or TEAM_ADMIN)
-    const isOwner = await hasRole(user.id, 'WORKSPACE_OWNER', 'team', teamId);
-    const isAdmin = await hasRole(user.id, 'WORKSPACE_ADMIN', 'team', teamId);
+    const isOwner = await hasRole(user.id, 'TEAM_OWNER', 'team', teamId);
+    const isAdmin = await hasRole(user.id, 'TEAM_ADMIN', 'team', teamId);
     
     if (!isOwner && !isAdmin) {
       return NextResponse.json(
@@ -120,8 +135,22 @@ export async function PATCH(
       ),
     });
 
-    // Update member roles
-    const member = await updateMemberRoles(teamId, userId, validation.data, user.id);
+    const { ownershipTransfers, ...roleInput } = validation.data;
+    const isDemotion =
+      roleInput.operationalRole === 'TEAM_MEMBER' ||
+      roleInput.operationalRole === 'TEAM_VIEWER';
+
+    // When ownership transfers are provided for a demotion, use the transfer-aware path
+    const member =
+      ownershipTransfers && ownershipTransfers.length > 0 && isDemotion
+        ? await demoteWithOwnershipTransfer(
+            teamId,
+            userId,
+            roleInput.operationalRole as 'TEAM_MEMBER' | 'TEAM_VIEWER',
+            ownershipTransfers,
+            user.id
+          )
+        : await updateMemberRoles(teamId, userId, roleInput, user.id);
 
     // Audit log role changes
     if (currentMember) {
@@ -179,7 +208,7 @@ export async function PATCH(
         );
       }
       
-      if (error.message.includes('owns projects')) {
+      if (error.message.includes('OWNERSHIP_TRANSFER_REQUIRED') || error.message.includes('owns projects')) {
         return NextResponse.json(
           {
             error: {
@@ -190,7 +219,7 @@ export async function PATCH(
           { status: 409 }
         );
       }
-      
+
       if (error.message.includes('not found')) {
         return NextResponse.json(
           {
@@ -257,8 +286,8 @@ export async function DELETE(
     }
     
     // Check permissions (TEAM_OWNER or TEAM_ADMIN)
-    const isOwner = await hasRole(user.id, 'WORKSPACE_OWNER', 'team', teamId);
-    const isAdmin = await hasRole(user.id, 'WORKSPACE_ADMIN', 'team', teamId);
+    const isOwner = await hasRole(user.id, 'TEAM_OWNER', 'team', teamId);
+    const isAdmin = await hasRole(user.id, 'TEAM_ADMIN', 'team', teamId);
     
     if (!isOwner && !isAdmin) {
       return NextResponse.json(
@@ -272,8 +301,17 @@ export async function DELETE(
       );
     }
     
-    // Remove member
-    await removeMember(teamId, userId, user.id);
+    // Parse optional body for ownership transfers
+    let ownershipTransfers: { projectId: string; newOwnerId: string }[] = [];
+    try {
+      const body = await request.json().catch(() => ({}));
+      const parsed = RemoveMemberSchema.safeParse(body);
+      if (parsed.success) ownershipTransfers = parsed.data.ownershipTransfers;
+    } catch {
+      // Body is optional — proceed with empty transfers
+    }
+
+    await removeWithOwnershipTransfer(teamId, userId, ownershipTransfers, user.id);
     
     // Audit log removal
     logAdminAction('member.removed', {
@@ -309,19 +347,14 @@ export async function DELETE(
     
     // Handle specific errors
     if (error instanceof Error) {
-      if (error.message.includes('owns projects')) {
+      if (error.message.includes('OWNERSHIP_TRANSFER_REQUIRED') || error.message.includes('owns projects')) {
         return NextResponse.json(
-          {
-            error: {
-              code: 'MEMBER_OWNS_PROJECTS',
-              message: error.message,
-            },
-          },
+          { error: { code: 'MEMBER_OWNS_PROJECTS', message: 'Member owns projects. Transfer ownership first.' } },
           { status: 409 }
         );
       }
     }
-    
+
     return NextResponse.json(
       {
         error: {

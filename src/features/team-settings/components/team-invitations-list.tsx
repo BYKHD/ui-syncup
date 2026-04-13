@@ -93,7 +93,7 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
 
   const [formData, setFormData] = useState<InviteMemberFormData>({
     email: "",
-    role: "WORKSPACE_MEMBER",
+    role: "TEAM_MEMBER",
     message: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -136,7 +136,7 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
         onSuccess: () => {
           toast.success("Invitation sent successfully");
           setIsInviteDialogOpen(false);
-          setFormData({ email: "", role: "WORKSPACE_MEMBER", message: "" });
+          setFormData({ email: "", role: "TEAM_MEMBER", message: "" });
           setFormErrors({});
         },
         onError: (error) => {
@@ -165,7 +165,7 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
             () => {
               toast.success("Invitation link copied to clipboard!");
               setIsInviteDialogOpen(false);
-              setFormData({ email: "", role: "WORKSPACE_MEMBER", message: "" });
+              setFormData({ email: "", role: "TEAM_MEMBER", message: "" });
               setFormErrors({});
             },
             () => {
@@ -280,9 +280,9 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="WORKSPACE_EDITOR">Editor</SelectItem>
-                        <SelectItem value="WORKSPACE_MEMBER">Member</SelectItem>
-                        <SelectItem value="WORKSPACE_VIEWER">Viewer</SelectItem>
+                        <SelectItem value="TEAM_EDITOR">Editor</SelectItem>
+                        <SelectItem value="TEAM_MEMBER">Member</SelectItem>
+                        <SelectItem value="TEAM_VIEWER">Viewer</SelectItem>
                       </SelectContent>
                     </Select>
                     {formErrors.role && (
@@ -307,21 +307,12 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
                   </div>
                 </div>
                 <DialogFooter className="flex-col sm:flex-row gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsInviteDialogOpen(false)}
-                    disabled={isCreating || isCopyingLink}
-                  >
-                    Cancel
-                  </Button>
                   <LoadingButton
                     variant="outline"
                     onClick={handleCopyInvitationLink}
                     isLoading={isCopyingLink}
                     disabled={isCreating}
                   >
-                    <Copy className="mr-2 h-4 w-4" />
                     Copy Link
                   </LoadingButton>
                   <LoadingButton
@@ -407,9 +398,8 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
                                   disabled={resendingId === invitation.id || isResending}
                                 >
                                   <RefreshCw
-                                    className={`mr-2 h-4 w-4 ${
-                                      resendingId === invitation.id ? "animate-spin" : ""
-                                    }`}
+                                    className={`mr-2 h-4 w-4 ${resendingId === invitation.id ? "animate-spin" : ""
+                                      }`}
                                   />
                                   Resend Invitation
                                 </DropdownMenuItem>
@@ -452,9 +442,9 @@ export function TeamInvitationsList({ teamId }: TeamInvitationsListProps) {
               Keep Invitation
             </AlertDialogCancel>
             <AlertDialogAction
+              variant="destructive"
               onClick={handleCancelInvitation}
               disabled={isCanceling}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isCanceling ? "Canceling..." : "Cancel Invitation"}
             </AlertDialogAction>

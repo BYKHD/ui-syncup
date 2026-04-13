@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -122,16 +121,9 @@ export function InlineEditableUserSelect({
 
   if (!canEdit) {
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className={cn('text-sm cursor-not-allowed opacity-75', displayClassName)}>
-            <UserDisplay user={selectedUser} />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="top">
-          <p>You don&apos;t have permission to edit this field</p>
-        </TooltipContent>
-      </Tooltip>
+      <div className={cn('text-sm cursor-not-allowed opacity-75', displayClassName)}>
+        <UserDisplay user={selectedUser} />
+      </div>
     );
   }
 

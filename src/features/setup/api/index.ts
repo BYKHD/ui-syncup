@@ -7,7 +7,7 @@ export { getInstanceStatus } from './get-instance-status';
 export { getServiceHealth } from './get-service-health';
 export { createAdmin } from './create-admin';
 export { saveInstanceConfig } from './save-instance-config';
-export { createFirstWorkspace } from './create-first-workspace';
+export { createFirstTeam } from './create-first-team';
 export { completeSetup } from './complete-setup';
 
 // Schemas
@@ -21,8 +21,8 @@ export {
   AdminAccountResponseSchema,
   InstanceConfigRequestSchema,
   InstanceConfigResponseSchema,
-  FirstWorkspaceRequestSchema,
-  FirstWorkspaceResponseSchema,
+  FirstTeamRequestSchema,
+  FirstTeamResponseSchema,
   SetupCompleteRequestSchema,
   SetupCompleteResponseSchema,
 } from './types';
@@ -37,8 +37,8 @@ export type {
   AdminAccountResponseDTO,
   InstanceConfigRequestDTO,
   InstanceConfigResponseDTO,
-  FirstWorkspaceRequestDTO,
-  FirstWorkspaceResponseDTO,
+  FirstTeamRequestDTO,
+  FirstTeamResponseDTO,
   SetupCompleteRequestDTO,
   SetupCompleteResponseDTO,
 } from './types';

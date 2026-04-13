@@ -5,17 +5,18 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator 
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip'
 import { RiTeamLine, RiMore2Line, RiUserLine, RiDeleteBinLine, RiAddLine, RiVipCrownLine, RiMailSendLine, RiAlertLine } from '@remixicon/react'
+import { getRoleDisplayName, getRoleBadgeVariant, getRoleDescription } from '@/features/projects/utils/role-helpers'
 
 interface User {
   id: string
@@ -36,7 +37,7 @@ interface ProjectMember {
 interface ProjectInvitation {
   id: string
   invitedUserId: string
-  role: 'editor' | 'developer' | 'viewer'
+  role: 'editor' | 'member' | 'viewer'
   status: 'pending' | 'accepted' | 'declined' | 'expired'
   createdAt: Date
   expiresAt: Date
@@ -73,10 +74,10 @@ interface ProjectMemberManagerDialogProps {
  * Ready-to-wire controlled dialog for managing project members and invitations.
  * All state and actions are managed by the parent component.
  */
-export function ProjectMemberManagerDialog({ 
-  projectId, 
+export function ProjectMemberManagerDialog({
+  projectId,
   projectName,
-  userRole, 
+  userRole,
   canManageMembers,
   open,
   onOpenChange,
@@ -90,7 +91,7 @@ export function ProjectMemberManagerDialog({
   onResendInvitation,
   onInviteMember,
   onOpen,
-  children 
+  children
 }: ProjectMemberManagerDialogProps) {
   // Confirmation dialogs
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
@@ -135,27 +136,6 @@ export function ProjectMemberManagerDialog({
     setRoleChangeData(null)
   }
 
-  const getRoleDisplayName = (role: string) => {
-    const roleNames = {
-      owner: 'Owner',
-      editor: 'Editor', 
-      member: 'Member',
-      developer: 'Developer',
-      viewer: 'Viewer'
-    }
-    return roleNames[role as keyof typeof roleNames] || role
-  }
-
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'owner': return 'default'
-      case 'editor': return 'secondary'
-      case 'member': return 'outline'
-      case 'viewer': return 'outline'
-      default: return 'outline'
-    }
-  }
-
   const canChangeRole = (member: ProjectMember) => {
     if (!canManageMembers) return false
     if (member.role === 'owner' && userRole !== 'owner') return false
@@ -185,7 +165,7 @@ export function ProjectMemberManagerDialog({
           <DialogHeader>
             <DialogTitle>Project Members</DialogTitle>
           </DialogHeader>
-          
+
           <div className="flex-1 overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -202,8 +182,8 @@ export function ProjectMemberManagerDialog({
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-medium">Members ({(members || []).length})</h3>
                     {canManageMembers && (
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={onInviteMember}
                       >
@@ -212,7 +192,7 @@ export function ProjectMemberManagerDialog({
                       </Button>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     {(members || []).map((member) => (
                       <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border">
@@ -231,17 +211,17 @@ export function ProjectMemberManagerDialog({
                             <div className="text-xs text-muted-foreground">{member.user.email}</div>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-2">
                           <Badge variant={getRoleBadgeVariant(member.role)}>
                             {getRoleDisplayName(member.role)}
                           </Badge>
-                          
+
                           {canManageMembers && (canChangeRole(member) || canRemoveMember(member)) && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
+                                <Button
+                                  variant="ghost"
                                   size="sm"
                                 >
                                   <RiMore2Line className="h-4 w-4" />
@@ -251,26 +231,46 @@ export function ProjectMemberManagerDialog({
                                 {canChangeRole(member) && (
                                   <>
                                     <DropdownMenuItem onClick={() => handleRoleChange(member, 'owner')}>
-                                      <RiVipCrownLine className="h-4 w-4" />
-                                      Make Owner
+                                      <RiVipCrownLine className="h-4 w-4 shrink-0" />
+                                      <div className="flex flex-col">
+                                        <span>Make Owner</span>
+                                        <span className="text-xs text-muted-foreground font-normal">
+                                          {getRoleDescription('owner')}
+                                        </span>
+                                      </div>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleRoleChange(member, 'editor')}>
-                                      <RiUserLine className="h-4 w-4" />
-                                      Make Editor
+                                      <RiUserLine className="h-4 w-4 shrink-0" />
+                                      <div className="flex flex-col">
+                                        <span>Make Editor</span>
+                                        <span className="text-xs text-muted-foreground font-normal">
+                                          {getRoleDescription('editor')}
+                                        </span>
+                                      </div>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleRoleChange(member, 'member')}>
-                                      <RiUserLine className="h-4 w-4" />
-                                      Make Member
+                                      <RiUserLine className="h-4 w-4 shrink-0" />
+                                      <div className="flex flex-col">
+                                        <span>Make Member</span>
+                                        <span className="text-xs text-muted-foreground font-normal">
+                                          {getRoleDescription('member')}
+                                        </span>
+                                      </div>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleRoleChange(member, 'viewer')}>
-                                      <RiUserLine className="h-4 w-4" />
-                                      Make Viewer
+                                      <RiUserLine className="h-4 w-4 shrink-0" />
+                                      <div className="flex flex-col">
+                                        <span>Make Viewer</span>
+                                        <span className="text-xs text-muted-foreground font-normal">
+                                          {getRoleDescription('viewer')}
+                                        </span>
+                                      </div>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                   </>
                                 )}
                                 {canRemoveMember(member) && (
-                                  <DropdownMenuItem 
+                                  <DropdownMenuItem
                                     onClick={() => handleRemoveMember(member)}
                                     variant="destructive"
                                   >
@@ -305,18 +305,18 @@ export function ProjectMemberManagerDialog({
                                 <div className="text-sm font-medium">{invitation.invitedUser.name}</div>
                                 <div className="text-xs text-muted-foreground">{invitation.invitedUser.email}</div>
                                 <div className="text-xs text-muted-foreground">
-                                  Invited by {invitation.invitedByUser.name} • 
+                                  Invited by {invitation.invitedByUser.name} •
                                   Expires {new Date(invitation.expiresAt).toLocaleDateString()}
                                 </div>
                               </div>
                             </div>
-                            
+
                             <div className="flex items-center gap-2">
                               <Badge variant="outline">
                                 {getRoleDisplayName(invitation.role)}
                               </Badge>
                               <Badge variant="secondary">Pending</Badge>
-                              
+
                               {invitation.emailDeliveryFailed && (
                                 <TooltipProvider>
                                   <Tooltip>
@@ -339,7 +339,7 @@ export function ProjectMemberManagerDialog({
                                   </Tooltip>
                                 </TooltipProvider>
                               )}
-                              
+
                               {canManageMembers && (
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
@@ -353,7 +353,7 @@ export function ProjectMemberManagerDialog({
                                       Resend Invitation
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem 
+                                    <DropdownMenuItem
                                       onClick={() => onRevokeInvitation(invitation.id)}
                                       variant="destructive"
                                     >
@@ -382,13 +382,13 @@ export function ProjectMemberManagerDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Member</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove <strong>{memberToRemove?.user.name}</strong> from this project? 
+              Are you sure you want to remove <strong>{memberToRemove?.user.name}</strong> from this project?
               They will lose access to all project content and will need to be re-invited to rejoin.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmRemoveMember} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={confirmRemoveMember} variant="destructive">
               Remove Member
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -401,7 +401,7 @@ export function ProjectMemberManagerDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Transfer Project Ownership</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to make <strong>{roleChangeData?.member.user.name}</strong> the project owner? 
+              Are you sure you want to make <strong>{roleChangeData?.member.user.name}</strong> the project owner?
               You will become an Editor and lose owner privileges for this project.
             </AlertDialogDescription>
           </AlertDialogHeader>

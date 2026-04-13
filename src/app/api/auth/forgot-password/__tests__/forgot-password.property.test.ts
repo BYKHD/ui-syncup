@@ -10,11 +10,9 @@ import fc from 'fast-check';
 import { db } from '@/lib/db';
 import { users, verificationTokens } from '@/server/db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
-import { hashPassword } from '@/server/auth/password';
 import { POST } from '../route';
 import { NextRequest } from 'next/server';
 import { clearAllLimits } from '@/server/auth/rate-limiter';
-import { forgotPasswordSchema } from '@/features/auth/utils/validators';
 
 // Property test configuration
 const PROPERTY_CONFIG = {
@@ -32,12 +30,10 @@ let testUserEmail: string;
  * Create a fresh test user for each test run to account for the global DB reset.
  */
 async function createTestUser() {
-  const passwordHash = await hashPassword('TestPassword123!');
   const [user] = await db
     .insert(users)
     .values({
       email: `test-forgot-${Date.now()}-${Math.random().toString(16).slice(2)}@example.com`,
-      passwordHash,
       name: 'Test Forgot Password User',
       emailVerified: true,
     })

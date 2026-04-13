@@ -29,7 +29,7 @@ export default async function TeamSettingsLayout({
   });
 
   if (!team) {
-    redirect("/onboarding");
+    redirect("/dashboard");
   }
 
   // Validate membership
@@ -45,8 +45,8 @@ export default async function TeamSettingsLayout({
   }
 
   const userRole: UserRole =
-    member.managementRole === "WORKSPACE_OWNER" ? "owner" :
-    member.managementRole === "WORKSPACE_ADMIN" ? "admin" : "member";
+    member.managementRole === "TEAM_OWNER" ? "owner" :
+    member.managementRole === "TEAM_ADMIN" ? "admin" : "member";
 
   const initialTeam: Team = {
     id: team.id,
@@ -55,7 +55,7 @@ export default async function TeamSettingsLayout({
   };
 
   return (
-    <TeamSettingsScreen initialTeam={initialTeam} userRole={userRole}>
+    <TeamSettingsScreen initialTeam={initialTeam} userRole={userRole} slug={slug}>
       {children}
     </TeamSettingsScreen>
   );

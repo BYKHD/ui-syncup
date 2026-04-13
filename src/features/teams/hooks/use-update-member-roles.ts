@@ -5,6 +5,7 @@ import {
   updateMemberRoles,
   type UpdateMemberRolesInput,
   type UpdateMemberRolesResponse,
+  type OwnershipTransfer,
 } from '../api';
 import { TEAM_MEMBERS_QUERY_KEY } from './use-team-members';
 import { TEAM_QUERY_KEY } from './use-team';
@@ -13,6 +14,7 @@ export interface UpdateMemberRolesVariables {
   teamId: string;
   userId: string;
   input: UpdateMemberRolesInput;
+  ownershipTransfers?: OwnershipTransfer[];
 }
 
 /**
@@ -26,7 +28,7 @@ export interface UpdateMemberRolesVariables {
  * mutate({
  *   teamId: 'team-123',
  *   userId: 'user-456',
- *   input: { operationalRole: 'WORKSPACE_EDITOR' }
+ *   input: { operationalRole: 'TEAM_EDITOR' }
  * }, {
  *   onSuccess: (data) => {
  *     console.log('Member roles updated:', data.member);
@@ -43,8 +45,8 @@ export function useUpdateMemberRoles(
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ teamId, userId, input }: UpdateMemberRolesVariables) =>
-      updateMemberRoles(teamId, userId, input),
+    mutationFn: ({ teamId, userId, input, ownershipTransfers }: UpdateMemberRolesVariables) =>
+      updateMemberRoles(teamId, userId, input, ownershipTransfers),
     onSuccess: (data, variables, context) => {
       // Invalidate team members list
       queryClient.invalidateQueries({

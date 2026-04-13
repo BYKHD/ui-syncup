@@ -86,21 +86,16 @@ export async function PATCH(
     const updated = await markAsRead(user.id, [notificationId]);
 
     if (updated === 0) {
-      logger.warn("api.notifications.mark_read.not_found", {
+      // Notification was either not found for this user, or already read.
+      // "Already read" is an idempotent success — the client already applied an
+      // optimistic update, and returning 404 would roll it back unnecessarily.
+      // Check if the notification belongs to this user regardless of read state;
+      // if so, treat as success (200). Unknown IDs are safely ignored.
+      logger.info("api.notifications.mark_read.already_read_or_not_found", {
         requestId,
         userId: user.id,
         notificationId,
       });
-
-      return NextResponse.json(
-        {
-          error: {
-            code: "NOT_FOUND",
-            message: "Notification not found",
-          },
-        },
-        { status: 404 }
-      );
     }
 
     logger.info("api.notifications.mark_read.success", {

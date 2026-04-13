@@ -2,9 +2,9 @@
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { users } from "@/server/db/schema";
+import { account } from "@/server/db/schema";
 import { hashPassword } from "@/server/auth/password";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
@@ -34,24 +34,36 @@ export async function setPassword(prevState: SetPasswordState, formData: FormDat
       return { error: "Unauthorized" };
     }
 
-    // Check if user already has a password
-    const user = await db.query.users.findFirst({
-        where: eq(users.id, session.user.id),
-        columns: { passwordHash: true }
+    // Check if a credential account already exists for this user
+    const existingAccount = await db.query.account.findFirst({
+      where: and(
+        eq(account.userId, session.user.id),
+        eq(account.providerId, "credential")
+      ),
+      columns: { id: true, password: true },
     });
 
-    if (user?.passwordHash) {
-        return { error: "Password already set. Please use Change Password." };
+    if (existingAccount?.password) {
+      return { error: "Password already set. Please use Change Password." };
     }
 
     const hashedPassword = await hashPassword(password);
 
-    await db.update(users)
-      .set({ 
-        passwordHash: hashedPassword,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, session.user.id));
+    if (existingAccount) {
+      // Credential row exists but has no password — update it
+      await db
+        .update(account)
+        .set({ password: hashedPassword, updatedAt: new Date() })
+        .where(and(eq(account.userId, session.user.id), eq(account.providerId, "credential")));
+    } else {
+      // No credential row yet (OAuth-only user) — create one
+      await db.insert(account).values({
+        accountId: session.user.id,
+        providerId: "credential",
+        userId: session.user.id,
+        password: hashedPassword,
+      });
+    }
 
     revalidatePath("/settings/security");
     

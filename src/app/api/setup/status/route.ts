@@ -22,9 +22,9 @@ import { logger } from "@/lib/logger";
  * {
  *   "isSetupComplete": boolean,
  *   "instanceName": string | null,
- *   "defaultWorkspaceId": string | null,
- *   "defaultMemberRole": "WORKSPACE_VIEWER" | "WORKSPACE_MEMBER" | "WORKSPACE_EDITOR",
- *   "isMultiWorkspaceMode": boolean,
+ *   "defaultTeamId": string | null,
+ *   "defaultMemberRole": "TEAM_VIEWER" | "TEAM_MEMBER" | "TEAM_EDITOR",
+ *   "isMultiTeamMode": boolean,
  *   "skipEmailVerification": boolean
  * }
  * 

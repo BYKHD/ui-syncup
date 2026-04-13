@@ -35,7 +35,6 @@ async function createTestUser(email: string, name: string) {
       email: email.toLowerCase().trim(),
       name: name.trim(),
       emailVerified: true,
-      passwordHash: 'test-hash',
     })
     .returning();
   
@@ -108,7 +107,7 @@ describe('Invitation Email Integration', () => {
     const { invitation } = await createProjectInvitation({
       projectId: project.id,
       email: 'newuser@example.com',
-      role: PROJECT_ROLES.PROJECT_DEVELOPER,
+      role: PROJECT_ROLES.PROJECT_MEMBER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
@@ -180,7 +179,7 @@ describe('Invitation Email Integration', () => {
     const { invitation } = await createProjectInvitation({
       projectId: project.id,
       email: 'failed@example.com',
-      role: PROJECT_ROLES.PROJECT_DEVELOPER,
+      role: PROJECT_ROLES.PROJECT_MEMBER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);

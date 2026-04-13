@@ -2,77 +2,39 @@
 
 /**
  * Role-Based Access Control (RBAC) Configuration
- * 
+ *
  * This file defines the canonical roles and permissions for UI SyncUp.
  * Keep this file in sync with product.md and RBAC.md documentation.
- * 
- * NOTE: WORKSPACE_* roles are the canonical names. TEAM_* roles are
- * backwards-compatible aliases and will be deprecated in a future version.
  */
 
 // ============================================================================
-// WORKSPACE ROLES (Two-Tier Hierarchy) - Canonical Names
+// TEAM ROLES (Two-Tier Hierarchy) - Canonical Names
 // ============================================================================
 
 /**
- * Management roles control workspace settings and administration.
- */
-export const WORKSPACE_MANAGEMENT_ROLES = {
-  WORKSPACE_OWNER: "WORKSPACE_OWNER",
-  WORKSPACE_ADMIN: "WORKSPACE_ADMIN",
-} as const;
-
-export type WorkspaceManagementRole = (typeof WORKSPACE_MANAGEMENT_ROLES)[keyof typeof WORKSPACE_MANAGEMENT_ROLES];
-
-/**
- * Operational roles determine content access.
- * Every user must have exactly one operational role.
- */
-export const WORKSPACE_OPERATIONAL_ROLES = {
-  WORKSPACE_EDITOR: "WORKSPACE_EDITOR",
-  WORKSPACE_MEMBER: "WORKSPACE_MEMBER",
-  WORKSPACE_VIEWER: "WORKSPACE_VIEWER",
-} as const;
-
-export type WorkspaceOperationalRole = (typeof WORKSPACE_OPERATIONAL_ROLES)[keyof typeof WORKSPACE_OPERATIONAL_ROLES];
-
-/**
- * All workspace roles (management + operational).
- */
-export const WORKSPACE_ROLES = {
-  ...WORKSPACE_MANAGEMENT_ROLES,
-  ...WORKSPACE_OPERATIONAL_ROLES,
-} as const;
-
-export type WorkspaceRole = (typeof WORKSPACE_ROLES)[keyof typeof WORKSPACE_ROLES];
-
-// ============================================================================
-// TEAM ROLES - Backwards Compatible Aliases (Deprecated)
-// ============================================================================
-
-/**
- * @deprecated Use WORKSPACE_MANAGEMENT_ROLES instead
+ * Management roles control team settings and administration.
  */
 export const TEAM_MANAGEMENT_ROLES = {
-  TEAM_OWNER: "WORKSPACE_OWNER",
-  TEAM_ADMIN: "WORKSPACE_ADMIN",
+  TEAM_OWNER: "TEAM_OWNER",
+  TEAM_ADMIN: "TEAM_ADMIN",
 } as const;
 
 export type TeamManagementRole = (typeof TEAM_MANAGEMENT_ROLES)[keyof typeof TEAM_MANAGEMENT_ROLES];
 
 /**
- * @deprecated Use WORKSPACE_OPERATIONAL_ROLES instead
+ * Operational roles determine content access.
+ * Every user must have exactly one operational role.
  */
 export const TEAM_OPERATIONAL_ROLES = {
-  TEAM_EDITOR: "WORKSPACE_EDITOR",
-  TEAM_MEMBER: "WORKSPACE_MEMBER",
-  TEAM_VIEWER: "WORKSPACE_VIEWER",
+  TEAM_EDITOR: "TEAM_EDITOR",
+  TEAM_MEMBER: "TEAM_MEMBER",
+  TEAM_VIEWER: "TEAM_VIEWER",
 } as const;
 
 export type TeamOperationalRole = (typeof TEAM_OPERATIONAL_ROLES)[keyof typeof TEAM_OPERATIONAL_ROLES];
 
 /**
- * @deprecated Use WORKSPACE_ROLES instead
+ * All team roles (management + operational).
  */
 export const TEAM_ROLES = {
   ...TEAM_MANAGEMENT_ROLES,
@@ -88,7 +50,7 @@ export type TeamRole = (typeof TEAM_ROLES)[keyof typeof TEAM_ROLES];
 export const PROJECT_ROLES = {
   PROJECT_OWNER: "owner",
   PROJECT_EDITOR: "editor",
-  PROJECT_DEVELOPER: "developer",
+  PROJECT_MEMBER: "member",
   PROJECT_VIEWER: "viewer",
 } as const;
 
@@ -104,6 +66,20 @@ export const ALL_ROLES = {
   ...TEAM_ROLES,
   ...PROJECT_ROLES,
 } as const;
+
+// Backwards-compatible aliases (deprecated — use TEAM_* instead)
+/** @deprecated Use TEAM_MANAGEMENT_ROLES */
+export const WORKSPACE_MANAGEMENT_ROLES = TEAM_MANAGEMENT_ROLES;
+/** @deprecated Use TeamManagementRole */
+export type WorkspaceManagementRole = TeamManagementRole;
+/** @deprecated Use TEAM_OPERATIONAL_ROLES */
+export const WORKSPACE_OPERATIONAL_ROLES = TEAM_OPERATIONAL_ROLES;
+/** @deprecated Use TeamOperationalRole */
+export type WorkspaceOperationalRole = TeamOperationalRole;
+/** @deprecated Use TEAM_ROLES */
+export const WORKSPACE_ROLES = TEAM_ROLES;
+/** @deprecated Use TeamRole */
+export type WorkspaceRole = TeamRole;
 
 // ============================================================================
 // PERMISSIONS
@@ -281,13 +257,13 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     PERMISSIONS.ANNOTATION_COMMENT,
   ],
 
-  [PROJECT_ROLES.PROJECT_DEVELOPER]: [
+  [PROJECT_ROLES.PROJECT_MEMBER]: [
     // Project permissions (view only)
     PERMISSIONS.PROJECT_VIEW,
 
     // Issue permissions (view, update status, comment)
     PERMISSIONS.ISSUE_VIEW,
-    PERMISSIONS.ISSUE_UPDATE,
+    PERMISSIONS.ISSUE_UPDATE,   // keep — matches what developer could do
     PERMISSIONS.ISSUE_COMMENT,
 
     // Annotation permissions (view and comment)
@@ -362,7 +338,7 @@ export const TEAM_OPERATIONAL_ROLE_HIERARCHY: Record<TeamOperationalRole, number
  */
 export const PROJECT_ROLE_HIERARCHY: Record<ProjectRole, number> = {
   [PROJECT_ROLES.PROJECT_VIEWER]: 1,
-  [PROJECT_ROLES.PROJECT_DEVELOPER]: 2,
+  [PROJECT_ROLES.PROJECT_MEMBER]: 2,
   [PROJECT_ROLES.PROJECT_EDITOR]: 3,
   [PROJECT_ROLES.PROJECT_OWNER]: 4,
 };
@@ -429,7 +405,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   // Project roles
   [PROJECT_ROLES.PROJECT_OWNER]: "Owner",
   [PROJECT_ROLES.PROJECT_EDITOR]: "Editor",
-  [PROJECT_ROLES.PROJECT_DEVELOPER]: "Developer",
+  [PROJECT_ROLES.PROJECT_MEMBER]: "Member",
   [PROJECT_ROLES.PROJECT_VIEWER]: "Viewer",
 };
 
@@ -456,8 +432,8 @@ export const ROLE_DESCRIPTIONS: Record<Role, string> = {
     "Full control over project and its issues. Auto-promotes to TEAM_EDITOR.",
   [PROJECT_ROLES.PROJECT_EDITOR]:
     "Create and manage issues and annotations. Auto-promotes to TEAM_EDITOR.",
-  [PROJECT_ROLES.PROJECT_DEVELOPER]:
-    "Update issue status and comment.",
+  [PROJECT_ROLES.PROJECT_MEMBER]:
+    "View issues and leave comments. Cannot create or edit issues.",
   [PROJECT_ROLES.PROJECT_VIEWER]:
     "View-only access to project and issues.",
 };

@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Badge } from '@/components/ui/badge';
 import {
   Command,
@@ -27,8 +28,6 @@ interface StatusSelectorProps {
   className?: string;
 }
 
-const statusOrder = STATUS_OPTIONS.map((option) => option.value);
-
 const formatStageLabel = (stage?: string) => {
   if (!stage) return 'Workflow';
   return stage
@@ -44,11 +43,6 @@ const springTransition = {
   damping: 30,
 };
 
-// Content fade transition
-const contentTransition = {
-  duration: 0.15,
-  ease: 'easeOut' as const,
-};
 
 // Variants for button content with separate enter/exit delays
 const buttonContentVariants = {
@@ -93,7 +87,11 @@ export function StatusSelector({
   const triggerId = id ?? layoutId;
   const [open, setOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+  const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => setMounted(true), []);
 
   const currentOption =
     STATUS_OPTIONS.find((option) => option.value === value) ?? STATUS_OPTIONS[0];
@@ -188,6 +186,82 @@ export function StatusSelector({
     );
   };
 
+  const menuPortal = (
+    <>
+      {/* Click-outside overlay */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="fixed inset-0 z-40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.1 }}
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Expanded: Menu Container — portaled to escape overflow:hidden ancestors */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            key="menu"
+            layoutId={layoutId}
+            className="z-50 w-[340px] overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-lg"
+            transition={springTransition}
+            style={{ ...menuStyle, borderRadius: 12 }}
+          >
+            <motion.div
+              variants={menuContentVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              {/* Current stage header */}
+              <div className="border-b border-border px-4 py-3">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Current stage</p>
+                <div className="mt-2 flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <currentOption.icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                      {currentOption.label}
+                    </div>
+                    {stageDescription && (
+                      <p className="mt-1 text-xs text-muted-foreground">{stageDescription}</p>
+                    )}
+                  </div>
+                  <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+                    {stageLabel}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Command menu */}
+              <Command>
+                <CommandInput placeholder="Search status..." />
+                <CommandList>
+                  <CommandEmpty>No status available.</CommandEmpty>
+                  {actionableOptions.length > 0 && (
+                    <CommandGroup heading="Next steps">
+                      {actionableOptions.map((option) => renderCommandItem(option, false))}
+                    </CommandGroup>
+                  )}
+                  {lockedOptions.length > 0 && (
+                    <CommandGroup heading="Other states">
+                      {lockedOptions.map((option) => renderCommandItem(option, true))}
+                    </CommandGroup>
+                  )}
+                </CommandList>
+              </Command>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+
   return (
     <LayoutGroup>
       <div ref={containerRef} className={cn('relative flex min-w-[10rem] flex-1 flex-col gap-1', className)}>
@@ -195,34 +269,32 @@ export function StatusSelector({
           Status
         </span>
 
-        {/* Click-outside handler (invisible) */}
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              className="fixed inset-0 z-40"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.1 }}
-              onClick={() => setOpen(false)}
-              aria-hidden="true"
-            />
-          )}
-        </AnimatePresence>
-
         {/* Fixed-size wrapper to prevent parent height changes */}
-        <div className="relative z-50 h-[44px] min-w-[9rem]">
-          <AnimatePresence mode="popLayout">
-            {!open ? (
+        <div className="relative h-[44px] min-w-[9rem]">
+          <AnimatePresence>
+            {!open && (
               /* Collapsed: Trigger Button */
               <motion.button
                 key="trigger"
                 layoutId={layoutId}
                 id={triggerId}
                 type="button"
-                onClick={() => !disabled && !isSaving && setOpen(true)}
+                onClick={() => {
+                  if (disabled || isSaving) return;
+                  if (containerRef.current) {
+                    const rect = containerRef.current.getBoundingClientRect();
+                    const style: React.CSSProperties = { position: 'fixed', top: rect.top };
+                    if (window.innerWidth - rect.left >= 356) {
+                      style.left = rect.left;
+                    } else {
+                      style.right = window.innerWidth - rect.right;
+                    }
+                    setMenuStyle(style);
+                  }
+                  setOpen(true);
+                }}
                 className={cn(
-                  'absolute inset-0 inline-flex items-center justify-between gap-3 rounded-md border border-border bg-primary px-4 text-left text-primary-foreground shadow-sm transition-colors',
+                  'absolute z-50 inset-0 inline-flex items-center justify-between gap-3 rounded-md border border-primary bg-primary-gradient-t shadow-active-menu text-shadow-debossed px-4 text-left text-primary-foreground transition-colors',
                   'hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                   !canChange && 'opacity-80',
                   (disabled || isSaving) && 'pointer-events-none opacity-60',
@@ -257,64 +329,13 @@ export function StatusSelector({
                   <RiArrowDownSLine className="h-3.5 w-3.5 text-primary-foreground/70" aria-hidden="true" />
                 </motion.span>
               </motion.button>
-            ) : (
-              /* Expanded: Menu Container */
-              <motion.div
-                key="menu"
-                layoutId={layoutId}
-                className="absolute top-0 left-0 w-[340px] overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-lg"
-                transition={springTransition}
-                style={{ borderRadius: 12 }}
-              >
-                {/* Blur in content */}
-                <motion.div
-                  variants={menuContentVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                >
-                  {/* Current stage header */}
-                  <div className="border-b border-border px-4 py-3">
-                    <p className="text-xs font-semibold uppercase text-muted-foreground">Current stage</p>
-                    <div className="mt-2 flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2 text-sm font-medium">
-                          <currentOption.icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                          {currentOption.label}
-                        </div>
-                        {stageDescription && (
-                          <p className="mt-1 text-xs text-muted-foreground">{stageDescription}</p>
-                        )}
-                      </div>
-                      <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
-                        {stageLabel}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Command menu */}
-                  <Command>
-                    <CommandInput placeholder="Search status..." />
-                    <CommandList>
-                      <CommandEmpty>No status available.</CommandEmpty>
-                      {actionableOptions.length > 0 && (
-                        <CommandGroup heading="Next steps">
-                          {actionableOptions.map((option) => renderCommandItem(option, false))}
-                        </CommandGroup>
-                      )}
-                      {lockedOptions.length > 0 && (
-                        <CommandGroup heading="Other states">
-                          {lockedOptions.map((option) => renderCommandItem(option, true))}
-                        </CommandGroup>
-                      )}
-                    </CommandList>
-                  </Command>
-                </motion.div>
-              </motion.div>
             )}
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Portal: escapes overflow:hidden ancestors so the menu is never clipped */}
+      {mounted && createPortal(menuPortal, document.body)}
     </LayoutGroup>
   );
 }

@@ -24,6 +24,7 @@ type SignInFormProps = {
   description?: string;
   invitedEmail?: string;
   isLongLoading?: boolean;
+  redirectTo?: string;
 };
 
 export function SignInForm({
@@ -38,6 +39,7 @@ export function SignInForm({
   description = "Sign in to your account to continue",
   invitedEmail,
   isLongLoading = false,
+  redirectTo,
 }: SignInFormProps) {
   const {
     register,
@@ -148,7 +150,8 @@ export function SignInForm({
         </Alert>
       )}
 
-      <SocialLoginButtons 
+      <SocialLoginButtons
+        redirectTo={redirectTo}
         disabled={status === "submitting" || oauthStatus === "loading"}
         onError={(_error: string) => {
           // Error is already handled by the component, but parent can also react

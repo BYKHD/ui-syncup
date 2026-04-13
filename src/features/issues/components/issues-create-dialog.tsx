@@ -4,6 +4,7 @@ import { PropsWithChildren, useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -225,9 +226,9 @@ export function IssuesCreateDialog({
       >
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 border-b">
           <DialogTitle>Create Issue</DialogTitle>
-          <p className="text-sm text-muted-foreground">
+          <DialogDescription>
             Report a UI issue with before/after images and annotations
-          </p>
+          </DialogDescription>
         </DialogHeader>
 
         <form

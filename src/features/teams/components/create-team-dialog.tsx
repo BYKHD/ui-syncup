@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { RiAddLine } from "@remixicon/react";
 import {
   Dialog,
   DialogContent,
@@ -62,7 +62,7 @@ export function CreateTeamDialog({ children, onTeamCreated }: CreateTeamDialogPr
             Create a new team to organize your projects and collaborate with others.
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="team-name">Team Name</Label>
@@ -94,7 +94,7 @@ export function CreateTeamDialog({ children, onTeamCreated }: CreateTeamDialogPr
               Cancel
             </Button>
             <Button type="submit">
-              <Plus className="h-4 w-4 mr-2" />
+              <RiAddLine className="h-4 w-4 mr-2" />
               Create Team
             </Button>
           </DialogFooter>

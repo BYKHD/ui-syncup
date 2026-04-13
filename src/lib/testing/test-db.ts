@@ -44,7 +44,6 @@ export async function createTestDb(): Promise<TestDbContext> {
   const resetDatabase = async () => {
     const tables = [
       "email_jobs",
-      "user_roles",
       "verification_tokens",
       "sessions",
       "account",

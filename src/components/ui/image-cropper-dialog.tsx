@@ -6,6 +6,7 @@ import type { Area, Point } from "react-easy-crop";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -118,6 +119,9 @@ export function ImageCropperDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Crop Image</DialogTitle>
+          <DialogDescription className="sr-only">
+            Adjust the crop area and zoom to crop your image
+          </DialogDescription>
         </DialogHeader>
         
         <div className="relative w-full aspect-square bg-black/5 rounded-md overflow-hidden mt-4">

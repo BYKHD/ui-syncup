@@ -27,7 +27,7 @@ describe('ProjectMemberManagerDialog', () => {
   const mockPendingInvitation = {
     id: 'invite-1',
     invitedUserId: 'user-2',
-    role: 'developer' as const,
+    role: 'member' as const,
     status: 'pending' as const,
     createdAt: new Date(),
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -112,8 +112,8 @@ describe('ProjectMemberManagerDialog', () => {
     it('should show role badge', () => {
       render(<ProjectMemberManagerDialog {...defaultProps} />);
       
-      // Developer role badge should be visible for the pending invitation
-      const badges = screen.getAllByText('Developer');
+      // Member role badge should be visible for the pending invitation
+      const badges = screen.getAllByText('Member');
       expect(badges.length).toBeGreaterThan(0);
     });
 
@@ -242,13 +242,37 @@ describe('ProjectMemberManagerDialog', () => {
   describe('Empty state', () => {
     it('should not show pending invitations section when empty', () => {
       render(
-        <ProjectMemberManagerDialog 
-          {...defaultProps} 
+        <ProjectMemberManagerDialog
+          {...defaultProps}
           pendingInvitations={[]}
         />
       );
-      
+
       expect(screen.queryByText(/pending invitations/i)).not.toBeInTheDocument();
     });
   });
+
+  describe('Role change', () => {
+    it('should call onRoleChange with member role when Make Member is clicked', async () => {
+      const user = userEvent.setup()
+      const onRoleChange = vi.fn()
+      render(
+        <ProjectMemberManagerDialog
+          {...defaultProps}
+          onRoleChange={onRoleChange}
+        />
+      )
+
+      // Open the dropdown for the member row
+      const memberRow = screen.getByText('john@example.com').closest('[class*="justify-between"]')
+      const moreButton = memberRow?.querySelector('button[aria-haspopup="menu"]')
+      if (!moreButton) throw new Error('More button not found')
+      await user.click(moreButton)
+
+      const makeMemberOption = await screen.findByText('Make Member')
+      await user.click(makeMemberOption)
+
+      expect(onRoleChange).toHaveBeenCalledWith('member-1', 'member')
+    })
+  })
 });

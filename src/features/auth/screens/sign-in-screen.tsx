@@ -61,6 +61,7 @@ export default function SignInScreen({
         oauthError={displayedOAuthError}
         description={description}
         invitedEmail={invitedEmail}
+        redirectTo={callbackUrl}
       />
     </AuthCard>
   );
