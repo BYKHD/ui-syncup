@@ -132,19 +132,6 @@ export interface CreateNotificationDTO {
   metadata: NotificationMetadata;
 }
 
-/**
- * Grouped notifications for UI display
- * Groups by (type, entity_type, entity_id) within time window
- */
-export interface NotificationGroup {
-  type: NotificationType;
-  entityType: EntityType;
-  entityId: string;
-  notifications: Notification[];
-  latestAt: Date;
-  actorNames: string[]; // "User A and 3 others"
-}
-
 // ============================================================================
 // Pagination Types
 // ============================================================================

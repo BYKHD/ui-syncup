@@ -170,7 +170,7 @@ describe.skip("Project Member Service - Property Tests (requires migrations)", (
       fc.asyncProperty(
         fc.constantFrom(
           PROJECT_ROLES.PROJECT_VIEWER,
-          PROJECT_ROLES.PROJECT_DEVELOPER,
+          PROJECT_ROLES.PROJECT_MEMBER,
           PROJECT_ROLES.PROJECT_EDITOR
         ), // Non-owner roles
         async (role) => {
@@ -246,7 +246,7 @@ describe.skip("Project Member Service - Property Tests (requires migrations)", (
       fc.asyncProperty(
         fc.constantFrom(
           PROJECT_ROLES.PROJECT_VIEWER,
-          PROJECT_ROLES.PROJECT_DEVELOPER
+          PROJECT_ROLES.PROJECT_MEMBER
         ), // Starting roles
         fc.constantFrom(
           PROJECT_ROLES.PROJECT_OWNER,
@@ -355,7 +355,7 @@ describe("Project Member Service - Logic Properties", () => {
         fc.constantFrom(
           PROJECT_ROLES.PROJECT_OWNER,
           PROJECT_ROLES.PROJECT_EDITOR,
-          PROJECT_ROLES.PROJECT_DEVELOPER,
+          PROJECT_ROLES.PROJECT_MEMBER,
           PROJECT_ROLES.PROJECT_VIEWER
         ),
         fc.integer({ min: 1, max: 5 }), // Number of owners

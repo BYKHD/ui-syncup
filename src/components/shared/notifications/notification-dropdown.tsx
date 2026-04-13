@@ -1,14 +1,12 @@
 'use client'
 
-import { useRef, useMemo } from 'react'
+import { useRef } from 'react'
 import { NotificationItem } from './notification-item'
-import { NotificationGroupItem } from './notification-group-item'
 import { NotificationLoadMore } from './notification-load-more'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNotifications, useMarkAllAsRead } from '@/features/notifications/hooks'
-import { groupNotifications } from '@/features/notifications/utils/group-notifications'
 
 // ============================================================================
 // NOTIFICATION DROPDOWN COMPONENT
@@ -23,20 +21,19 @@ interface NotificationDropdownProps {
  *
  * Features:
  * - Paginated notification list with load more
- * - Client-side grouping of similar notifications
  * - Mark all as read functionality
  * - Loading and empty states
  */
 export function NotificationDropdown({ teamId }: NotificationDropdownProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  
+
   // Fetch notifications
-  const { 
-    data, 
-    isLoading, 
+  const {
+    data,
+    isLoading,
     isFetching,
-    hasNextPage, 
-    fetchNextPage 
+    hasNextPage,
+    fetchNextPage
   } = useNotifications({
     limit: 20,
     enabled: !!teamId,
@@ -45,11 +42,7 @@ export function NotificationDropdown({ teamId }: NotificationDropdownProps) {
   // Mark all as read mutation
   const { mutate: markAllAsRead, isPending: isMarkingAllRead } = useMarkAllAsRead()
 
-  // Group notifications for display
-  const groupedNotifications = useMemo(() => {
-    if (!data?.notifications) return []
-    return groupNotifications(data.notifications)
-  }, [data?.notifications])
+  const notifications = data?.notifications ?? []
 
   const handleLoadMore = () => {
     if (!isFetching && hasNextPage) {
@@ -108,22 +101,18 @@ export function NotificationDropdown({ teamId }: NotificationDropdownProps) {
       >
         {isLoading ? (
           <NotificationListSkeleton />
-        ) : groupedNotifications.length === 0 ? (
+        ) : notifications.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">
             No notifications
           </div>
         ) : (
-          groupedNotifications.map((group, index) => (
-            <div key={group.key}>
-              {group.notifications.length > 1 ? (
-                <NotificationGroupItem group={group} teamId={teamId} />
-              ) : (
-                <NotificationItem 
-                  notification={group.latest} 
-                  teamId={teamId} 
-                />
-              )}
-              {index < groupedNotifications.length - 1 && <Separator />}
+          notifications.map((notification, index) => (
+            <div key={notification.id}>
+              <NotificationItem
+                notification={notification}
+                teamId={teamId}
+              />
+              {index < notifications.length - 1 && <Separator />}
             </div>
           ))
         )}

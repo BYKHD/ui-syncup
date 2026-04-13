@@ -17,6 +17,7 @@
 
 import { db } from "@/lib/db";
 import { notifications } from "@/server/db/schema/notifications";
+import { users } from "@/server/db/schema/users";
 import { eq, and, desc, lt, isNull, gt, inArray, count, sql } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import type {
@@ -130,51 +131,40 @@ export function buildTargetUrl(
   type: NotificationType,
   metadata: Partial<NotificationMetadata>
 ): string {
-  const { team_slug, project_key, issue_key, comment_id } = metadata;
-
-  // Base team URL
-  const teamUrl = team_slug ? `/teams/${team_slug}` : "";
+  const { project_key, issue_key, comment_id, team_slug } = metadata;
 
   switch (type) {
     case "mention":
     case "comment_created":
     case "reply":
-      // Comment-related notifications navigate to issue with comment anchor
-      if (team_slug && project_key && issue_key) {
-        const issueUrl = `${teamUrl}/projects/${project_key}/issues/${issue_key}`;
-        return comment_id ? `${issueUrl}#comment-${comment_id}` : issueUrl;
+      // Navigate to issue page with optional comment anchor
+      if (issue_key) {
+        return comment_id ? `/issue/${issue_key}#comment-${comment_id}` : `/issue/${issue_key}`;
       }
       break;
 
     case "issue_assigned":
     case "issue_status_changed":
-      // Issue notifications navigate to the issue
-      if (team_slug && project_key && issue_key) {
-        return `${teamUrl}/projects/${project_key}/issues/${issue_key}`;
+      // Navigate to the issue page
+      if (issue_key) {
+        return `/issue/${issue_key}`;
       }
       break;
 
     case "project_invitation":
-      // Project invitation navigates to project (after acceptance)
-      if (team_slug && project_key) {
-        return `${teamUrl}/projects/${project_key}`;
+      // Navigate to project page after acceptance
+      if (project_key) {
+        return `/${project_key}`;
       }
       break;
 
     case "team_invitation":
-      // Team invitation redirects to /projects after team context is switched
-      // The /teams/{slug} route doesn't exist - app uses route groups
+      // Navigate to projects list after joining
       return "/projects";
 
     case "role_updated":
-      // Role update navigates to team settings or project
-      if (team_slug && project_key) {
-        return `${teamUrl}/projects/${project_key}/settings/members`;
-      }
-      if (team_slug) {
-        return `${teamUrl}/settings/members`;
-      }
-      break;
+      // Navigate to team member settings (slug-based URL avoids lastActiveTeamId shim)
+      return team_slug ? `/team/${team_slug}/settings/members` : "/team/settings/members";
   }
 
   // Fallback to root or provided target_url
@@ -349,8 +339,42 @@ export async function getNotifications(
 
     const totalUnread = unreadResult?.count || 0;
 
-    // Transform to domain types
-    const notificationList = notificationRows.map(transformNotification);
+    // Batch-fetch actor names and avatars for all notifications that have an actorId
+    const actorIds = [...new Set(
+      notificationRows.map((r) => r.actorId).filter((id): id is string => id !== null)
+    )];
+
+    const actorMap = new Map<string, { name: string; image: string | null }>();
+    if (actorIds.length > 0) {
+      const actorRows = await db
+        .select({ id: users.id, name: users.name, image: users.image })
+        .from(users)
+        .where(inArray(users.id, actorIds));
+      for (const actor of actorRows) {
+        actorMap.set(actor.id, { name: actor.name, image: actor.image });
+      }
+    }
+
+    // Transform to domain types and merge actor data + re-derived target_url into metadata
+    const notificationList = notificationRows.map((row) => {
+      const notification = transformNotification(row);
+      const meta = notification.metadata;
+
+      // Re-derive target_url from stored metadata fields so old notifications
+      // with stale URLs are automatically corrected without a DB migration.
+      const derivedUrl = buildTargetUrl(notification.type, meta);
+
+      notification.metadata = {
+        ...meta,
+        target_url: derivedUrl,
+        ...(row.actorId && actorMap.has(row.actorId) ? {
+          actor_name: actorMap.get(row.actorId)!.name,
+          actor_avatar_url: actorMap.get(row.actorId)!.image ?? undefined,
+        } : {}),
+      };
+
+      return notification;
+    });
 
     // Calculate next cursor
     const lastNotification = notificationList[notificationList.length - 1];

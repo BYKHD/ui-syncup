@@ -194,7 +194,7 @@ export async function GET(
  * PATCH /api/issues/[issueId]
  *
  * Update issue fields.
- * Requires ISSUE_UPDATE permission (PROJECT_DEVELOPER+).
+ * Requires ISSUE_UPDATE permission (PROJECT_MEMBER+).
  *
  * Request body (all optional):
  * {

@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { teamMembers } from "@/server/db/schema/team-members";
 import { projectMembers } from "@/server/db/schema/project-members";
 import { users } from "@/server/db/schema/users";
+import { projects } from "@/server/db/schema/projects";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { logTeamEvent } from "./team-service";
 import type { AddMemberInput, UpdateMemberRolesInput, TeamMember } from "./types";
@@ -307,6 +308,248 @@ export async function removeMember(
     }
     throw error;
   }
+}
+
+export interface OwnedProjectDetails {
+  id: string;
+  name: string;
+  key: string;
+}
+
+export interface EligibleOwner {
+  userId: string;
+  name: string;
+  email: string;
+  image: string | null;
+}
+
+export interface OwnedProjectsWithDetailsResult {
+  ownedProjects: OwnedProjectDetails[];
+  eligibleOwners: EligibleOwner[];
+}
+
+/**
+ * Returns projects owned by a user within a team, plus eligible replacement owners.
+ * Used to drive the ownership transfer dialog before removing a member.
+ */
+export async function getOwnedProjectsWithDetails(
+  userId: string,
+  teamId: string
+): Promise<OwnedProjectsWithDetailsResult> {
+  // Get projects in this team where user is PROJECT_OWNER
+  const owned = await db
+    .select({ id: projects.id, name: projects.name, key: projects.key })
+    .from(projectMembers)
+    .innerJoin(projects, eq(projectMembers.projectId, projects.id))
+    .where(and(
+      eq(projectMembers.userId, userId),
+      eq(projectMembers.role, 'owner'),
+      eq(projects.teamId, teamId)
+    ));
+
+  // Eligible owners: TEAM_EDITOR members of this team, excluding the user being removed
+  const eligibleRows = await db
+    .select({
+      userId: teamMembers.userId,
+      name: users.name,
+      email: users.email,
+      image: users.image,
+    })
+    .from(teamMembers)
+    .innerJoin(users, eq(teamMembers.userId, users.id))
+    .where(and(
+      eq(teamMembers.teamId, teamId),
+      eq(teamMembers.operationalRole, 'TEAM_EDITOR'),
+      sql`${teamMembers.userId} != ${userId}`
+    ));
+
+  return {
+    ownedProjects: owned,
+    eligibleOwners: eligibleRows,
+  };
+}
+
+export interface OwnershipTransfer {
+  projectId: string;
+  newOwnerId: string;
+}
+
+/**
+ * Atomically transfers project ownerships and demotes a team member's operational role.
+ * Promotes each new project owner to TEAM_EDITOR if not already at that level.
+ * Throws if any owned project within the team has no transfer target.
+ */
+export async function demoteWithOwnershipTransfer(
+  teamId: string,
+  userId: string,
+  newOperationalRole: 'TEAM_MEMBER' | 'TEAM_VIEWER',
+  transfers: OwnershipTransfer[],
+  actorId: string
+): Promise<TeamMember> {
+  // Check which projects the user owns in this team
+  const owned = await db
+    .select({ id: projects.id })
+    .from(projectMembers)
+    .innerJoin(projects, eq(projectMembers.projectId, projects.id))
+    .where(and(
+      eq(projectMembers.userId, userId),
+      eq(projectMembers.role, 'owner'),
+      eq(projects.teamId, teamId)
+    ));
+
+  // Validate every owned project has a transfer target
+  const transferMap = new Map(transfers.map(t => [t.projectId, t.newOwnerId]));
+  for (const { id } of owned) {
+    if (!transferMap.has(id)) {
+      throw new Error(`OWNERSHIP_TRANSFER_REQUIRED: project ${id} has no transfer target`);
+    }
+  }
+
+  await db.transaction(async (tx) => {
+    for (const { projectId, newOwnerId } of transfers) {
+      // Promote new owner in project
+      await tx
+        .update(projectMembers)
+        .set({ role: 'owner' })
+        .where(and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.userId, newOwnerId)
+        ));
+
+      // Demote previous owner to editor within the project
+      await tx
+        .update(projectMembers)
+        .set({ role: 'editor' })
+        .where(and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.userId, userId)
+        ));
+    }
+
+    // Demote the user's operational role
+    await tx
+      .update(teamMembers)
+      .set({ operationalRole: newOperationalRole })
+      .where(and(
+        eq(teamMembers.teamId, teamId),
+        eq(teamMembers.userId, userId)
+      ));
+  });
+
+  // Auto-promote each new project owner to TEAM_EDITOR if they aren't already
+  for (const { newOwnerId } of transfers) {
+    const existing = await db.query.teamMembers.findFirst({
+      where: and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, newOwnerId)),
+    });
+    if (existing && existing.operationalRole !== 'TEAM_EDITOR') {
+      await db
+        .update(teamMembers)
+        .set({ operationalRole: 'TEAM_EDITOR' })
+        .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, newOwnerId)));
+    }
+  }
+
+  // Re-fetch the updated member with user join
+  const [updatedMember] = await db
+    .select({
+      id: teamMembers.id,
+      teamId: teamMembers.teamId,
+      userId: teamMembers.userId,
+      managementRole: teamMembers.managementRole,
+      operationalRole: teamMembers.operationalRole,
+      joinedAt: teamMembers.joinedAt,
+      invitedBy: teamMembers.invitedBy,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        image: users.image,
+      },
+    })
+    .from(teamMembers)
+    .innerJoin(users, eq(teamMembers.userId, users.id))
+    .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)));
+
+  logTeamEvent('team.member.role_change.success', {
+    outcome: 'success',
+    userId: actorId,
+    teamId,
+    metadata: {
+      targetUserId: userId,
+      newOperationalRole,
+      ownershipTransfers: transfers.length,
+    },
+  });
+
+  return updatedMember as unknown as TeamMember;
+}
+
+/**
+ * Atomically transfers project ownerships and removes a team member.
+ * Throws if any owned project within the team has no transfer target.
+ */
+export async function removeWithOwnershipTransfer(
+  teamId: string,
+  userId: string,
+  transfers: OwnershipTransfer[],
+  actorId: string
+): Promise<void> {
+  // Check which projects the user owns in this team
+  const owned = await db
+    .select({ id: projects.id })
+    .from(projectMembers)
+    .innerJoin(projects, eq(projectMembers.projectId, projects.id))
+    .where(and(
+      eq(projectMembers.userId, userId),
+      eq(projectMembers.role, 'owner'),
+      eq(projects.teamId, teamId)
+    ));
+
+  // Validate every owned project has a transfer target
+  const transferMap = new Map(transfers.map(t => [t.projectId, t.newOwnerId]));
+  for (const { id } of owned) {
+    if (!transferMap.has(id)) {
+      throw new Error(`OWNERSHIP_TRANSFER_REQUIRED: project ${id} has no transfer target`);
+    }
+  }
+
+  await db.transaction(async (tx) => {
+    // Transfer ownership for each provided project
+    for (const { projectId, newOwnerId } of transfers) {
+      // Promote new owner
+      await tx
+        .update(projectMembers)
+        .set({ role: 'owner' })
+        .where(and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.userId, newOwnerId)
+        ));
+
+      // Demote previous owner to editor
+      await tx
+        .update(projectMembers)
+        .set({ role: 'editor' })
+        .where(and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.userId, userId)
+        ));
+    }
+
+    // Remove from team
+    await tx
+      .delete(teamMembers)
+      .where(and(
+        eq(teamMembers.teamId, teamId),
+        eq(teamMembers.userId, userId)
+      ));
+  });
+
+  logTeamEvent('team.member.remove.success', {
+    outcome: 'success',
+    userId: actorId,
+    teamId,
+    metadata: { removedUserId: userId, ownershipTransfers: transfers.length },
+  });
 }
 
 /**

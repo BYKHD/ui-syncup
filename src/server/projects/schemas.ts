@@ -18,7 +18,6 @@ export const ProjectVisibilitySchema = z.enum(["private", "public"]);
 export const ProjectRoleSchema = z.enum([
   PROJECT_ROLES.PROJECT_OWNER,
   PROJECT_ROLES.PROJECT_EDITOR,
-  PROJECT_ROLES.PROJECT_DEVELOPER,
   PROJECT_ROLES.PROJECT_MEMBER,
   PROJECT_ROLES.PROJECT_VIEWER,
 ] as const);

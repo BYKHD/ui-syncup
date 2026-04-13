@@ -101,7 +101,7 @@ const teamRoleArb = fc.constantFrom(
 const projectRoleArb = fc.constantFrom(
   'PROJECT_OWNER',
   'PROJECT_EDITOR',
-  'PROJECT_DEVELOPER',
+  'PROJECT_MEMBER',
   'PROJECT_VIEWER'
 );
 

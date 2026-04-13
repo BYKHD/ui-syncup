@@ -86,7 +86,7 @@ export function NotificationActions({
       // Determine the API endpoint based on notification type
       const isProjectInvitation = notification.type === 'project_invitation'
       const endpoint = isProjectInvitation
-        ? `/api/invite/project/${invitationId}`
+        ? `/api/invite/project/by-id/${invitationId}/${action}`
         : `/api/teams/invitations/by-id/${invitationId}/${action}`
 
       const response = await fetch(endpoint, {
@@ -99,7 +99,7 @@ export function NotificationActions({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `Failed to ${action} invitation`)
+        throw new Error(errorData.error?.message || errorData.error || `Failed to ${action} invitation`)
       }
 
       // Parse response for redirect info

@@ -48,7 +48,7 @@ describe("RoleGate Component - Property-Based Tests", () => {
     "TEAM_VIEWER",
     "PROJECT_OWNER",
     "PROJECT_EDITOR",
-    "PROJECT_DEVELOPER",
+    "PROJECT_MEMBER",
     "PROJECT_VIEWER"
   ) as fc.Arbitrary<Role>;
 

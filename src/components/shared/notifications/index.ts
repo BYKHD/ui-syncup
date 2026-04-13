@@ -13,7 +13,6 @@ export { NotificationPanel } from './notification-panel'
 export { NotificationBell } from './notification-bell-button'
 export { NotificationDropdown } from './notification-dropdown'
 export { NotificationItem } from './notification-item'
-export { NotificationGroupItem } from './notification-group-item'
 export { NotificationActions } from './notification-actions'
 export { NotificationLoadMore } from './notification-load-more'
 

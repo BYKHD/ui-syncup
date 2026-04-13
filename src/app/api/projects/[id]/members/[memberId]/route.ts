@@ -300,7 +300,10 @@ export async function DELETE(
         memberId,
       });
 
-      return new NextResponse(null, { status: 204 });
+      return NextResponse.json(
+        { success: true, message: 'Member removed successfully' },
+        { status: 200 }
+      );
     } catch (error) {
       if (error instanceof Error) {
         if (error.message === "Member not found") {

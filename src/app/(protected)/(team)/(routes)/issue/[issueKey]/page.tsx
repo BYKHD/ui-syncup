@@ -5,6 +5,7 @@
 
 import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/shared/headers';
 import { IssueDetailsScreen } from '@/features/issues';
+import type { IssuePermissions } from '@/features/issues/types';
 import { getIssueByKeyOnly } from '@/server/issues';
 import { getProject } from '@/server/projects/project-service';
 import { getSession } from '@/server/auth/session';
@@ -64,8 +65,27 @@ export default async function IssuePage({ params }: IssuePageProps) {
     return notFound();
   }
 
-  // Get project for breadcrumbs
+  // Get project for breadcrumbs and permission derivation
   const project = await getProject(issue.projectId, userId);
+
+  // Derive permissions from project role + assignee.
+  // PROJECT_MEMBER may only update/change status when they are the assigned user.
+  // TEAM_MEMBER and unrelated visitors (userRole === null) get view-only access.
+  const isAssignedUser = issue.assigneeId === userId;
+
+  const issuePermissions: IssuePermissions = (() => {
+    switch (project.userRole) {
+      case 'owner':
+        return { canEdit: true, canDelete: true, canComment: true, canAssign: true, canChangeStatus: true };
+      case 'editor':
+        return { canEdit: true, canDelete: true, canComment: true, canAssign: true, canChangeStatus: true };
+      case 'member':
+        return { canEdit: isAssignedUser, canDelete: false, canComment: true, canAssign: false, canChangeStatus: isAssignedUser };
+      case 'viewer':
+      default:
+        return { canEdit: false, canDelete: false, canComment: false, canAssign: false, canChangeStatus: false };
+    }
+  })();
 
   const issueBreadcrumbs: BreadcrumbItem[] = [
     { label: 'Projects', href: '/projects' },
@@ -82,7 +102,7 @@ export default async function IssuePage({ params }: IssuePageProps) {
       <div className="h-full flex flex-col">
         {/* Issue Details Screen */}
         <div className="flex-1 overflow-hidden">
-          <IssueDetailsScreen issueId={issue.id} userId={userId} />
+          <IssueDetailsScreen issueId={issue.id} userId={userId} permissions={issuePermissions} />
         </div>
       </div>
     </>

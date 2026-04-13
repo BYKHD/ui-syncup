@@ -1,13 +1,14 @@
 'use client';
 
 import { useMutation, useQueryClient, type UseMutationOptions } from '@tanstack/react-query';
-import { removeMember, type RemoveMemberResponse } from '../api';
+import { removeMember, type RemoveMemberResponse, type OwnershipTransfer } from '../api';
 import { TEAM_MEMBERS_QUERY_KEY } from './use-team-members';
 import { TEAM_QUERY_KEY } from './use-team';
 
 export interface RemoveMemberVariables {
   teamId: string;
   userId: string;
+  ownershipTransfers?: OwnershipTransfer[];
 }
 
 /**
@@ -37,8 +38,8 @@ export function useRemoveMember(
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ teamId, userId }: RemoveMemberVariables) =>
-      removeMember(teamId, userId),
+    mutationFn: ({ teamId, userId, ownershipTransfers }: RemoveMemberVariables) =>
+      removeMember(teamId, userId, ownershipTransfers),
     onSuccess: (data, variables, context) => {
       // Invalidate team members list
       queryClient.invalidateQueries({

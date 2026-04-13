@@ -62,6 +62,17 @@ const MIGRATION_APPLIED_CHECKS: Record<string, AppliedChecker> = {
     `;
     return row.applied as boolean;
   },
+
+  "0001_consolidate_developer_to_member.sql": async (client) => {
+    // Applied when no rows with role='developer' remain in either table
+    const [members] = await client`
+      SELECT COUNT(*)::int AS cnt FROM project_members WHERE role = 'developer'
+    `;
+    const [invitations] = await client`
+      SELECT COUNT(*)::int AS cnt FROM project_invitations WHERE role = 'developer'
+    `;
+    return (members.cnt as number) === 0 && (invitations.cnt as number) === 0;
+  },
 };
 
 // ============================================================================

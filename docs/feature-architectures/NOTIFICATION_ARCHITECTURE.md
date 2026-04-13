@@ -198,10 +198,6 @@ create index idx_notifications_recipient_unread
 create index idx_notifications_entity
   on notifications(entity_type, entity_id);
 
--- Grouping queries (client-side grouping)
-create index idx_notifications_grouping
-  on notifications(recipient_id, type, entity_type, entity_id, created_at desc);
-
 -- Deduplication check (5-minute window)
 create index idx_notifications_dedup
   on notifications(recipient_id, actor_id, type, entity_type, entity_id, created_at desc);
@@ -330,10 +326,6 @@ Location: `src/features/notifications/hooks/`
 - Listens for React Query cache updates
 - Triggers Sonner toast with notification preview for new notifications
 
-#### `useGroupedNotifications()`
-- Groups notifications by `(type, entity_type, entity_id)` for display
-- Uses 1-hour time window by default
-
 ### B. UI Components
 
 Location: `src/components/shared/notifications/`
@@ -351,10 +343,6 @@ Location: `src/components/shared/notifications/`
 - Polymorphic rendering based on notification type
 - Click navigation to `metadata.target_url`
 - Visual distinction for read/unread state
-
-#### `NotificationGroupItem`
-- Collapsed view for grouped notifications
-- Shows "User A and 3 others commented on Issue #123"
 
 #### `NotificationActions`
 - Inline Accept/Decline buttons for invitation types
@@ -678,34 +666,7 @@ The `/api/notifications/stream` endpoint:
 
 ## 9. Advanced Features
 
-### A. Client-Side Grouping
-
-Notifications are grouped by `(type, entity_type, entity_id)` within a time window (default: 1 hour) for better UX:
-
-**Before Grouping:**
-- Alice commented on Issue #123
-- Bob commented on Issue #123
-- Carol commented on Issue #123
-
-**After Grouping:**
-- Alice, Bob and 1 other commented on Issue #123
-
-**Implementation:**
-
-```typescript
-// src/features/notifications/utils/group-notifications.ts
-export function groupNotifications(
-  notifications: Notification[],
-  windowMs: number = 3600000  // 1 hour
-): NotificationGroup[] {
-  // Group by (type, entity_type, entity_id)
-  // Only group if notifications within windowMs
-}
-```
-
-**Rationale:** Client-side grouping keeps the database schema simple and allows flexible UI experimentation without migrations.
-
-### B. Deep-Link Navigation
+### A. Deep-Link Navigation
 
 When a user clicks a notification, the system navigates to `metadata.target_url`:
 
@@ -793,7 +754,6 @@ if (notification.type === 'project_invitation') {
 
 ### Unit Tests
 - `buildTargetUrl()` generates correct URLs for all entity types
-- `groupNotifications()` utility with various edge cases
 - `NotificationItem` renders correct text/links for each type
 - `useNotificationSubscription` hook — mocked `EventSource`, SSE event handling, fallback to polling
 
@@ -812,6 +772,7 @@ Each correctness property with minimum 100 iterations:
 - **Property 5:** Mark as read state change
 - **Property 7:** Actor self-notification prevention
 - **Property 8:** Deduplication correctness
+
 
 ### E2E Tests
 - User A comments → User B receives notification and badge update via SSE
@@ -892,14 +853,12 @@ src/
 │   │   ├── use-notification-toast.ts
 │   │   └── index.ts                          # Barrel export
 │   └── utils/
-│       └── group-notifications.ts
 │
 └── components/shared/notifications/
     ├── notification-panel.tsx                # Main entry point (integrates SSE hook)
     ├── notification-bell-button.tsx
     ├── notification-dropdown.tsx
     ├── notification-item.tsx
-    ├── notification-group-item.tsx
     ├── notification-actions.tsx
     └── __tests__/
 ```

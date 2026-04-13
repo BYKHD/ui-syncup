@@ -44,7 +44,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
  * - No multi-tenant fields (teamId, projectId) since notifications are user-scoped
  * - RLS policies ensure users can only access their own notifications
  * - Metadata is denormalized to avoid N+1 queries when rendering
- * - Indexes optimized for common query patterns (unread, grouping, dedup)
+ * - Indexes optimized for common query patterns (unread, dedup)
  */
 export const notifications = pgTable(
   "notifications",
@@ -85,15 +85,6 @@ export const notifications = pgTable(
     entityIdx: index("idx_notifications_entity").on(
       table.entityType,
       table.entityId
-    ),
-    // Grouping index for client-side aggregation queries
-    // Used for: Grouping notifications by (type, entity) within time window
-    groupingIdx: index("idx_notifications_grouping").on(
-      table.recipientId,
-      table.type,
-      table.entityType,
-      table.entityId,
-      table.createdAt
     ),
     // Deduplication check index (5-minute window)
     // Used for: Preventing notification spam from repeated actions
