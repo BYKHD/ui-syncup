@@ -1,3 +1,30 @@
+# [0.8.0](https://github.com/BYKHD/ui-syncup/compare/v0.7.3...v0.8.0) (2026-04-13)
+
+
+### Bug Fixes
+
+*  PWA manifest and icons, standardize user avatar field, and update project join/leave API responses and UI components. ([#126](https://github.com/BYKHD/ui-syncup/issues/126)) ([10d7779](https://github.com/BYKHD/ui-syncup/commit/10d77790c2e20859744abc2d94d7275cf51829f0))
+* add PROJECT_MEMBER role and fix PATCH member role assignment ([#128](https://github.com/BYKHD/ui-syncup/issues/128)) ([#132](https://github.com/BYKHD/ui-syncup/issues/132)) ([4c4ef9f](https://github.com/BYKHD/ui-syncup/commit/4c4ef9fd8fca7af339740201e84a3f4dcdd17f9f))
+* consolidate developer to member ([#133](https://github.com/BYKHD/ui-syncup/issues/133)) ([d319de8](https://github.com/BYKHD/ui-syncup/commit/d319de8f60fd7055cf7befcbb899380d55b6e2fd)), closes [#128](https://github.com/BYKHD/ui-syncup/issues/128) [#128](https://github.com/BYKHD/ui-syncup/issues/128)
+* core UI improvement 1 ([#125](https://github.com/BYKHD/ui-syncup/issues/125)) ([a0d6b8e](https://github.com/BYKHD/ui-syncup/commit/a0d6b8e66364412229c5ef6341feb9f00622e37e))
+* correct quote usage in self-registration success toast message ([a56b047](https://github.com/BYKHD/ui-syncup/commit/a56b047b240057a7ecc71858444a1fabe2bb6e09))
+* invitation acceptance redirect flow ([aa91de7](https://github.com/BYKHD/ui-syncup/commit/aa91de724c2d09d5cff512267eab673cc5eed33c))
+* minor bug part 2 ([#121](https://github.com/BYKHD/ui-syncup/issues/121)) ([e1e1fef](https://github.com/BYKHD/ui-syncup/commit/e1e1fefe9ba8ca88200611650e2c834cd4c46602))
+* persistent invitation flow during OAuth ([ca3d78a](https://github.com/BYKHD/ui-syncup/commit/ca3d78a75cad5fe66048daa206be2709b2cf8807))
+* redandant database table ([#124](https://github.com/BYKHD/ui-syncup/issues/124)) ([389274d](https://github.com/BYKHD/ui-syncup/commit/389274d962f01cf3e746ef2580534d9b15f5ffdf))
+* rename workspace terminology to team throughout authentication and setup flows ([af7333a](https://github.com/BYKHD/ui-syncup/commit/af7333a0893e18041754efc311c907d042a1883c))
+* replace dedicated user_roles table with team_members and project_members for RBAC ([2cbe9c4](https://github.com/BYKHD/ui-syncup/commit/2cbe9c4e9f4bc950e04a7fe7eb5b5d7563a3020c))
+* replace Loader2 icon with RiLoader4Line in setup wizard ([0b3b07a](https://github.com/BYKHD/ui-syncup/commit/0b3b07ac0dd8765f7d24cf57fd6ce6f0dc93899f))
+* retrigger ([3b23d2e](https://github.com/BYKHD/ui-syncup/commit/3b23d2ef5e18f5a62c343a38600308874ef3d07e))
+* team invitation & notification error ([63dec9a](https://github.com/BYKHD/ui-syncup/commit/63dec9af05b0ed0d188c39dbf0a60d162c88054a))
+* update invitation acceptance redirect to use absolute app URL and correct return path ([#123](https://github.com/BYKHD/ui-syncup/issues/123)) ([da63bbc](https://github.com/BYKHD/ui-syncup/commit/da63bbcd6a1ec9e0b412c9606da80096fe257247))
+* update team settings navigation to use slug-based paths ([2ab0ce9](https://github.com/BYKHD/ui-syncup/commit/2ab0ce9c1365b1987d447d927103ace14ae4ea6f))
+
+
+### Features
+
+* clean up legacy Drizzle migrations and update database schema snapshot ([d3b0de5](https://github.com/BYKHD/ui-syncup/commit/d3b0de55b720fd1f633d3dbf69b2ac328660a706))
+
 # [0.8.0-beta.12](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.11...v0.8.0-beta.12) (2026-04-13)
 
 
