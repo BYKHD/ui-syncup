@@ -1,3 +1,10 @@
+# [0.8.0-beta.12](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.11...v0.8.0-beta.12) (2026-04-13)
+
+
+### Bug Fixes
+
+* consolidate developer to member ([#133](https://github.com/BYKHD/ui-syncup/issues/133)) ([d319de8](https://github.com/BYKHD/ui-syncup/commit/d319de8f60fd7055cf7befcbb899380d55b6e2fd)), closes [#128](https://github.com/BYKHD/ui-syncup/issues/128) [#128](https://github.com/BYKHD/ui-syncup/issues/128)
+
 # [0.8.0-beta.11](https://github.com/BYKHD/ui-syncup/compare/v0.8.0-beta.10...v0.8.0-beta.11) (2026-04-10)
 
 
