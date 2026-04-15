@@ -1,3 +1,10 @@
+## [0.8.1-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.8.0...v0.8.1-beta.1) (2026-04-15)
+
+
+### Bug Fixes
+
+* migration error, recreate init ([20ef2bb](https://github.com/BYKHD/ui-syncup/commit/20ef2bbb3c572749d050e0f17583a6092dcf9501))
+
 # [0.8.0](https://github.com/BYKHD/ui-syncup/compare/v0.7.3...v0.8.0) (2026-04-13)
 
 

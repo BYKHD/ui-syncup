@@ -6,14 +6,7 @@
       "idx": 0,
       "version": "7",
       "when": 1775413109217,
-      "tag": "0000_fluffy_wrecker",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1744243200000,
-      "tag": "0001_consolidate_developer_to_member",
+      "tag": "0000_init",
       "breakpoints": true
     }
   ]
