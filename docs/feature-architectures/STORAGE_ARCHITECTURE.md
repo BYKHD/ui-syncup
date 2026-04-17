@@ -92,6 +92,10 @@ STORAGE_BUCKET=ui-syncup-storage
 STORAGE_PUBLIC_ACCESS=true
 STORAGE_PUBLIC_URL=http://localhost:9000/ui-syncup-storage
 
+# Rewrite minio:9000 → localhost:9000 in presigned URLs returned to browsers.
+# Required whenever STORAGE_ENDPOINT uses a Docker-internal hostname.
+STORAGE_PUBLIC_ENDPOINT=http://localhost:9000
+
 # MinIO admin bootstrap (must match credentials above)
 MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=change-me-min-8-chars
@@ -108,6 +112,7 @@ MINIO_ROOT_PASSWORD=change-me-min-8-chars
 | `STORAGE_BUCKET` | Yes | — | Single bucket name |
 | `STORAGE_PUBLIC_ACCESS` | No | `false` | Set `true` to serve media via direct public URLs instead of the media proxy |
 | `STORAGE_PUBLIC_URL` | No | — | Base URL for public object access (required when `STORAGE_PUBLIC_ACCESS=true`) |
+| `STORAGE_PUBLIC_ENDPOINT` | No | — | Publicly reachable MinIO origin (e.g. `http://localhost:9000`). Set only when `STORAGE_ENDPOINT` is a Docker-internal hostname. Rewrites presigned URL origins before they are sent to browsers. Not needed for AWS S3, Lightsail, R2, or local non-Docker MinIO. |
 
 ---
 

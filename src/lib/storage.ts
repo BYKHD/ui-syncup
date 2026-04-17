@@ -155,7 +155,21 @@ export async function generateDownloadUrl(
     Bucket: getBucketName(),
     Key: key,
   });
-  return getSignedUrl(client, command, { expiresIn });
+  let url = await getSignedUrl(client, command, { expiresIn });
+
+  // When STORAGE_ENDPOINT is a Docker-internal hostname (e.g. http://minio:9000),
+  // the AWS SDK embeds that hostname in presigned URLs. Browsers cannot resolve
+  // Docker service names, so we rewrite the origin to STORAGE_PUBLIC_ENDPOINT
+  // (e.g. http://localhost:9000) — the address the browser can actually reach.
+  // This only activates when both vars are set, so AWS S3, Lightsail, and R2
+  // are completely unaffected.
+  const internalEndpoint = process.env.STORAGE_ENDPOINT;
+  const publicEndpoint = process.env.STORAGE_PUBLIC_ENDPOINT;
+  if (internalEndpoint && publicEndpoint && url.startsWith(internalEndpoint)) {
+    url = publicEndpoint + url.slice(internalEndpoint.length);
+  }
+
+  return url;
 }
 
 // ============================================================================
