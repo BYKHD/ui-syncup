@@ -46,25 +46,26 @@ function getBucketName(): string {
 }
 
 // ============================================================================
-// S3 CLIENT (single instance)
+// S3 CLIENTS
 // ============================================================================
 
-function createClient(): S3Client {
-  const endpoint = process.env.STORAGE_ENDPOINT;
-  const isCustomEndpoint = !!endpoint;
-
-  // forcePathStyle is required for MinIO and other self-hosted S3-compatible
-  // stores (e.g. http://127.0.0.1:9000/bucket/key). AWS S3 and Lightsail use
-  // virtual-hosted-style URLs so forcePathStyle must be false, otherwise
-  // presigned URLs are generated in the wrong format.
+/**
+ * Build an S3Client for a given endpoint.
+ *
+ * forcePathStyle is required for MinIO and other self-hosted S3-compatible
+ * stores (e.g. http://127.0.0.1:9000/bucket/key). AWS S3 and Lightsail use
+ * virtual-hosted-style URLs so forcePathStyle must be false, otherwise
+ * presigned URLs are generated in the wrong format.
+ */
+function createClient(endpoint: string | undefined): S3Client {
   return new S3Client({
     region: process.env.STORAGE_REGION ?? 'us-east-1',
-    ...(isCustomEndpoint ? { endpoint } : {}),
+    ...(endpoint ? { endpoint } : {}),
     credentials: {
       accessKeyId: process.env.STORAGE_ACCESS_KEY_ID ?? 'minioadmin',
       secretAccessKey: process.env.STORAGE_SECRET_ACCESS_KEY ?? 'minioadmin',
     },
-    forcePathStyle: isCustomEndpoint,
+    forcePathStyle: !!endpoint,
     // AWS SDK v3 >= 3.750 defaults to 'when_supported', which embeds a CRC32
     // checksum in presigned PUT URLs. Browsers cannot send the required
     // x-amz-checksum-crc32 header, causing S3 to reject uploads with 400.
@@ -74,7 +75,23 @@ function createClient(): S3Client {
   });
 }
 
-const client = createClient();
+// Used for all server-side S3 operations (upload, delete, HeadBucket, etc.).
+// May use a Docker-internal endpoint (e.g. http://minio:9000) — never exposed
+// to the browser.
+const client = createClient(process.env.STORAGE_ENDPOINT);
+
+// Used exclusively for generating presigned GET URLs that are sent to browsers.
+// AWS Signature v4 includes the `host` header in the signed payload, so the
+// client used for signing must use the same hostname the browser will send
+// requests to. When STORAGE_ENDPOINT is a Docker-internal address (e.g.
+// http://minio:9000), set STORAGE_PUBLIC_ENDPOINT to the publicly reachable
+// address (e.g. http://localhost:9000) so browsers can reach MinIO and the
+// signature remains valid. Falls back to STORAGE_ENDPOINT when the env var is
+// not set (AWS S3, Lightsail, R2, and local non-Docker MinIO all work without
+// it).
+const presigningClient = createClient(
+  process.env.STORAGE_PUBLIC_ENDPOINT ?? process.env.STORAGE_ENDPOINT
+);
 
 /**
  * Get the configured S3 client.
@@ -143,6 +160,9 @@ export async function uploadFile(key: string, body: Buffer, contentType: string)
 /**
  * Generate a presigned URL for downloading/viewing a private file.
  *
+ * Uses presigningClient (signed with STORAGE_PUBLIC_ENDPOINT when set) so the
+ * resulting URL is both reachable by the browser and carries a valid signature.
+ *
  * @param key - Full storage key
  * @param expiresIn - Seconds until URL expires (default: 1 hour)
  * @returns Presigned GET URL
@@ -155,21 +175,7 @@ export async function generateDownloadUrl(
     Bucket: getBucketName(),
     Key: key,
   });
-  let url = await getSignedUrl(client, command, { expiresIn });
-
-  // When STORAGE_ENDPOINT is a Docker-internal hostname (e.g. http://minio:9000),
-  // the AWS SDK embeds that hostname in presigned URLs. Browsers cannot resolve
-  // Docker service names, so we rewrite the origin to STORAGE_PUBLIC_ENDPOINT
-  // (e.g. http://localhost:9000) — the address the browser can actually reach.
-  // This only activates when both vars are set, so AWS S3, Lightsail, and R2
-  // are completely unaffected.
-  const internalEndpoint = process.env.STORAGE_ENDPOINT;
-  const publicEndpoint = process.env.STORAGE_PUBLIC_ENDPOINT;
-  if (internalEndpoint && publicEndpoint && url.startsWith(internalEndpoint)) {
-    url = publicEndpoint + url.slice(internalEndpoint.length);
-  }
-
-  return url;
+  return getSignedUrl(presigningClient, command, { expiresIn });
 }
 
 // ============================================================================

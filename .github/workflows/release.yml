@@ -85,6 +85,7 @@ jobs:
         working-directory: ./cli
         run: |
           VERSION="${{ steps.semantic.outputs.new_release_version }}"
+          npm version "$VERSION" --no-git-tag-version
           if [[ "$VERSION" == *"-"* ]]; then
             CHANNEL="${VERSION#*-}"
             CHANNEL="${CHANNEL%%.*}"
