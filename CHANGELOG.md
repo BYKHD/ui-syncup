@@ -1,3 +1,11 @@
+## [0.8.4-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.8.4-beta.2...v0.8.4-beta.3) (2026-04-17)
+
+
+### Bug Fixes
+
+* add STORAGE_PUBLIC_ENDPOINT support to fix MinIO presigned URL resolution in Docker environments ([d98eed1](https://github.com/BYKHD/ui-syncup/commit/d98eed103fa99e8324a7aaa6458542bc027eacc5))
+* log attachment presign failures and reset image state on URL changes ([9acf911](https://github.com/BYKHD/ui-syncup/commit/9acf91118a576c83ed383ca30fbec99507f9b16d))
+
 ## [0.8.4-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.8.4-beta.1...v0.8.4-beta.2) (2026-04-17)
 
 
