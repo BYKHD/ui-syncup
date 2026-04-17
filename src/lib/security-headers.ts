@@ -40,12 +40,16 @@ export function getCSPDirectives(): CSPDirectives {
     // Styles: allow self and inline styles (required for Tailwind/CSS-in-JS)
     'style-src': ["'self'", "'unsafe-inline'"],
     
-    // Images: allow self, data URIs, HTTPS, and blob for dynamic content
+    // Images: allow self, data URIs, HTTPS, and blob for dynamic content.
+    // Also allow configured storage endpoints — presigned URLs embed the
+    // STORAGE_PUBLIC_ENDPOINT host, which may be HTTP (e.g. self-hosted MinIO).
     'img-src': [
       "'self'",
       'data:',
       'https:',
       'blob:',
+      ...(env.STORAGE_PUBLIC_ENDPOINT ? [env.STORAGE_PUBLIC_ENDPOINT] : []),
+      ...(env.STORAGE_PUBLIC_URL ? [env.STORAGE_PUBLIC_URL] : []),
       ...(isDevelopment() ? ['http://localhost:*', 'http://127.0.0.1:*'] : []),
     ],
     
