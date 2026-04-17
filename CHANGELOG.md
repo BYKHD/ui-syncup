@@ -1,3 +1,10 @@
+## [0.8.5-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.8.4...v0.8.5-beta.1) (2026-04-17)
+
+
+### Bug Fixes
+
+* log attachment presign failures and reset image state on URL changes ([9acf911](https://github.com/BYKHD/ui-syncup/commit/9acf91118a576c83ed383ca30fbec99507f9b16d))
+
 ## [0.8.4](https://github.com/BYKHD/ui-syncup/compare/v0.8.3...v0.8.4) (2026-04-17)
 
 
