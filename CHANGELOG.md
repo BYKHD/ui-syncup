@@ -1,3 +1,12 @@
+## [0.8.4](https://github.com/BYKHD/ui-syncup/compare/v0.8.3...v0.8.4) (2026-04-17)
+
+
+### Bug Fixes
+
+* add STORAGE_PUBLIC_ENDPOINT support to fix MinIO presigned URL resolution in Docker environments ([d98eed1](https://github.com/BYKHD/ui-syncup/commit/d98eed103fa99e8324a7aaa6458542bc027eacc5))
+* add STORAGE_PUBLIC_ENDPOINT support to fix MinIO presigned URL resolution in Docker environments ([e2bdd58](https://github.com/BYKHD/ui-syncup/commit/e2bdd584ea8bca8ab9aa6129bcff828271f8630f))
+* remove CLI npm publishing logic from release workflow ([807c072](https://github.com/BYKHD/ui-syncup/commit/807c07258eb8343d2dbbc7143c5b21e3db35c59d))
+
 ## [0.8.4-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.8.4-beta.1...v0.8.4-beta.2) (2026-04-17)
 
 
