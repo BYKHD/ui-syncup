@@ -163,15 +163,25 @@ export async function initCommand(): Promise<void> {
       message: 'MinIO root password (min 8 chars):',
       validate: v => v.length >= 8 || 'Minimum 8 characters',
     })
+    // The app container reaches MinIO via the Docker-internal hostname.
+    // Browsers reach MinIO via the host's publicly exposed port 9000.
+    // STORAGE_PUBLIC_ENDPOINT makes the presigner embed the public hostname
+    // in signed URLs so browsers can fetch attachments without DNS failure.
+    ui.info('MinIO port 9000 is exposed on your host. Enter the address browsers will use to reach it.')
+    const minioPublicUrl = await input({
+      message: 'Public MinIO URL (e.g. http://localhost:9000 or http://your-server-ip:9000):',
+      default: 'http://localhost:9000',
+      validate: v => v.startsWith('http') || 'Must start with http:// or https://',
+    })
     envVars['MINIO_ROOT_USER'] = minioUser
     envVars['MINIO_ROOT_PASSWORD'] = minioPass
     envVars['STORAGE_ENDPOINT'] = 'http://minio:9000'
+    envVars['STORAGE_PUBLIC_ENDPOINT'] = minioPublicUrl
     envVars['STORAGE_REGION'] = 'us-east-1'
     envVars['STORAGE_ACCESS_KEY_ID'] = minioUser
     envVars['STORAGE_SECRET_ACCESS_KEY'] = minioPass
     envVars['STORAGE_BUCKET'] = 'ui-syncup-storage'
-    envVars['STORAGE_PUBLIC_ACCESS'] = 'true'
-    envVars['STORAGE_PUBLIC_URL'] = 'http://minio:9000/ui-syncup-storage'
+    envVars['STORAGE_PUBLIC_ACCESS'] = 'false'
   } else if (storageChoice === 'aws') {
     ui.info('Leave the endpoint blank — the AWS SDK resolves it from the region automatically.')
     envVars['STORAGE_REGION'] = await input({ message: 'AWS region (e.g. ap-southeast-1):' })
