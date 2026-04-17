@@ -89,6 +89,13 @@ const envSchema = z.object({
   STORAGE_PUBLIC_URL: optionalUrl().describe(
     "Base public URL for storage (required when STORAGE_PUBLIC_ACCESS=true)"
   ),
+  // When STORAGE_ENDPOINT is a Docker-internal hostname (e.g. http://minio:9000),
+  // set this to the publicly reachable MinIO address so presigned GET URLs sent to
+  // browsers embed the correct hostname. Leave unset for AWS S3, Lightsail, R2,
+  // and local non-Docker MinIO (where STORAGE_ENDPOINT is already public).
+  STORAGE_PUBLIC_ENDPOINT: optionalUrl().describe(
+    "Public MinIO URL for presigned URL signing (required when STORAGE_ENDPOINT is a Docker-internal address)"
+  ),
 
   // Authentication (Google OAuth)
   // Optional in development - enables email/password only mode

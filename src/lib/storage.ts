@@ -93,6 +93,32 @@ const presigningClient = createClient(
   process.env.STORAGE_PUBLIC_ENDPOINT ?? process.env.STORAGE_ENDPOINT
 );
 
+// Warn at startup when STORAGE_ENDPOINT is likely a Docker-internal hostname
+// but STORAGE_PUBLIC_ENDPOINT is not set. In this configuration presigned URLs
+// embed the internal hostname (e.g. minio:9000) which browsers cannot resolve,
+// causing "Failed to load image" errors for all attachments.
+if (process.env.STORAGE_ENDPOINT && !process.env.STORAGE_PUBLIC_ENDPOINT) {
+  try {
+    const { hostname } = new URL(process.env.STORAGE_ENDPOINT);
+    const isPublicHost =
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '::1' ||
+      /^\d+\.\d+\.\d+\.\d+$/.test(hostname) ||
+      hostname.includes('.');
+    if (!isPublicHost) {
+      console.warn(
+        `[storage] STORAGE_ENDPOINT uses hostname "${hostname}" which looks like a Docker-internal address. ` +
+        `Presigned URLs sent to browsers will contain this hostname and fail to load. ` +
+        `Set STORAGE_PUBLIC_ENDPOINT to the publicly reachable MinIO address ` +
+        `(e.g. http://localhost:9000 or http://your-server-ip:9000).`
+      );
+    }
+  } catch {
+    // Invalid URL — env validation will surface the error
+  }
+}
+
 /**
  * Get the configured S3 client.
  * Use this instead of building your own client so configuration stays in sync.

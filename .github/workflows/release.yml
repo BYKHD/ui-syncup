@@ -58,16 +58,6 @@ jobs:
         working-directory: ./cli
         run: bun run build
 
-      - name: Check if CLI source changed since last release
-        id: cli_diff
-        run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -n "$PREV_TAG" ] && git diff --quiet "$PREV_TAG" HEAD -- cli/; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
-
       # TODO: Add "bun run test" here once CI test environment supports it (requires db/env vars)
       - name: Run semantic-release
         id: semantic
@@ -80,21 +70,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish CLI to npm
-        if: steps.semantic.outputs.new_release_published == 'true' && steps.cli_diff.outputs.changed == 'true'
-        working-directory: ./cli
-        run: |
-          VERSION="${{ steps.semantic.outputs.new_release_version }}"
-          npm version "$VERSION" --no-git-tag-version
-          if [[ "$VERSION" == *"-"* ]]; then
-            CHANNEL="${VERSION#*-}"
-            CHANNEL="${CHANNEL%%.*}"
-          else
-            CHANNEL="latest"
-          fi
-          npm publish --access public --tag "$CHANNEL"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   docker-prerelease:
     name: Build & Push Docker Image (pre-release)
