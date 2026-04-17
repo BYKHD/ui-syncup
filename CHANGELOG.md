@@ -1,3 +1,10 @@
+## [0.8.5-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.8.5-beta.1...v0.8.5-beta.2) (2026-04-17)
+
+
+### Bug Fixes
+
+* allow configured storage endpoints in CSP img-src directive ([391c210](https://github.com/BYKHD/ui-syncup/commit/391c2108704dd83e25789bae336e6c919998170c))
+
 ## [0.8.5-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.8.4...v0.8.5-beta.1) (2026-04-17)
 
 
