@@ -77,6 +77,18 @@ export function CenteredCanvasView({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+
+  // Reset image state when the URL changes (e.g. React Query refetches a fresh
+  // presigned URL after a stale one caused a load failure).
+  const displayUrl = attachment?.downloadUrl ?? attachment?.url;
+  const prevDisplayUrlRef = useRef(displayUrl);
+  if (prevDisplayUrlRef.current !== displayUrl) {
+    prevDisplayUrlRef.current = displayUrl;
+    if (imageError) {
+      setImageError(false);
+      setImageLoaded(false);
+    }
+  }
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   // Motion values for smooth animation (separate from React state to avoid re-renders)
@@ -582,8 +594,7 @@ export function CenteredCanvasView({
   // RENDER
   // ============================================================================
 
-  // Use the presigned download URL when available, fall back to the stored URL.
-  const displayUrl = attachment.downloadUrl ?? attachment.url;
+  // displayUrl is computed above (near state declarations) so URL changes reset image state.
 
   if (imageError) {
     return (

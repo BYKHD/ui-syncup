@@ -149,8 +149,12 @@ export async function GET(
         let downloadUrl: string | null = null;
         try {
           downloadUrl = await generateDownloadUrl(att.url);
-        } catch {
-          // Non-fatal: client falls back to the stored key
+        } catch (err) {
+          logger.error("api.issue.attachments.presign.failed", {
+            attachmentId: att.id,
+            key: att.url,
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
         return {
           ...att,
