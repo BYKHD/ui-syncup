@@ -137,16 +137,25 @@ main() {
   if [[ "$STORAGE_CHOICE" == "1" ]]; then
     PROFILES+=(storage)
     MINIO_PASS="$(openssl rand -hex 16)"
-    set_env MINIO_ROOT_USER                "minioadmin"
-    set_env MINIO_ROOT_PASSWORD            "$MINIO_PASS"
-    set_env STORAGE_ENDPOINT               "http://minio:9000"
-    set_env STORAGE_REGION                 "us-east-1"
-    set_env STORAGE_ACCESS_KEY_ID          "minioadmin"
-    set_env STORAGE_SECRET_ACCESS_KEY      "$MINIO_PASS"
-    set_env STORAGE_ATTACHMENTS_BUCKET     "ui-syncup-attachments"
-    set_env STORAGE_MEDIA_BUCKET           "ui-syncup-media"
-    set_env STORAGE_ATTACHMENTS_PUBLIC_URL "${APP_URL}/storage/attachments"
-    set_env STORAGE_MEDIA_PUBLIC_URL       "${APP_URL}/storage/media"
+    # Extract hostname from APP_URL (strip scheme and any port) so we can build
+    # the publicly reachable MinIO address (same host, port 9000).
+    # e.g. https://syncup.example.com → http://syncup.example.com:9000
+    MINIO_HOST="$(echo "$APP_URL" | sed -E 's|^https?://([^/:]+).*|\1|')"
+    MINIO_PUBLIC_ENDPOINT="http://${MINIO_HOST}:9000"
+    set_env MINIO_ROOT_USER           "minioadmin"
+    set_env MINIO_ROOT_PASSWORD       "$MINIO_PASS"
+    set_env STORAGE_ENDPOINT          "http://minio:9000"
+    set_env STORAGE_REGION            "us-east-1"
+    set_env STORAGE_ACCESS_KEY_ID     "minioadmin"
+    set_env STORAGE_SECRET_ACCESS_KEY "$MINIO_PASS"
+    set_env STORAGE_BUCKET            "ui-syncup-storage"
+    set_env STORAGE_PUBLIC_ACCESS     "true"
+    set_env STORAGE_PUBLIC_URL        "${MINIO_PUBLIC_ENDPOINT}/ui-syncup-storage"
+    # Presigned GET URLs for attachments must be signed with the public endpoint
+    # so browsers can reach MinIO and the HMAC signature (which includes the
+    # host header) remains valid. Without this, browsers get minio:9000 URLs
+    # that are only resolvable inside Docker.
+    set_env STORAGE_PUBLIC_ENDPOINT   "$MINIO_PUBLIC_ENDPOINT"
   else
     read -r -p "Storage endpoint URL: "      S_EP
     read -r -p "Storage access key ID: "     S_KEY

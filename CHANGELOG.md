@@ -1,10 +1,18 @@
-## [0.8.2](https://github.com/BYKHD/ui-syncup/compare/v0.8.1...v0.8.2) (2026-04-17)
+## [0.8.3-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.8.2...v0.8.3-beta.1) (2026-04-17)
+
+
+### Bug Fixes
+
+* bump to 0.8.3 ([9c8df36](https://github.com/BYKHD/ui-syncup/commit/9c8df3633fee7769e81793667931d48cd07c247c))
+* minio storage endpoint ([3f7d2b8](https://github.com/BYKHD/ui-syncup/commit/3f7d2b8b0b09b9ae5853b5c8811e5f970af5bdab))
+
+## [0.8.2-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.8.2-beta.1...v0.8.2-beta.2) (2026-04-17)
 
 
 ### Bug Fixes
 
 * minio image load error ([c817ba3](https://github.com/BYKHD/ui-syncup/commit/c817ba31de462442e6d16fe329e6fc85d1a9d77c))
-* minio load image error ([19098bc](https://github.com/BYKHD/ui-syncup/commit/19098bc27ba384f1f989f34e70bc34f5de2d3acd))
+* minio storage endpoint ([3f7d2b8](https://github.com/BYKHD/ui-syncup/commit/3f7d2b8b0b09b9ae5853b5c8811e5f970af5bdab))
 
 ## [0.8.2-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.8.1...v0.8.2-beta.1) (2026-04-17)
 
