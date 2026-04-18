@@ -147,8 +147,12 @@ export async function GET(
         let downloadUrl: string | null = null;
         try {
           downloadUrl = await generateDownloadUrl(att.url);
-        } catch {
-          // Non-fatal: client will fall back to the stored key
+        } catch (err) {
+          logger.error("api.issue.attachments.presign.failed", {
+            attachmentId: att.id,
+            key: att.url,
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
         return {
           ...att,
@@ -339,8 +343,12 @@ export async function POST(
     let downloadUrl: string | null = null;
     try {
       downloadUrl = await generateDownloadUrl(attachment.url);
-    } catch {
-      // Non-fatal: client will retry on next GET
+    } catch (err) {
+      logger.error("api.issue.attachments.presign.failed", {
+        attachmentId: attachment.id,
+        key: attachment.url,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
 
     // Serialize dates
