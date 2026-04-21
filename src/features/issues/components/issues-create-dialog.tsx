@@ -45,6 +45,7 @@ interface IssueFormData {
   title: string;
   description: string;
   page?: string;
+  figmaLink?: string;
   type: IssueTypeValue;
   priority: IssuePriorityValue;
   asIsImage: ImageData | null;
@@ -59,6 +60,7 @@ interface IssuesCreateDialogProps extends PropsWithChildren {
     title?: string;
     description?: string;
     page?: string;
+    figmaLink?: string;
     type?: string;
     priority?: string;
     asIsImage?: string;
@@ -70,6 +72,7 @@ interface IssuesCreateDialogProps extends PropsWithChildren {
   onTitleChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
   onPageChange: (value: string) => void;
+  onFigmaLinkChange: (value: string) => void;
   onTypeChange: (value: IssueTypeValue) => void;
   onPriorityChange: (value: IssuePriorityValue) => void;
   onAsIsImageChange: (image: ImageData | null) => void;
@@ -87,6 +90,7 @@ export function IssuesCreateDialog({
   onTitleChange,
   onDescriptionChange,
   onPageChange,
+  onFigmaLinkChange,
   onTypeChange,
   onPriorityChange,
   onAsIsImageChange,
@@ -347,6 +351,28 @@ export function IssuesCreateDialog({
                       {errors.page && (
                         <FieldDescription className="text-destructive">
                           {errors.page}
+                        </FieldDescription>
+                      )}
+                    </Field>
+
+                    <Field>
+                      <FieldLabel className="sr-only text-sm font-semibold">
+                        Figma Link
+                      </FieldLabel>
+                      <FieldContent>
+                        <Input
+                          type="url"
+                          placeholder="Figma design link (optional)"
+                          value={formData.figmaLink || ""}
+                          onChange={(e) => onFigmaLinkChange(e.target.value)}
+                          aria-invalid={!!errors.figmaLink}
+                          maxLength={2048}
+                          className="bg-transparent dark:bg-transparent border-none rounded-none w-full shadow-none outline-none px-0 h-auto focus-visible:ring-0 overflow-hidden text-sm font-normal text-muted-foreground"
+                        />
+                      </FieldContent>
+                      {errors.figmaLink && (
+                        <FieldDescription className="text-destructive">
+                          {errors.figmaLink}
                         </FieldDescription>
                       )}
                     </Field>

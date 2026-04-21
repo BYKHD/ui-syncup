@@ -86,6 +86,7 @@ export default function ProjectDetailScreen({
   const [issueFormData, setIssueFormData] = useState({
     title: "",
     page: "",
+    figmaLink: "",
     description: "",
     type: null as IssueTypeValue,
     priority: null as IssuePriorityValue,
@@ -227,6 +228,16 @@ export default function ProjectDetailScreen({
       if (!issueFormData.asIsImage) errors.asIsImage = "As-is image is required";
       if (!issueFormData.toBeImage) errors.toBeImage = "To-be image is required";
     }
+    if (issueFormData.figmaLink) {
+      try {
+        const url = new URL(issueFormData.figmaLink);
+        if (!url.hostname.endsWith("figma.com")) {
+          errors.figmaLink = "Must be a valid figma.com URL";
+        }
+      } catch {
+        errors.figmaLink = "Must be a valid figma.com URL";
+      }
+    }
 
     if (Object.keys(errors).length > 0) {
       setIssueErrors(errors);
@@ -241,6 +252,7 @@ export default function ProjectDetailScreen({
         projectId: project.id,
         title: issueFormData.title,
         page: issueFormData.page,
+        figmaLink: issueFormData.figmaLink || undefined,
         description: issueFormData.description,
         type: issueFormData.type!,
         priority: issueFormData.priority!,
@@ -297,6 +309,7 @@ export default function ProjectDetailScreen({
       setIssueFormData({
         title: "",
         page: "",
+        figmaLink: "",
         description: "",
         type: null,
         priority: null,
@@ -315,6 +328,7 @@ export default function ProjectDetailScreen({
     setIssueFormData({
       title: "",
       page: "",
+      figmaLink: "",
       description: "",
       type: null,
       priority: null,
@@ -521,6 +535,10 @@ export default function ProjectDetailScreen({
             onPageChange={(value) => {
               setIssueFormData((prev) => ({ ...prev, page: value }));
               if (value.trim()) clearFieldError("page");
+            }}
+            onFigmaLinkChange={(value) => {
+              setIssueFormData((prev) => ({ ...prev, figmaLink: value }));
+              clearFieldError("figmaLink");
             }}
             onDescriptionChange={(value) => {
               setIssueFormData((prev) => ({ ...prev, description: value }));
