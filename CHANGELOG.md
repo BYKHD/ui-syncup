@@ -1,3 +1,9 @@
+## [0.8.6-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.8.5...v0.8.6-beta.1) (2026-04-21)
+
+
+### Bug Fixes
+
+* add figmaLink field to issue creation and update priority badge styling ([02f5f37](https://github.com/BYKHD/ui-syncup/commit/02f5f37d3420e420abebfdda0fa4f1a5e58475f5))
 
 ## [0.8.5](https://github.com/BYKHD/ui-syncup/compare/v0.8.4...v0.8.5) (2026-04-18)
 ## [0.8.5-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.8.5-beta.2...v0.8.5-beta.3) (2026-04-21)
