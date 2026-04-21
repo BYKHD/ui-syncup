@@ -1,4 +1,6 @@
+
 ## [0.8.5](https://github.com/BYKHD/ui-syncup/compare/v0.8.4...v0.8.5) (2026-04-18)
+## [0.8.5-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.8.5-beta.2...v0.8.5-beta.3) (2026-04-21)
 
 
 ### Bug Fixes
@@ -6,6 +8,9 @@
 * allow configured storage endpoints in CSP img-src directive ([bb85e4b](https://github.com/BYKHD/ui-syncup/commit/bb85e4b026c61da77e134778c24ba0a8a4b979fd))
 * allow configured storage endpoints in CSP img-src directive ([391c210](https://github.com/BYKHD/ui-syncup/commit/391c2108704dd83e25789bae336e6c919998170c))
 * log attachment presign failures and reset image state on URL changes ([9acf911](https://github.com/BYKHD/ui-syncup/commit/9acf91118a576c83ed383ca30fbec99507f9b16d))
+* add figmaLink field to issue creation and update priority badge styling ([02f5f37](https://github.com/BYKHD/ui-syncup/commit/02f5f37d3420e420abebfdda0fa4f1a5e58475f5))
+* allow configured storage endpoints in CSP img-src directive ([bb85e4b](https://github.com/BYKHD/ui-syncup/commit/bb85e4b026c61da77e134778c24ba0a8a4b979fd))
+
 
 ## [0.8.5-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.8.5-beta.1...v0.8.5-beta.2) (2026-04-17)
 
