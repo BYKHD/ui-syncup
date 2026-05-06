@@ -11,7 +11,7 @@ import { projectMembers } from "@/server/db/schema/project-members";
 import { projects } from "@/server/db/schema/projects";
 import { users } from "@/server/db/schema/users";
 import { teams } from "@/server/db/schema/teams";
-import { eq, and, gt, isNull, sql, desc } from "drizzle-orm";
+import { eq, and, gt, lte, isNull, sql, desc } from "drizzle-orm";
 import { randomBytes, createHash } from "crypto";
 import { logger } from "@/lib/logger";
 import { env } from "@/lib/env";
@@ -29,6 +29,32 @@ import {
   logInvitationDeclined,
   logMemberAdded,
 } from "./activity-service";
+
+const ACTIVE_INVITATION_UNIQUE_INDEX = "project_invitations_active_unique_idx";
+
+// Postgres unique-violation SQLSTATE. Drizzle can wrap the driver error in
+// DrizzleQueryError; inspect the cause chain so unrelated unique constraints
+// (for example token_hash) are not mislabeled as duplicate active invitations.
+function isUniqueViolationOnConstraint(err: unknown, constraintName: string): boolean {
+  if (typeof err !== "object" || err === null) return false;
+
+  const error = err as {
+    code?: unknown;
+    constraint?: unknown;
+    constraint_name?: unknown;
+    message?: unknown;
+    cause?: unknown;
+  };
+
+  const hasUniqueViolationCode = error.code === "23505";
+  const hasTargetConstraint =
+    error.constraint === constraintName ||
+    error.constraint_name === constraintName ||
+    (typeof error.message === "string" && error.message.includes(`"${constraintName}"`));
+
+  if (hasUniqueViolationCode && hasTargetConstraint) return true;
+  return isUniqueViolationOnConstraint(error.cause, constraintName);
+}
 import type { 
   ProjectInvitation,
   ProjectInvitationWithUsers,
@@ -188,23 +214,6 @@ export async function createProjectInvitation(
     throw new Error("User is already a member of this project");
   }
 
-  // Check for existing pending invitation
-  const existingInvitationResult = await db
-    .select()
-    .from(projectInvitations)
-    .where(and(
-      eq(projectInvitations.projectId, projectId),
-      eq(projectInvitations.email, email),
-      isNull(projectInvitations.usedAt),
-      isNull(projectInvitations.cancelledAt),
-      gt(projectInvitations.expiresAt, new Date())
-    ))
-    .limit(1);
-
-  if (existingInvitationResult.length > 0) {
-    throw new Error("An active invitation already exists for this email");
-  }
-
   // Generate secure token
   const token = randomBytes(32).toString("hex");
   const tokenHash = createHash("sha256").update(token).digest("hex");
@@ -212,18 +221,43 @@ export async function createProjectInvitation(
   // 7-day expiration
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  // Create invitation
-  const [invitation] = await db
-    .insert(projectInvitations)
-    .values({
-      projectId,
-      email,
-      tokenHash,
-      role,
-      invitedBy,
-      expiresAt,
-    })
-    .returning();
+  // Atomically: free the unique slot held by any expired pending invitation,
+  // then insert. The partial unique index on (project_id, lower(email))
+  // WHERE used_at IS NULL AND cancelled_at IS NULL is the source of truth —
+  // a 23505 here means another concurrent caller won the race.
+  let invitation: typeof projectInvitations.$inferSelect;
+  try {
+    invitation = await db.transaction(async (tx) => {
+      await tx
+        .update(projectInvitations)
+        .set({ cancelledAt: new Date() })
+        .where(and(
+          eq(projectInvitations.projectId, projectId),
+          eq(projectInvitations.email, email),
+          isNull(projectInvitations.usedAt),
+          isNull(projectInvitations.cancelledAt),
+          lte(projectInvitations.expiresAt, new Date()),
+        ));
+
+      const [row] = await tx
+        .insert(projectInvitations)
+        .values({
+          projectId,
+          email,
+          tokenHash,
+          role,
+          invitedBy,
+          expiresAt,
+        })
+        .returning();
+      return row;
+    });
+  } catch (err) {
+    if (isUniqueViolationOnConstraint(err, ACTIVE_INVITATION_UNIQUE_INDEX)) {
+      throw new Error("An active invitation already exists for this email");
+    }
+    throw err;
+  }
 
   logger.info("project.invitation.created", {
     projectId,

@@ -44,3 +44,7 @@ Append-only. Newest entries at the bottom. Each entry starts with `## [YYYY-MM-D
 - Resolved with option (a): concepts are canonical; source pages slimmed to provenance stubs (identity, scope, `feeds_into`) pointing at the concept page. Source frontmatter `original_status` updated from "this wiki page is now canonical" to "canonical content in [[concepts/X]]".
 - Fixed [[index]]: stale `Concepts (12)` header → `(16)`; replaced removed `docs/feature-architectures/*` paths in source descriptions with provenance/canonical pointers.
 - No content lost — concept pages already covered every fact in the slimmed sources.
+
+## [2026-05-06] fix | invitation duplicate race review fixes
+- Tightened project/team invitation duplicate handling to map only the active-invitation partial unique indexes to duplicate-invitation errors.
+- Fixed project invitation create typing so raw database rows are not assigned to the domain `ProjectInvitation` shape.

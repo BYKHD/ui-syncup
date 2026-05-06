@@ -3,7 +3,7 @@ import { teamInvitations } from "@/server/db/schema/team-invitations";
 import { teamMembers } from "@/server/db/schema/team-members";
 import { teams } from "@/server/db/schema/teams";
 import { users } from "@/server/db/schema/users";
-import { eq, and, gt, sql, isNull } from "drizzle-orm";
+import { eq, and, gt, lte, sql, isNull } from "drizzle-orm";
 import { randomBytes, createHash } from "crypto";
 import { logTeamEvent } from "./team-service";
 import { addMember } from "./member-service";
@@ -14,12 +14,40 @@ import { createNotification, buildTargetUrl, markInvitationNotificationAsRespond
 import type { CreateInvitationInput, Invitation } from "./types";
 import { logAdminAction } from "@/server/audit";
 
+const ACTIVE_INVITATION_UNIQUE_INDEX = "team_invitations_active_unique_idx";
+
+// Postgres unique-violation SQLSTATE. Drizzle can wrap the driver error in
+// DrizzleQueryError; inspect the cause chain so unrelated unique constraints
+// (for example token_hash) are not mislabeled as duplicate pending invitations.
+function isUniqueViolationOnConstraint(err: unknown, constraintName: string): boolean {
+  if (typeof err !== "object" || err === null) return false;
+
+  const error = err as {
+    code?: unknown;
+    constraint?: unknown;
+    constraint_name?: unknown;
+    message?: unknown;
+    cause?: unknown;
+  };
+
+  const hasUniqueViolationCode = error.code === "23505";
+  const hasTargetConstraint =
+    error.constraint === constraintName ||
+    error.constraint_name === constraintName ||
+    (typeof error.message === "string" && error.message.includes(`"${constraintName}"`));
+
+  if (hasUniqueViolationCode && hasTargetConstraint) return true;
+  return isUniqueViolationOnConstraint(error.cause, constraintName);
+}
+
 /**
  * Creates a new invitation
  * Implements Requirements 2.1, 2.2, 2A.5, 14.2
  */
 export async function createInvitation(input: CreateInvitationInput): Promise<{ invitation: Invitation; token: string }> {
-  const { teamId, email, managementRole, operationalRole, invitedBy } = input;
+  const { teamId, managementRole, operationalRole, invitedBy } = input;
+  // Normalize once so duplicate-checks, storage, and accept-time comparisons agree.
+  const email = input.email.trim().toLowerCase();
 
   try {
     // Requirement 2A.5: Rate limiting (10/hour per team)
@@ -67,31 +95,6 @@ export async function createInvitation(input: CreateInvitationInput): Promise<{ 
       throw new Error("User is already a member of this team");
     }
 
-    // Check for an existing pending invitation for the same email
-    const existingInvitation = await db
-      .select({ id: teamInvitations.id })
-      .from(teamInvitations)
-      .where(and(
-        eq(teamInvitations.teamId, teamId),
-        eq(teamInvitations.email, email.toLowerCase().trim()),
-        isNull(teamInvitations.usedAt),
-        isNull(teamInvitations.cancelledAt),
-        gt(teamInvitations.expiresAt, new Date())
-      ))
-      .limit(1);
-
-    if (existingInvitation.length > 0) {
-      logTeamEvent("team.invitation.create.failure", {
-        outcome: "failure",
-        userId: invitedBy,
-        teamId,
-        errorCode: "INVITATION_ALREADY_PENDING",
-        errorMessage: "A pending invitation already exists for this email",
-        metadata: { email },
-      });
-      throw new Error("A pending invitation already exists for this email");
-    }
-
     // Generate secure token
     const token = randomBytes(32).toString("hex");
     const tokenHash = createHash("sha256").update(token).digest("hex");
@@ -99,19 +102,52 @@ export async function createInvitation(input: CreateInvitationInput): Promise<{ 
     // Requirement 2.1: 7-day expiration
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    // Create invitation
-    const [invitation] = await db
-      .insert(teamInvitations)
-      .values({
-        teamId,
-        email,
-        tokenHash,
-        managementRole: managementRole ?? null,
-        operationalRole,
-        invitedBy,
-        expiresAt,
-      })
-      .returning();
+    // Atomically: free the unique slot held by any expired pending invitation,
+    // then insert. The partial unique index on (team_id, lower(email))
+    // WHERE used_at IS NULL AND cancelled_at IS NULL is the source of truth —
+    // a 23505 here means another concurrent caller won the race.
+    let invitation: typeof teamInvitations.$inferSelect;
+    try {
+      invitation = await db.transaction(async (tx) => {
+        await tx
+          .update(teamInvitations)
+          .set({ cancelledAt: new Date() })
+          .where(and(
+            eq(teamInvitations.teamId, teamId),
+            eq(teamInvitations.email, email),
+            isNull(teamInvitations.usedAt),
+            isNull(teamInvitations.cancelledAt),
+            lte(teamInvitations.expiresAt, new Date()),
+          ));
+
+        const [row] = await tx
+          .insert(teamInvitations)
+          .values({
+            teamId,
+            email,
+            tokenHash,
+            managementRole: managementRole ?? null,
+            operationalRole,
+            invitedBy,
+            expiresAt,
+          })
+          .returning();
+        return row;
+      });
+    } catch (err) {
+      if (isUniqueViolationOnConstraint(err, ACTIVE_INVITATION_UNIQUE_INDEX)) {
+        logTeamEvent("team.invitation.create.failure", {
+          outcome: "failure",
+          userId: invitedBy,
+          teamId,
+          errorCode: "INVITATION_ALREADY_PENDING",
+          errorMessage: "A pending invitation already exists for this email",
+          metadata: { email },
+        });
+        throw new Error("A pending invitation already exists for this email");
+      }
+      throw err;
+    }
 
     // Get team and inviter info for email
     const team = await db.query.teams.findFirst({
@@ -162,7 +198,7 @@ export async function createInvitation(input: CreateInvitationInput): Promise<{ 
       const invitedUserResult = await db
         .select({ id: users.id })
         .from(users)
-        .where(eq(users.email, email.toLowerCase().trim()))
+        .where(eq(users.email, email))
         .limit(1);
 
       if (invitedUserResult[0] && team) {
@@ -195,9 +231,10 @@ export async function createInvitation(input: CreateInvitationInput): Promise<{ 
     return { invitation: invitation as unknown as Invitation, token };
   } catch (error) {
     // Log failure if not already logged
-    if (error instanceof Error && 
-        !error.message.includes("rate limit") && 
-        !error.message.includes("already a member")) {
+    if (error instanceof Error &&
+        !error.message.includes("rate limit") &&
+        !error.message.includes("already a member") &&
+        !error.message.includes("already exists")) {
       logTeamEvent("team.invitation.create.failure", {
         outcome: "error",
         userId: invitedBy,
