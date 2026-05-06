@@ -12,6 +12,7 @@ import { ProjectActions } from '../project-actions';
 const baseProps = {
   projectId: 'proj-1',
   projectName: 'Test Project',
+  canViewMembers: false,
   canManageMembers: false,
   canEditSettings: false,
   canLeaveProject: false,

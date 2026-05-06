@@ -57,6 +57,7 @@ export function ProjectDetailHeader({
   renderLeaveDialog,
 }: ProjectDetailHeaderRefactoredProps) {
   // Permission calculations
+  const canViewMembers = userRole !== null;
   const canManageMembers = userRole === 'owner' || userRole === 'editor';
   const canEditSettings = userRole === 'owner' || userRole === 'editor';
   const canLeaveProject = userRole !== null && userRole !== 'owner';
@@ -83,6 +84,7 @@ export function ProjectDetailHeader({
             projectId={project.id}
             projectName={project.name}
             userRole={userRole}
+            canViewMembers={canViewMembers}
             canManageMembers={canManageMembers}
             canEditSettings={canEditSettings}
             canLeaveProject={canLeaveProject}

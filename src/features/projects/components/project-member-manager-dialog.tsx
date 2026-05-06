@@ -287,8 +287,8 @@ export function ProjectMemberManagerDialog({
                   </div>
                 </div>
 
-                {/* Pending Invitations */}
-                {(pendingInvitations || []).length > 0 && (
+                {/* Pending Invitations — only visible to members managers */}
+                {canManageMembers && (pendingInvitations || []).length > 0 && (
                   <>
                     <Separator />
                     <div className="space-y-4">
