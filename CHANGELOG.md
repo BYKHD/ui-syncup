@@ -1,3 +1,10 @@
+## [0.8.6-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.8.6-beta.1...v0.8.6-beta.2) (2026-05-06)
+
+
+### Bug Fixes
+
+* add member viewing permissions to project actions and conditionally render issue action menu ([50b1cd0](https://github.com/BYKHD/ui-syncup/commit/50b1cd00e2723622c5c6ea7fb9c0a36f90dd306c))
+
 ## [0.8.6-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.8.5...v0.8.6-beta.1) (2026-04-21)
 
 
