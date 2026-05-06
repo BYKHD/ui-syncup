@@ -158,7 +158,20 @@ export async function POST(
       );
     }
 
-    // 2. Accept the invitation
+    // 2. Block unverified emails — accepting an invite confers project access,
+    // which we won't grant until the user has proven they own the email.
+    if (!user.emailVerified) {
+      logger.warn("api.invite.accept.email_not_verified", {
+        requestId,
+        userId: user.id,
+      });
+      return NextResponse.json(
+        { error: { code: "EMAIL_NOT_VERIFIED", message: "Please verify your email address before accepting this invitation." } },
+        { status: 403 }
+      );
+    }
+
+    // 3. Accept the invitation
     const { projectId, projectSlug } = await acceptProjectInvitation(token, user.id, user.email);
 
     logger.info("api.invite.accept.success", {
