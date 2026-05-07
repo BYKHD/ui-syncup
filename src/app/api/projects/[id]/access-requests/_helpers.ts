@@ -27,7 +27,7 @@ export function mapError(
       { error: { code: "NOT_FOUND", message: "Request not found" } },
       { status: 404 }
     );
-  if (msg.startsWith("INVALID_STATE:"))
+  if (msg === "INVALID_STATE" || msg.startsWith("INVALID_STATE:"))
     return NextResponse.json(
       { error: { code: "INVALID_STATE", message: "Request is not pending" } },
       { status: 409 }

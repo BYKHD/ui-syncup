@@ -90,6 +90,49 @@ describe('getProjectForAccessCheck', () => {
     expect(result!.project.name).toBeDefined();
   });
 
+  test('non-member, public project: returns project + hasAccess true', async () => {
+    const ts = Date.now();
+    const owner = await createTestUser(`owner-pac-public-${ts}@test.com`, 'Owner');
+    const outsider = await createTestUser(`out-pac-public-${ts}@test.com`, 'Outsider');
+    const team = await createTeam({ name: `T-pac-public-${ts}`, creatorId: owner.id });
+    testTeamIds.push(team.id);
+    const project = await createProject(
+      { teamId: team.id, name: `P-pac-public-${ts}`, key: uniqueKey(), visibility: 'public' },
+      owner.id
+    );
+    testProjectIds.push(project.id);
+
+    const result = await getProjectForAccessCheck(project.id, outsider.id);
+    expect(result).not.toBeNull();
+    expect(result!.hasAccess).toBe(true);
+    expect(result!.project.id).toBe(project.id);
+  });
+
+  test('team owner, private project: returns project + hasAccess true without project membership', async () => {
+    const ts = Date.now();
+    const teamOwner = await createTestUser(`team-owner-pac-${ts}@test.com`, 'Team Owner');
+    const projectOwner = await createTestUser(`project-owner-pac-${ts}@test.com`, 'Project Owner');
+    const team = await createTeam({ name: `T-pac-owner-${ts}`, creatorId: teamOwner.id });
+    testTeamIds.push(team.id);
+    const project = await createProject(
+      { teamId: team.id, name: `P-pac-owner-${ts}`, key: uniqueKey(), visibility: 'private' },
+      projectOwner.id
+    );
+    testProjectIds.push(project.id);
+
+    const directMembership = await db
+      .select({ userId: projectMembers.userId })
+      .from(projectMembers)
+      .where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, teamOwner.id)))
+      .limit(1);
+
+    const result = await getProjectForAccessCheck(project.id, teamOwner.id);
+    expect(directMembership).toHaveLength(0);
+    expect(result).not.toBeNull();
+    expect(result!.hasAccess).toBe(true);
+    expect(result!.project.id).toBe(project.id);
+  });
+
   test('soft-deleted project: returns null', async () => {
     const ts = Date.now();
     const owner = await createTestUser(`owner-pac3-${ts}@test.com`, 'Owner');

@@ -1,7 +1,7 @@
 ---
 title: Wiki Log
 type: log
-last_updated: 2026-05-05
+last_updated: 2026-05-07
 ---
 
 # Wiki Log
@@ -98,3 +98,23 @@ Append-only. Newest entries at the bottom. Each entry starts with `## [YYYY-MM-D
 - Registered all 3 in `render-template.tsx`: new `EmailTemplate` union members, imports, `renderTemplate` switch cases, `getEmailSubject` cases.
 - Added 3 types to `EmailJobInput.type` union in `queue.ts`.
 - TypeScript typecheck clean (`npx tsc --noEmit` produced no output).
+
+## [2026-05-07] feat | access request UI components — Wave 6 (Tasks 18 + 19)
+- Task 18: Created `AccessRequestPanel` (`src/features/projects/components/access-requests/access-request-panel.tsx`) — requester-side card with three states: form (request access with optional message), pending (cancel request), cooldown (declined within 7-day window). Exported from components barrel.
+- Task 19: Created `AccessRequestRow` + `AccessRequestList` (`src/features/projects/components/access-requests/`) — approver-side components. Row shows requester avatar/name/email/time/message with Approve+Decline buttons for pending requests. List filters to pending only, hides when empty. Both exported from components barrel.
+- Hook call signatures adapted to actual implementations (hooks take no projectId arg; params passed to mutate). Type-check clean on both tasks.
+
+## [2026-05-07] feat | project members surface access requests (Task 22)
+- Surfaced `AccessRequestList` in `ProjectMemberManagerDialog` immediately above the pending invitations section.
+- Reused the existing `canManageMembers` gate and passed the dialog's `projectId` prop.
+- TypeScript typecheck clean with `bun run typecheck`.
+
+## [2026-05-07] test | project member manager dialog access request harness
+- Fixed `ProjectMemberManagerDialog` component tests by rendering with a fresh React Query `QueryClientProvider` and seeding access-request query data.
+- Added coverage that non-managers do not see pending access requests even when request data exists.
+- Focused dialog tests and TypeScript typecheck are clean.
+
+## [2026-05-07] add | concepts/access-requests
+- Project-scoped request-to-join feature: replaces the dead-end "no permission" error on shared issue links with an in-place access-request panel.
+- Approval grants `PROJECT_VIEWER` through the project member service, which ensures baseline team operational access.
+- Race-safe via partial unique index. Three new email templates + three SSE notification kinds.

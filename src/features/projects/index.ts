@@ -19,6 +19,8 @@ export {
   useProjects,
   useProject,
   useProjectMembers,
+  useProjectAccessRequests,
+  useMyAccessRequest,
   useProjectFilters,
   projectKeys,
 } from './hooks'
@@ -33,6 +35,10 @@ export {
   useLeaveProject,
   useUpdateMemberRole,
   useRemoveMember,
+  useCreateAccessRequest,
+  useApproveAccessRequest,
+  useDeclineAccessRequest,
+  useCancelAccessRequest,
 } from './hooks'
 
 // API Functions (for advanced use cases)
@@ -47,6 +53,11 @@ export {
   leaveProject,
   updateMemberRole,
   removeMember,
+  createAccessRequest,
+  listAccessRequests,
+  approveAccessRequest,
+  declineAccessRequest,
+  cancelAccessRequest,
 } from './api'
 
 // API Types (for consumers who need request/response types)
@@ -64,6 +75,13 @@ export type {
   RemoveMemberResponse,
   DeleteProjectResponse,
   LeaveMemberResponse,
+  AccessRequest,
+  AccessRequestStatus,
+  AccessRequestWithRequester,
+  CreateAccessRequestBody,
+  CreateAccessRequestResponse,
+  ListAccessRequestsResponse,
+  AccessRequestActionResponse,
 } from './api'
 
 // Components
@@ -81,11 +99,14 @@ export {
   ProjectStats as ProjectStatsComponent,
   ProjectActions,
   ProjectLeaveButton,
+  AccessRequestPanel,
+  AccessRequestRow,
+  AccessRequestList,
 
 } from './components'
 
 // Screens
-export { ProjectsListScreen, InvitationAcceptanceScreen } from './screens'
+export { ProjectsListScreen, InvitationAcceptanceScreen, AccessRequestScreen } from './screens'
 
 // Utils
 export { formatLastActivity, getRoleDisplayName, getRoleBadgeVariant } from './utils'

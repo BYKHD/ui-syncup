@@ -2296,7 +2296,7 @@ git commit -m "feat(projects/hooks): access-request mutation + query hooks"
 - Create: `src/features/projects/components/access-requests/access-request-panel.tsx`
 - Modify: `src/features/projects/components/index.ts`
 
-- [ ] **Step 1: Implement the panel**
+- [x] **Step 1: Implement the panel**
 
 ```tsx
 "use client";
@@ -2376,7 +2376,7 @@ export function AccessRequestPanel({ projectId, projectName, teamName, existingR
 }
 ```
 
-- [ ] **Step 2: Re-export from barrel**
+- [x] **Step 2: Re-export from barrel**
 
 In `src/features/projects/components/index.ts` (explicit named exports):
 
@@ -2384,7 +2384,7 @@ In `src/features/projects/components/index.ts` (explicit named exports):
 export { AccessRequestPanel } from "./access-requests/access-request-panel";
 ```
 
-- [ ] **Step 3: Type-check & commit**
+- [x] **Step 3: Type-check & commit**
 
 ```bash
 bun run typecheck
@@ -2402,7 +2402,7 @@ git commit -m "feat(projects): AccessRequestPanel (requester UI)"
 - Create: `src/features/projects/components/access-requests/access-request-list.tsx`
 - Modify: `src/features/projects/components/index.ts`
 
-- [ ] **Step 1: Implement row**
+- [x] **Step 1: Implement row**
 
 ```tsx
 "use client";
@@ -2457,7 +2457,7 @@ export function AccessRequestRow({
 }
 ```
 
-- [ ] **Step 2: Implement list**
+- [x] **Step 2: Implement list**
 
 ```tsx
 "use client";
@@ -2486,14 +2486,14 @@ export function AccessRequestList({ projectId }: { projectId: string }) {
 }
 ```
 
-- [ ] **Step 3: Re-export**
+- [x] **Step 3: Re-export**
 
 ```ts
 export { AccessRequestRow } from "./access-requests/access-request-row";
 export { AccessRequestList } from "./access-requests/access-request-list";
 ```
 
-- [ ] **Step 4: Type-check & commit**
+- [x] **Step 4: Type-check & commit**
 
 ```bash
 bun run typecheck
@@ -2509,7 +2509,7 @@ git commit -m "feat(projects): AccessRequestList + AccessRequestRow (approver UI
 - Create: `src/features/projects/screens/access-request-screen.tsx`
 - Modify: `src/features/projects/screens/index.ts`
 
-- [ ] **Step 1: Implement**
+- [x] **Step 1: Implement**
 
 ```tsx
 import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/shared/headers";
@@ -2544,17 +2544,17 @@ export function AccessRequestScreen({ project, teamName, existingRequest }: Prop
 }
 ```
 
-- [ ] **Step 2: Re-export**
+- [x] **Step 2: Re-export**
 
 ```ts
 export { AccessRequestScreen } from "./access-request-screen";
 ```
 
-- [ ] **Step 3: Surface from feature root**
+- [x] **Step 3: Surface from feature root**
 
 In `src/features/projects/index.ts`, ensure the new screen + components + hooks are reachable through the existing feature barrel.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add src/features/projects/screens/ src/features/projects/index.ts
@@ -2569,7 +2569,7 @@ git commit -m "feat(projects): AccessRequestScreen wires panel into page chrome"
 - Modify: `src/app/(protected)/(team)/(routes)/issue/[issueKey]/page.tsx`
 - Modify: `src/app/(protected)/(verified)/(team)/(routes)/issue/[issueKey]/page.tsx`
 
-- [ ] **Step 1: Add a helper that returns `{ pending, lastDeclined } | null` for a (project, user) pair**
+- [x] **Step 1: Add a helper that returns `{ pending, lastDeclined } | null` for a (project, user) pair**
 
 Append to `src/server/projects/access-request-service.ts`:
 
@@ -2601,7 +2601,7 @@ export async function getMyLatestAccessRequest(
 
 Re-export from `src/server/projects/index.ts`.
 
-- [ ] **Step 2: Modify the unverified issue page**
+- [x] **Step 2: Modify the unverified issue page**
 
 Replace the current body of `src/app/(protected)/(team)/(routes)/issue/[issueKey]/page.tsx` `IssuePage` so the access-denied branch renders the access-request screen instead of throwing:
 
@@ -2643,11 +2643,11 @@ const project = await getProject(issue.projectId, userId);
 
 (The original `getProject` call still runs after the access check so the rest of the page logic — permissions derivation, breadcrumbs — remains unchanged for the access-granted case.)
 
-- [ ] **Step 3: Same change to the verified variant**
+- [x] **Step 3: Same change to the verified variant** _(skipped — route variant is absent in this checkout)_
 
 Apply the identical change to `src/app/(protected)/(verified)/(team)/(routes)/issue/[issueKey]/page.tsx`.
 
-- [ ] **Step 4: Manual smoke test**
+- [x] **Step 4: Manual smoke test** _(automated verification used instead: focused integration/component tests + typecheck)_
 
 Start dev server: `bun run dev`
 
@@ -2661,7 +2661,7 @@ In browser:
 7. As user A in another browser: project members page shows the new request → click Approve.
 8. Back as user B: refresh `/issue/PRJ-1` → issue renders normally.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add src/app/\(protected\)/\(team\)/\(routes\)/issue/\[issueKey\]/page.tsx \
@@ -2678,13 +2678,13 @@ git commit -m "feat(issue): show AccessRequestPanel for non-members on shared li
 **Files:**
 - Modify: `src/features/projects/screens/project-detail-screen.tsx` (or whichever screen renders the members tab — confirm via grep)
 
-- [ ] **Step 1: Locate the pending-invitations section**
+- [x] **Step 1: Locate the pending-invitations section**
 
 Run: `grep -n "invitations\|InvitationList\|pending" src/features/projects/screens/project-detail-screen.tsx src/features/projects/components/project-member-manager-dialog.tsx`
 
 Find the place that renders the invitations list. The new `<AccessRequestList>` goes immediately above it.
 
-- [ ] **Step 2: Insert AccessRequestList**
+- [x] **Step 2: Insert AccessRequestList**
 
 Import:
 
@@ -2700,11 +2700,11 @@ Insert above the invitations section, gated by approver permission (use existing
 
 (`canManageMembers` is the existing variable used for the invitations section. If it doesn't exist with that name, follow the pattern actually used — search for `PROJECT_MANAGE_MEMBERS` or the role check the screen already does.)
 
-- [ ] **Step 3: Smoke test**
+- [x] **Step 3: Smoke test** _(automated verification used instead: focused component test + typecheck)_
 
 In dev: as project owner, visit `/{team}/{project}` members tab. Verify the new "Access requests" section appears once a pending request exists, and disappears when none.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add src/features/projects/screens/project-detail-screen.tsx
@@ -2718,7 +2718,7 @@ git commit -m "feat(projects): surface AccessRequestList on members tab"
 **Files:**
 - Create: `e2e/access-request-flow.spec.ts` (path may differ — confirm via `find . -name "*.spec.ts" -path "*e2e*"`)
 
-- [ ] **Step 1: Write the spec**
+- [x] **Step 1: Write the spec**
 
 ```ts
 import { test, expect } from "@playwright/test";
@@ -2755,13 +2755,13 @@ test("non-member requests access from issue link → approver approves → reque
 });
 ```
 
-- [ ] **Step 2: Run**
+- [x] **Step 2: Run**
 
 Run: `bun run e2e -- access-request-flow.spec.ts` (replace with whatever the project's e2e command is — see `package.json`).
 
 Expected: PASS.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add e2e/
@@ -2778,7 +2778,7 @@ git commit -m "test(e2e): access-request golden path"
 - Modify: `.ai/wiki/features/projects.md`
 - Modify: `.ai/wiki/log.md`
 
-- [ ] **Step 1: Create concept page**
+- [x] **Step 1: Create concept page**
 
 `.ai/wiki/concepts/access-requests.md`:
 
@@ -2830,7 +2830,7 @@ Public projects (visibility = 'public') auto-join via existing `joinProject`; th
 - Entities: [[entities/project]], [[entities/user]]
 ```
 
-- [ ] **Step 2: Update index**
+- [x] **Step 2: Update index**
 
 Add to `.ai/wiki/index.md` under Concepts:
 
@@ -2840,7 +2840,7 @@ Add to `.ai/wiki/index.md` under Concepts:
 
 Bump the concept count and total in the summary table at the bottom.
 
-- [ ] **Step 3: Update projects feature page**
+- [x] **Step 3: Update projects feature page**
 
 In `.ai/wiki/features/projects.md`, append to the API and Hooks sections:
 
@@ -2854,7 +2854,7 @@ Access requests: `create-access-request`, `list-access-requests`, `approve-acces
 
 Append a new "## Access requests" section linking to `[[concepts/access-requests]]`.
 
-- [ ] **Step 4: Append log entry**
+- [x] **Step 4: Append log entry**
 
 Append to `.ai/wiki/log.md`:
 
@@ -2863,7 +2863,7 @@ Append to `.ai/wiki/log.md`:
 Project-scoped request-to-join feature: replaces the dead-end "no permission" error on shared issue links with an in-place access-request panel. Reuses joinProject for approval (auto-team-membership preserved). Race-safe via partial unique index. Three new email templates + three SSE notification kinds.
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add .ai/wiki/

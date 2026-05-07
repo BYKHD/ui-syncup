@@ -205,6 +205,29 @@ export function rowToAccessRequest(row: typeof projectAccessRequests.$inferSelec
   };
 }
 
+export async function getMyLatestAccessRequest(
+  projectId: string,
+  userId: string
+): Promise<AccessRequest | null> {
+  const [row] = await db
+    .select()
+    .from(projectAccessRequests)
+    .where(
+      and(
+        eq(projectAccessRequests.projectId, projectId),
+        eq(projectAccessRequests.requesterUserId, userId),
+        or(
+          eq(projectAccessRequests.status, "pending"),
+          eq(projectAccessRequests.status, "declined")
+        )!
+      )
+    )
+    .orderBy(desc(projectAccessRequests.createdAt))
+    .limit(1);
+
+  return row ? rowToAccessRequest(row) : null;
+}
+
 /**
  * List access requests for a project.
  *

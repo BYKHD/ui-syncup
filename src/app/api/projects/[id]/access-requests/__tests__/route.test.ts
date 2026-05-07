@@ -260,7 +260,7 @@ describe('POST /api/projects/[id]/access-requests/[requestId]/approve', () => {
   });
 
   it('409 invalid state', async () => {
-    mockApproveAccessRequest.mockRejectedValue(new Error('INVALID_STATE:cancelled'));
+    mockApproveAccessRequest.mockRejectedValue(new Error('INVALID_STATE'));
     const res = await approvePost(makeRequestIdRequest('POST'), {
       params: Promise.resolve({ id: 'proj-1', requestId: 'req-1' }),
     });
@@ -331,7 +331,7 @@ describe('POST /api/projects/[id]/access-requests/[requestId]/decline', () => {
   });
 
   it('409 invalid state', async () => {
-    mockDeclineAccessRequest.mockRejectedValue(new Error('INVALID_STATE:approved'));
+    mockDeclineAccessRequest.mockRejectedValue(new Error('INVALID_STATE'));
     const res = await declinePost(makeRequestIdRequest('POST'), {
       params: Promise.resolve({ id: 'proj-1', requestId: 'req-1' }),
     });
@@ -398,6 +398,16 @@ describe('DELETE /api/projects/[id]/access-requests/[requestId]', () => {
     expect(res.status).toBe(404);
     const data = await res.json();
     expect(data.error.code).toBe('NOT_FOUND');
+  });
+
+  it('409 invalid state', async () => {
+    mockCancelAccessRequest.mockRejectedValue(new Error('INVALID_STATE'));
+    const res = await cancelDelete(makeRequestIdRequest('DELETE'), {
+      params: Promise.resolve({ id: 'proj-1', requestId: 'req-1' }),
+    });
+    expect(res.status).toBe(409);
+    const data = await res.json();
+    expect(data.error.code).toBe('INVALID_STATE');
   });
 
   it('500 on unexpected error', async () => {

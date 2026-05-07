@@ -147,15 +147,15 @@ export async function isAuthenticated(page: Page): Promise<boolean> {
  */
 export async function createAuthenticatedSession(
   context: BrowserContext,
-  sessionToken: string
+  sessionToken: string,
+  baseURL: string = process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${process.env.PORT ?? '3000'}`
 ): Promise<void> {
   // Add session cookie to context
   await context.addCookies([
     {
-      name: 'session',
+      name: 'session_token',
       value: sessionToken,
-      domain: 'localhost',
-      path: '/',
+      url: baseURL,
       httpOnly: true,
       secure: false, // Set to true for HTTPS
       sameSite: 'Lax',

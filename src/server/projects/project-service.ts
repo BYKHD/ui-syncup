@@ -511,13 +511,7 @@ export async function getProjectForAccessCheck(
   });
   if (!projectRow) return null;
 
-  const member = await db
-    .select({ userId: projectMembers.userId })
-    .from(projectMembers)
-    .where(
-      and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId))
-    )
-    .limit(1);
+  const hasAccess = await canAccessProject(userId, projectRow);
 
   return {
     project: {
@@ -527,6 +521,6 @@ export async function getProjectForAccessCheck(
       teamId: projectRow.teamId,
       visibility: projectRow.visibility,
     },
-    hasAccess: member.length > 0,
+    hasAccess,
   };
 }

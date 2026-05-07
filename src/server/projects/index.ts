@@ -17,5 +17,6 @@ export {
   declineAccessRequest,
   cancelAccessRequest,
   supersedePendingRequests,
+  getMyLatestAccessRequest,
 } from "./access-request-service";
 export { getProjectForAccessCheck } from "./project-service";
