@@ -717,6 +717,10 @@ export async function acceptProjectInvitation(
     await ensureOperationalRole(userId, project.teamId, TEAM_OPERATIONAL_ROLES.TEAM_VIEWER);
   }
 
+  // Resolve any in-flight access request now that membership is realized.
+  const { supersedePendingRequests } = await import("./access-request-service");
+  await supersedePendingRequests(invitation.projectId, userId);
+
   logger.info("project.invitation.accepted", {
     invitationId: invitation.id,
     projectId: invitation.projectId,
@@ -982,6 +986,10 @@ export async function acceptProjectInvitationById(
   } else {
     await ensureOperationalRole(userId, project.teamId, TEAM_OPERATIONAL_ROLES.TEAM_VIEWER);
   }
+
+  // Resolve any in-flight access request now that membership is realized.
+  const { supersedePendingRequests } = await import("./access-request-service");
+  await supersedePendingRequests(invitation.projectId, userId);
 
   logger.info("project.invitation.accepted_by_id", {
     invitationId: invitation.id,

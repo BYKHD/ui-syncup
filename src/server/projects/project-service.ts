@@ -489,3 +489,44 @@ async function getUserProjectRole(
 
   return membership?.role ?? null;
 }
+
+/**
+ * Read a project for the access-check branching path.
+ *
+ * Unlike getProject, this does NOT throw on access-denied — it returns
+ * `{ project, hasAccess: false }` so the caller can render an access-request
+ * panel with the project's display fields while the user is still a non-member.
+ *
+ * Returns null if the project is missing or soft-deleted.
+ */
+export async function getProjectForAccessCheck(
+  projectId: string,
+  userId: string
+): Promise<{
+  project: { id: string; name: string; slug: string; teamId: string; visibility: string };
+  hasAccess: boolean;
+} | null> {
+  const projectRow = await db.query.projects.findFirst({
+    where: and(eq(projects.id, projectId), isNull(projects.deletedAt)),
+  });
+  if (!projectRow) return null;
+
+  const member = await db
+    .select({ userId: projectMembers.userId })
+    .from(projectMembers)
+    .where(
+      and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId))
+    )
+    .limit(1);
+
+  return {
+    project: {
+      id: projectRow.id,
+      name: projectRow.name,
+      slug: projectRow.slug,
+      teamId: projectRow.teamId,
+      visibility: projectRow.visibility,
+    },
+    hasAccess: member.length > 0,
+  };
+}

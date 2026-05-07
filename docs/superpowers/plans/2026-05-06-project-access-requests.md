@@ -275,7 +275,7 @@ PERMISSIONS.PROJECT_ACCESS_REQUEST_APPROVE,
 - Create: `src/server/projects/access-request-service.ts`
 - Create: `src/server/projects/__tests__/access-request-service.integration.test.ts`
 
-- [ ] **Step 1: Write integration tests for create**
+- [x] **Step 1: Write integration tests for create**
 
 Create `src/server/projects/__tests__/access-request-service.integration.test.ts` with the test scaffolding (cleanup arrays, helpers — copy the shape of `invitation-service.integration.test.ts`) plus these cases:
 
@@ -370,13 +370,13 @@ describe('createAccessRequest', () => {
 });
 ```
 
-- [ ] **Step 2: Run tests — they should fail with module-not-found**
+- [x] **Step 2: Run tests — they should fail with module-not-found**
 
 Run: `bun run test src/server/projects/__tests__/access-request-service.integration.test.ts`
 
 Expected: FAIL — `Cannot find module '@/server/projects/access-request-service'` (or similar). This is the RED state.
 
-- [ ] **Step 3: Implement `createAccessRequest`**
+- [x] **Step 3: Implement `createAccessRequest`**
 
 Create `src/server/projects/access-request-service.ts`:
 
@@ -502,13 +502,13 @@ function rowToAccessRequest(row: typeof projectAccessRequests.$inferSelect): Acc
 }
 ```
 
-- [ ] **Step 4: Run tests — they should now pass**
+- [x] **Step 4: Run tests — they should now pass**
 
 Run: `bun run test src/server/projects/__tests__/access-request-service.integration.test.ts -t createAccessRequest`
 
 Expected: PASS, all 6 cases green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add src/server/projects/access-request-service.ts \
@@ -524,7 +524,7 @@ git commit -m "feat(projects): createAccessRequest with race-safe pending unique
 - Modify: `src/server/projects/access-request-service.ts`
 - Modify: `src/server/projects/__tests__/access-request-service.integration.test.ts`
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Append a new `describe('listAccessRequests', ...)` block:
 
@@ -551,12 +551,12 @@ describe('listAccessRequests', () => {
 });
 ```
 
-- [ ] **Step 2: Run — RED**
+- [x] **Step 2: Run — RED**
 
 Run: `bun run test src/server/projects/__tests__/access-request-service.integration.test.ts -t listAccessRequests`
 Expected: FAIL — `listAccessRequests is not a function`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Append to `src/server/projects/access-request-service.ts`:
 
@@ -632,12 +632,12 @@ export async function listAccessRequests(
 
 (The `requesterAlias` / `deciderAlias` aliases are written for clarity; if Drizzle complains about double-aliasing of `users`, switch the decider join to a follow-up query as shown — keeps it simple and avoids `alias`/`subqueryAs` ceremony.)
 
-- [ ] **Step 4: Run — GREEN**
+- [x] **Step 4: Run — GREEN**
 
 Run: `bun run test src/server/projects/__tests__/access-request-service.integration.test.ts -t listAccessRequests`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add src/server/projects/access-request-service.ts \
@@ -653,7 +653,7 @@ git commit -m "feat(projects): listAccessRequests with RBAC guard"
 - Modify: `src/server/projects/access-request-service.ts`
 - Modify: `src/server/projects/__tests__/access-request-service.integration.test.ts`
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Append:
 
@@ -715,11 +715,11 @@ describe('approveAccessRequest', () => {
 });
 ```
 
-- [ ] **Step 2: Run — RED**
+- [x] **Step 2: Run — RED**
 
 Expected: `approveAccessRequest is not a function`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Append to `src/server/projects/access-request-service.ts`:
 
@@ -819,11 +819,11 @@ export async function approveAccessRequest(
 
 **Verify there is no import cycle:** `joinProject` lives in `member-service.ts`; `access-request-service.ts` imports it. `member-service.ts` does NOT (yet) import from `access-request-service.ts`. The supersede integration in Task 8 introduces a back-edge — handled there with a dynamic import to keep the cycle broken.
 
-- [ ] **Step 4: Run — GREEN**
+- [x] **Step 4: Run — GREEN**
 
 Run: `bun run test src/server/projects/__tests__/access-request-service.integration.test.ts -t approveAccessRequest`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add src/server/projects/access-request-service.ts \
@@ -839,7 +839,7 @@ git commit -m "feat(projects): approveAccessRequest reuses joinProject"
 - Modify: `src/server/projects/access-request-service.ts`
 - Modify: `src/server/projects/__tests__/access-request-service.integration.test.ts`
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 ```ts
 import { declineAccessRequest } from '@/server/projects/access-request-service';
@@ -872,9 +872,9 @@ describe('declineAccessRequest', () => {
 });
 ```
 
-- [ ] **Step 2: Run — RED**
+- [x] **Step 2: Run — RED**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```ts
 const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
@@ -939,9 +939,9 @@ export async function declineAccessRequest(
 }
 ```
 
-- [ ] **Step 4: Run — GREEN**
+- [x] **Step 4: Run — GREEN**
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add src/server/projects/access-request-service.ts \
@@ -957,7 +957,7 @@ git commit -m "feat(projects): declineAccessRequest with 7-day cooldown"
 - Modify: `src/server/projects/access-request-service.ts`
 - Modify: `src/server/projects/__tests__/access-request-service.integration.test.ts`
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 ```ts
 import { cancelAccessRequest } from '@/server/projects/access-request-service';
@@ -984,9 +984,9 @@ describe('cancelAccessRequest', () => {
 });
 ```
 
-- [ ] **Step 2: Run — RED**
+- [x] **Step 2: Run — RED**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```ts
 export async function cancelAccessRequest(
@@ -1024,9 +1024,9 @@ export async function cancelAccessRequest(
 }
 ```
 
-- [ ] **Step 4: Run — GREEN**
+- [x] **Step 4: Run — GREEN**
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add src/server/projects/access-request-service.ts \
@@ -1044,7 +1044,7 @@ git commit -m "feat(projects): cancelAccessRequest (requester self-cancel)"
 - Modify: `src/server/projects/invitation-service.ts`
 - Modify: `src/server/projects/__tests__/access-request-service.integration.test.ts`
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 ```ts
 import { acceptProjectInvitation, createProjectInvitation } from '@/server/projects/invitation-service';
@@ -1075,11 +1075,11 @@ describe('supersedePendingRequests integration', () => {
 });
 ```
 
-- [ ] **Step 2: Run — RED**
+- [x] **Step 2: Run — RED**
 
 The first test fails because `joinProject` does not yet supersede. The second test fails because `acceptProjectInvitation` does not yet supersede.
 
-- [ ] **Step 3: Implement supersede helper**
+- [x] **Step 3: Implement supersede helper**
 
 Append to `src/server/projects/access-request-service.ts`:
 
@@ -1108,7 +1108,7 @@ export async function supersedePendingRequests(
 }
 ```
 
-- [ ] **Step 4: Wire into `joinProject`**
+- [x] **Step 4: Wire into `joinProject`**
 
 In `src/server/projects/member-service.ts`, find `export async function joinProject(` (line ~338). After the project_members insert and the team-membership grant succeed, but before the function returns, add:
 
@@ -1120,7 +1120,7 @@ const { supersedePendingRequests } = await import("./access-request-service");
 await supersedePendingRequests(projectId, userId);
 ```
 
-- [ ] **Step 5: Wire into invitation acceptance**
+- [x] **Step 5: Wire into invitation acceptance**
 
 In `src/server/projects/invitation-service.ts`, in **both** `acceptProjectInvitation` and `acceptProjectInvitationById`, after the transaction commits and the team-role bump runs, add the same dynamic-import call:
 
@@ -1131,7 +1131,7 @@ await supersedePendingRequests(invitation.projectId, userId);
 
 (Two call sites — same line, same intent. No DRYing needed for two lines.)
 
-- [ ] **Step 6: Run — GREEN**
+- [x] **Step 6: Run — GREEN**
 
 Run: `bun run test src/server/projects/__tests__/access-request-service.integration.test.ts -t supersedePendingRequests`
 
@@ -1140,7 +1140,7 @@ Also run the existing invitation tests to ensure no regression:
 
 Both expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add src/server/projects/access-request-service.ts \
@@ -1158,13 +1158,13 @@ git commit -m "feat(projects): supersede pending access requests on join/accept"
 - Modify: `src/server/projects/project-service.ts`
 - Modify: existing project-service tests OR add a new test file
 
-- [ ] **Step 1: Inspect existing tests**
+- [x] **Step 1: Inspect existing tests**
 
 Run: `ls src/server/projects/__tests__/project-service.*` to see whether to add to property tests or create a new integration-style test. If only property tests exist, create a new file:
 
 `src/server/projects/__tests__/project-service.access-check.integration.test.ts`
 
-- [ ] **Step 2: Write tests**
+- [x] **Step 2: Write tests**
 
 ```ts
 import { describe, test, expect } from 'vitest';
@@ -1199,9 +1199,9 @@ describe('getProjectForAccessCheck', () => {
 });
 ```
 
-- [ ] **Step 3: Run — RED**
+- [x] **Step 3: Run — RED**
 
-- [ ] **Step 4: Implement**
+- [x] **Step 4: Implement**
 
 Add to `src/server/projects/project-service.ts`:
 
@@ -1248,9 +1248,9 @@ export async function getProjectForAccessCheck(
 
 (Pull the existing `db`, `projects`, `projectMembers`, `eq`, `and`, `isNull` imports from the top of the file — they should already be there. Add any missing.)
 
-- [ ] **Step 5: Run — GREEN**
+- [x] **Step 5: Run — GREEN**
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add src/server/projects/project-service.ts \
@@ -1265,7 +1265,7 @@ git commit -m "feat(projects): getProjectForAccessCheck returns hasAccess flag"
 **Files:**
 - Modify: `src/server/projects/index.ts`
 
-- [ ] **Step 1: Add re-exports**
+- [x] **Step 1: Add re-exports**
 
 Append to `src/server/projects/index.ts`:
 
@@ -1281,13 +1281,13 @@ export {
 export { getProjectForAccessCheck } from "./project-service";
 ```
 
-- [ ] **Step 2: Type-check**
+- [x] **Step 2: Type-check**
 
 Run: `bun run typecheck` (or `bun run build` if that's the project's type-check entrypoint — see `package.json` scripts).
 
 Expected: no new errors.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add src/server/projects/index.ts

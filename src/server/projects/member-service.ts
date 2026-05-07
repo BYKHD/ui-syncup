@@ -367,7 +367,15 @@ export async function joinProject(
   }
 
   // Add as viewer
-  return addMember(projectId, userId, PROJECT_ROLES.PROJECT_VIEWER, teamId);
+  const member = await addMember(projectId, userId, PROJECT_ROLES.PROJECT_VIEWER, teamId);
+
+  // Resolve any in-flight access request now that membership is realized.
+  // Dynamic import avoids an import cycle (access-request-service imports
+  // addMember from this file).
+  const { supersedePendingRequests } = await import("./access-request-service");
+  await supersedePendingRequests(projectId, userId);
+
+  return member;
 }
 
 /**
