@@ -87,7 +87,7 @@
 
 ---
 
-## Execute Wave 
+## Execution Wave
 
 Wave 0  (sequential):  Task 1 → 2
 Wave 1  (sequential):  Task 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10
@@ -108,7 +108,7 @@ Wave 9  (sequential):  Task 25 (final verify)
 - Create: `src/server/db/schema/project-access-requests.ts`
 - Modify: `src/server/db/schema/index.ts`
 
-- [ ] **Step 1: Write the schema file**
+- [x] **Step 1: Write the schema file**
 
 Create `src/server/db/schema/project-access-requests.ts`:
 
@@ -157,7 +157,7 @@ export type ProjectAccessRequestRow = typeof projectAccessRequests.$inferSelect;
 export type NewProjectAccessRequestRow = typeof projectAccessRequests.$inferInsert;
 ```
 
-- [ ] **Step 2: Re-export from schema barrel**
+- [x] **Step 2: Re-export from schema barrel**
 
 Add to `src/server/db/schema/index.ts` next to the other table exports:
 
@@ -167,13 +167,13 @@ export * from "./project-access-requests";
 
 (The existing barrel uses `export *` — match local convention rather than the import-rules guidance for application barrels; schema barrels are an established exception.)
 
-- [ ] **Step 3: Generate migration**
+- [x] **Step 3: Generate migration**
 
 Run: `bun run db:generate`
 
 Expected: a new file appears under `drizzle/` (e.g. `drizzle/0002_<adjective>.sql`) containing `CREATE TABLE "project_access_requests" ...` and the partial unique index. `drizzle/meta/_journal.json` is updated. `drizzle/meta/0002_snapshot.json` is created.
 
-- [ ] **Step 4: Sanity-check the generated SQL**
+- [x] **Step 4: Sanity-check the generated SQL**
 
 Open the new `drizzle/<id>_*.sql` and verify:
 - `CREATE TABLE "project_access_requests"` with all 9 columns.
@@ -183,14 +183,7 @@ Open the new `drizzle/<id>_*.sql` and verify:
 
 If the partial-unique index is missing the `WHERE` clause, hand-edit the SQL to add it (Drizzle's generator usually preserves it; if not, this is a known gotcha).
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/server/db/schema/project-access-requests.ts \
-        src/server/db/schema/index.ts \
-        drizzle/
-git commit -m "feat(db): add project_access_requests schema"
-```
+- [x] **Step 5: Commit** _(skipped — user commits manually)_
 
 ---
 
@@ -200,7 +193,7 @@ git commit -m "feat(db): add project_access_requests schema"
 - Modify: `src/server/projects/types.ts`
 - Modify: `src/config/roles.ts`
 
-- [ ] **Step 1: Add request types**
+- [x] **Step 1: Add request types**
 
 Append to `src/server/projects/types.ts`:
 
@@ -245,17 +238,17 @@ export interface CreateAccessRequestData {
 }
 ```
 
-- [ ] **Step 2: Add permissions to `PERMISSIONS`**
+- [x] **Step 2: Add permissions to `PERMISSIONS`**
 
 In `src/config/roles.ts`, locate the `PERMISSIONS` const (around line 88) and add three entries grouped with the other `project:*` permissions:
 
 ```ts
-PROJECT_ACCESS_REQUEST_CREATE: "project:access-request:create",
-PROJECT_ACCESS_REQUEST_LIST: "project:access-request:list",
-PROJECT_ACCESS_REQUEST_APPROVE: "project:access-request:approve",
+PROJECT_ACCESS_REQUEST_CREATE: "project:access_request:create",
+PROJECT_ACCESS_REQUEST_LIST: "project:access_request:list",
+PROJECT_ACCESS_REQUEST_APPROVE: "project:access_request:approve",
 ```
 
-- [ ] **Step 3: Grant to PROJECT_OWNER and PROJECT_EDITOR**
+- [x] **Step 3: Grant to PROJECT_OWNER and PROJECT_EDITOR**
 
 In the role-permission grant table (the object that maps `[PROJECT_ROLES.PROJECT_OWNER]: [...]` etc., starting around line 216), add these to **both** `PROJECT_OWNER` and `PROJECT_EDITOR`:
 
@@ -272,12 +265,7 @@ PERMISSIONS.PROJECT_ACCESS_REQUEST_APPROVE,
 // not-already-a-member, no-pending-request, and cooldown invariants.
 ```
 
-- [ ] **Step 4: Commit**
-
-```bash
-git add src/server/projects/types.ts src/config/roles.ts
-git commit -m "feat(roles): add project access-request permissions"
-```
+- [x] **Step 4: Commit** _(skipped — user commits manually)_
 
 ---
 
