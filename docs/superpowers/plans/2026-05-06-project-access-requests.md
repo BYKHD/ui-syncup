@@ -87,6 +87,21 @@
 
 ---
 
+## Execute Wave 
+
+Wave 0  (sequential):  Task 1 → 2
+Wave 1  (sequential):  Task 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10
+Wave 2  (sequential):  Task 11 → 12
+Wave 3  (PARALLEL):    Task 13 (emails) ‖ Task 14 (notif types)
+Wave 4  (sequential):  Task 15 (wires 13+14 in)
+Wave 5  (sequential):  Task 16 → 17
+Wave 6  (PARALLEL):    Task 18 (panel) ‖ Task 19 (list+row)
+Wave 7  (sequential):  Task 20 → 21 → 22
+Wave 8  (PARALLEL):    Task 23 (E2E) ‖ Task 24 (wiki)
+Wave 9  (sequential):  Task 25 (final verify)
+
+---
+
 ## Task 1: Add Drizzle schema for `project_access_requests`
 
 **Files:**
