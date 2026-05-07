@@ -155,6 +155,15 @@ function getToastMessage(notification: Notification): string {
     case 'role_updated':
       return `Your role was updated${metadata.new_role ? ` to ${metadata.new_role}` : ''}`
 
+    case 'project_access_request_created':
+      return `${metadata.requester_name ?? 'Someone'} requested access to ${metadata.project_name || 'a project'}`
+
+    case 'project_access_request_approved':
+      return `Your access request to ${metadata.project_name || 'a project'} was approved`
+
+    case 'project_access_request_declined':
+      return `Your access request to ${metadata.project_name || 'a project'} was not approved`
+
     default:
       return 'New notification'
   }

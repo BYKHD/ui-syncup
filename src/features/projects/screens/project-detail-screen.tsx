@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { IssuesCreateDialog, type ImageData } from "@/features/issues/components/issues-create-dialog";
 import { useCreateIssue, uploadAttachment } from "@/features/issues";
 import { ProjectMemberManagerDialog } from "../components/project-member-manager-dialog";
@@ -58,7 +58,11 @@ export default function ProjectDetailScreen({
 }: ProjectDetailScreenProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { addRecentProject } = useRecentProjects();
+
+  // Controlled open state for the member dialog — driven by ?open=members URL param
+  const [memberDialogOpen, setMemberDialogOpen] = useState(false);
 
   useEffect(() => {
     if (project) {
@@ -145,6 +149,20 @@ export default function ProjectDetailScreen({
 
   const { mutateAsync: revokeInvitationMutation } = useRevokeInvitation();
   const { mutateAsync: resendInvitationMutation } = useResendInvitation();
+
+  // Auto-open member dialog and enable data hooks when ?open=members is in the URL
+  useEffect(() => {
+    if (searchParams.get('open') === 'members') {
+      setMemberDialogOpen(true);
+      setMemberDialogOpened(true);
+      refetchMembers();
+      refetchInvitations();
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('open');
+      const newUrl = params.size > 0 ? `${pathname}?${params}` : pathname;
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [searchParams, pathname, router, refetchMembers, refetchInvitations]);
 
   // Transform API members to dialog format
   const members = useMemo(() => {
@@ -645,6 +663,11 @@ export default function ProjectDetailScreen({
             {trigger}
           </ProjectLeaveButton>
         )}
+        memberDialogOpen={memberDialogOpen}
+        onMemberDialogOpenChange={(open) => {
+          setMemberDialogOpen(open);
+          handleMemberDialogOpen(open);
+        }}
       />
 
       <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">

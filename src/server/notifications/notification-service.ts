@@ -167,9 +167,9 @@ export function buildTargetUrl(
       return team_slug ? `/team/${team_slug}/settings/members` : "/team/settings/members";
 
     case "project_access_request_created":
-      // Approver notification — deep-link to members tab, requests pane
-      return metadata.project_slug && metadata.team_slug
-        ? `/${metadata.team_slug}/${metadata.project_slug}?tab=requests`
+      // Approver notification — open member manager dialog to the requests section
+      return metadata.project_slug
+        ? `/${metadata.project_slug}?open=members`
         : "/";
 
     case "project_access_request_approved":
@@ -265,6 +265,18 @@ export async function createNotification(
       type: data.type,
       recipientId: data.recipientId,
     });
+
+    // Fire pg_notify so pg-listener can forward to Redis → SSE clients.
+    // Non-fatal: if this fails the badge will update via 30-second polling fallback.
+    try {
+      const payload = JSON.stringify({ id: created.id, user_id: data.recipientId });
+      await db.execute(sql`SELECT pg_notify('new_notification', ${payload})`);
+    } catch (notifyErr) {
+      logger.warn("pg_notify failed — SSE push skipped", {
+        notificationId: created.id,
+        error: notifyErr instanceof Error ? notifyErr.message : String(notifyErr),
+      });
+    }
 
     return transformNotification(created);
   } catch (error) {

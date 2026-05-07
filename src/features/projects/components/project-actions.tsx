@@ -51,6 +51,9 @@ interface ProjectActionsProps {
   renderMemberDialog?: (props: { trigger: React.ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => React.ReactNode;
   renderSettingsDialog?: (props: { trigger: React.ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => React.ReactNode;
   renderLeaveDialog?: (props: { trigger: React.ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => React.ReactNode;
+  // Optional controlled open state for member dialog (used when opened from notification URL)
+  memberDialogOpen?: boolean;
+  onMemberDialogOpenChange?: (open: boolean) => void;
 }
 
 /**
@@ -76,9 +79,20 @@ export function ProjectActions({
   renderMemberDialog,
   renderSettingsDialog,
   renderLeaveDialog,
+  memberDialogOpen: controlledMemberOpen,
+  onMemberDialogOpenChange,
 }: ProjectActionsProps) {
   // Dialog states
-  const [showMemberDialog, setShowMemberDialog] = useState(false);
+  const [internalMemberDialogOpen, setInternalMemberDialogOpen] = useState(false);
+  const isControlled = controlledMemberOpen !== undefined;
+  const showMemberDialog = isControlled ? controlledMemberOpen : internalMemberDialogOpen;
+  const setShowMemberDialog = (open: boolean) => {
+    if (isControlled) {
+      onMemberDialogOpenChange?.(open);
+    } else {
+      setInternalMemberDialogOpen(open);
+    }
+  };
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);

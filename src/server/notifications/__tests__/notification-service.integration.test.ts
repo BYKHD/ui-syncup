@@ -151,6 +151,21 @@ describe("Notification Service", () => {
       });
       expect(url).toBe("/custom/path");
     });
+
+    it("should build URL for project_access_request_created with project_slug", () => {
+      const url = buildTargetUrl("project_access_request_created", {
+        project_slug: "demo-project",
+        team_slug: "local-team",
+      });
+      expect(url).toBe("/demo-project?open=members");
+    });
+
+    it("should fallback to root for project_access_request_created without project_slug", () => {
+      const url = buildTargetUrl("project_access_request_created", {
+        team_slug: "local-team",
+      });
+      expect(url).toBe("/");
+    });
   });
 
   // ============================================================================

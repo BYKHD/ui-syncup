@@ -2874,19 +2874,23 @@ git commit -m "docs(wiki): add access-requests concept + cross-links"
 
 ## Task 25: Final verification
 
-- [ ] **Step 1: Type-check**
+- [x] **Step 1: Type-check**
 
 Run: `bun run typecheck`
 
 Expected: clean.
 
-- [ ] **Step 2: Linter**
+Result: clean (exit 0, no diagnostics).
+
+- [x] **Step 2: Linter**
 
 Run: `bun run lint`
 
 Expected: clean (or pre-existing warnings only).
 
-- [ ] **Step 3: Targeted test suite**
+Result: 0 errors, 337 pre-existing warnings; none in access-request files touched by this plan.
+
+- [x] **Step 3: Targeted test suite**
 
 Run only the suites this plan touched:
 
@@ -2899,7 +2903,9 @@ bun run test src/app/api/projects/\[id\]/access-requests/__tests__/route.test.ts
 
 (Per the user-feedback memory: don't run the full suite during dev; rely on CI/pre-commit.)
 
-- [ ] **Step 4: Final manual spot-check**
+Result: 4 files passed, 72 tests passed (8.80s).
+
+- [ ] **Step 4: Final manual spot-check** (deferred to user — manual browser verification)
 
 Repeat the dev-server smoke test from Task 21 with two browser profiles and verify:
 - pending → approval → issue visible
@@ -2908,7 +2914,7 @@ Repeat the dev-server smoke test from Task 21 with two browser profiles and veri
 - approver-only sees the list section
 - email-preview renders all three templates without error (visit `/email-preview`)
 
-- [ ] **Step 5: Push**
+- [ ] **Step 5: Push** (deferred to user — user is committing/pushing themselves)
 
 ```bash
 git push -u origin <current-branch>
