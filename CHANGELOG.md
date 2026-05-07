@@ -1,3 +1,10 @@
+## [0.8.6-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.8.6-beta.2...v0.8.6-beta.3) (2026-05-07)
+
+
+### Bug Fixes
+
+* localhost exist on project invitation ([#142](https://github.com/BYKHD/ui-syncup/issues/142)) ([628cfe8](https://github.com/BYKHD/ui-syncup/commit/628cfe8461e769f9f0450a35acb04bce77da4c8b))
+
 ## [0.8.6-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.8.6-beta.1...v0.8.6-beta.2) (2026-05-06)
 
 
