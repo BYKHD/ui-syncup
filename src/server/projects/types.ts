@@ -164,3 +164,54 @@ export interface CreateProjectInvitationData {
   role: Exclude<ProjectRole, "PROJECT_OWNER">;
   invitedBy: string;
 }
+
+/**
+ * Status values for a project access request.
+ */
+export type AccessRequestStatus =
+  | "pending"
+  | "approved"
+  | "declined"
+  | "superseded"
+  | "cancelled";
+
+/**
+ * A user-initiated request to join a project.
+ */
+export interface AccessRequest {
+  id: string;
+  projectId: string;
+  requesterUserId: string;
+  message: string | null;
+  status: AccessRequestStatus;
+  decidedByUserId: string | null;
+  decidedAt: Date | null;
+  declineCooldownUntil: Date | null;
+  createdAt: Date;
+}
+
+/**
+ * Access request enriched with requester and decision-actor details.
+ */
+export interface AccessRequestWithRequester extends AccessRequest {
+  requester: {
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+  };
+  decidedByUser: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+}
+
+/**
+ * Input data for creating a new access request.
+ */
+export interface CreateAccessRequestData {
+  projectId: string;
+  userId: string;
+  message?: string | null;
+}

@@ -284,3 +284,58 @@ export type ResendInvitationResponse = z.infer<typeof ResendInvitationResponseSc
 export type ProjectActivityType = z.infer<typeof ProjectActivityTypeSchema>
 export type ProjectActivity = z.infer<typeof ProjectActivitySchema>
 export type ListProjectActivitiesResponse = z.infer<typeof ListProjectActivitiesResponseSchema>
+
+// ============================================================================
+// ACCESS REQUEST SCHEMAS
+// ============================================================================
+
+export const AccessRequestStatusSchema = z.enum(['pending', 'approved', 'declined', 'superseded', 'cancelled'])
+
+export const AccessRequestSchema = z.object({
+  id: z.string().uuid(),
+  projectId: z.string().uuid(),
+  requesterUserId: z.string().uuid(),
+  message: z.string().nullable(),
+  status: AccessRequestStatusSchema,
+  decidedByUserId: z.string().uuid().nullable(),
+  decidedAt: z.string().datetime().nullable(),
+  declineCooldownUntil: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+})
+
+export const AccessRequestRequesterSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  email: z.string(),
+  image: z.string().nullable(),
+})
+
+export const AccessRequestWithRequesterSchema = AccessRequestSchema.extend({
+  requester: AccessRequestRequesterSchema,
+  decidedByUser: z.object({ id: z.string().uuid(), name: z.string(), email: z.string() }).nullable(),
+})
+
+export const CreateAccessRequestBodySchema = z.object({
+  message: z.string().trim().max(500).optional(),
+})
+
+export const CreateAccessRequestResponseSchema = z.object({
+  request: AccessRequestSchema,
+})
+
+export const ListAccessRequestsResponseSchema = z.object({
+  requests: z.array(AccessRequestWithRequesterSchema),
+})
+
+export const AccessRequestActionResponseSchema = z.object({
+  request: AccessRequestSchema,
+})
+
+// Access request type exports
+export type AccessRequestStatus = z.infer<typeof AccessRequestStatusSchema>
+export type AccessRequest = z.infer<typeof AccessRequestSchema>
+export type AccessRequestWithRequester = z.infer<typeof AccessRequestWithRequesterSchema>
+export type CreateAccessRequestBody = z.infer<typeof CreateAccessRequestBodySchema>
+export type CreateAccessRequestResponse = z.infer<typeof CreateAccessRequestResponseSchema>
+export type ListAccessRequestsResponse = z.infer<typeof ListAccessRequestsResponseSchema>
+export type AccessRequestActionResponse = z.infer<typeof AccessRequestActionResponseSchema>

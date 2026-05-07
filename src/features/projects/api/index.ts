@@ -25,3 +25,10 @@ export { listInvitations } from './list-invitations'
 export { revokeInvitation } from './revoke-invitation'
 export { resendInvitation } from './resend-invitation'
 
+// Access Request APIs
+export { createAccessRequest } from './create-access-request'
+export { listAccessRequests } from './list-access-requests'
+export { approveAccessRequest } from './approve-access-request'
+export { declineAccessRequest } from './decline-access-request'
+export { cancelAccessRequest } from './cancel-access-request'
+

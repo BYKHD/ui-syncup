@@ -5,6 +5,7 @@ import { InvitationAcceptanceScreen } from "@/features/projects";
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { checkLimit, RATE_LIMITS, createRateLimitKey } from "@/server/auth/rate-limiter";
 
 export const metadata = {
   title: 'Accept Project Invitation | UI SyncUp',
@@ -66,6 +67,33 @@ export default async function InvitationPage({ params, searchParams }: Invitatio
     const validatedCallback = validateCallbackUrl(callbackUrl) || `/invite/project/${token}`;
     const encodedCallback = encodeURIComponent(validatedCallback);
     redirect(`/sign-in?callbackUrl=${encodedCallback}`);
+  }
+
+  // Same rate limit the GET /api/invite/project/[token] route uses,
+  // so SSR access doesn't bypass it.
+  const isAllowed = await checkLimit(
+    createRateLimitKey.invitationAction(token),
+    RATE_LIMITS.INVITATION_ACTION.limit,
+    RATE_LIMITS.INVITATION_ACTION.windowMs,
+  );
+  if (!isAllowed) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gray-900">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle>Too Many Requests</CardTitle>
+            <CardDescription>
+              You&apos;ve opened this invitation too many times in a short window. Please wait a moment and try again.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="flex justify-center">
+            <Button asChild>
+              <Link href="/projects">Go to Projects</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
   }
 
   let invitationData;

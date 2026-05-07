@@ -234,6 +234,11 @@ export const RATE_LIMITS = {
     limit: 5,
     windowMs: 15 * 60 * 1000, // 15 minutes
   },
+  // Invitation resend: 1 resend per invitation per 5 minutes (prevents email-bomb).
+  INVITATION_RESEND: {
+    limit: 1,
+    windowMs: 5 * 60 * 1000, // 5 minutes
+  },
   // Setup admin creation: 5 attempts per IP per minute
   SETUP_ADMIN: {
     limit: 5,
@@ -258,6 +263,7 @@ export const createRateLimitKey = {
   signupIp: (ip: string) => `signup:ip:${ip}`,
   resendVerification: (email: string) => `resend-verification:email:${email.toLowerCase()}`,
   invitationAction: (token: string) => `invitation:${token.substring(0, 8)}`,
+  invitationResend: (invitationId: string) => `invitation-resend:${invitationId}`,
   setupAdminIp: (ip: string) => `setup:admin:ip:${ip}`,
   signupIntent: (email: string) => `signup-intent:email:${email.toLowerCase()}`,
 } as const;

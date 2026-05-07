@@ -11,10 +11,14 @@ import { projectMembers } from "@/server/db/schema/project-members";
 import { projects } from "@/server/db/schema/projects";
 import { users } from "@/server/db/schema/users";
 import { teams } from "@/server/db/schema/teams";
-import { eq, and, gt, isNull, sql, desc } from "drizzle-orm";
+import { eq, and, gt, lte, isNull, sql, desc } from "drizzle-orm";
 import { randomBytes, createHash } from "crypto";
 import { logger } from "@/lib/logger";
-import { addMember } from "./member-service";
+import { env } from "@/lib/env";
+import { validateEmailUrl } from "@/lib/url-validator";
+import { autoPromoteToEditor, ensureOperationalRole } from "@/server/auth/rbac";
+import { checkLimit, RATE_LIMITS, createRateLimitKey } from "@/server/auth/rate-limiter";
+import { PROJECT_ROLES, TEAM_OPERATIONAL_ROLES } from "@/config/roles";
 import type { ProjectRole } from "@/config/roles";
 import { enqueueEmail } from "@/server/email";
 import { createNotification, buildTargetUrl } from "@/server/notifications";
@@ -25,6 +29,32 @@ import {
   logInvitationDeclined,
   logMemberAdded,
 } from "./activity-service";
+
+const ACTIVE_INVITATION_UNIQUE_INDEX = "project_invitations_active_unique_idx";
+
+// Postgres unique-violation SQLSTATE. Drizzle can wrap the driver error in
+// DrizzleQueryError; inspect the cause chain so unrelated unique constraints
+// (for example token_hash) are not mislabeled as duplicate active invitations.
+function isUniqueViolationOnConstraint(err: unknown, constraintName: string): boolean {
+  if (typeof err !== "object" || err === null) return false;
+
+  const error = err as {
+    code?: unknown;
+    constraint?: unknown;
+    constraint_name?: unknown;
+    message?: unknown;
+    cause?: unknown;
+  };
+
+  const hasUniqueViolationCode = error.code === "23505";
+  const hasTargetConstraint =
+    error.constraint === constraintName ||
+    error.constraint_name === constraintName ||
+    (typeof error.message === "string" && error.message.includes(`"${constraintName}"`));
+
+  if (hasUniqueViolationCode && hasTargetConstraint) return true;
+  return isUniqueViolationOnConstraint(error.cause, constraintName);
+}
 import type { 
   ProjectInvitation,
   ProjectInvitationWithUsers,
@@ -154,7 +184,9 @@ export async function listProjectInvitations(
 export async function createProjectInvitation(
   data: CreateProjectInvitationData
 ): Promise<{ invitation: ProjectInvitation; token: string }> {
-  const { projectId, email, role, invitedBy } = data;
+  const { projectId, role, invitedBy } = data;
+  // Normalize once so duplicate-checks, storage, and accept-time comparisons agree.
+  const email = data.email.trim().toLowerCase();
 
   // Rate limiting (10/hour per project)
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
@@ -182,23 +214,6 @@ export async function createProjectInvitation(
     throw new Error("User is already a member of this project");
   }
 
-  // Check for existing pending invitation
-  const existingInvitationResult = await db
-    .select()
-    .from(projectInvitations)
-    .where(and(
-      eq(projectInvitations.projectId, projectId),
-      eq(projectInvitations.email, email),
-      isNull(projectInvitations.usedAt),
-      isNull(projectInvitations.cancelledAt),
-      gt(projectInvitations.expiresAt, new Date())
-    ))
-    .limit(1);
-
-  if (existingInvitationResult.length > 0) {
-    throw new Error("An active invitation already exists for this email");
-  }
-
   // Generate secure token
   const token = randomBytes(32).toString("hex");
   const tokenHash = createHash("sha256").update(token).digest("hex");
@@ -206,18 +221,43 @@ export async function createProjectInvitation(
   // 7-day expiration
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  // Create invitation
-  const [invitation] = await db
-    .insert(projectInvitations)
-    .values({
-      projectId,
-      email,
-      tokenHash,
-      role,
-      invitedBy,
-      expiresAt,
-    })
-    .returning();
+  // Atomically: free the unique slot held by any expired pending invitation,
+  // then insert. The partial unique index on (project_id, lower(email))
+  // WHERE used_at IS NULL AND cancelled_at IS NULL is the source of truth —
+  // a 23505 here means another concurrent caller won the race.
+  let invitation: typeof projectInvitations.$inferSelect;
+  try {
+    invitation = await db.transaction(async (tx) => {
+      await tx
+        .update(projectInvitations)
+        .set({ cancelledAt: new Date() })
+        .where(and(
+          eq(projectInvitations.projectId, projectId),
+          eq(projectInvitations.email, email),
+          isNull(projectInvitations.usedAt),
+          isNull(projectInvitations.cancelledAt),
+          lte(projectInvitations.expiresAt, new Date()),
+        ));
+
+      const [row] = await tx
+        .insert(projectInvitations)
+        .values({
+          projectId,
+          email,
+          tokenHash,
+          role,
+          invitedBy,
+          expiresAt,
+        })
+        .returning();
+      return row;
+    });
+  } catch (err) {
+    if (isUniqueViolationOnConstraint(err, ACTIVE_INVITATION_UNIQUE_INDEX)) {
+      throw new Error("An active invitation already exists for this email");
+    }
+    throw err;
+  }
 
   logger.info("project.invitation.created", {
     projectId,
@@ -239,9 +279,9 @@ export async function createProjectInvitation(
     const inviter = inviterData[0];
 
     if (project && inviter) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      const invitationUrl = `${baseUrl}/invite/project/${token}`;
-      
+      const invitationUrl = `${env.NEXT_PUBLIC_APP_URL}/invite/project/${token}`;
+      validateEmailUrl(invitationUrl, 'project-invitation-email');
+
       // Format role for display (e.g., "PROJECT_MEMBER" -> "Member")
       const roleDisplay = role.replace('PROJECT_', '').toLowerCase()
         .split('_')
@@ -270,11 +310,28 @@ export async function createProjectInvitation(
       });
     }
   } catch (emailError) {
-    // Log error but don't fail invitation creation
+    // Don't fail the create — surface the failure on the invitation row instead,
+    // so the UI's "Resend" affordance is the operator's recovery path.
+    const reason = emailError instanceof Error ? emailError.message : 'Unknown error';
     logger.error("project.invitation.email_failed", {
       invitationId: invitation.id,
-      error: emailError instanceof Error ? emailError.message : 'Unknown error',
+      error: reason,
     });
+    try {
+      await db
+        .update(projectInvitations)
+        .set({
+          emailDeliveryFailed: true,
+          emailFailureReason: reason.slice(0, 500),
+          emailLastAttemptAt: new Date(),
+        })
+        .where(eq(projectInvitations.id, invitation.id));
+    } catch (markError) {
+      logger.error("project.invitation.email_failed_mark_failed", {
+        invitationId: invitation.id,
+        error: markError instanceof Error ? markError.message : 'Unknown error',
+      });
+    }
   }
 
   // Log activity for invitation sent
@@ -312,7 +369,7 @@ export async function createProjectInvitation(
     const invitedUserResult = await db
       .select({ id: users.id })
       .from(users)
-      .where(eq(users.email, email.toLowerCase().trim()))
+      .where(eq(users.email, email))
       .limit(1);
 
     if (invitedUserResult[0]) {
@@ -463,6 +520,16 @@ export async function resendProjectInvitation(
     throw new Error("Invitation is no longer active");
   }
 
+  // Per-invitation cooldown: prevent email-bomb on a single invite.
+  const cooldownAllowed = await checkLimit(
+    createRateLimitKey.invitationResend(invitationId),
+    RATE_LIMITS.INVITATION_RESEND.limit,
+    RATE_LIMITS.INVITATION_RESEND.windowMs,
+  );
+  if (!cooldownAllowed) {
+    throw new Error("Invitation resend cooldown active");
+  }
+
   // Generate new token
   const token = randomBytes(32).toString("hex");
   const tokenHash = createHash("sha256").update(token).digest("hex");
@@ -498,9 +565,9 @@ export async function resendProjectInvitation(
     const inviter = inviterData[0];
 
     if (project && inviter) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      const invitationUrl = `${baseUrl}/invite/project/${token}`;
-      
+      const invitationUrl = `${env.NEXT_PUBLIC_APP_URL}/invite/project/${token}`;
+      validateEmailUrl(invitationUrl, 'project-invitation-resend-email');
+
       // Format role for display
       const roleDisplay = invitation.role.replace('PROJECT_', '').toLowerCase()
         .split('_')
@@ -529,11 +596,28 @@ export async function resendProjectInvitation(
       });
     }
   } catch (emailError) {
-    // Log error but don't fail resend
+    // Don't fail the resend — re-mark the invitation as failed so the UI
+    // can surface the failure (mirrors the create path).
+    const reason = emailError instanceof Error ? emailError.message : 'Unknown error';
     logger.error("project.invitation.email_failed", {
       invitationId,
-      error: emailError instanceof Error ? emailError.message : 'Unknown error',
+      error: reason,
     });
+    try {
+      await db
+        .update(projectInvitations)
+        .set({
+          emailDeliveryFailed: true,
+          emailFailureReason: reason.slice(0, 500),
+          emailLastAttemptAt: new Date(),
+        })
+        .where(eq(projectInvitations.id, invitationId));
+    } catch (markError) {
+      logger.error("project.invitation.email_failed_mark_failed", {
+        invitationId,
+        error: markError instanceof Error ? markError.message : 'Unknown error',
+      });
+    }
   }
 
   return { token };
@@ -590,24 +674,62 @@ export async function acceptProjectInvitation(
     throw new Error("Project not found");
   }
 
-  // Add user to project
-  await addMember(
-    invitation.projectId,
-    userId,
-    invitation.role as ProjectRole,
-    project.teamId
-  );
+  const role = invitation.role as ProjectRole;
 
-  // Mark invitation as used
-  await db
-    .update(projectInvitations)
-    .set({ usedAt: new Date() })
-    .where(eq(projectInvitations.id, invitation.id));
+  if (role === PROJECT_ROLES.PROJECT_OWNER) {
+    throw new Error("Invitations cannot grant PROJECT_OWNER");
+  }
+
+  // Atomically add the project member and mark the invitation used.
+  // If either write fails, the invitation stays pending so retry is safe.
+  await db.transaction(async (tx) => {
+    const existing = await tx
+      .select({ userId: projectMembers.userId })
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, invitation.projectId),
+          eq(projectMembers.userId, userId)
+        )
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      throw new Error("User is already a member of this project");
+    }
+
+    await tx.insert(projectMembers).values({
+      projectId: invitation.projectId,
+      userId,
+      role,
+    });
+
+    await tx
+      .update(projectInvitations)
+      .set({ usedAt: new Date() })
+      .where(eq(projectInvitations.id, invitation.id));
+  });
+
+  // Team-role bump runs after commit; it's upgrade-only and idempotent on retry.
+  if (role === PROJECT_ROLES.PROJECT_EDITOR) {
+    await autoPromoteToEditor(userId, project.teamId);
+  } else {
+    await ensureOperationalRole(userId, project.teamId, TEAM_OPERATIONAL_ROLES.TEAM_VIEWER);
+  }
+
+  // Resolve any in-flight access request now that membership is realized.
+  const { supersedePendingRequests } = await import("./access-request-service");
+  await supersedePendingRequests(invitation.projectId, userId);
 
   logger.info("project.invitation.accepted", {
     invitationId: invitation.id,
     projectId: invitation.projectId,
     userId,
+  });
+  logger.info("project.member.added", {
+    projectId: invitation.projectId,
+    userId,
+    role,
   });
 
   // Log activity for invitation accepted and member added
@@ -825,22 +947,59 @@ export async function acceptProjectInvitationById(
     throw new Error("Project not found");
   }
 
-  await addMember(
-    invitation.projectId,
-    userId,
-    invitation.role as ProjectRole,
-    project.teamId
-  );
+  const role = invitation.role as ProjectRole;
 
-  await db
-    .update(projectInvitations)
-    .set({ usedAt: new Date() })
-    .where(eq(projectInvitations.id, invitation.id));
+  if (role === PROJECT_ROLES.PROJECT_OWNER) {
+    throw new Error("Invitations cannot grant PROJECT_OWNER");
+  }
+
+  await db.transaction(async (tx) => {
+    const existing = await tx
+      .select({ userId: projectMembers.userId })
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, invitation.projectId),
+          eq(projectMembers.userId, userId)
+        )
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      throw new Error("User is already a member of this project");
+    }
+
+    await tx.insert(projectMembers).values({
+      projectId: invitation.projectId,
+      userId,
+      role,
+    });
+
+    await tx
+      .update(projectInvitations)
+      .set({ usedAt: new Date() })
+      .where(eq(projectInvitations.id, invitation.id));
+  });
+
+  if (role === PROJECT_ROLES.PROJECT_EDITOR) {
+    await autoPromoteToEditor(userId, project.teamId);
+  } else {
+    await ensureOperationalRole(userId, project.teamId, TEAM_OPERATIONAL_ROLES.TEAM_VIEWER);
+  }
+
+  // Resolve any in-flight access request now that membership is realized.
+  const { supersedePendingRequests } = await import("./access-request-service");
+  await supersedePendingRequests(invitation.projectId, userId);
 
   logger.info("project.invitation.accepted_by_id", {
     invitationId: invitation.id,
     projectId: invitation.projectId,
     userId,
+  });
+  logger.info("project.member.added", {
+    projectId: invitation.projectId,
+    userId,
+    role,
   });
 
   try {

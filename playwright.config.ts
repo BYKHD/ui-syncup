@@ -1,7 +1,11 @@
 import { defineConfig, devices } from "@playwright/test"
+import * as dotenv from "dotenv"
+
+dotenv.config({ path: ".env.local" })
+dotenv.config({ path: ".env.development" })
 
 const PORT = process.env.PORT ?? "3000"
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${PORT}`
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`
 
 /**
  * Playwright Configuration

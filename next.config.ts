@@ -6,6 +6,9 @@ import "./src/lib/env"
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  turbopack: {
+    root: __dirname,
+  },
   env: {
     NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version,
   },

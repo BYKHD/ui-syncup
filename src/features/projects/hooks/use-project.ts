@@ -19,6 +19,8 @@ export const projectKeys = {
   detail: (id: string) => [...projectKeys.details(), id] as const,
   members: (id: string) => [...projectKeys.detail(id), 'members'] as const,
   activities: (id: string) => [...projectKeys.detail(id), 'activities'] as const,
+  accessRequests: (projectId: string) => [...projectKeys.detail(projectId), 'access-requests'] as const,
+  myAccessRequest: (projectId: string) => [...projectKeys.detail(projectId), 'my-access-request'] as const,
 }
 
 // ============================================================================

@@ -12,8 +12,8 @@ import { users } from "@/server/db/schema/users";
 import { teams } from "@/server/db/schema/teams";
 import { eq, and, isNull, count } from "drizzle-orm";
 import { logger } from "@/lib/logger";
-import { autoPromoteToEditor } from "@/server/auth/rbac";
-import { PROJECT_ROLES } from "@/config/roles";
+import { autoPromoteToEditor, ensureOperationalRole } from "@/server/auth/rbac";
+import { PROJECT_ROLES, TEAM_OPERATIONAL_ROLES } from "@/config/roles";
 import type { ProjectRole } from "@/config/roles";
 import type { ProjectMember } from "./types";
 import { createNotification, buildTargetUrl } from "@/server/notifications";
@@ -91,9 +91,12 @@ export async function addMember(
     return member;
   });
 
-  // Auto-promote to TEAM_EDITOR if role is PROJECT_OWNER or PROJECT_EDITOR
+  // Every project member must also be at least a TEAM_VIEWER on the parent team.
+  // OWNER/EDITOR auto-promote to TEAM_EDITOR; MEMBER/VIEWER ensure baseline TEAM_VIEWER.
   if (role === PROJECT_ROLES.PROJECT_OWNER || role === PROJECT_ROLES.PROJECT_EDITOR) {
     await autoPromoteToEditor(userId, teamId);
+  } else {
+    await ensureOperationalRole(userId, teamId, TEAM_OPERATIONAL_ROLES.TEAM_VIEWER);
   }
 
   // Fetch user details
@@ -364,7 +367,15 @@ export async function joinProject(
   }
 
   // Add as viewer
-  return addMember(projectId, userId, PROJECT_ROLES.PROJECT_VIEWER, teamId);
+  const member = await addMember(projectId, userId, PROJECT_ROLES.PROJECT_VIEWER, teamId);
+
+  // Resolve any in-flight access request now that membership is realized.
+  // Dynamic import avoids an import cycle (access-request-service imports
+  // addMember from this file).
+  const { supersedePendingRequests } = await import("./access-request-service");
+  await supersedePendingRequests(projectId, userId);
+
+  return member;
 }
 
 /**

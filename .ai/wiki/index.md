@@ -1,7 +1,7 @@
 ---
 title: Wiki Index
 type: index
-last_updated: 2026-05-05
+last_updated: 2026-05-07
 ---
 
 # Wiki Index
@@ -41,16 +41,17 @@ One page per feature module in `src/features/<name>/`.
 - [[features/issues]] — issue tracking, details, share, attachments
 - [[features/legal]] — public legal pages
 - [[features/notifications]] — real-time SSE notifications (headless)
-- [[features/projects]] — project CRUD, members, project invitations
+- [[features/projects]] — project CRUD, members, project invitations, access requests
 - [[features/setup]] — first-run setup wizard
 - [[features/team-settings]] — team admin UI
 - [[features/teams]] — team CRUD, switching, team invitations
 - [[features/user-settings]] — per-user preferences
 
-## Concepts (16)
+## Concepts (17)
 
 Cross-cutting topics referenced by multiple features.
 
+- [[concepts/access-requests]] — user-initiated request-to-join flow for private projects
 - [[concepts/architecture]] — top-level layout + layered composition
 - [[concepts/cli-package]] — `cli/` standalone npm package
 - [[concepts/deployment]] — self-host vs managed, required services
@@ -84,7 +85,7 @@ Domain nouns referenced across many pages.
 |---|---|
 | Sources | 12 |
 | Features | 15 |
-| Concepts | 16 |
+| Concepts | 17 |
 | Entities | 5 |
 | Meta (WIKI, index, log, overview) | 4 |
-| **Total** | **52** |
+| **Total** | **53** |

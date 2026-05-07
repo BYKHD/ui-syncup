@@ -5,10 +5,21 @@
  */
 
 import { db } from '@/lib/db';
-import { users, sessions, verificationTokens, account } from '@/server/db/schema';
+import {
+  account,
+  issues,
+  projectAccessRequests,
+  projectMembers,
+  projects,
+  sessions,
+  teamMembers,
+  teams,
+  users,
+  verificationTokens,
+} from '@/server/db/schema';
 import { hashPassword } from '@/server/auth/password';
 import { generateToken } from '@/server/auth/tokens';
-import { eq } from 'drizzle-orm';
+import { and, eq, like } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 /**
@@ -20,6 +31,26 @@ export interface TestUserFixture {
   password: string;
   name: string;
   emailVerified: boolean;
+}
+
+export interface AccessRequestFlowFixture {
+  owner: TestUserFixture;
+  requester: TestUserFixture;
+  team: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  project: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  issue: {
+    id: string;
+    issueKey: string;
+    title: string;
+  };
 }
 
 /**
@@ -193,6 +224,147 @@ export async function cleanupTestUsers(): Promise<void> {
 }
 
 /**
+ * Clean up access-request E2E fixture records from previous interrupted runs.
+ */
+export async function cleanupAccessRequestFlowFixtures(): Promise<void> {
+  if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'development') {
+    throw new Error('cleanupAccessRequestFlowFixtures can only be run in test or development environments');
+  }
+
+  await db.delete(teams).where(like(teams.slug, 'e2e-access-%'));
+  await db.delete(users).where(like(users.email, 'test-e2e-access-%@example.com'));
+}
+
+/**
+ * Create a private project fixture for the project access-request E2E flow.
+ *
+ * The fixture uses a unique issue key per call because Playwright runs this
+ * spec once per browser project by default.
+ */
+export async function createAccessRequestFlowFixture(
+  suffix: string = randomUUID().slice(0, 8)
+): Promise<AccessRequestFlowFixture> {
+  const cleanSuffix = suffix.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/^-+|-+$/g, '');
+  const entropy = randomUUID().slice(0, 6);
+  const normalizedSuffix = `${cleanSuffix.slice(0, 12)}-${entropy}`;
+  const upperSuffix = entropy.toUpperCase();
+
+  const owner = await createVerifiedTestUser(
+    `test-e2e-access-owner-${normalizedSuffix}@example.com`,
+    'Test123!@#',
+    `E2E Owner ${normalizedSuffix}`
+  );
+  const requester = await createVerifiedTestUser(
+    `test-e2e-access-requester-${normalizedSuffix}@example.com`,
+    'Test123!@#',
+    `E2E Requester ${normalizedSuffix}`
+  );
+
+  const [team] = await db
+    .insert(teams)
+    .values({
+      name: `E2E Access Team ${normalizedSuffix}`,
+      slug: `e2e-access-${normalizedSuffix}`,
+    })
+    .returning({
+      id: teams.id,
+      name: teams.name,
+      slug: teams.slug,
+    });
+
+  await db.insert(teamMembers).values({
+    teamId: team.id,
+    userId: owner.id,
+    managementRole: 'TEAM_OWNER',
+    operationalRole: 'TEAM_EDITOR',
+  });
+  await db.insert(teamMembers).values({
+    teamId: team.id,
+    userId: requester.id,
+    operationalRole: 'TEAM_VIEWER',
+  });
+
+  await db
+    .update(users)
+    .set({ lastActiveTeamId: team.id })
+    .where(eq(users.id, owner.id));
+  await db
+    .update(users)
+    .set({ lastActiveTeamId: team.id })
+    .where(eq(users.id, requester.id));
+
+  const [project] = await db
+    .insert(projects)
+    .values({
+      teamId: team.id,
+      name: `E2E Access Project ${normalizedSuffix}`,
+      key: `E2E${upperSuffix}`.slice(0, 10),
+      slug: `e2e-access-project-${normalizedSuffix}`,
+      description: 'Private project for the access request happy path.',
+      visibility: 'private',
+      status: 'active',
+    })
+    .returning({
+      id: projects.id,
+      name: projects.name,
+      slug: projects.slug,
+    });
+
+  await db.insert(projectMembers).values({
+    projectId: project.id,
+    userId: owner.id,
+    role: 'owner',
+  });
+
+  const issueKey = `E2E-${upperSuffix || '1'}`;
+  const [issue] = await db
+    .insert(issues)
+    .values({
+      teamId: team.id,
+      projectId: project.id,
+      issueKey,
+      issueNumber: 1,
+      title: `E2E access request issue ${normalizedSuffix}`,
+      description: 'Requester should see this after the owner approves access.',
+      type: 'bug',
+      priority: 'medium',
+      status: 'open',
+      reporterId: owner.id,
+      createdBy: owner.id,
+      updatedBy: owner.id,
+    })
+    .returning({
+      id: issues.id,
+      issueKey: issues.issueKey,
+      title: issues.title,
+    });
+
+  return {
+    owner,
+    requester,
+    team,
+    project,
+    issue,
+  };
+}
+
+/**
+ * Remove one access-request E2E fixture.
+ */
+export async function deleteAccessRequestFlowFixture(fixture: AccessRequestFlowFixture): Promise<void> {
+  await db
+    .delete(projectAccessRequests)
+    .where(eq(projectAccessRequests.projectId, fixture.project.id));
+  await db
+    .delete(issues)
+    .where(and(eq(issues.projectId, fixture.project.id), eq(issues.issueKey, fixture.issue.issueKey)));
+  await db.delete(projects).where(eq(projects.id, fixture.project.id));
+  await db.delete(teams).where(eq(teams.id, fixture.team.id));
+  await db.delete(users).where(eq(users.id, fixture.requester.id));
+  await db.delete(users).where(eq(users.id, fixture.owner.id));
+}
+
+/**
  * Get user by email
  */
 export async function getTestUserByEmail(email: string): Promise<TestUserFixture | null> {
@@ -283,6 +455,7 @@ export async function createAuthenticatedTestUser(): Promise<{
  */
 export async function setupTestDatabase(): Promise<void> {
   // Clean up any existing test data
+  await cleanupAccessRequestFlowFixtures();
   await cleanupTestUsers();
 }
 
@@ -291,5 +464,6 @@ export async function setupTestDatabase(): Promise<void> {
  */
 export async function teardownTestDatabase(): Promise<void> {
   // Clean up test data
+  await cleanupAccessRequestFlowFixtures();
   await cleanupTestUsers();
 }

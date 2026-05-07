@@ -44,6 +44,18 @@ export async function POST(
       );
     }
 
+    if (!user.emailVerified) {
+      logger.warn('api.invite.project.accept_by_id.email_not_verified', {
+        requestId,
+        userId: user.id,
+        invitationId,
+      });
+      return NextResponse.json(
+        { error: 'Please verify your email address before accepting this invitation.' },
+        { status: 403 }
+      );
+    }
+
     const { projectId, projectSlug } = await acceptProjectInvitationById(
       invitationId,
       user.id,

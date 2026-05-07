@@ -6,9 +6,15 @@
 import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/shared/headers';
 import { IssueDetailsScreen } from '@/features/issues';
 import type { IssuePermissions } from '@/features/issues/types';
+import { AccessRequestScreen } from '@/features/projects';
+import type { AccessRequest } from '@/features/projects/api';
+import { db } from '@/lib/db';
+import { teams } from '@/server/db/schema';
 import { getIssueByKeyOnly } from '@/server/issues';
+import { getMyLatestAccessRequest, getProjectForAccessCheck } from '@/server/projects';
 import { getProject } from '@/server/projects/project-service';
 import { getSession } from '@/server/auth/session';
+import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
@@ -17,6 +23,10 @@ interface IssuePageProps {
     issueKey: string;
   }>;
 }
+
+const GENERIC_ISSUE_METADATA: Metadata = {
+  title: 'Issue',
+};
 
 /**
  * Generate metadata for the issue page
@@ -29,6 +39,17 @@ export async function generateMetadata({ params }: IssuePageProps): Promise<Meta
     return {
       title: 'Issue Not Found',
     };
+  }
+
+  const session = await getSession();
+  const userId = session?.id;
+  if (!userId) {
+    return GENERIC_ISSUE_METADATA;
+  }
+
+  const access = await getProjectForAccessCheck(issue.projectId, userId);
+  if (!access?.hasAccess) {
+    return GENERIC_ISSUE_METADATA;
   }
 
   return {
@@ -63,6 +84,36 @@ export default async function IssuePage({ params }: IssuePageProps) {
   if (!userId) {
     // Should typically be handled by middleware, but safe guard here
     return notFound();
+  }
+
+  const access = await getProjectForAccessCheck(issue.projectId, userId);
+  if (!access) {
+    notFound();
+  }
+
+  if (!access.hasAccess) {
+    const teamRow = await db
+      .select({ name: teams.name })
+      .from(teams)
+      .where(eq(teams.id, access.project.teamId))
+      .limit(1);
+    const existingRequest = await getMyLatestAccessRequest(access.project.id, userId);
+    const serializedExistingRequest: AccessRequest | null = existingRequest
+      ? {
+          ...existingRequest,
+          decidedAt: existingRequest.decidedAt?.toISOString() ?? null,
+          declineCooldownUntil: existingRequest.declineCooldownUntil?.toISOString() ?? null,
+          createdAt: existingRequest.createdAt.toISOString(),
+        }
+      : null;
+
+    return (
+      <AccessRequestScreen
+        project={{ id: access.project.id, name: access.project.name, slug: access.project.slug }}
+        teamName={teamRow[0]?.name ?? ''}
+        existingRequest={serializedExistingRequest}
+      />
+    );
   }
 
   // Get project for breadcrumbs and permission derivation
@@ -108,4 +159,3 @@ export default async function IssuePage({ params }: IssuePageProps) {
     </>
   );
 }
-

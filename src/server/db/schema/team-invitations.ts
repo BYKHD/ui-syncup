@@ -19,4 +19,10 @@ export const teamInvitations = pgTable("team_invitations", {
   tokenHashIdx: uniqueIndex("team_invitations_token_hash_idx").on(table.tokenHash),
   teamEmailIdx: index("team_invitations_team_email_idx").on(table.teamId, table.email),
   expiresIdx: index("team_invitations_expires_idx").on(table.expiresAt),
+  // Enforces at most one active (not used, not cancelled) invitation per
+  // (team, email). Mirrors project_invitations_active_unique_idx — closes a
+  // check-then-insert race in createInvitation.
+  activeInvitationUniqueIdx: uniqueIndex("team_invitations_active_unique_idx")
+    .on(table.teamId, sql`lower(${table.email})`)
+    .where(sql`${table.usedAt} IS NULL AND ${table.cancelledAt} IS NULL`),
 }));

@@ -6,6 +6,9 @@ import { SecurityAlertEmail } from './templates/security-alert-email';
 import { TeamInvitationEmail } from './templates/team-invitation-email';
 import { OwnershipTransferEmail } from './templates/ownership-transfer-email';
 import { ProjectInvitationEmail } from './templates/project-invitation-email';
+import { ProjectAccessRequestReceivedEmail } from './templates/project-access-request-received-email';
+import { ProjectAccessRequestApprovedEmail } from './templates/project-access-request-approved-email';
+import { ProjectAccessRequestDeclinedEmail } from './templates/project-access-request-declined-email';
 
 /**
  * Template types and their corresponding data structures
@@ -43,6 +46,20 @@ export type EmailTemplate =
       newOwnerName: string;
       isNewOwner: boolean;
       teamUrl: string;
+    }}
+  | { type: 'project_access_request_received'; data: {
+      requesterName: string;
+      requesterEmail: string;
+      projectName: string;
+      message: string | null;
+      reviewUrl: string;
+    }}
+  | { type: 'project_access_request_approved'; data: {
+      projectName: string;
+      returnUrl: string;
+    }}
+  | { type: 'project_access_request_declined'; data: {
+      projectName: string;
     }};
 
 /**
@@ -75,6 +92,15 @@ export async function renderTemplate(template: EmailTemplate): Promise<string> {
       break;
     case 'ownership_transfer':
       component = <OwnershipTransferEmail {...template.data} />;
+      break;
+    case 'project_access_request_received':
+      component = <ProjectAccessRequestReceivedEmail {...template.data} />;
+      break;
+    case 'project_access_request_approved':
+      component = <ProjectAccessRequestApprovedEmail {...template.data} />;
+      break;
+    case 'project_access_request_declined':
+      component = <ProjectAccessRequestDeclinedEmail {...template.data} />;
       break;
     default:
       throw new Error(`Unknown template type: ${(template as { type: string }).type}`);
@@ -111,6 +137,12 @@ export function getEmailSubject(template: EmailTemplate): string {
       return `You've been invited to join ${template.data.projectName}`;
     case 'ownership_transfer':
       return `Ownership transfer for ${template.data.teamName} - UI SyncUp`;
+    case 'project_access_request_received':
+      return `New access request for ${template.data.projectName} - UI SyncUp`;
+    case 'project_access_request_approved':
+      return 'Your access request was approved - UI SyncUp';
+    case 'project_access_request_declined':
+      return 'Update on your access request - UI SyncUp';
     default:
       return 'UI SyncUp Notification';
   }
