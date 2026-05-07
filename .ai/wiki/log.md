@@ -73,3 +73,28 @@ Append-only. Newest entries at the bottom. Each entry starts with `## [YYYY-MM-D
 - **Task 9**: Added `getProjectForAccessCheck(projectId, userId)` to `project-service.ts`. Returns `{ project, hasAccess }` without throwing when user is a non-member — enabling the access-request panel to render with project metadata. Returns `null` for missing or soft-deleted projects. 4 new integration tests in `project-service.access-check.integration.test.ts`.
 - **Task 10**: Appended explicit named re-exports for all 6 access-request functions and `getProjectForAccessCheck` to `src/server/projects/index.ts`. TypeScript typecheck clean.
 - Final test count: 41/41 across 3 test files.
+
+## [2026-05-07] feat | access-requests route handler + tests (Task 11)
+- Created `src/app/api/projects/[id]/access-requests/route.ts`: POST (create) + GET (list) handlers.
+- POST: auth guard → Zod body validation (message ≤500 chars) → `createAccessRequest` → service-error map → 201.
+- GET: auth guard → `listAccessRequests` → serializes dates → 200 with requester/decidedByUser enrichment.
+- `mapServiceError` maps PROJECT_NOT_FOUND/REQUEST_NOT_FOUND → 404, ALREADY_MEMBER/REQUEST_PENDING/COOLDOWN_ACTIVE → 409, FORBIDDEN → 403, unknown → 500 with logger.
+- Fixed typecheck error: `serializeRequest` parameter typed as `AccessRequest` (not `[k: string]: unknown` index signature).
+- 10 unit tests in `__tests__/route.test.ts` — all GREEN. Typecheck clean.
+
+## [2026-05-07] feat | project access request notifications + email side-effects (Task 15)
+- Added fire-and-forget notification + email side-effects to `createAccessRequest`, `approveAccessRequest`, `declineAccessRequest` in `access-request-service.ts`.
+- New imports: `teams` schema, `env`, `createNotification`, `enqueueEmail`.
+- `createAccessRequest` fans out a `project_access_request_created` notification and `project_access_request_received` email to all PROJECT_OWNER/PROJECT_EDITOR members.
+- `approveAccessRequest` sends `project_access_request_approved` notification + email to requester.
+- `declineAccessRequest` sends `project_access_request_declined` notification + email to requester.
+- All side-effects wrapped in try/catch — failures log but never block the main response.
+- Generated migration `0003_lowly_cassandra_nova.sql` to add 3 new values to `notification_type` enum (required for PGlite test DB).
+- Added `notifications` import to integration test, notification existence assertions in 3 tests, and cleanup of notifications by `entityId` in `afterEach`.
+- All 26 tests pass.
+
+## [2026-05-07] feat | project access request email templates (Task 13)
+- Created 3 email templates: `project-access-request-received-email.tsx` (approver notification with optional message block), `project-access-request-approved-email.tsx` (requester confirmation), `project-access-request-declined-email.tsx` (neutral decline, no reason exposed).
+- Registered all 3 in `render-template.tsx`: new `EmailTemplate` union members, imports, `renderTemplate` switch cases, `getEmailSubject` cases.
+- Added 3 types to `EmailJobInput.type` union in `queue.ts`.
+- TypeScript typecheck clean (`npx tsc --noEmit` produced no output).

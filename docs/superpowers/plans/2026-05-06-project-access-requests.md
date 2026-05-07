@@ -1302,7 +1302,7 @@ git commit -m "feat(projects): re-export access-request service from barrel"
 - Create: `src/app/api/projects/[id]/access-requests/route.ts`
 - Create: `src/app/api/projects/[id]/access-requests/__tests__/route.test.ts`
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Mirror `src/app/api/notifications/__tests__/notifications.integration.test.ts` patterns. Cover:
 
@@ -1324,11 +1324,11 @@ describe('GET /api/projects/[id]/access-requests', () => {
 });
 ```
 
-- [ ] **Step 2: Run — RED**
+- [x] **Step 2: Run — RED**
 
 Expected: route 404s.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/app/api/projects/[id]/access-requests/route.ts`:
 
@@ -1449,11 +1449,11 @@ function mapServiceError(err: unknown, requestId: string, projectId: string): Ne
 }
 ```
 
-- [ ] **Step 4: Run — GREEN**
+- [x] **Step 4: Run — GREEN**
 
 Run: `bun run test src/app/api/projects/\[id\]/access-requests/__tests__/route.test.ts`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add src/app/api/projects/\[id\]/access-requests/
@@ -1470,7 +1470,7 @@ git commit -m "feat(api): POST + GET /projects/[id]/access-requests"
 - Create: `src/app/api/projects/[id]/access-requests/[requestId]/route.ts` (DELETE = cancel)
 - Modify: `src/app/api/projects/[id]/access-requests/__tests__/route.test.ts` (add cases)
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Append:
 
@@ -1493,9 +1493,9 @@ describe('DELETE /api/projects/[id]/access-requests/[requestId]', () => {
 });
 ```
 
-- [ ] **Step 2: Run — RED**
+- [x] **Step 2: Run — RED**
 
-- [ ] **Step 3: Implement approve route**
+- [x] **Step 3: Implement approve route**
 
 Create `src/app/api/projects/[id]/access-requests/[requestId]/approve/route.ts`:
 
@@ -1545,11 +1545,11 @@ export async function POST(
 }
 ```
 
-- [ ] **Step 4: Implement decline route**
+- [x] **Step 4: Implement decline route**
 
 Create `src/app/api/projects/[id]/access-requests/[requestId]/decline/route.ts` — identical structure to approve, but calls `declineAccessRequest`. Same error mapping.
 
-- [ ] **Step 5: Implement DELETE (cancel) route**
+- [x] **Step 5: Implement DELETE (cancel) route**
 
 Create `src/app/api/projects/[id]/access-requests/[requestId]/route.ts`:
 
@@ -1594,9 +1594,9 @@ export async function DELETE(
 }
 ```
 
-- [ ] **Step 6: Run — GREEN**
+- [x] **Step 6: Run — GREEN**
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit** _(skipped — user commits manually)_
 
 ```bash
 git add src/app/api/projects/\[id\]/access-requests/\[requestId\]/
@@ -1614,7 +1614,7 @@ git commit -m "feat(api): approve/decline/cancel access-request endpoints"
 - Modify: `src/server/email/queue.ts`
 - Modify: `src/server/email/render-template.tsx`
 
-- [ ] **Step 1: Create the "received" template (for approvers)**
+- [x] **Step 1: Create the "received" template (for approvers)**
 
 Mirror `project-invitation-email.tsx` shape. `src/server/email/templates/project-access-request-received-email.tsx`:
 
@@ -1661,7 +1661,7 @@ export function ProjectAccessRequestReceivedEmail({
 }
 ```
 
-- [ ] **Step 2: Create the "approved" template (for requester)**
+- [x] **Step 2: Create the "approved" template (for requester)**
 
 `src/server/email/templates/project-access-request-approved-email.tsx`:
 
@@ -1694,7 +1694,7 @@ export function ProjectAccessRequestApprovedEmail({ projectName, returnUrl }: Pr
 }
 ```
 
-- [ ] **Step 3: Create the "declined" template (for requester)**
+- [x] **Step 3: Create the "declined" template (for requester)**
 
 `src/server/email/templates/project-access-request-declined-email.tsx`:
 
@@ -1723,7 +1723,7 @@ export function ProjectAccessRequestDeclinedEmail({ projectName }: Props) {
 
 (Neutral copy — no reason field, matches the "no decline reason exposed" decision.)
 
-- [ ] **Step 4: Add type discriminators in queue.ts**
+- [x] **Step 4: Add type discriminators in queue.ts**
 
 In `src/server/email/queue.ts` find the `type` union (line ~27) and add three entries:
 
@@ -1735,7 +1735,7 @@ type: 'verification' | 'password_reset' | 'welcome' | 'security_alert'
     | 'project_access_request_declined';
 ```
 
-- [ ] **Step 5: Register templates in render-template.tsx**
+- [x] **Step 5: Register templates in render-template.tsx**
 
 In `src/server/email/render-template.tsx`, find the discriminated-union of templates (line ~15-40) and add three branches:
 
@@ -1763,7 +1763,7 @@ case 'project_access_request_declined':
   return <ProjectAccessRequestDeclinedEmail {...template.data} />;
 ```
 
-- [ ] **Step 6: Type-check**
+- [x] **Step 6: Type-check**
 
 Run: `bun run typecheck`
 
@@ -1786,7 +1786,7 @@ git commit -m "feat(email): templates for project access-request lifecycle"
 - Modify: `src/server/notifications/types.ts`
 - Modify: `src/server/notifications/notification-service.ts` (or wherever `buildTargetUrl` lives — check via grep)
 
-- [ ] **Step 1: Add types**
+- [x] **Step 1: Add types**
 
 In `src/server/notifications/types.ts`, find the `NotificationType` union (line ~28) and add 3 entries:
 
@@ -1798,7 +1798,7 @@ In `src/server/notifications/types.ts`, find the `NotificationType` union (line 
 
 Add the same 3 strings to the `NOTIFICATION_TYPES` constant array (line ~41) and the `notificationTypeEnum` zod schema (line ~171).
 
-- [ ] **Step 2: Add target-url builders**
+- [x] **Step 2: Add target-url builders**
 
 Find `buildTargetUrl` (likely in `notification-service.ts`). Add cases:
 
@@ -1816,7 +1816,7 @@ case "project_access_request_declined":
 
 (Adjust to actual signature of `buildTargetUrl` — examine an existing case before writing yours.)
 
-- [ ] **Step 3: Type-check**
+- [x] **Step 3: Type-check**
 
 Run: `bun run typecheck`
 
@@ -1835,7 +1835,7 @@ git commit -m "feat(notifications): add project access-request types"
 - Modify: `src/server/projects/access-request-service.ts`
 - Modify: `src/server/projects/__tests__/access-request-service.integration.test.ts` (light assertions on side-effects)
 
-- [ ] **Step 1: Add side-effect calls to `createAccessRequest`**
+- [x] **Step 1: Add side-effect calls to `createAccessRequest`**
 
 After the successful insert + `logger.info`, add a fire-and-forget block (mirrors `invitation-service.ts:362-415`):
 
@@ -1923,7 +1923,7 @@ import { createNotification } from "@/server/notifications";
 import { enqueueEmail } from "@/server/email";
 ```
 
-- [ ] **Step 2: Add side-effects to `approveAccessRequest`**
+- [x] **Step 2: Add side-effects to `approveAccessRequest`**
 
 Right before `return rowToAccessRequest(updated);`, add:
 
@@ -1969,7 +1969,7 @@ try {
 
 (Optional polish — capture the issue-page URL on creation as `metadata.return_url` and pass it through here. Keep it as a follow-up improvement; v1 sends the project landing URL.)
 
-- [ ] **Step 3: Add side-effects to `declineAccessRequest`**
+- [x] **Step 3: Add side-effects to `declineAccessRequest`**
 
 Same pattern, type `project_access_request_declined`:
 
@@ -1990,7 +1990,7 @@ await enqueueEmail({
 });
 ```
 
-- [ ] **Step 4: Add light assertions to existing tests**
+- [x] **Step 4: Add light assertions to existing tests**
 
 In existing create / approve / decline tests, after the assertions on the request row, add:
 
@@ -2002,7 +2002,7 @@ expect(notifs.length).toBeGreaterThan(0);
 
 (Import `notifications` from the schema barrel. If notifications are written async via `Promise.allSettled` in fire-and-forget, await a small `setTimeout(50)` or restructure to `await Promise.all` so tests are deterministic.)
 
-- [ ] **Step 5: Run — GREEN**
+- [x] **Step 5: Run — GREEN**
 
 Run: `bun run test src/server/projects/__tests__/access-request-service.integration.test.ts`
 
@@ -2026,7 +2026,7 @@ git commit -m "feat(projects): notify + email on access-request lifecycle"
 - Create: `src/features/projects/api/cancel-access-request.ts`
 - Modify: `src/features/projects/api/index.ts`
 
-- [ ] **Step 1: Implement `create-access-request.ts`**
+- [x] **Step 1: Implement `create-access-request.ts`**
 
 ```ts
 import { z } from "zod";
@@ -2068,7 +2068,7 @@ export async function createAccessRequest(
 }
 ```
 
-- [ ] **Step 2: Implement `list-access-requests.ts`**
+- [x] **Step 2: Implement `list-access-requests.ts`**
 
 ```ts
 import { z } from "zod";
@@ -2098,7 +2098,7 @@ export async function listAccessRequests(projectId: string) {
 }
 ```
 
-- [ ] **Step 3: Implement `approve-access-request.ts`**
+- [x] **Step 3: Implement `approve-access-request.ts`**
 
 ```ts
 import { z } from "zod";
@@ -2117,14 +2117,14 @@ export async function approveAccessRequest(projectId: string, requestId: string)
 }
 ```
 
-- [ ] **Step 4: Implement `decline-access-request.ts` and `cancel-access-request.ts`**
+- [x] **Step 4: Implement `decline-access-request.ts` and `cancel-access-request.ts`**
 
 Identical shape to approve, just different URL/method:
 
 - decline → `POST /api/projects/${projectId}/access-requests/${requestId}/decline`
 - cancel → `DELETE /api/projects/${projectId}/access-requests/${requestId}`
 
-- [ ] **Step 5: Re-export from barrel**
+- [x] **Step 5: Re-export from barrel**
 
 In `src/features/projects/api/index.ts` (note the convention: explicit named exports — see hard constraint "Barrels use explicit named exports. Never `export *`"):
 
@@ -2145,7 +2145,7 @@ export { declineAccessRequest } from "./decline-access-request";
 export { cancelAccessRequest } from "./cancel-access-request";
 ```
 
-- [ ] **Step 6: Type-check**
+- [x] **Step 6: Type-check**
 
 Run: `bun run typecheck`
 
@@ -2169,7 +2169,7 @@ git commit -m "feat(projects/api): client callers for access-requests"
 - Create: `src/features/projects/hooks/use-cancel-access-request.ts`
 - Modify: `src/features/projects/hooks/index.ts`
 
-- [ ] **Step 1: Add query keys to existing `projectKeys`**
+- [x] **Step 1: Add query keys to existing `projectKeys`**
 
 In `src/features/projects/hooks/use-project.ts` (where `projectKeys` is defined per Task 16 import in `use-join-project.ts`), add:
 
@@ -2178,7 +2178,7 @@ accessRequests: (projectId: string) => [...projectKeys.detail(projectId), "acces
 myAccessRequest: (projectId: string) => [...projectKeys.detail(projectId), "my-access-request"] as const,
 ```
 
-- [ ] **Step 2: Implement `use-create-access-request.ts`**
+- [x] **Step 2: Implement `use-create-access-request.ts`**
 
 ```ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -2208,7 +2208,7 @@ export function useCreateAccessRequest(projectId: string, options?: { onSuccess?
 }
 ```
 
-- [ ] **Step 3: Implement `use-my-access-request.ts`**
+- [x] **Step 3: Implement `use-my-access-request.ts`**
 
 This hook reads the requester-side state. Since the GET endpoint is approver-only, we expose pending state via the create endpoint's 409 path. Simpler approach: pass the pending request object as `initialData` from the server component (which fetched it directly via the service in the page) and use the hook only as a cache placeholder.
 
@@ -2227,7 +2227,7 @@ export function useMyAccessRequest(projectId: string, initialData: AccessRequest
 }
 ```
 
-- [ ] **Step 4: Implement `use-project-access-requests.ts`**
+- [x] **Step 4: Implement `use-project-access-requests.ts`**
 
 ```ts
 import { useQuery } from "@tanstack/react-query";
@@ -2244,7 +2244,7 @@ export function useProjectAccessRequests(projectId: string, enabled = true) {
 }
 ```
 
-- [ ] **Step 5: Implement `use-approve-access-request.ts` and `use-decline-access-request.ts`**
+- [x] **Step 5: Implement `use-approve-access-request.ts` and `use-decline-access-request.ts`**
 
 ```ts
 // approve
@@ -2269,7 +2269,7 @@ export function useApproveAccessRequest(projectId: string) {
 
 decline mirrors approve, calling `declineAccessRequest`. cancel hook is a near-copy with different toast strings.
 
-- [ ] **Step 6: Re-export from barrel** (explicit named exports)
+- [x] **Step 6: Re-export from barrel** (explicit named exports)
 
 ```ts
 export { useCreateAccessRequest } from "./use-create-access-request";
@@ -2280,7 +2280,7 @@ export { useDeclineAccessRequest } from "./use-decline-access-request";
 export { useCancelAccessRequest } from "./use-cancel-access-request";
 ```
 
-- [ ] **Step 7: Type-check & commit**
+- [x] **Step 7: Type-check & commit**
 
 ```bash
 bun run typecheck

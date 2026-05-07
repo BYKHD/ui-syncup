@@ -27,7 +27,10 @@ export type NotificationType =
   | "issue_status_changed"
   | "project_invitation"
   | "team_invitation"
-  | "role_updated";
+  | "role_updated"
+  | "project_access_request_created"
+  | "project_access_request_approved"
+  | "project_access_request_declined";
 
 /**
  * All valid notification types as a constant array
@@ -41,6 +44,9 @@ export const NOTIFICATION_TYPES = [
   "project_invitation",
   "team_invitation",
   "role_updated",
+  "project_access_request_created",
+  "project_access_request_approved",
+  "project_access_request_declined",
 ] as const;
 
 /**
@@ -99,6 +105,12 @@ export interface NotificationMetadata {
   // Actor information (denormalized for display)
   actor_name?: string;
   actor_avatar_url?: string;
+
+  // Access request metadata
+  project_slug?: string;
+  return_url?: string;
+  request_id?: string;
+  requester_name?: string;
 }
 
 // ============================================================================
@@ -171,6 +183,9 @@ export const NotificationTypeSchema = z.enum([
   "project_invitation",
   "team_invitation",
   "role_updated",
+  "project_access_request_created",
+  "project_access_request_approved",
+  "project_access_request_declined",
 ]);
 
 /**
@@ -199,6 +214,10 @@ export const NotificationMetadataSchema = z.object({
   invitation_status: z.enum(['accepted', 'declined']).optional(),
   actor_name: z.string().optional(),
   actor_avatar_url: z.string().optional(),
+  project_slug: z.string().optional(),
+  return_url: z.string().optional(),
+  request_id: z.string().optional(),
+  requester_name: z.string().optional(),
 });
 
 /**

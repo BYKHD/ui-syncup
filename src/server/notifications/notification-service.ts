@@ -165,6 +165,19 @@ export function buildTargetUrl(
     case "role_updated":
       // Navigate to team member settings (slug-based URL avoids lastActiveTeamId shim)
       return team_slug ? `/team/${team_slug}/settings/members` : "/team/settings/members";
+
+    case "project_access_request_created":
+      // Approver notification — deep-link to members tab, requests pane
+      return metadata.project_slug && metadata.team_slug
+        ? `/${metadata.team_slug}/${metadata.project_slug}?tab=requests`
+        : "/";
+
+    case "project_access_request_approved":
+      // Requester notification — back to originating page if available
+      return metadata.return_url ?? metadata.target_url ?? "/";
+
+    case "project_access_request_declined":
+      return "/";
   }
 
   // Fallback to root or provided target_url

@@ -24,7 +24,7 @@ import { sendEmail } from './client';
 export interface EmailJobInput {
   userId: string;
   tokenId?: string;
-  type: 'verification' | 'password_reset' | 'welcome' | 'security_alert' | 'team_invitation' | 'ownership_transfer' | 'project_invitation';
+  type: 'verification' | 'password_reset' | 'welcome' | 'security_alert' | 'team_invitation' | 'ownership_transfer' | 'project_invitation' | 'project_access_request_received' | 'project_access_request_approved' | 'project_access_request_declined';
   to: string;
   template: EmailTemplate;
 }

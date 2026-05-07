@@ -2,12 +2,16 @@ import { db } from "@/lib/db";
 import { projectAccessRequests } from "@/server/db/schema/project-access-requests";
 import { projectMembers } from "@/server/db/schema/project-members";
 import { projects } from "@/server/db/schema/projects";
+import { teams } from "@/server/db/schema/teams";
 import { and, eq, gt, gte, isNotNull, desc, inArray, or } from "drizzle-orm";
 import { addMember } from "./member-service";
 import { logger } from "@/lib/logger";
 import { hasPermission } from "@/server/auth/rbac";
 import { PERMISSIONS, PROJECT_ROLES } from "@/config/roles";
 import { users } from "@/server/db/schema/users";
+import { env } from "@/lib/env";
+import { createNotification } from "@/server/notifications";
+import { enqueueEmail } from "@/server/email";
 import type { AccessRequest, AccessRequestStatus, AccessRequestWithRequester, CreateAccessRequestData } from "./types";
 
 const PENDING_UNIQUE_INDEX = "project_access_requests_pending_unique_idx";
@@ -101,6 +105,88 @@ export async function createAccessRequest(data: CreateAccessRequestData): Promis
     projectId,
     requesterUserId: userId,
   });
+
+  // Fire-and-forget: notify + email all project approvers. Failures must not block the response.
+  try {
+    const approvers = await db
+      .select({ userId: projectMembers.userId })
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, projectId),
+          inArray(projectMembers.role, [PROJECT_ROLES.PROJECT_OWNER, PROJECT_ROLES.PROJECT_EDITOR])
+        )
+      );
+
+    const [projectMeta] = await db
+      .select({ name: projects.name, slug: projects.slug, teamId: projects.teamId })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    const [teamMeta] = projectMeta
+      ? await db.select({ slug: teams.slug }).from(teams).where(eq(teams.id, projectMeta.teamId)).limit(1)
+      : [];
+
+    const [requesterRow] = await db
+      .select({ name: users.name, email: users.email })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (projectMeta && teamMeta && requesterRow) {
+      const reviewUrl = `${env.NEXT_PUBLIC_APP_URL}/${teamMeta.slug}/${projectMeta.slug}?tab=requests`;
+
+      await Promise.allSettled(
+        approvers.map(async (approver) => {
+          await createNotification({
+            recipientId: approver.userId,
+            actorId: userId,
+            type: "project_access_request_created",
+            entityType: "project",
+            entityId: projectId,
+            metadata: {
+              target_url: reviewUrl,
+              project_name: projectMeta.name,
+              project_slug: projectMeta.slug,
+              team_slug: teamMeta.slug,
+              request_id: row.id,
+              requester_name: requesterRow.name,
+            },
+          });
+
+          const [approverRow] = await db
+            .select({ email: users.email })
+            .from(users)
+            .where(eq(users.id, approver.userId))
+            .limit(1);
+
+          if (approverRow) {
+            await enqueueEmail({
+              userId: approver.userId,
+              type: "project_access_request_received",
+              to: approverRow.email,
+              template: {
+                type: "project_access_request_received",
+                data: {
+                  requesterName: requesterRow.name,
+                  requesterEmail: requesterRow.email,
+                  projectName: projectMeta.name,
+                  message,
+                  reviewUrl,
+                },
+              },
+            });
+          }
+        })
+      );
+    }
+  } catch (sideEffectErr) {
+    logger.error("project.access_request.fanout_failed", {
+      requestId: row.id,
+      error: sideEffectErr instanceof Error ? sideEffectErr.message : "unknown",
+    });
+  }
 
   return rowToAccessRequest(row);
 }
@@ -288,6 +374,57 @@ export async function approveAccessRequest(
     actorUserId,
   });
 
+  try {
+    const [projectMeta] = await db
+      .select({ name: projects.name, slug: projects.slug, teamId: projects.teamId })
+      .from(projects)
+      .where(eq(projects.id, request.projectId))
+      .limit(1);
+
+    const [teamMeta] = projectMeta
+      ? await db.select({ slug: teams.slug }).from(teams).where(eq(teams.id, projectMeta.teamId)).limit(1)
+      : [];
+
+    const [requesterRow] = await db
+      .select({ email: users.email })
+      .from(users)
+      .where(eq(users.id, request.requesterUserId))
+      .limit(1);
+
+    if (projectMeta && teamMeta && requesterRow) {
+      const returnUrl = `${env.NEXT_PUBLIC_APP_URL}/${teamMeta.slug}/${projectMeta.slug}`;
+
+      await createNotification({
+        recipientId: request.requesterUserId,
+        actorId: actorUserId,
+        type: "project_access_request_approved",
+        entityType: "project",
+        entityId: request.projectId,
+        metadata: {
+          target_url: returnUrl,
+          project_name: projectMeta.name,
+          project_slug: projectMeta.slug,
+          team_slug: teamMeta.slug,
+        },
+      });
+
+      await enqueueEmail({
+        userId: request.requesterUserId,
+        type: "project_access_request_approved",
+        to: requesterRow.email,
+        template: {
+          type: "project_access_request_approved",
+          data: { projectName: projectMeta.name, returnUrl },
+        },
+      });
+    }
+  } catch (sideEffectErr) {
+    logger.error("project.access_request.approve.fanout_failed", {
+      requestId,
+      error: sideEffectErr instanceof Error ? sideEffectErr.message : "unknown",
+    });
+  }
+
   return rowToAccessRequest(updated);
 }
 
@@ -363,6 +500,49 @@ export async function declineAccessRequest(
     requesterUserId: request.requesterUserId,
     actorUserId,
   });
+
+  try {
+    const [projectMeta] = await db
+      .select({ name: projects.name, slug: projects.slug, teamId: projects.teamId })
+      .from(projects)
+      .where(eq(projects.id, request.projectId))
+      .limit(1);
+
+    const [requesterRow] = await db
+      .select({ email: users.email })
+      .from(users)
+      .where(eq(users.id, request.requesterUserId))
+      .limit(1);
+
+    if (projectMeta && requesterRow) {
+      await createNotification({
+        recipientId: request.requesterUserId,
+        actorId: actorUserId,
+        type: "project_access_request_declined",
+        entityType: "project",
+        entityId: request.projectId,
+        metadata: {
+          target_url: "/",
+          project_name: projectMeta.name,
+        },
+      });
+
+      await enqueueEmail({
+        userId: request.requesterUserId,
+        type: "project_access_request_declined",
+        to: requesterRow.email,
+        template: {
+          type: "project_access_request_declined",
+          data: { projectName: projectMeta.name },
+        },
+      });
+    }
+  } catch (sideEffectErr) {
+    logger.error("project.access_request.decline.fanout_failed", {
+      requestId,
+      error: sideEffectErr instanceof Error ? sideEffectErr.message : "unknown",
+    });
+  }
 
   return rowToAccessRequest(updated);
 }

@@ -19,3 +19,6 @@ export { ProjectActions } from './project-actions'
 // Action components
 export { ProjectLeaveButton } from './project-leave-button'
 
+// Access request components
+export { AccessRequestPanel } from './access-requests/access-request-panel'
+

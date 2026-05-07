@@ -1,6 +1,6 @@
 import { describe, test, expect, afterEach } from 'vitest';
 import { db } from '@/lib/db';
-import { users, teams, teamMembers, projects, projectMembers, projectAccessRequests, projectInvitations } from '@/server/db/schema';
+import { users, teams, teamMembers, projects, projectMembers, projectAccessRequests, projectInvitations, notifications } from '@/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { createTeam } from '@/server/teams/team-service';
 import { createProject } from '@/server/projects/project-service';
@@ -49,6 +49,7 @@ async function cleanupTestData() {
     await db.delete(projectAccessRequests).where(eq(projectAccessRequests.id, id)).catch(() => {});
   }
   for (const id of testProjectIds) {
+    await db.delete(notifications).where(eq(notifications.entityId, id)).catch(() => {});
     await db.delete(projectMembers).where(eq(projectMembers.projectId, id)).catch(() => {});
     await db.delete(projectInvitations).where(eq(projectInvitations.projectId, id)).catch(() => {});
     await db.delete(projectAccessRequests).where(eq(projectAccessRequests.projectId, id)).catch(() => {});
@@ -94,6 +95,11 @@ describe('createAccessRequest', () => {
     expect(req.status).toBe('pending');
     expect(req.message).toBe('please');
     expect(req.requesterUserId).toBe(requester.id);
+
+    // Allow async side-effects to settle
+    await new Promise(r => setTimeout(r, 50));
+    const notifs = await db.select().from(notifications).where(eq(notifications.entityId, project.id));
+    expect(notifs.length).toBeGreaterThan(0);
   });
 
   test('throws REQUEST_PENDING when one already exists', async () => {
@@ -313,6 +319,11 @@ describe('approveAccessRequest', () => {
       and(eq(teamMembers.teamId, team.id), eq(teamMembers.userId, requester.id))
     );
     expect(tm).toBeDefined();
+
+    // Allow async side-effects to settle
+    await new Promise(r => setTimeout(r, 50));
+    const notifs = await db.select().from(notifications).where(eq(notifications.entityId, project.id));
+    expect(notifs.length).toBeGreaterThan(0);
   });
 
   test('throws FORBIDDEN if actor lacks approve permission', async () => {
@@ -414,6 +425,11 @@ describe('declineAccessRequest', () => {
     const cooldownMs = decided.declineCooldownUntil!.getTime() - before;
     expect(cooldownMs).toBeGreaterThanOrEqual(sevenDays - (after - before));
     expect(cooldownMs).toBeLessThanOrEqual(sevenDays + 1000);
+
+    // Allow async side-effects to settle
+    await new Promise(r => setTimeout(r, 50));
+    const notifs = await db.select().from(notifications).where(eq(notifications.entityId, project.id));
+    expect(notifs.length).toBeGreaterThan(0);
   });
 
   test('throws FORBIDDEN for actor with no project role', async () => {
