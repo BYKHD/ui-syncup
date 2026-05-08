@@ -36,6 +36,9 @@ interface InvitationState {
   disabledReason?: string
 }
 
+const isAccessRequestType = (notification: Notification) =>
+  notification.type === 'project_access_request_created'
+
 /**
  * NotificationActions - Accept/Decline buttons for invitation notifications
  *
@@ -53,15 +56,22 @@ export function NotificationActions({
   const [pendingAction, setPendingAction] = useState<InvitationAction | null>(null)
   const [localStatus, setLocalStatus] = useState<InvitationState | null>(null)
 
+  const isAccessRequest = isAccessRequestType(notification)
+
   // Derive invitation state from metadata or local state
   const invitationState = localStatus ?? deriveInvitationState(notification)
   const invitationId = notification.metadata.invitation_id
+  const requestId = notification.metadata.request_id
+  const projectId = notification.entityId
+
+  const hasRequiredIds = isAccessRequest
+    ? Boolean(projectId && requestId)
+    : Boolean(teamId && invitationId)
 
   const disabled =
     invitationState.status !== 'pending' ||
     pendingAction !== null ||
-    !teamId ||
-    !invitationId
+    !hasRequiredIds
 
   const disabledReason = invitationState.disabledReason
 
@@ -76,18 +86,26 @@ export function NotificationActions({
     : null
 
   const handleRespond = async (action: InvitationAction) => {
-    if (!teamId || !invitationId || pendingAction) {
+    if (!hasRequiredIds || pendingAction) {
       return
     }
+
+    const noun = isAccessRequest ? 'request' : 'invitation'
 
     try {
       setPendingAction(action)
 
       // Determine the API endpoint based on notification type
-      const isProjectInvitation = notification.type === 'project_invitation'
-      const endpoint = isProjectInvitation
-        ? `/api/invite/project/by-id/${invitationId}/${action}`
-        : `/api/teams/invitations/by-id/${invitationId}/${action}`
+      let endpoint: string
+      if (isAccessRequest) {
+        // Access request: action 'accept' maps to 'approve' on the server.
+        const serverAction = action === 'accept' ? 'approve' : 'decline'
+        endpoint = `/api/projects/${projectId}/access-requests/${requestId}/${serverAction}`
+      } else if (notification.type === 'project_invitation') {
+        endpoint = `/api/invite/project/by-id/${invitationId}/${action}`
+      } else {
+        endpoint = `/api/teams/invitations/by-id/${invitationId}/${action}`
+      }
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -99,18 +117,22 @@ export function NotificationActions({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || errorData.error || `Failed to ${action} invitation`)
+        const error = new Error(
+          errorData.error?.message || errorData.error || `Failed to ${action} ${noun}`
+        ) as Error & { code?: string }
+        error.code = errorData.error?.code
+        throw error
       }
 
       // Parse response for redirect info
       const responseData = await response.json().catch(() => ({}))
 
       // Show success toast
-      toast.success(
-        action === 'accept'
-          ? 'Invitation accepted!'
-          : 'Invitation declined'
-      )
+      if (isAccessRequest) {
+        toast.success(action === 'accept' ? 'Request approved!' : 'Request declined')
+      } else {
+        toast.success(action === 'accept' ? 'Invitation accepted!' : 'Invitation declined')
+      }
 
       if (action === 'accept') {
         // Delete the notification so it clears from the inbox immediately.
@@ -121,14 +143,18 @@ export function NotificationActions({
         setLocalStatus({
           status: 'declined',
           respondedAt: new Date().toISOString(),
-          message: 'You declined this invitation',
+          message: isAccessRequest
+            ? 'You declined this request'
+            : 'You declined this invitation',
         })
         markAsReadMutation(notification.id)
         queryClient.invalidateQueries({ queryKey: notificationKeys.all })
       }
 
-      // Navigate to the project/team if accepted
-      if (action === 'accept') {
+      // Navigate after accepting an invitation. Approvers acting on access
+      // requests stay in their inbox (no navigation).
+      if (action === 'accept' && !isAccessRequest) {
+        const isProjectInvitation = notification.type === 'project_invitation'
         // For team invitations, switch team context first then redirect to projects
         if (!isProjectInvitation && responseData.teamId) {
           await fetch(`/api/teams/${responseData.teamId}/switch`, {
@@ -142,7 +168,33 @@ export function NotificationActions({
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : ''
-      
+      const errorCode = (error as { code?: string } | null)?.code
+
+      if (isAccessRequest) {
+        console.error(`Failed to ${action} access request:`, error)
+
+        // Server-mapped error codes from /access-requests routes:
+        // - INVALID_STATE (409): request is no longer pending
+        // - NOT_FOUND (404): request_id doesn't resolve
+        // - FORBIDDEN (403): caller lacks permission
+        if (errorCode === 'INVALID_STATE') {
+          setLocalStatus({
+            status: 'expired',
+            message: 'This request is no longer pending.',
+          })
+          toast.error('This request is no longer pending')
+        } else if (errorCode === 'NOT_FOUND') {
+          setLocalStatus({
+            status: 'expired',
+            message: 'This request no longer exists.',
+          })
+          toast.error('This request no longer exists')
+        } else {
+          toast.error(errorMessage || `Failed to ${action} request`)
+        }
+        return
+      }
+
       // Handle "Already used" — invitation was already accepted (e.g. via join-team link).
       // The server's acceptInvitationById already deleted the notification from DB.
       // Optimistically remove it here so the UI clears instantly without waiting
@@ -156,8 +208,8 @@ export function NotificationActions({
       console.error(`Failed to ${action} invitation:`, error)
 
       // Check if this is a "no longer active" type error
-      const isInactiveError = 
-        errorMessage.includes('cancelled') || 
+      const isInactiveError =
+        errorMessage.includes('cancelled') ||
         errorMessage.includes('expired') ||
         errorMessage.includes('no longer active')
 
@@ -219,7 +271,7 @@ export function NotificationActions({
         onClick={() => handleRespond('accept')}
       >
         {pendingAction === 'accept' && <Loader2 className="h-4 w-4 animate-spin" />}
-        Accept
+        {isAccessRequest ? 'Approve' : 'Accept'}
       </Button>
       <Button
         variant="outline"

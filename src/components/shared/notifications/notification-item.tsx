@@ -32,17 +32,19 @@ export function NotificationItem({ notification, teamId }: NotificationItemProps
   const { mutate: markAsRead } = useMarkAsRead()
   const { mutate: deleteNotification } = useDeleteNotification()
 
+  // Notifications with inline accept/decline (or approve/decline) buttons:
+  // clicking the row should NOT navigate — the inline buttons drive the flow.
+  const isActionableType =
+    notification.type === 'project_invitation' ||
+    notification.type === 'team_invitation' ||
+    notification.type === 'project_access_request_created'
+
   const handleClick = () => {
-    // Don't navigate or mark as read for invitation notifications
-    // User must accept/decline first (handled by NotificationActions)
-    const isInvitationType = 
-      notification.type === 'project_invitation' || 
-      notification.type === 'team_invitation'
-    if (isInvitationType) {
+    if (isActionableType) {
       return
     }
 
-    // Mark as read if unread (non-invitation types only)
+    // Mark as read if unread (non-actionable types only)
     if (!notification.readAt) {
       markAsRead(notification.id)
     }
@@ -56,7 +58,6 @@ export function NotificationItem({ notification, teamId }: NotificationItemProps
   const actorName = notification.metadata.actor_name || 'Someone'
   const message = getNotificationMessage(notification)
   const timestamp = formatTimestamp(notification.createdAt)
-  const isInvitation = notification.type === 'project_invitation' || notification.type === 'team_invitation'
 
   return (
     <div
@@ -105,8 +106,8 @@ export function NotificationItem({ notification, teamId }: NotificationItemProps
             {timestamp}
           </p>
 
-          {/* Invitation Actions */}
-          {isInvitation && (
+          {/* Inline actions (invitations + access requests) */}
+          {isActionableType && (
             <NotificationActions notification={notification} teamId={teamId} />
           )}
         </div>
@@ -170,6 +171,15 @@ function getNotificationMessage(notification: Notification): string {
 
     case 'role_updated':
       return `Your role was updated${metadata.new_role ? ` to ${metadata.new_role}` : ''}${metadata.project_name ? ` in ${metadata.project_name}` : ''}`
+
+    case 'project_access_request_created':
+      return `${metadata.requester_name ?? actor} requested to join ${metadata.project_name ?? 'a project'}`
+
+    case 'project_access_request_approved':
+      return `${actor} approved your request to join ${metadata.project_name ?? 'the project'}`
+
+    case 'project_access_request_declined':
+      return `${actor} declined your request to join ${metadata.project_name ?? 'the project'}`
 
     default:
       return `${actor} sent you a notification`

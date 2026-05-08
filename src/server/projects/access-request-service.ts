@@ -135,7 +135,7 @@ export async function createAccessRequest(data: CreateAccessRequestData): Promis
       .limit(1);
 
     if (projectMeta && teamMeta && requesterRow) {
-      const reviewUrl = `${env.NEXT_PUBLIC_APP_URL}/${teamMeta.slug}/${projectMeta.slug}?tab=requests`;
+      const reviewUrl = `${env.NEXT_PUBLIC_APP_URL}/${projectMeta.slug}?open=members`;
 
       await Promise.allSettled(
         approvers.map(async (approver) => {
@@ -415,7 +415,7 @@ export async function approveAccessRequest(
       .limit(1);
 
     if (projectMeta && teamMeta && requesterRow) {
-      const returnUrl = `${env.NEXT_PUBLIC_APP_URL}/${teamMeta.slug}/${projectMeta.slug}`;
+      const returnUrl = `${env.NEXT_PUBLIC_APP_URL}/${projectMeta.slug}`;
 
       await createNotification({
         recipientId: request.requesterUserId,

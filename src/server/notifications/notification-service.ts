@@ -173,11 +173,12 @@ export function buildTargetUrl(
         : "/";
 
     case "project_access_request_approved":
-      // Requester notification — back to originating page if available
-      return metadata.return_url ?? metadata.target_url ?? "/";
+      // Requester notification — land on the project page they now have access to.
+      return metadata.project_slug ? `/${metadata.project_slug}` : "/";
 
     case "project_access_request_declined":
-      return "/";
+      // Requester can't open the project — send them to the projects list instead.
+      return "/projects";
   }
 
   // Fallback to root or provided target_url

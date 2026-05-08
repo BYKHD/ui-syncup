@@ -34,11 +34,15 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
-// Mock the useMarkAsRead hook
+// Mock the notification hooks
 const mockMarkAsRead = vi.fn()
+const mockDeleteNotification = vi.fn()
 vi.mock('@/features/notifications/hooks', () => ({
   useMarkAsRead: () => ({
     mutate: mockMarkAsRead,
+  }),
+  useDeleteNotification: () => ({
+    mutate: mockDeleteNotification,
   }),
 }))
 
