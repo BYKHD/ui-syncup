@@ -1,3 +1,18 @@
+# [0.9.0](https://github.com/BYKHD/ui-syncup/compare/v0.8.5...v0.9.0) (2026-05-08)
+
+
+### Bug Fixes
+
+* add figmaLink field to issue creation and update priority badge styling ([02f5f37](https://github.com/BYKHD/ui-syncup/commit/02f5f37d3420e420abebfdda0fa4f1a5e58475f5))
+* add member viewing permissions to project actions and conditionally render issue action menu ([50b1cd0](https://github.com/BYKHD/ui-syncup/commit/50b1cd00e2723622c5c6ea7fb9c0a36f90dd306c))
+* localhost exist on project invitation ([#142](https://github.com/BYKHD/ui-syncup/issues/142)) ([628cfe8](https://github.com/BYKHD/ui-syncup/commit/628cfe8461e769f9f0450a35acb04bce77da4c8b))
+* notification bug ([#143](https://github.com/BYKHD/ui-syncup/issues/143)) ([93e997a](https://github.com/BYKHD/ui-syncup/commit/93e997a4b6d8ffb8b2521a200b7c7810eaa04163))
+
+
+### Features
+
+* figma link relocate and notification bug ([5678b4d](https://github.com/BYKHD/ui-syncup/commit/5678b4de566dd28a3ac6b40ba598a13e801dda61)), closes [#142](https://github.com/BYKHD/ui-syncup/issues/142) [#143](https://github.com/BYKHD/ui-syncup/issues/143)
+
 ## [0.8.6-beta.4](https://github.com/BYKHD/ui-syncup/compare/v0.8.6-beta.3...v0.8.6-beta.4) (2026-05-08)
 
 
