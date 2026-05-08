@@ -113,7 +113,7 @@ describe("Notification Service", () => {
         issue_key: "PROJ-123",
         comment_id: "abc-123",
       });
-      expect(url).toBe("/teams/acme/projects/PROJ/issues/PROJ-123#comment-abc-123");
+      expect(url).toBe("/issue/PROJ-123#comment-abc-123");
     });
 
     it("should build URL for issue_assigned without comment anchor", () => {
@@ -122,7 +122,7 @@ describe("Notification Service", () => {
         project_key: "PROJ",
         issue_key: "PROJ-123",
       });
-      expect(url).toBe("/teams/acme/projects/PROJ/issues/PROJ-123");
+      expect(url).toBe("/issue/PROJ-123");
     });
 
     it("should build URL for project_invitation", () => {
@@ -130,7 +130,7 @@ describe("Notification Service", () => {
         team_slug: "acme",
         project_key: "PROJ",
       });
-      expect(url).toBe("/teams/acme/projects/PROJ");
+      expect(url).toBe("/PROJ");
     });
 
     it("should build URL for team_invitation", () => {

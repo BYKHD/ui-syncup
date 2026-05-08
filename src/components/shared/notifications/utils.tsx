@@ -11,6 +11,8 @@ import {
   RiMailLine,
   RiTeamLine,
   RiShieldUserLine,
+  RiCheckboxCircleLine,
+  RiCloseCircleLine,
 } from '@remixicon/react'
 import type { NotificationType } from '@/features/notifications/api'
 import type { ComponentType } from 'react'
@@ -74,6 +76,12 @@ export function getNotificationIcon(
       return RiTeamLine
     case 'role_updated':
       return RiShieldUserLine
+    case 'project_access_request_created':
+      return RiUserAddLine
+    case 'project_access_request_approved':
+      return RiCheckboxCircleLine
+    case 'project_access_request_declined':
+      return RiCloseCircleLine
     default:
       return null
   }
@@ -109,6 +117,12 @@ export function NotificationIcon({
       return <RiTeamLine className={className} />
     case 'role_updated':
       return <RiShieldUserLine className={className} />
+    case 'project_access_request_created':
+      return <RiUserAddLine className={className} />
+    case 'project_access_request_approved':
+      return <RiCheckboxCircleLine className={className} />
+    case 'project_access_request_declined':
+      return <RiCloseCircleLine className={className} />
     default:
       return null
   }
