@@ -315,7 +315,7 @@ describe('Attachment Deletion Cascade - Property-Based Tests', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.uuid(),
-        async (attachmentId) => {
+        async (_attachmentId) => {
           // Deletion should still succeed
           const simulateDeletion = () => {
             return {

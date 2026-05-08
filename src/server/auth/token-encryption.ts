@@ -132,7 +132,7 @@ export function decryptToken(encryptedToken: string, key: string): string {
     ]);
 
     return decrypted.toString("utf-8");
-  } catch (error) {
+  } catch {
     throw new Error("Failed to decrypt token: invalid key or tampered data");
   }
 }

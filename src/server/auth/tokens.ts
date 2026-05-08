@@ -310,7 +310,7 @@ export async function verifyToken(
       tokenId: dbToken.id,
       type: dbToken.type as TokenType,
     };
-  } catch (error) {
+  } catch {
     // Database error - return null to prevent information leakage
     return null;
   }

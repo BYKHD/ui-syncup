@@ -1,6 +1,7 @@
 "use client";
 
 import { PropsWithChildren, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -567,10 +568,11 @@ function CompactImagePreview({ image, onRemove, progress = 0, isUploading = fals
       />
       {/* Image Preview */}
       <div className="relative aspect-video bg-muted/50">
-        <img
+        <Image
           src={image.preview}
           alt="To-be reference"
           className="w-full h-full object-contain"
+          fill
         />
 
         {/* Remove Button */}

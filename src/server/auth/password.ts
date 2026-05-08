@@ -86,7 +86,7 @@ export async function verifyPassword(
   try {
     const isValid = await verify(hash, password);
     return isValid;
-  } catch (error) {
+  } catch {
     // Invalid hash format or verification error
     // Return false instead of throwing to prevent information leakage
     return false;

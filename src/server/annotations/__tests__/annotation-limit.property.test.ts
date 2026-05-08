@@ -94,7 +94,7 @@ const storedAnnotationArb = fc.record({
 /**
  * Generate an array of annotations of specific size
  */
-const annotationArrayArb = (size: number) =>
+const _annotationArrayArb = (size: number) =>
   fc.array(storedAnnotationArb, { minLength: size, maxLength: size });
 
 // ============================================================================

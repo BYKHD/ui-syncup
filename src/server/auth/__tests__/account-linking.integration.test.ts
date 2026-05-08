@@ -179,7 +179,7 @@ describe("Integration Test: Multi-Account Sign-In (Task 7.2)", () => {
 
     // Create user with Google as primary provider
     const user = await createTestUser(email, "Primary Provider User");
-    const googleAccount = await createOAuthAccount(
+    const _googleAccount = await createOAuthAccount(
       user.id,
       "google",
       `google-${Date.now()}`

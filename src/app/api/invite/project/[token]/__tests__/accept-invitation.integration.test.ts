@@ -7,7 +7,7 @@
  * Requirements: 3.1-3.5, 7.5
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, afterEach } from 'vitest';
 import { db } from '@/lib/db';
 import { users, teams, projects, projectMembers, projectInvitations } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';
@@ -108,14 +108,14 @@ describe('POST /api/invite/project/[token]', () => {
     testProjectIds.push(project.id);
     
     const inviteeEmail = `invitee-api-${Date.now()}@example.com`;
-    const { invitation, token } = await createProjectInvitation({
+    const { invitation, token: _token } = await createProjectInvitation({
       projectId: project.id,
       email: inviteeEmail,
       role: PROJECT_ROLES.PROJECT_EDITOR,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
-    
+
     const invitee = await createTestUser(inviteeEmail, 'Invitee');
     
     // When: Accepting the invitation via API
@@ -131,14 +131,14 @@ describe('POST /api/invite/project/[token]', () => {
     // Expected status: 200
     
     // Then: Invitation should be marked as used
-    const [usedInvitation] = await db
+    const [_usedInvitation] = await db
       .select()
       .from(projectInvitations)
       .where(eq(projectInvitations.id, invitation.id))
       .limit(1);
-    
+
     // Verify user is project member
-   const [member] = await db
+    const [_member] = await db
       .select()
       .from(projectMembers)
       .where(eq(projectMembers.userId, invitee.id))
@@ -203,14 +203,14 @@ describe('POST /api/invite/project/[token]', () => {
     testProjectIds.push(project.id);
     
     const inviteeEmail = `invitee-expired-api-${Date.now()}@example.com`;
-    const { invitation, token } = await createProjectInvitation({
+    const { invitation, token: _token2 } = await createProjectInvitation({
       projectId: project.id,
       email: inviteeEmail,
       role: PROJECT_ROLES.PROJECT_MEMBER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
-    
+
     // Expire the invitation
     await db
       .update(projectInvitations)
@@ -253,14 +253,14 @@ describe('POST /api/invite/project/[token]', () => {
     testProjectIds.push(project.id);
     
     const inviteeEmail = `invitee-cancelled-api-${Date.now()}@example.com`;
-    const { invitation, token } = await createProjectInvitation({
+    const { invitation, token: _token3 } = await createProjectInvitation({
       projectId: project.id,
       email: inviteeEmail,
       role: PROJECT_ROLES.PROJECT_VIEWER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
-    
+
     // Cancel the invitation
     await db
       .update(projectInvitations)
@@ -303,14 +303,14 @@ describe('POST /api/invite/project/[token]', () => {
     testProjectIds.push(project.id);
     
     const inviteeEmail = `invitee-used-api-${Date.now()}@example.com`;
-    const { invitation, token } = await createProjectInvitation({
+    const { invitation, token: _token4 } = await createProjectInvitation({
       projectId: project.id,
       email: inviteeEmail,
       role: PROJECT_ROLES.PROJECT_MEMBER,
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
-    
+
     // Mark as used
     await db
       .update(projectInvitations)

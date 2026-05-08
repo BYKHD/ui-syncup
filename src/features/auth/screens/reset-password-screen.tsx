@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { ResetPasswordForm } from "../components/reset-password-form";
 import { AuthCard } from "../components/auth-card";
 import type { SuccessResponse } from "../api/types";
@@ -18,12 +20,12 @@ export default function ResetPasswordScreen({
       footer={
         <>
           <p>Remember your password?</p>
-          <a
+          <Link
             href="/sign-in"
             className="font-medium text-primary hover:underline"
           >
             Sign in
-          </a>
+          </Link>
         </>
       }
     >

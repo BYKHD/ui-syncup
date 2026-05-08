@@ -34,7 +34,6 @@ const generateTestUUID = () => randomUUID();
 
 async function createTestUser(overrides: Partial<typeof users.$inferInsert> = {}) {
   const userId = overrides.id ?? generateTestUUID();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id: _, email, name, ...rest } = overrides;
 
   const [user] = await db

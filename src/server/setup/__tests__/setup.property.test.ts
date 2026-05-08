@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fc from 'fast-check';
-import { 
-  getInstanceStatus, 
-  createAdmin, 
-  saveInstanceConfig, 
-  completeSetup 
+import {
+  getInstanceStatus,
 } from '../setup-service';
 import { isMultiTeamMode } from '@/config/team';
 

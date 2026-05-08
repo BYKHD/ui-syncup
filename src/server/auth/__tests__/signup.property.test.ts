@@ -43,7 +43,7 @@ const passwordArb = fc
 const nameArb = fc.string({ minLength: 1, maxLength: 120 }).filter((s) => s.trim().length > 0);
 
 // Generate complete registration data
-const registrationArb = fc.record({
+const _registrationArb = fc.record({
   email: emailArb,
   password: passwordArb,
   name: nameArb,
@@ -214,7 +214,7 @@ describe('Property 1: Valid registration creates user with hashed password', () 
         expect(normalized1).toBe(normalized1.trim());
         
         // Property: Normalized name should preserve internal whitespace
-        const internalSpaces = name.trim().split(/\s+/).length - 1;
+        const _internalSpaces = name.trim().split(/\s+/).length - 1;
         const normalizedSpaces = normalized1.split(/\s+/).length - 1;
         expect(normalizedSpaces).toBeGreaterThanOrEqual(0);
       }),

@@ -18,7 +18,7 @@
  *   CI=1 bun run test:ui tests/e2e/auth.spec.ts
  */
 
-import { test, expect, type Page, type BrowserContext } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { randomUUID } from 'crypto';
 
 // Test configuration
@@ -52,7 +52,7 @@ async function signUpUser(page: Page, userData: ReturnType<typeof generateTestUs
 }
 
 // Helper to sign in a user
-async function signInUser(page: Page, email: string, password: string) {
+async function _signInUser(page: Page, email: string, password: string) {
   await page.goto('/sign-in');
   
   // Fill in sign-in form
@@ -65,7 +65,7 @@ async function signInUser(page: Page, email: string, password: string) {
 
 // Helper to extract verification token from email (mock implementation)
 // In a real scenario, this would query a test email service or database
-async function getVerificationToken(email: string): Promise<string | null> {
+async function _getVerificationToken(_email: string): Promise<string | null> {
   // For E2E tests, we'll need to query the database directly
   // This is a placeholder that would be implemented based on your test setup
   return null;
@@ -235,7 +235,7 @@ test.describe('User Sign-In and Dashboard Access', () => {
     // This would be implemented with actual sign-in
   });
 
-  test('should redirect authenticated users from sign-in page', async ({ page }) => {
+  test('should redirect authenticated users from sign-in page', async ({ page: _page }) => {
     // Note: This test requires an authenticated session
     // The test would verify that accessing /sign-in redirects to dashboard
   });
@@ -328,16 +328,16 @@ test.describe('Sign-Out from Multiple Devices', () => {
     // This would be tested with actual authentication
   });
 
-  test('should redirect to sign-in after sign-out', async ({ page }) => {
+  test('should redirect to sign-in after sign-out', async ({ page: _page }) => {
     // Note: This test requires an authenticated session
-    
+
     // After signing out, should redirect to sign-in page
     // This would be tested with actual authentication
   });
 
-  test('should invalidate session after sign-out', async ({ page }) => {
+  test('should invalidate session after sign-out', async ({ page: _page2 }) => {
     // Note: This test requires an authenticated session
-    
+
     // After signing out, accessing protected routes should redirect to sign-in
     // This would be tested with actual authentication
   });
@@ -347,8 +347,8 @@ test.describe('Sign-Out from Multiple Devices', () => {
     const context1 = await browser.newContext();
     const context2 = await browser.newContext();
     
-    const page1 = await context1.newPage();
-    const page2 = await context2.newPage();
+    const _page1 = await context1.newPage();
+    const _page2 = await context2.newPage();
     
     // Note: This test requires actual authentication on both contexts
     // Then sign out from one and verify the other remains authenticated
@@ -427,11 +427,11 @@ test.describe('Rate Limiting', () => {
     // This test would verify the HTTP response headers
     // Playwright can intercept responses to check headers
     
-    let retryAfterHeader: string | null = null;
-    
+    let _retryAfterHeader: string | null = null;
+
     page.on('response', (response) => {
       if (response.status() === 429) {
-        retryAfterHeader = response.headers()['retry-after'];
+        _retryAfterHeader = response.headers()['retry-after'];
       }
     });
     
@@ -464,7 +464,7 @@ test.describe('Protected Route Access Control', () => {
       await page.goto(route);
       
       // Should load successfully (200 or redirect)
-      const response = await page.waitForLoadState('domcontentloaded');
+      const _response = await page.waitForLoadState('domcontentloaded');
       
       // Should not redirect to sign-in (unless already authenticated)
       // This is a basic check that the page loads
@@ -479,16 +479,16 @@ test.describe('Protected Route Access Control', () => {
     await expect(page).toHaveURL(/\/sign-in/, { timeout: 10000 });
   });
 
-  test('should allow authenticated users to access protected routes', async ({ page }) => {
+  test('should allow authenticated users to access protected routes', async ({ page: _page3 }) => {
     // Note: This test requires an authenticated session
-    
+
     // After signing in, should be able to access protected routes
     // This would be tested with actual authentication
   });
 
-  test('should redirect authenticated users from guest-only routes', async ({ page }) => {
+  test('should redirect authenticated users from guest-only routes', async ({ page: _page4 }) => {
     // Note: This test requires an authenticated session
-    
+
     // After signing in, accessing /sign-in or /sign-up should redirect to dashboard
     // This would be tested with actual authentication
   });

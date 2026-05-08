@@ -8,7 +8,7 @@ import { projects } from '@/server/db/schema/projects';
 import { eq, and } from 'drizzle-orm';
 import { createTeam } from '@/server/teams/team-service';
 import { addMember } from '@/server/teams/member-service';
-import { getOwnedProjectsWithDetails, removeWithOwnershipTransfer } from '@/server/teams/member-service';
+import { getOwnedProjectsWithDetails, removeWithOwnershipTransfer, demoteWithOwnershipTransfer } from '@/server/teams/member-service';
 
 const testUserIds: string[] = [];
 const testTeamIds: string[] = [];
@@ -154,5 +154,112 @@ describe('removeWithOwnershipTransfer', () => {
       where: and(eq(teamMembers.teamId, team.id), eq(teamMembers.userId, member.id)),
     });
     expect(teamMember).toBeUndefined();
+  });
+
+  test('transfers ownership when new owner has no existing project membership', async () => {
+    const owner = await createTestUser(`owner-${Date.now()}@example.com`, 'Owner');
+    const newOwner = await createTestUser(`new-${Date.now()}@example.com`, 'New Owner');
+    const team = await createTeam({ name: `Team ${Date.now()}`, creatorId: owner.id });
+    testTeamIds.push(team.id);
+
+    // newOwner is a team member but has NO row in project_members
+    await addMember({ teamId: team.id, userId: newOwner.id, operationalRole: 'TEAM_EDITOR', invitedBy: owner.id });
+
+    const project = await createTestProject(team.id, 'Dashboard', 'DASH');
+    await db.insert(projectMembers).values({ projectId: project.id, userId: owner.id, role: 'owner' });
+    // Intentionally omit: no projectMembers row for newOwner
+
+    await removeWithOwnershipTransfer(
+      team.id,
+      owner.id,
+      [{ projectId: project.id, newOwnerId: newOwner.id }],
+      owner.id
+    );
+
+    const newOwnerRow = await db.query.projectMembers.findFirst({
+      where: and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, newOwner.id)),
+    });
+    expect(newOwnerRow?.role).toBe('owner');
+  });
+});
+
+describe('demoteWithOwnershipTransfer', () => {
+  test('transfers ownership and demotes team role', async () => {
+    const actor = await createTestUser(`actor-${Date.now()}@example.com`, 'Actor');
+    const editor = await createTestUser(`editor-${Date.now()}@example.com`, 'Editor');
+    const newOwner = await createTestUser(`new-${Date.now()}@example.com`, 'New Owner');
+    const team = await createTeam({ name: `Team ${Date.now()}`, creatorId: actor.id });
+    testTeamIds.push(team.id);
+
+    await addMember({ teamId: team.id, userId: editor.id, operationalRole: 'TEAM_EDITOR', invitedBy: actor.id });
+    await addMember({ teamId: team.id, userId: newOwner.id, operationalRole: 'TEAM_EDITOR', invitedBy: actor.id });
+
+    const project = await createTestProject(team.id, 'App', 'APP');
+    await db.insert(projectMembers).values({ projectId: project.id, userId: editor.id, role: 'owner' });
+    await db.insert(projectMembers).values({ projectId: project.id, userId: newOwner.id, role: 'editor' });
+
+    await demoteWithOwnershipTransfer(
+      team.id, editor.id, 'TEAM_MEMBER',
+      [{ projectId: project.id, newOwnerId: newOwner.id }],
+      actor.id
+    );
+
+    const editorTeamRow = await db.query.teamMembers.findFirst({
+      where: and(eq(teamMembers.teamId, team.id), eq(teamMembers.userId, editor.id)),
+    });
+    expect(editorTeamRow?.operationalRole).toBe('TEAM_MEMBER');
+
+    const newOwnerProjectRow = await db.query.projectMembers.findFirst({
+      where: and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, newOwner.id)),
+    });
+    expect(newOwnerProjectRow?.role).toBe('owner');
+  });
+
+  test('transfers ownership and demotes when new owner has no existing project membership', async () => {
+    const actor = await createTestUser(`actor-${Date.now()}@example.com`, 'Actor');
+    const editor = await createTestUser(`editor-${Date.now()}@example.com`, 'Editor');
+    const newOwner = await createTestUser(`new-${Date.now()}@example.com`, 'New Owner');
+    const team = await createTeam({ name: `Team ${Date.now()}`, creatorId: actor.id });
+    testTeamIds.push(team.id);
+
+    await addMember({ teamId: team.id, userId: editor.id, operationalRole: 'TEAM_EDITOR', invitedBy: actor.id });
+    // newOwner is a team member but has NO row in project_members
+    await addMember({ teamId: team.id, userId: newOwner.id, operationalRole: 'TEAM_EDITOR', invitedBy: actor.id });
+
+    const project = await createTestProject(team.id, 'App', 'APP');
+    await db.insert(projectMembers).values({ projectId: project.id, userId: editor.id, role: 'owner' });
+    // Intentionally omit: no projectMembers row for newOwner
+
+    await demoteWithOwnershipTransfer(
+      team.id, editor.id, 'TEAM_MEMBER',
+      [{ projectId: project.id, newOwnerId: newOwner.id }],
+      actor.id
+    );
+
+    const newOwnerProjectRow = await db.query.projectMembers.findFirst({
+      where: and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, newOwner.id)),
+    });
+    expect(newOwnerProjectRow?.role).toBe('owner');
+
+    const editorTeamRow = await db.query.teamMembers.findFirst({
+      where: and(eq(teamMembers.teamId, team.id), eq(teamMembers.userId, editor.id)),
+    });
+    expect(editorTeamRow?.operationalRole).toBe('TEAM_MEMBER');
+  });
+
+  test('throws OWNERSHIP_TRANSFER_REQUIRED if owned project has no transfer target', async () => {
+    const actor = await createTestUser(`actor-${Date.now()}@example.com`, 'Actor');
+    const editor = await createTestUser(`editor-${Date.now()}@example.com`, 'Editor');
+    const team = await createTeam({ name: `Team ${Date.now()}`, creatorId: actor.id });
+    testTeamIds.push(team.id);
+
+    await addMember({ teamId: team.id, userId: editor.id, operationalRole: 'TEAM_EDITOR', invitedBy: actor.id });
+
+    const project = await createTestProject(team.id, 'App', 'APP');
+    await db.insert(projectMembers).values({ projectId: project.id, userId: editor.id, role: 'owner' });
+
+    await expect(
+      demoteWithOwnershipTransfer(team.id, editor.id, 'TEAM_MEMBER', [], actor.id)
+    ).rejects.toThrow('OWNERSHIP_TRANSFER_REQUIRED');
   });
 });

@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RiAlertLine, RiCheckboxCircleLine } from "@remixicon/react";
 
+import Link from "next/link";
+
 import { useForgotPassword } from "../hooks/use-forgot-password";
 import type { SuccessResponse } from "../api/types";
 
@@ -103,12 +105,12 @@ export function ForgotPasswordForm({
       </form>
 
       <div className="text-center text-sm text-muted-foreground">
-        <a
+        <Link
           href="/sign-in"
           className="text-primary hover:underline"
         >
           Back to sign in
-        </a>
+        </Link>
       </div>
     </div>
   );

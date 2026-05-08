@@ -12,11 +12,9 @@ import { addMember } from "../member-service";
 import { createInvitation } from "../invitation-service";
 import { db } from "@/lib/db";
 import { teams } from "@/server/db/schema/teams";
-import { teamMembers } from "@/server/db/schema/team-members";
-import { teamInvitations } from "@/server/db/schema/team-invitations";
 import { users } from "@/server/db/schema/users";
 import { projects } from "@/server/db/schema/projects";
-import { eq, inArray } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 
 // Test configuration: run 20 iterations for DB operations
 const propertyConfig = { numRuns: 20 };

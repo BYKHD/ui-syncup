@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode, type RefObject, useRef, useCallback, useEffect, useMemo } from "react";
+import Image from "next/image";
 import { motion, useMotionValue, useSpring, animate } from "motion/react";
 import type { IssueAttachment, CanvasViewState } from "@/features/issues/types";
 import type { AnnotationSaveStatus } from "@/features/annotations/types";
@@ -685,7 +686,7 @@ export function CenteredCanvasView({
               )}
 
               {/* Image */}
-              <img
+              <Image
                 ref={imageRef}
                 src={displayUrl}
                 alt={attachment.fileName}
@@ -693,6 +694,8 @@ export function CenteredCanvasView({
                   "max-w-none transition-opacity duration-200",
                   imageLoaded ? 'opacity-100' : 'opacity-0'
                 )}
+                width={displaySize.width}
+                height={displaySize.height}
                 style={{
                   width: displaySize.width,
                   height: displaySize.height,
@@ -700,6 +703,7 @@ export function CenteredCanvasView({
                 onLoad={handleImageLoad}
                 onError={handleImageError}
                 draggable={false}
+                unoptimized
               />
 
               {/* Overlay (Annotations) */}

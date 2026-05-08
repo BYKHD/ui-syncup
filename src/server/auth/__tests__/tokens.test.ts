@@ -8,14 +8,13 @@
  * @module server/auth/__tests__/tokens
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, afterEach } from 'vitest';
 import * as fc from 'fast-check';
 import {
   generateToken,
   verifyToken,
   markTokenAsUsed,
   invalidateUserTokens,
-  type TokenType,
 } from '../tokens';
 import { db } from '@/lib/db';
 import { verificationTokens, users } from '@/server/db/schema';
