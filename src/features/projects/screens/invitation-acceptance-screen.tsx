@@ -10,6 +10,7 @@ import { Loader2, AlertCircle, AlertTriangle, Check } from "lucide-react";
 import { type ProjectRole, ROLE_LABELS } from "@/config/roles";
 import { formatDistanceToNow, isPast, differenceInHours } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSignOut } from "@/features/auth";
 
 interface InvitationAcceptanceScreenProps {
   token: string;
@@ -38,6 +39,13 @@ export function InvitationAcceptanceScreen({
 
   // Email mismatch detection
   const emailMismatch = currentUserEmail.toLowerCase() !== invitation.email.toLowerCase();
+
+  // When emails mismatch, "Sign out & switch account" sends the user back to sign-in
+  // with a callback that returns them to this same invitation page.
+  const signInCallback = `/invite/project/${token}`;
+  const { signOut: signOutAndSwitch, isLoading: isSigningOut } = useSignOut({
+    redirectTo: `/sign-in?callbackUrl=${encodeURIComponent(signInCallback)}`,
+  });
 
   // Expiration display logic
   const getExpirationDisplay = () => {
@@ -160,16 +168,32 @@ export function InvitationAcceptanceScreen({
               <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-900 dark:bg-orange-950/30">
                 <div className="flex gap-3">
                   <AlertTriangle className="h-5 w-5 flex-shrink-0 text-orange-600 dark:text-orange-500" />
-                  <div className="flex-1 space-y-1">
+                  <div className="flex-1 space-y-2">
                     <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
                       Email Mismatch
                     </p>
                     <p className="text-sm text-orange-800 dark:text-orange-200">
-                      You are logged in as <strong>{currentUserEmail}</strong>, but this invitation was sent to <strong>{invitation.email}</strong>.
+                      You are signed in as <strong>{currentUserEmail}</strong>, but this invitation was sent to <strong>{invitation.email}</strong>.
                     </p>
                     <p className="text-xs text-orange-700 dark:text-orange-300">
-                      Accepting will add you ({currentUserEmail}) to the project.
+                      You need to sign in with <strong>{invitation.email}</strong> to accept this invitation.
                     </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="mt-1"
+                      onClick={() => signOutAndSwitch()}
+                      disabled={isSigningOut || isAccepting || isDeclining}
+                    >
+                      {isSigningOut ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Signing out...
+                        </>
+                      ) : (
+                        "Sign out and switch account"
+                      )}
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -217,12 +241,16 @@ export function InvitationAcceptanceScreen({
                 <p>{error}</p>
               </div>
             )}
-            <Button 
-              className="w-full" 
-              size="lg" 
+            <Button
+              className="w-full"
+              size="lg"
               onClick={handleAccept}
-              disabled={isAccepting || isDeclining}
-              aria-label={`Accept invitation to join ${invitation.projectName} as ${roleDisplay}`}
+              disabled={isAccepting || isDeclining || emailMismatch}
+              aria-label={
+                emailMismatch
+                  ? `Cannot accept: signed in with a different email than ${invitation.email}`
+                  : `Accept invitation to join ${invitation.projectName} as ${roleDisplay}`
+              }
             >
               {isAccepting ? (
                 <>

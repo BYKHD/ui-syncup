@@ -37,6 +37,7 @@ interface ProjectActionsProps {
   projectId: string;
   projectName: string;
   userRole: 'owner' | 'editor' | 'member' | 'viewer' | null;
+  canViewMembers: boolean;
   canManageMembers: boolean;
   canEditSettings: boolean;
   canLeaveProject: boolean;
@@ -50,6 +51,9 @@ interface ProjectActionsProps {
   renderMemberDialog?: (props: { trigger: React.ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => React.ReactNode;
   renderSettingsDialog?: (props: { trigger: React.ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => React.ReactNode;
   renderLeaveDialog?: (props: { trigger: React.ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => React.ReactNode;
+  // Optional controlled open state for member dialog (used when opened from notification URL)
+  memberDialogOpen?: boolean;
+  onMemberDialogOpenChange?: (open: boolean) => void;
 }
 
 /**
@@ -65,6 +69,7 @@ export function ProjectActions({
   projectId,
   projectName,
   userRole,
+  canViewMembers,
   canManageMembers,
   canEditSettings,
   canLeaveProject,
@@ -74,16 +79,27 @@ export function ProjectActions({
   renderMemberDialog,
   renderSettingsDialog,
   renderLeaveDialog,
+  memberDialogOpen: controlledMemberOpen,
+  onMemberDialogOpenChange,
 }: ProjectActionsProps) {
   // Dialog states
-  const [showMemberDialog, setShowMemberDialog] = useState(false);
+  const [internalMemberDialogOpen, setInternalMemberDialogOpen] = useState(false);
+  const isControlled = controlledMemberOpen !== undefined;
+  const showMemberDialog = isControlled ? controlledMemberOpen : internalMemberDialogOpen;
+  const setShowMemberDialog = (open: boolean) => {
+    if (isControlled) {
+      onMemberDialogOpenChange?.(open);
+    } else {
+      setInternalMemberDialogOpen(open);
+    }
+  };
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const hasSecondaryActions = canManageMembers || canEditSettings || canLeaveProject || canDeleteProject;
+  const hasSecondaryActions = canViewMembers || canEditSettings || canLeaveProject || canDeleteProject;
 
   const handleDelete = async () => {
     if (deleteConfirmName !== projectName) return;
@@ -157,7 +173,7 @@ export function ProjectActions({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              {canManageMembers && (
+              {canViewMembers && (
                 <DropdownMenuItem onClick={() => setShowMemberDialog(true)}>
                   <RiTeamLine className="h-4 w-4" />
                   Members
@@ -171,7 +187,7 @@ export function ProjectActions({
                 </DropdownMenuItem>
               )}
 
-              {(canManageMembers || canEditSettings) && (canLeaveProject || canDeleteProject) && (
+              {(canViewMembers || canEditSettings) && (canLeaveProject || canDeleteProject) && (
                 <DropdownMenuSeparator />
               )}
 

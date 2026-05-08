@@ -32,6 +32,9 @@ interface ProjectDetailHeaderRefactoredProps {
   renderMemberDialog?: (props: { trigger: ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => ReactNode;
   renderSettingsDialog?: (props: { trigger: ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => ReactNode;
   renderLeaveDialog?: (props: { trigger: ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => ReactNode;
+  // Optional controlled open state for member dialog (used when opened from notification URL)
+  memberDialogOpen?: boolean;
+  onMemberDialogOpenChange?: (open: boolean) => void;
 }
 
 /**
@@ -55,8 +58,11 @@ export function ProjectDetailHeader({
   renderMemberDialog,
   renderSettingsDialog,
   renderLeaveDialog,
+  memberDialogOpen,
+  onMemberDialogOpenChange,
 }: ProjectDetailHeaderRefactoredProps) {
   // Permission calculations
+  const canViewMembers = userRole !== null;
   const canManageMembers = userRole === 'owner' || userRole === 'editor';
   const canEditSettings = userRole === 'owner' || userRole === 'editor';
   const canLeaveProject = userRole !== null && userRole !== 'owner';
@@ -83,6 +89,7 @@ export function ProjectDetailHeader({
             projectId={project.id}
             projectName={project.name}
             userRole={userRole}
+            canViewMembers={canViewMembers}
             canManageMembers={canManageMembers}
             canEditSettings={canEditSettings}
             canLeaveProject={canLeaveProject}
@@ -95,6 +102,8 @@ export function ProjectDetailHeader({
             renderMemberDialog={renderMemberDialog}
             renderSettingsDialog={renderSettingsDialog}
             renderLeaveDialog={renderLeaveDialog}
+            memberDialogOpen={memberDialogOpen}
+            onMemberDialogOpenChange={onMemberDialogOpenChange}
           />
         </div>
       </div>

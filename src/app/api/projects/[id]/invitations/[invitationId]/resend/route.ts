@@ -82,6 +82,12 @@ export async function POST(
           { status: 400 }
         );
       }
+      if (error.message === "Invitation resend cooldown active") {
+        return NextResponse.json(
+          { error: { code: "RATE_LIMIT_EXCEEDED", message: "Please wait a few minutes before resending this invitation." } },
+          { status: 429 }
+        );
+      }
     }
 
     logger.error("api.projects.invitations.resend.error", {

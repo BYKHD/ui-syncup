@@ -18,6 +18,9 @@ export const NotificationTypeSchema = z.enum([
   "project_invitation",
   "team_invitation",
   "role_updated",
+  "project_access_request_created",
+  "project_access_request_approved",
+  "project_access_request_declined",
 ]);
 
 export const EntityTypeSchema = z.enum(["issue", "project", "comment", "team"]);
@@ -44,6 +47,11 @@ export const NotificationMetadataSchema = z.object({
   invitation_status: z.enum(['accepted', 'declined']).optional(),
   actor_name: z.string().optional(),
   actor_avatar_url: z.string().optional(),
+  // Access request metadata
+  project_slug: z.string().optional(),
+  return_url: z.string().optional(),
+  request_id: z.string().optional(),
+  requester_name: z.string().optional(),
 });
 
 // ============================================================================

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { IssuesCreateDialog, type ImageData } from "@/features/issues/components/issues-create-dialog";
 import { useCreateIssue, uploadAttachment } from "@/features/issues";
 import { ProjectMemberManagerDialog } from "../components/project-member-manager-dialog";
@@ -58,7 +58,11 @@ export default function ProjectDetailScreen({
 }: ProjectDetailScreenProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { addRecentProject } = useRecentProjects();
+
+  // Controlled open state for the member dialog — driven by ?open=members URL param
+  const [memberDialogOpen, setMemberDialogOpen] = useState(false);
 
   useEffect(() => {
     if (project) {
@@ -86,6 +90,7 @@ export default function ProjectDetailScreen({
   const [issueFormData, setIssueFormData] = useState({
     title: "",
     page: "",
+    figmaLink: "",
     description: "",
     type: null as IssueTypeValue,
     priority: null as IssuePriorityValue,
@@ -144,6 +149,20 @@ export default function ProjectDetailScreen({
 
   const { mutateAsync: revokeInvitationMutation } = useRevokeInvitation();
   const { mutateAsync: resendInvitationMutation } = useResendInvitation();
+
+  // Auto-open member dialog and enable data hooks when ?open=members is in the URL
+  useEffect(() => {
+    if (searchParams.get('open') === 'members') {
+      setMemberDialogOpen(true);
+      setMemberDialogOpened(true);
+      refetchMembers();
+      refetchInvitations();
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('open');
+      const newUrl = params.size > 0 ? `${pathname}?${params}` : pathname;
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [searchParams, pathname, router, refetchMembers, refetchInvitations]);
 
   // Transform API members to dialog format
   const members = useMemo(() => {
@@ -227,6 +246,16 @@ export default function ProjectDetailScreen({
       if (!issueFormData.asIsImage) errors.asIsImage = "As-is image is required";
       if (!issueFormData.toBeImage) errors.toBeImage = "To-be image is required";
     }
+    if (issueFormData.figmaLink) {
+      try {
+        const url = new URL(issueFormData.figmaLink);
+        if (!url.hostname.endsWith("figma.com")) {
+          errors.figmaLink = "Must be a valid figma.com URL";
+        }
+      } catch {
+        errors.figmaLink = "Must be a valid figma.com URL";
+      }
+    }
 
     if (Object.keys(errors).length > 0) {
       setIssueErrors(errors);
@@ -241,6 +270,7 @@ export default function ProjectDetailScreen({
         projectId: project.id,
         title: issueFormData.title,
         page: issueFormData.page,
+        figmaLink: issueFormData.figmaLink || undefined,
         description: issueFormData.description,
         type: issueFormData.type!,
         priority: issueFormData.priority!,
@@ -297,6 +327,7 @@ export default function ProjectDetailScreen({
       setIssueFormData({
         title: "",
         page: "",
+        figmaLink: "",
         description: "",
         type: null,
         priority: null,
@@ -315,6 +346,7 @@ export default function ProjectDetailScreen({
     setIssueFormData({
       title: "",
       page: "",
+      figmaLink: "",
       description: "",
       type: null,
       priority: null,
@@ -522,6 +554,10 @@ export default function ProjectDetailScreen({
               setIssueFormData((prev) => ({ ...prev, page: value }));
               if (value.trim()) clearFieldError("page");
             }}
+            onFigmaLinkChange={(value) => {
+              setIssueFormData((prev) => ({ ...prev, figmaLink: value }));
+              clearFieldError("figmaLink");
+            }}
             onDescriptionChange={(value) => {
               setIssueFormData((prev) => ({ ...prev, description: value }));
               if (value.trim()) clearFieldError("description");
@@ -627,6 +663,11 @@ export default function ProjectDetailScreen({
             {trigger}
           </ProjectLeaveButton>
         )}
+        memberDialogOpen={memberDialogOpen}
+        onMemberDialogOpenChange={(open) => {
+          setMemberDialogOpen(open);
+          handleMemberDialogOpen(open);
+        }}
       />
 
       <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">

@@ -78,6 +78,9 @@ export function PanelHeader({
   const canChangeStatus = permissions?.canChangeStatus ?? true;
   const canDelete = permissions?.canDelete ?? true;
   const collapsed = isPanelCollapsed ?? false;
+  const showShortcutsItem = Boolean(onToggleShortcutsHelp);
+  const showDeleteItem = canDelete;
+  const showActionsMenu = showShortcutsItem || showDeleteItem;
 
   return (
     <>
@@ -138,39 +141,40 @@ export function PanelHeader({
               )}
             </AnimatePresence>
 
-            {/* TODO: wire permission guards when implemented */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  aria-label="Issue actions"
-                >
-                  <RiMore2Line className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {onToggleShortcutsHelp && (
-                  <>
+            {showActionsMenu && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    aria-label="Issue actions"
+                  >
+                    <RiMore2Line className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {showShortcutsItem && (
                     <DropdownMenuItem onClick={onToggleShortcutsHelp}>
                       <RiKeyboardBoxLine className="mr-2 h-4 w-4" />
                       Keyboard Shortcuts
                     </DropdownMenuItem>
+                  )}
+                  {showShortcutsItem && showDeleteItem && (
                     <DropdownMenuSeparator />
-                  </>
-                )}
-                {canDelete && (
-                  <DropdownMenuItem
-                    onClick={handleDeleteClick}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <RiDeleteBinLine className="text-destructive mr-2 h-4 w-4" />
-                    Delete Issue
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  )}
+                  {showDeleteItem && (
+                    <DropdownMenuItem
+                      onClick={handleDeleteClick}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <RiDeleteBinLine className="text-destructive mr-2 h-4 w-4" />
+                      Delete Issue
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
         </header>

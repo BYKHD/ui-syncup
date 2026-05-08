@@ -8,6 +8,7 @@ export interface CreateIssueParams {
   type: string;
   priority: string;
   page?: string;
+  figmaLink?: string;
 }
 
 export async function createIssue(params: CreateIssueParams): Promise<{ issue: IssueDetailData }> {

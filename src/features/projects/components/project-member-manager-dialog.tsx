@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip'
 import { RiTeamLine, RiMore2Line, RiUserLine, RiDeleteBinLine, RiAddLine, RiVipCrownLine, RiMailSendLine, RiAlertLine } from '@remixicon/react'
 import { getRoleDisplayName, getRoleBadgeVariant, getRoleDescription } from '@/features/projects/utils/role-helpers'
+import { AccessRequestList } from './access-requests/access-request-list'
 
 interface User {
   id: string
@@ -287,8 +288,15 @@ export function ProjectMemberManagerDialog({
                   </div>
                 </div>
 
-                {/* Pending Invitations */}
-                {(pendingInvitations || []).length > 0 && (
+                {canManageMembers && (
+                  <>
+                    <Separator />
+                    <AccessRequestList projectId={projectId} />
+                  </>
+                )}
+
+                {/* Pending Invitations — only visible to members managers */}
+                {canManageMembers && (pendingInvitations || []).length > 0 && (
                   <>
                     <Separator />
                     <div className="space-y-4">

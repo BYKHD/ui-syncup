@@ -27,6 +27,9 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "project_invitation",
   "team_invitation",
   "role_updated",
+  "project_access_request_created",
+  "project_access_request_approved",
+  "project_access_request_declined",
 ]);
 
 /**

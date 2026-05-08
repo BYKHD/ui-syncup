@@ -8,10 +8,12 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ProjectActions } from '../project-actions';
+import userEvent from '@testing-library/user-event';
 
 const baseProps = {
   projectId: 'proj-1',
   projectName: 'Test Project',
+  canViewMembers: false,
   canManageMembers: false,
   canEditSettings: false,
   canLeaveProject: false,
@@ -58,4 +60,47 @@ describe('ProjectActions — Add Issue button', () => {
       expect(mockRender).not.toHaveBeenCalled();
     }
   );
+});
+
+describe('ProjectActions — controlled member dialog', () => {
+  it('calls renderMemberDialog with open=true when memberDialogOpen prop is true', () => {
+    const renderMember = vi.fn(({ trigger }: { trigger: React.ReactNode; open: boolean; onOpenChange: (v: boolean) => void }) => trigger);
+
+    render(
+      <ProjectActions
+        {...baseProps}
+        userRole="owner"
+        canViewMembers
+        memberDialogOpen={true}
+        onMemberDialogOpenChange={vi.fn()}
+        renderMemberDialog={renderMember}
+      />
+    );
+
+    expect(renderMember).toHaveBeenCalledWith(
+      expect.objectContaining({ open: true })
+    );
+  });
+
+  it('calls onMemberDialogOpenChange when member dialog is closed', async () => {
+    const onOpenChange = vi.fn();
+    // Render dialog open and confirm onOpenChange is wired
+    const renderMember = vi.fn(({ onOpenChange: change }: { trigger: React.ReactNode; open: boolean; onOpenChange: (v: boolean) => void }) => {
+      return <button onClick={() => change(false)}>close</button>;
+    });
+
+    render(
+      <ProjectActions
+        {...baseProps}
+        userRole="owner"
+        canViewMembers
+        memberDialogOpen={true}
+        onMemberDialogOpenChange={onOpenChange}
+        renderMemberDialog={renderMember}
+      />
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'close' }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
 });

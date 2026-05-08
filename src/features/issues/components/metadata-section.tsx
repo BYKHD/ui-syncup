@@ -260,7 +260,7 @@ export function MetadataSection({
             placeholder="Select priority"
             renderValue={(option) => (
               <div className="flex items-center gap-2">
-                <IssuesPriorityBadge priority={issue.priority} />
+                <IssuesPriorityBadge priority={issue.priority} className="pointer-events-none" />
                 <span className="text-sm capitalize">{option.label}</span>
               </div>
             )}

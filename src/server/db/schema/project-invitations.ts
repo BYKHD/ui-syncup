@@ -31,4 +31,11 @@ export const projectInvitations = pgTable("project_invitations", {
   emailFailedIdx: index("project_invitations_email_failed_idx")
     .on(table.emailDeliveryFailed, table.emailLastAttemptAt)
     .where(sql`${table.emailDeliveryFailed} = true`),
+  // Enforces at most one active (not used, not cancelled) invitation per
+  // (project, email). lower(email) is defense-in-depth — service code already
+  // normalizes email before insert. Race fix: replaces a check-then-insert
+  // pattern that allowed two concurrent POSTs to both create pending invites.
+  activeInvitationUniqueIdx: uniqueIndex("project_invitations_active_unique_idx")
+    .on(table.projectId, sql`lower(${table.email})`)
+    .where(sql`${table.usedAt} IS NULL AND ${table.cancelledAt} IS NULL`),
 }));

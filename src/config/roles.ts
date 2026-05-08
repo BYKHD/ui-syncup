@@ -101,6 +101,9 @@ export const PERMISSIONS = {
   PROJECT_DELETE: "project:delete",
   PROJECT_MANAGE_MEMBERS: "project:manage_members",
   PROJECT_MANAGE_SETTINGS: "project:manage_settings",
+  PROJECT_ACCESS_REQUEST_CREATE: "project:access_request:create",
+  PROJECT_ACCESS_REQUEST_LIST: "project:access_request:list",
+  PROJECT_ACCESS_REQUEST_APPROVE: "project:access_request:approve",
 
   // Issue permissions
   ISSUE_VIEW: "issue:view",
@@ -127,6 +130,10 @@ export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 /**
  * Maps each role to its set of permissions.
  * This is the single source of truth for what each role can do.
+ *
+ * Note: PROJECT_ACCESS_REQUEST_CREATE is intentionally not granted via role.
+ * Any authenticated user can request access; the service layer enforces
+ * not-already-a-member, no-pending-request, and cooldown invariants.
  */
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   // -------------------------------------------------------------------------
@@ -220,6 +227,10 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     PERMISSIONS.PROJECT_DELETE,
     PERMISSIONS.PROJECT_MANAGE_MEMBERS,
     PERMISSIONS.PROJECT_MANAGE_SETTINGS,
+    // PROJECT_ACCESS_REQUEST_CREATE is intentionally omitted — any authenticated
+    // user may request access; see ROLE_PERMISSIONS JSDoc for details.
+    PERMISSIONS.PROJECT_ACCESS_REQUEST_LIST,
+    PERMISSIONS.PROJECT_ACCESS_REQUEST_APPROVE,
 
     // Issue permissions (full control)
     PERMISSIONS.ISSUE_VIEW,
@@ -240,6 +251,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   [PROJECT_ROLES.PROJECT_EDITOR]: [
     // Project permissions (view only)
     PERMISSIONS.PROJECT_VIEW,
+    PERMISSIONS.PROJECT_ACCESS_REQUEST_LIST,
+    PERMISSIONS.PROJECT_ACCESS_REQUEST_APPROVE,
 
     // Issue permissions (full control)
     PERMISSIONS.ISSUE_VIEW,

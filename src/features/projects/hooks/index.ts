@@ -19,6 +19,12 @@ export { useRemoveMember } from './use-remove-member'
 export { useCreateInvitation } from './use-create-invitation'
 export { useRevokeInvitation } from './use-revoke-invitation'
 export { useResendInvitation } from './use-resend-invitation'
+export { useProjectAccessRequests } from './use-project-access-requests'
+export { useMyAccessRequest } from './use-my-access-request'
+export { useCreateAccessRequest } from './use-create-access-request'
+export { useApproveAccessRequest } from './use-approve-access-request'
+export { useDeclineAccessRequest } from './use-decline-access-request'
+export { useCancelAccessRequest } from './use-cancel-access-request'
 
 // Filter Hooks
 export { useProjectFilters, type ProjectFilters } from './use-project-filters'

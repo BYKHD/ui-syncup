@@ -8,6 +8,27 @@
       "when": 1775413109217,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778064043551,
+      "tag": "0001_easy_leopardon",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778129107338,
+      "tag": "0002_broad_sleepwalker",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778141793910,
+      "tag": "0003_lowly_cassandra_nova",
+      "breakpoints": true
     }
   ]
 }

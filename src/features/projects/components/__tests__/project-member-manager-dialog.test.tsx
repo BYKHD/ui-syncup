@@ -6,7 +6,11 @@
 
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { ComponentProps } from 'react';
+import type { AccessRequestWithRequester } from '../../api';
+import { projectKeys } from '../../hooks/use-project';
 import { ProjectMemberManagerDialog } from '../project-member-manager-dialog';
 
 describe('ProjectMemberManagerDialog', () => {
@@ -64,45 +68,85 @@ describe('ProjectMemberManagerDialog', () => {
     onInviteMember: vi.fn(),
   };
 
+  const mockAccessRequest: AccessRequestWithRequester = {
+    id: '11111111-1111-1111-1111-111111111111',
+    projectId: '22222222-2222-2222-2222-222222222222',
+    requesterUserId: '33333333-3333-3333-3333-333333333333',
+    message: 'Please let me in',
+    status: 'pending',
+    decidedByUserId: null,
+    decidedAt: null,
+    declineCooldownUntil: null,
+    createdAt: new Date().toISOString(),
+    requester: {
+      id: '33333333-3333-3333-3333-333333333333',
+      name: 'Access Requester',
+      email: 'requester@example.com',
+      image: null,
+    },
+    decidedByUser: null,
+  };
+
+  const renderDialog = (
+    props: Partial<ComponentProps<typeof ProjectMemberManagerDialog>> = {},
+    accessRequests: AccessRequestWithRequester[] = []
+  ) => {
+    const mergedProps = { ...defaultProps, ...props };
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+
+    queryClient.setQueryData(projectKeys.accessRequests(mergedProps.projectId), accessRequests);
+
+    return render(
+      <QueryClientProvider client={queryClient}>
+        <ProjectMemberManagerDialog {...mergedProps} />
+      </QueryClientProvider>
+    );
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('Rendering', () => {
     it('should render dialog title', () => {
-      render(<ProjectMemberManagerDialog {...defaultProps} />);
+      renderDialog();
       
       expect(screen.getByText('Project Members')).toBeInTheDocument();
     });
 
     it('should render members list', () => {
-      render(<ProjectMemberManagerDialog {...defaultProps} />);
+      renderDialog();
       
       expect(screen.getByText('John Doe')).toBeInTheDocument();
       expect(screen.getByText('john@example.com')).toBeInTheDocument();
     });
 
     it('should render pending invitations', () => {
-      render(<ProjectMemberManagerDialog {...defaultProps} />);
+      renderDialog();
       
       expect(screen.getByText('Jane Smith')).toBeInTheDocument();
       expect(screen.getByText('jane@example.com')).toBeInTheDocument();
     });
 
     it('should show members count', () => {
-      render(<ProjectMemberManagerDialog {...defaultProps} />);
+      renderDialog();
       
       expect(screen.getByText('Members (1)')).toBeInTheDocument();
     });
 
     it('should show pending invitations count', () => {
-      render(<ProjectMemberManagerDialog {...defaultProps} />);
+      renderDialog();
       
       expect(screen.getByText('Pending Invitations (1)')).toBeInTheDocument();
     });
 
     it('should show Invite button for managers', () => {
-      render(<ProjectMemberManagerDialog {...defaultProps} />);
+      renderDialog();
       
       expect(screen.getByRole('button', { name: /invite/i })).toBeInTheDocument();
     });
@@ -110,7 +154,7 @@ describe('ProjectMemberManagerDialog', () => {
 
   describe('Pending invitations display', () => {
     it('should show role badge', () => {
-      render(<ProjectMemberManagerDialog {...defaultProps} />);
+      renderDialog();
       
       // Member role badge should be visible for the pending invitation
       const badges = screen.getAllByText('Member');
@@ -118,13 +162,13 @@ describe('ProjectMemberManagerDialog', () => {
     });
 
     it('should show Pending status badge', () => {
-      render(<ProjectMemberManagerDialog {...defaultProps} />);
+      renderDialog();
       
       expect(screen.getByText('Pending')).toBeInTheDocument();
     });
 
     it('should show inviter name', () => {
-      render(<ProjectMemberManagerDialog {...defaultProps} />);
+      renderDialog();
       
       expect(screen.getByText(/invited by john doe/i)).toBeInTheDocument();
     });
@@ -139,18 +183,13 @@ describe('ProjectMemberManagerDialog', () => {
         emailLastAttemptAt: new Date(),
       };
       
-      render(
-        <ProjectMemberManagerDialog 
-          {...defaultProps} 
-          pendingInvitations={[failedInvitation]} 
-        />
-      );
+      renderDialog({ pendingInvitations: [failedInvitation] });
       
       expect(screen.getByText('Email Failed')).toBeInTheDocument();
     });
 
     it('should not show Email Failed badge when email delivered', () => {
-      render(<ProjectMemberManagerDialog {...defaultProps} />);
+      renderDialog();
       
       expect(screen.queryByText('Email Failed')).not.toBeInTheDocument();
     });
@@ -159,7 +198,7 @@ describe('ProjectMemberManagerDialog', () => {
   describe('Invite action', () => {
     it('should call onInviteMember when Invite button clicked', async () => {
       const user = userEvent.setup();
-      render(<ProjectMemberManagerDialog {...defaultProps} />);
+      renderDialog();
       
       await user.click(screen.getByRole('button', { name: /invite/i }));
       
@@ -170,7 +209,7 @@ describe('ProjectMemberManagerDialog', () => {
   describe('Resend action', () => {
     it('should call onResendInvitation from dropdown', async () => {
       const user = userEvent.setup();
-      render(<ProjectMemberManagerDialog {...defaultProps} />);
+      renderDialog();
       
       // Find and click the dropdown trigger for invitation
       const invitationRow = screen.getByText('jane@example.com').closest('div');
@@ -191,7 +230,7 @@ describe('ProjectMemberManagerDialog', () => {
   describe('Revoke action', () => {
     it('should call onRevokeInvitation from dropdown', async () => {
       const user = userEvent.setup();
-      render(<ProjectMemberManagerDialog {...defaultProps} />);
+      renderDialog();
       
       // Find and click the dropdown trigger for invitation
       const invitationRow = screen.getByText('jane@example.com').closest('div');
@@ -211,14 +250,11 @@ describe('ProjectMemberManagerDialog', () => {
 
   describe('Loading state', () => {
     it('should show loading message when loading', () => {
-      render(
-        <ProjectMemberManagerDialog 
-          {...defaultProps} 
-          isLoading={true}
-          members={[]}
-          pendingInvitations={[]}
-        />
-      );
+      renderDialog({
+        isLoading: true,
+        members: [],
+        pendingInvitations: [],
+      });
       
       expect(screen.getByText(/loading members/i)).toBeInTheDocument();
     });
@@ -226,14 +262,11 @@ describe('ProjectMemberManagerDialog', () => {
 
   describe('Error state', () => {
     it('should show error message when error present', () => {
-      render(
-        <ProjectMemberManagerDialog 
-          {...defaultProps} 
-          error="Failed to load members"
-          members={[]}
-          pendingInvitations={[]}
-        />
-      );
+      renderDialog({
+        error: 'Failed to load members',
+        members: [],
+        pendingInvitations: [],
+      });
       
       expect(screen.getByText('Failed to load members')).toBeInTheDocument();
     });
@@ -241,14 +274,23 @@ describe('ProjectMemberManagerDialog', () => {
 
   describe('Empty state', () => {
     it('should not show pending invitations section when empty', () => {
-      render(
-        <ProjectMemberManagerDialog
-          {...defaultProps}
-          pendingInvitations={[]}
-        />
-      );
+      renderDialog({ pendingInvitations: [] });
 
       expect(screen.queryByText(/pending invitations/i)).not.toBeInTheDocument();
+    });
+
+    it('should not show access requests for non-managers', () => {
+      renderDialog(
+        {
+          userRole: 'member',
+          canManageMembers: false,
+        },
+        [mockAccessRequest]
+      );
+
+      expect(screen.queryByText('Access requests (1)')).not.toBeInTheDocument();
+      expect(screen.queryByText('Access Requester')).not.toBeInTheDocument();
+      expect(screen.queryByText('requester@example.com')).not.toBeInTheDocument();
     });
   });
 
@@ -256,12 +298,7 @@ describe('ProjectMemberManagerDialog', () => {
     it('should call onRoleChange with member role when Make Member is clicked', async () => {
       const user = userEvent.setup()
       const onRoleChange = vi.fn()
-      render(
-        <ProjectMemberManagerDialog
-          {...defaultProps}
-          onRoleChange={onRoleChange}
-        />
-      )
+      renderDialog({ onRoleChange })
 
       // Open the dropdown for the member row
       const memberRow = screen.getByText('john@example.com').closest('[class*="justify-between"]')
