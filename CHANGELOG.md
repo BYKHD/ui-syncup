@@ -1,3 +1,10 @@
+## [0.8.6-beta.4](https://github.com/BYKHD/ui-syncup/compare/v0.8.6-beta.3...v0.8.6-beta.4) (2026-05-08)
+
+
+### Bug Fixes
+
+* notification bug ([#143](https://github.com/BYKHD/ui-syncup/issues/143)) ([93e997a](https://github.com/BYKHD/ui-syncup/commit/93e997a4b6d8ffb8b2521a200b7c7810eaa04163))
+
 ## [0.8.6-beta.3](https://github.com/BYKHD/ui-syncup/compare/v0.8.6-beta.2...v0.8.6-beta.3) (2026-05-07)
 
 
