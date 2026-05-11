@@ -143,3 +143,8 @@ Append-only. Newest entries at the bottom. Each entry starts with `## [YYYY-MM-D
 - Redesigned requester-side `AccessRequestPanel` into a richer permission-review card with explicit private-project, team, access-level, reviewer, pending-review, and cooldown states.
 - Kept request creation/cancellation behavior unchanged and added focused component coverage for the new visible state contract.
 - Verification: focused access-request panel tests, TypeScript typecheck, and lint all pass.
+
+## [2026-05-11] ingest | CSS will-change (jakub.kr)
+
+- Created [[sources/css-will-change]] — summarises when to use `will-change`, when to avoid it, and the dynamic add/remove pattern.
+- Created [[concepts/css-will-change]] — project-facing guidance: use only after profiling confirms layer-promotion delay, avoid on layout-triggering properties, remove after animation ends.
