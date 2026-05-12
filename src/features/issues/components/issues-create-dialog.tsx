@@ -111,7 +111,7 @@ export function IssuesCreateDialog({
   // Extract image dimensions using Image API
   const extractImageMetadata = async (file: File): Promise<{ width: number; height: number }> => {
     return new Promise((resolve, reject) => {
-      const img = new Image();
+      const img = new window.Image();
       const preview = URL.createObjectURL(file);
 
       img.onload = () => {

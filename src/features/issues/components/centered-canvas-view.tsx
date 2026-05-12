@@ -688,7 +688,7 @@ export function CenteredCanvasView({
               {/* Image */}
               <Image
                 ref={imageRef}
-                src={displayUrl}
+                src={displayUrl!}
                 alt={attachment.fileName}
                 className={cn(
                   "max-w-none transition-opacity duration-200",
