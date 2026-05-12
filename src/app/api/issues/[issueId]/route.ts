@@ -20,6 +20,7 @@ import {
 import { getAttachmentsByIssue } from "@/server/issues/attachment-service";
 import { generateDownloadUrl } from "@/lib/storage";
 import { logger } from "@/lib/logger";
+import { canViewIssue } from "@/server/projects";
 import { z } from "zod";
 import type {
   IssueStatus,
@@ -47,7 +48,7 @@ const UpdateIssueSchema = z.object({
  * GET /api/issues/[issueId]
  *
  * Get issue details with attachments.
- * Requires ISSUE_VIEW permission (PROJECT_VIEWER+).
+ * Requires team membership; project membership required for private projects.
  *
  * Success response (200):
  * {
@@ -106,13 +107,8 @@ export async function GET(
       );
     }
 
-    // Check ISSUE_VIEW permission on the project
-    const canView = await hasPermission({
-      userId: user.id,
-      permission: PERMISSIONS.ISSUE_VIEW,
-      resourceId: issue.projectId,
-      resourceType: "project",
-    });
+    // Check view access (same rule as project detail / issues list)
+    const canView = await canViewIssue(user.id, { projectId: issue.projectId });
 
     if (!canView) {
       logger.warn("api.issue.get.forbidden", {

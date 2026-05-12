@@ -1,6 +1,6 @@
 # Unify Issue + Project Access Control Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Eliminate the inconsistency where same-team non-members can list issues in a "public" project but get 403 when opening the issue detail, and close the related cross-team leak where users from a different team can view another team's "public" projects/issues.
 
@@ -45,7 +45,7 @@
 - Modify: `src/server/projects/project-service.ts:388-412`
 - Test: `src/server/projects/__tests__/project-service.access-check.integration.test.ts:93-109` (existing test asserts the leaky behavior — must be flipped)
 
-- [ ] **Step 1: Update the existing failing test to reflect new contract**
+- [x] **Step 1: Update the existing failing test to reflect new contract**
 
 In `src/server/projects/__tests__/project-service.access-check.integration.test.ts`, replace lines 93–109 with:
 
@@ -95,12 +95,12 @@ In `src/server/projects/__tests__/project-service.access-check.integration.test.
   });
 ```
 
-- [ ] **Step 2: Run the tests to verify the first one fails (current code still returns hasAccess=true for outsiders)**
+- [x] **Step 2: Run the tests to verify the first one fails (current code still returns hasAccess=true for outsiders)**
 
 Run: `bun run test src/server/projects/__tests__/project-service.access-check.integration.test.ts`
 Expected: FAIL — `non-team-member, public project: returns project + hasAccess false` expects `false` but gets `true`. The new same-team-member-public test should PASS already (because the current leaky branch lets everyone in).
 
-- [ ] **Step 3: Update `canAccessProject()` to require team membership**
+- [x] **Step 3: Update `canAccessProject()` to require team membership**
 
 In `src/server/projects/project-service.ts`, add `teamMembers` import:
 
@@ -165,17 +165,17 @@ export async function canAccessProject(
 
 Note: this also lets us drop the `getManagementRole(userId, project.teamId)` lookup at the bottom because we already have the membership row — saves one query per call.
 
-- [ ] **Step 4: Run the access-check tests and verify all pass**
+- [x] **Step 4: Run the access-check tests and verify all pass**
 
 Run: `bun run test src/server/projects/__tests__/project-service.access-check.integration.test.ts`
 Expected: PASS — all 6 tests (including the two new ones) pass.
 
-- [ ] **Step 5: Run the full project-service property tests to make sure nothing else regressed**
+- [x] **Step 5: Run the full project-service property tests to make sure nothing else regressed**
 
 Run: `bun run test src/server/projects/__tests__/`
 Expected: PASS — all suites green. If `member-service.property.test.ts` or others fail because they relied on cross-team access, that is an additional bug uncovered by this fix; investigate before proceeding.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/server/projects/project-service.ts src/server/projects/__tests__/project-service.access-check.integration.test.ts
@@ -197,7 +197,7 @@ to the documented contract and closes the cross-team leak."
 - Modify: `src/server/projects/index.ts`
 - Test: `src/server/projects/__tests__/project-service.access-check.integration.test.ts` (append a new `describe` block)
 
-- [ ] **Step 1: Write the failing tests for `canViewIssue`**
+- [x] **Step 1: Write the failing tests for `canViewIssue`**
 
 In `src/server/projects/__tests__/project-service.access-check.integration.test.ts`, add this `describe` block at the bottom of the file:
 
@@ -288,12 +288,12 @@ import { getProjectForAccessCheck, canViewIssue } from '@/server/projects/projec
 
 (Replace the existing `import { getProjectForAccessCheck } from '@/server/projects/project-service';` line.)
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `bun run test src/server/projects/__tests__/project-service.access-check.integration.test.ts`
 Expected: FAIL — `canViewIssue is not a function` / `Cannot find name 'canViewIssue'`.
 
-- [ ] **Step 3: Implement `canViewIssue` in `project-service.ts`**
+- [x] **Step 3: Implement `canViewIssue` in `project-service.ts`**
 
 In `src/server/projects/project-service.ts`, append at the end of the file (after `getProjectForAccessCheck`):
 
@@ -329,7 +329,7 @@ export async function canViewIssue(
 }
 ```
 
-- [ ] **Step 4: Export `canViewIssue` from the projects barrel**
+- [x] **Step 4: Export `canViewIssue` from the projects barrel**
 
 In `src/server/projects/index.ts`, find the line:
 ```ts
@@ -342,12 +342,12 @@ export { getProjectForAccessCheck, canViewIssue } from "./project-service";
 
 (If the barrel uses a different export grouping, append `canViewIssue` to the existing `project-service` export. Do NOT add `export *` per CLAUDE.md.)
 
-- [ ] **Step 5: Run the tests and verify all pass**
+- [x] **Step 5: Run the tests and verify all pass**
 
 Run: `bun run test src/server/projects/__tests__/project-service.access-check.integration.test.ts`
 Expected: PASS — both `getProjectForAccessCheck` and `canViewIssue` describe blocks green (11 tests total).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/server/projects/project-service.ts src/server/projects/index.ts src/server/projects/__tests__/project-service.access-check.integration.test.ts
@@ -362,7 +362,7 @@ git commit -m "feat(projects): add canViewIssue helper to unify issue read-acces
 - Modify: `src/app/api/issues/[issueId]/route.ts:13` (imports), `:109-134` (the check inside `GET`)
 - Test: `src/app/api/issues/[issueId]/__tests__/route.test.ts` (CREATE — does not exist yet)
 
-- [ ] **Step 1: Write a failing route test for the same-team-non-member-public scenario**
+- [x] **Step 1: Write a failing route test for the same-team-non-member-public scenario**
 
 Create `src/app/api/issues/[issueId]/__tests__/route.test.ts`:
 
@@ -442,12 +442,12 @@ describe('GET /api/issues/[issueId]', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `bun run test src/app/api/issues/\[issueId\]/__tests__/route.test.ts`
 Expected: FAIL — current route imports/calls `hasPermission`, not `canViewIssue`. The mock for `canViewIssue` is never invoked, so `expect(mockCanViewIssue).toHaveBeenCalledWith(...)` fails. Status checks for the 200 case may also fail because `hasPermission` (unmocked) will return false.
 
-- [ ] **Step 3: Update the route to use `canViewIssue`**
+- [x] **Step 3: Update the route to use `canViewIssue`**
 
 In `src/app/api/issues/[issueId]/route.ts`:
 
@@ -517,12 +517,12 @@ Replace with:
     }
 ```
 
-- [ ] **Step 4: Run the route test and verify it passes**
+- [x] **Step 4: Run the route test and verify it passes**
 
 Run: `bun run test src/app/api/issues/\[issueId\]/__tests__/route.test.ts`
 Expected: PASS — all 4 cases green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/app/api/issues/\[issueId\]/route.ts src/app/api/issues/\[issueId\]/__tests__/route.test.ts
@@ -543,7 +543,7 @@ same rule the project routes use."
 - Modify: `src/app/api/issues/[issueId]/activities/route.ts:11` (imports), `:108-135` (the check inside `GET`)
 - Test: `src/app/api/issues/[issueId]/activities/__tests__/route.test.ts` (CREATE)
 
-- [ ] **Step 1: Write a failing route test**
+- [x] **Step 1: Write a failing route test**
 
 Create `src/app/api/issues/[issueId]/activities/__tests__/route.test.ts`:
 
@@ -594,12 +594,12 @@ describe('GET /api/issues/[issueId]/activities', () => {
 
 > [!note] Verify the imported activity-service function name. Open `src/server/issues/activity-service.ts` and confirm the read function is `getActivitiesByIssue`. If different, adjust the `vi.mock` shape. If the route imports a different module path, mirror it.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `bun run test src/app/api/issues/\[issueId\]/activities/__tests__/route.test.ts`
 Expected: FAIL — same reason as Task 3.
 
-- [ ] **Step 3: Update the route to use `canViewIssue`**
+- [x] **Step 3: Update the route to use `canViewIssue`**
 
 In `src/app/api/issues/[issueId]/activities/route.ts`, the `GET` handler currently has this block around line 108–135:
 
@@ -631,12 +631,12 @@ c) Leave the existing `if (!canView) { ... return 403 ... }` block untouched.
 
 d) Check whether `hasPermission` and `PERMISSIONS` are still referenced elsewhere in the file. If neither is used anywhere else, remove their imports (lines 11 and the line importing `PERMISSIONS`). If yes, keep them.
 
-- [ ] **Step 4: Run the test and verify it passes**
+- [x] **Step 4: Run the test and verify it passes**
 
 Run: `bun run test src/app/api/issues/\[issueId\]/activities/__tests__/route.test.ts`
 Expected: PASS — both cases green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/app/api/issues/\[issueId\]/activities/route.ts src/app/api/issues/\[issueId\]/activities/__tests__/route.test.ts
@@ -651,7 +651,7 @@ git commit -m "fix(api): unify GET /api/issues/[issueId]/activities view check w
 - Modify: `src/app/api/issues/[issueId]/attachments/route.ts:12` (imports), `:103-130` (the check inside `GET`)
 - Test: `src/app/api/issues/[issueId]/attachments/__tests__/route.test.ts` (CREATE)
 
-- [ ] **Step 1: Write a failing route test for the GET handler only**
+- [x] **Step 1: Write a failing route test for the GET handler only**
 
 Create `src/app/api/issues/[issueId]/attachments/__tests__/route.test.ts`:
 
@@ -708,12 +708,12 @@ describe('GET /api/issues/[issueId]/attachments', () => {
 
 > [!note] Verify mock paths. Open `src/app/api/issues/[issueId]/attachments/route.ts` and confirm the storage helper used (e.g. `generateDownloadUrl`) and its import path. Adjust the `vi.mock('@/server/storage/s3', ...)` line to mirror the actual import.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `bun run test src/app/api/issues/\[issueId\]/attachments/__tests__/route.test.ts`
 Expected: FAIL — `canViewIssue` mock never invoked.
 
-- [ ] **Step 3: Update the GET handler to use `canViewIssue`**
+- [x] **Step 3: Update the GET handler to use `canViewIssue`**
 
 In `src/app/api/issues/[issueId]/attachments/route.ts`:
 
@@ -744,12 +744,12 @@ d) Do NOT change the `POST` handler — it correctly uses `hasPermission(ISSUE_U
 
 e) Confirm `hasPermission` and `PERMISSIONS` are still referenced (by the `POST` handler) — keep their imports.
 
-- [ ] **Step 4: Run the test and verify it passes**
+- [x] **Step 4: Run the test and verify it passes**
 
 Run: `bun run test src/app/api/issues/\[issueId\]/attachments/__tests__/route.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/app/api/issues/\[issueId\]/attachments/route.ts src/app/api/issues/\[issueId\]/attachments/__tests__/route.test.ts
@@ -764,7 +764,7 @@ git commit -m "fix(api): unify GET /api/issues/[issueId]/attachments view check 
 - Modify: `.ai/wiki/concepts/rbac-roles.md`
 - Modify: `.ai/wiki/log.md`
 
-- [ ] **Step 1: Run the focused test suites for everything touched**
+- [x] **Step 1: Run the focused test suites for everything touched**
 
 Run, in order:
 ```
@@ -774,7 +774,7 @@ bun run test src/app/api/projects/
 ```
 Expected: PASS across all three.
 
-- [ ] **Step 2: Manually verify the bug is fixed in the dev server**
+- [x] **Step 2: Manually verify the bug is fixed in the dev server**
 
 Per CLAUDE.md ("for UI or frontend changes, start the dev server and use the feature in a browser"):
 
@@ -788,7 +788,7 @@ Per CLAUDE.md ("for UI or frontend changes, start the dev server and use the fea
 
 If any of these don't behave as documented, debug before continuing.
 
-- [ ] **Step 3: Update the wiki**
+- [x] **Step 3: Update the wiki**
 
 In `.ai/wiki/concepts/rbac-roles.md`, find the "Storage (single source of truth)" section. Above it, add a new section:
 
@@ -805,7 +805,7 @@ Cross-team users never see another team's projects regardless of visibility. Enf
 
 Update the page's `last_updated` frontmatter to today's date.
 
-- [ ] **Step 4: Append the session-end log entry**
+- [x] **Step 4: Append the session-end log entry**
 
 In `.ai/wiki/log.md`, append at the bottom:
 
@@ -817,14 +817,14 @@ Tightened `canAccessProject()` and added `canViewIssue()` to unify read-access c
 Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts`, `src/app/api/issues/[issueId]/route.ts`, `src/app/api/issues/[issueId]/activities/route.ts`, `src/app/api/issues/[issueId]/attachments/route.ts`, plus tests.
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add .ai/wiki/concepts/rbac-roles.md .ai/wiki/log.md
 git commit -m "docs(wiki): document project visibility access rules + log session"
 ```
 
-- [ ] **Step 6: Final verification — full type check**
+- [x] **Step 6: Final verification — full type check**
 
 Run: `bun run typecheck` (or whatever the project's type-check script is — verify in `package.json`)
 Expected: PASS — no new TypeScript errors.

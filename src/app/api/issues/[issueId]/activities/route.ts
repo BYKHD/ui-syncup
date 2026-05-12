@@ -8,10 +8,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/server/auth/session";
-import { hasPermission } from "@/server/auth/rbac";
-import { PERMISSIONS } from "@/config/roles";
 import { getIssueById } from "@/server/issues/issue-service";
 import { getActivitiesByIssue } from "@/server/issues/activity-service";
+import { canViewIssue } from "@/server/projects";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import type { ActivityType } from "@/server/issues/types";
@@ -40,7 +39,7 @@ const ListActivitiesQuerySchema = z.object({
  * GET /api/issues/[issueId]/activities
  *
  * Get paginated activities for an issue.
- * Requires ISSUE_VIEW permission (PROJECT_VIEWER+).
+ * Requires team membership; project membership required for private projects.
  *
  * Query parameters:
  * - type: Activity type filter (optional)
@@ -107,13 +106,8 @@ export async function GET(
       );
     }
 
-    // Check ISSUE_VIEW permission on the project
-    const canView = await hasPermission({
-      userId: user.id,
-      permission: PERMISSIONS.ISSUE_VIEW,
-      resourceId: issue.projectId,
-      resourceType: "project",
-    });
+    // Check view access (same rule as project detail / issues list)
+    const canView = await canViewIssue(user.id, { projectId: issue.projectId });
 
     if (!canView) {
       logger.warn("api.issue.activities.get.forbidden", {
@@ -137,9 +131,9 @@ export async function GET(
     // Parse and validate query parameters
     const { searchParams } = new URL(request.url);
     const queryParams = {
-      type: searchParams.get("type") || undefined,
-      page: searchParams.get("page"),
-      limit: searchParams.get("limit"),
+      type: searchParams.get("type") ?? undefined,
+      page: searchParams.get("page") ?? undefined,
+      limit: searchParams.get("limit") ?? undefined,
     };
 
     const validation = ListActivitiesQuerySchema.safeParse(queryParams);
