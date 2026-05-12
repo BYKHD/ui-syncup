@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,9 +18,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   RiAddLine,
   RiTeamLine,
@@ -29,14 +29,17 @@ import {
   RiDeleteBinLine,
   RiMore2Line,
   RiLoader4Line,
-} from '@remixicon/react';
-import { toast } from 'sonner';
-import { PermissionTooltip } from '@/components/shared/permission-guard/permission-tooltip';
+  RiUserAddLine,
+} from "@remixicon/react";
+import { toast } from "sonner";
+import { PermissionTooltip } from "@/components/shared/permission-guard/permission-tooltip";
+import { useJoinProject } from "../hooks/use-join-project";
 
 interface ProjectActionsProps {
   projectId: string;
   projectName: string;
-  userRole: 'owner' | 'editor' | 'member' | 'viewer' | null;
+  userRole: "owner" | "editor" | "member" | "viewer" | null;
+  canJoinProject?: boolean;
   canViewMembers: boolean;
   canManageMembers: boolean;
   canEditSettings: boolean;
@@ -48,9 +51,21 @@ interface ProjectActionsProps {
   onProjectDeleted?: () => void;
   // Render props for dialogs that need external state
   renderIssueDialog: (trigger: React.ReactNode) => React.ReactNode;
-  renderMemberDialog?: (props: { trigger: React.ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => React.ReactNode;
-  renderSettingsDialog?: (props: { trigger: React.ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => React.ReactNode;
-  renderLeaveDialog?: (props: { trigger: React.ReactNode | null; open: boolean; onOpenChange: (open: boolean) => void }) => React.ReactNode;
+  renderMemberDialog?: (props: {
+    trigger: React.ReactNode | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+  }) => React.ReactNode;
+  renderSettingsDialog?: (props: {
+    trigger: React.ReactNode | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+  }) => React.ReactNode;
+  renderLeaveDialog?: (props: {
+    trigger: React.ReactNode | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+  }) => React.ReactNode;
   // Optional controlled open state for member dialog (used when opened from notification URL)
   memberDialogOpen?: boolean;
   onMemberDialogOpenChange?: (open: boolean) => void;
@@ -59,7 +74,7 @@ interface ProjectActionsProps {
 /**
  * ProjectActions
  * Renders action buttons for project management with a simplified dropdown menu pattern
- * 
+ *
  * Features:
  * - Primary "Add Issue" button
  * - Secondary actions in a dropdown menu (Members, Settings, Leave, Delete)
@@ -69,11 +84,13 @@ export function ProjectActions({
   projectId,
   projectName,
   userRole,
+  canJoinProject = false,
   canViewMembers,
   canManageMembers,
   canEditSettings,
   canLeaveProject,
   canDeleteProject,
+  onMembershipChanged,
   onProjectDeleted,
   renderIssueDialog,
   renderMemberDialog,
@@ -83,9 +100,12 @@ export function ProjectActions({
   onMemberDialogOpenChange,
 }: ProjectActionsProps) {
   // Dialog states
-  const [internalMemberDialogOpen, setInternalMemberDialogOpen] = useState(false);
+  const [internalMemberDialogOpen, setInternalMemberDialogOpen] =
+    useState(false);
   const isControlled = controlledMemberOpen !== undefined;
-  const showMemberDialog = isControlled ? controlledMemberOpen : internalMemberDialogOpen;
+  const showMemberDialog = isControlled
+    ? controlledMemberOpen
+    : internalMemberDialogOpen;
   const setShowMemberDialog = (open: boolean) => {
     if (isControlled) {
       onMemberDialogOpenChange?.(open);
@@ -96,10 +116,18 @@ export function ProjectActions({
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteConfirmName, setDeleteConfirmName] = useState('');
+  const [deleteConfirmName, setDeleteConfirmName] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const { mutate: joinProject, isPending: isJoining } = useJoinProject({
+    onSuccess: onMembershipChanged,
+  });
 
-  const hasSecondaryActions = canViewMembers || canEditSettings || canLeaveProject || canDeleteProject;
+  const hasSecondaryActions =
+    canViewMembers || canEditSettings || canLeaveProject || canDeleteProject;
+
+  const handleJoinProject = () => {
+    joinProject(projectId);
+  };
 
   const handleDelete = async () => {
     if (deleteConfirmName !== projectName) return;
@@ -107,24 +135,25 @@ export function ProjectActions({
     setIsDeleting(true);
     try {
       const response = await fetch(`/api/projects/${projectId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to delete project');
+        throw new Error(error.message || "Failed to delete project");
       }
 
-      toast.success('Project deleted', {
+      toast.success("Project deleted", {
         description: `"${projectName}" has been permanently deleted.`,
       });
 
       setShowDeleteDialog(false);
-      setDeleteConfirmName('');
+      setDeleteConfirmName("");
       onProjectDeleted?.();
     } catch (error) {
-      toast.error('Failed to delete project', {
-        description: error instanceof Error ? error.message : 'Please try again.',
+      toast.error("Failed to delete project", {
+        description:
+          error instanceof Error ? error.message : "Please try again.",
       });
     } finally {
       setIsDeleting(false);
@@ -135,7 +164,7 @@ export function ProjectActions({
     if (!isDeleting) {
       setShowDeleteDialog(open);
       if (!open) {
-        setDeleteConfirmName('');
+        setDeleteConfirmName("");
       }
     }
   };
@@ -143,13 +172,26 @@ export function ProjectActions({
   return (
     <>
       <div className="flex items-center gap-2">
-        {/* Primary Action — only owner/editor can create issues per RBAC */}
-        {userRole === 'owner' || userRole === 'editor' ? (
+        {/* Primary Action — public project non-members can join from details */}
+        {canJoinProject ? (
+          <Button
+            variant={"secondary"}
+            onClick={handleJoinProject}
+            disabled={isJoining}
+          >
+            {isJoining ? (
+              <RiLoader4Line className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RiUserAddLine className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            {isJoining ? "Joining..." : "Join Project"}
+          </Button>
+        ) : userRole === "owner" || userRole === "editor" ? (
           renderIssueDialog(
             <Button>
               <RiAddLine className="mr-1.5 h-3.5 w-3.5" />
               Add Issue
-            </Button>
+            </Button>,
           )
         ) : (
           <PermissionTooltip
@@ -187,9 +229,10 @@ export function ProjectActions({
                 </DropdownMenuItem>
               )}
 
-              {(canViewMembers || canEditSettings) && (canLeaveProject || canDeleteProject) && (
-                <DropdownMenuSeparator />
-              )}
+              {(canViewMembers || canEditSettings) &&
+                (canLeaveProject || canDeleteProject) && (
+                  <DropdownMenuSeparator />
+                )}
 
               {canLeaveProject && (
                 <DropdownMenuItem onClick={() => setShowLeaveDialog(true)}>
@@ -213,16 +256,34 @@ export function ProjectActions({
       </div>
 
       {/* Member Dialog - controlled by internal state */}
-      {renderMemberDialog && renderMemberDialog({ trigger: null, open: showMemberDialog, onOpenChange: setShowMemberDialog })}
+      {renderMemberDialog &&
+        renderMemberDialog({
+          trigger: null,
+          open: showMemberDialog,
+          onOpenChange: setShowMemberDialog,
+        })}
 
       {/* Settings Dialog - controlled by internal state */}
-      {renderSettingsDialog && renderSettingsDialog({ trigger: null, open: showSettingsDialog, onOpenChange: setShowSettingsDialog })}
+      {renderSettingsDialog &&
+        renderSettingsDialog({
+          trigger: null,
+          open: showSettingsDialog,
+          onOpenChange: setShowSettingsDialog,
+        })}
 
       {/* Leave Dialog - controlled by internal state */}
-      {renderLeaveDialog && renderLeaveDialog({ trigger: null, open: showLeaveDialog, onOpenChange: setShowLeaveDialog })}
+      {renderLeaveDialog &&
+        renderLeaveDialog({
+          trigger: null,
+          open: showLeaveDialog,
+          onOpenChange: setShowLeaveDialog,
+        })}
 
       {/* Delete Project Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={handleDeleteDialogChange}>
+      <AlertDialog
+        open={showDeleteDialog}
+        onOpenChange={handleDeleteDialogChange}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
@@ -233,12 +294,18 @@ export function ProjectActions({
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
               <p>
-                This action cannot be undone. This will permanently delete{' '}
-                <strong>{projectName}</strong> and all its issues, comments, and attachments.
+                This action cannot be undone. This will permanently delete{" "}
+                <strong>{projectName}</strong> and all its issues, comments, and
+                attachments.
               </p>
               <div className="space-y-2 pt-2">
-                <Label htmlFor="confirm-project-name" className="text-foreground">
-                  Type <span className="font-mono font-semibold">{projectName}</span> to confirm
+                <Label
+                  htmlFor="confirm-project-name"
+                  className="text-foreground"
+                >
+                  Type{" "}
+                  <span className="font-mono font-semibold">{projectName}</span>{" "}
+                  to confirm
                 </Label>
                 <Input
                   id="confirm-project-name"
@@ -267,7 +334,7 @@ export function ProjectActions({
                   Deleting...
                 </span>
               ) : (
-                'Delete Project'
+                "Delete Project"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

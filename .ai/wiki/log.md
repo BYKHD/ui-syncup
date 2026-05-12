@@ -170,3 +170,15 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - Added `teamMembers` import; removed call to `getManagementRole` in favour of reading `managementRole` directly off the found `teamMembership` row.
 - Updated test `non-member, public project: returns hasAccess true` → `non-team-member, public project: returns hasAccess false (cross-team leak closed)` and added a second test: `team-member but not project-member, public project: returns hasAccess true`.
 - 7/7 access-check tests GREEN; 56/56 (4 skipped) project-service suite GREEN.
+
+## [2026-05-12] fix | project member dialog duplicate separator
+
+- Fixed `ProjectMemberManagerDialog` rendering an empty separator before `AccessRequestList` when access requests were absent.
+- Moved the access-request section divider into `AccessRequestList`, so it only appears when pending access requests render.
+- Added regression coverage for the pending-invitations-only state.
+
+## [2026-05-12] feat | join project from detail header
+
+- Added a `Join Project` primary action for public projects when the current user can view the details page as a same-team non-member (`userRole === null`).
+- Reused the existing `useJoinProject` mutation and refreshes the project detail route after successful join so server-derived role state updates.
+- Added focused `ProjectActions` component coverage for rendering, click behavior, and hiding the join action when joining is not allowed.

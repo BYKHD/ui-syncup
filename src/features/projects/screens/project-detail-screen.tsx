@@ -450,6 +450,10 @@ export default function ProjectDetailScreen({
     leaveProjectMutation(project.id);
   };
 
+  const handleMembershipChanged = useCallback(() => {
+    router.refresh();
+  }, [router]);
+
   // Member dialog handlers
   const handleMemberDialogOpen = useCallback((open: boolean) => {
     if (open) {
@@ -539,6 +543,7 @@ export default function ProjectDetailScreen({
       <ProjectDetailHeader
         project={project}
         userRole={userRole}
+        onMembershipChanged={handleMembershipChanged}
         renderIssueDialog={(trigger) => (
           <IssuesCreateDialog
             open={issueDialogOpen}

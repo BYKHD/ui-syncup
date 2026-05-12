@@ -289,10 +289,7 @@ export function ProjectMemberManagerDialog({
                 </div>
 
                 {canManageMembers && (
-                  <>
-                    <Separator />
-                    <AccessRequestList projectId={projectId} />
-                  </>
+                  <AccessRequestList projectId={projectId} />
                 )}
 
                 {/* Pending Invitations — only visible to members managers */}

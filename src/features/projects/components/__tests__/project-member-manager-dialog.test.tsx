@@ -279,6 +279,13 @@ describe('ProjectMemberManagerDialog', () => {
       expect(screen.queryByText(/pending invitations/i)).not.toBeInTheDocument();
     });
 
+    it('should not render an empty separator when access requests are absent', () => {
+      renderDialog();
+
+      expect(screen.queryByText(/access requests/i)).not.toBeInTheDocument();
+      expect(document.body.querySelectorAll('[data-slot="separator"]')).toHaveLength(1);
+    });
+
     it('should not show access requests for non-managers', () => {
       renderDialog(
         {
