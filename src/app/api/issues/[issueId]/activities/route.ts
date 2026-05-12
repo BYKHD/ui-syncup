@@ -137,9 +137,9 @@ export async function GET(
     // Parse and validate query parameters
     const { searchParams } = new URL(request.url);
     const queryParams = {
-      type: searchParams.get("type") || undefined,
-      page: searchParams.get("page"),
-      limit: searchParams.get("limit"),
+      type: searchParams.get("type") ?? undefined,
+      page: searchParams.get("page") ?? undefined,
+      limit: searchParams.get("limit") ?? undefined,
     };
 
     const validation = ListActivitiesQuerySchema.safeParse(queryParams);
