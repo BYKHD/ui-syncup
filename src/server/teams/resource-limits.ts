@@ -1,8 +1,7 @@
 import { db } from "@/lib/db";
-import { teams } from "@/server/db/schema/teams";
 import { teamMembers } from "@/server/db/schema/team-members";
 import { projects } from "@/server/db/schema/projects";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { QUOTAS } from "@/config/quotas";
 import { logger } from "@/lib/logger";
 

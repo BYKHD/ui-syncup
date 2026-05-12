@@ -10,7 +10,7 @@ Catalog of every page in `.ai/wiki/`. Read this first when answering a query —
 
 > Schema: [[WIKI]] · Timeline: [[log]] · Synthesis: [[overview]]
 
-## Sources (12)
+## Sources (13)
 
 Pages that summarize raw source documents. The `feature-arch-*` originals were removed from the repo; those pages now exist as provenance pointing at the canonical concept page.
 
@@ -26,6 +26,7 @@ Pages that summarize raw source documents. The `feature-arch-*` originals were r
 - [[sources/feature-arch-security]] — *(original removed; canonical: [[concepts/security]])*
 - [[sources/feature-arch-storage]] — *(original removed; canonical: [[concepts/storage]])*
 - [[sources/feature-arch-teams]] — *(original removed; provenance only — see [[features/teams]])*
+- [[sources/css-will-change]] — jakub.kr article on `will-change`: when to use it, when to avoid it, dynamic add/remove pattern
 
 ## Features (15)
 
@@ -47,7 +48,7 @@ One page per feature module in `src/features/<name>/`.
 - [[features/teams]] — team CRUD, switching, team invitations
 - [[features/user-settings]] — per-user preferences
 
-## Concepts (17)
+## Concepts (18)
 
 Cross-cutting topics referenced by multiple features.
 
@@ -68,6 +69,7 @@ Cross-cutting topics referenced by multiple features.
 - [[concepts/storage]] — single-bucket S3-compatible model
 - [[concepts/tech-stack]] — runtimes, libraries, conventions
 - [[concepts/testing]] — Vitest + PGlite + Playwright
+- [[concepts/css-will-change]] — when/how to use `will-change` for animation performance; dynamic add/remove pattern
 
 ## Entities (5)
 
@@ -83,9 +85,9 @@ Domain nouns referenced across many pages.
 
 | Category | Count |
 |---|---|
-| Sources | 12 |
+| Sources | 13 |
 | Features | 15 |
-| Concepts | 17 |
+| Concepts | 18 |
 | Entities | 5 |
 | Meta (WIKI, index, log, overview) | 4 |
-| **Total** | **53** |
+| **Total** | **55** |

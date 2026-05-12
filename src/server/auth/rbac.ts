@@ -15,13 +15,11 @@ import { projectMembers } from "@/server/db/schema/project-members";
 import {
   ALL_ROLES,
   isManagementRole,
-  isOperationalRole,
   type Permission,
   PROJECT_ROLES,
   type ProjectRole,
   type Role,
   ROLE_PERMISSIONS,
-  TEAM_MANAGEMENT_ROLES,
   type TeamManagementRole,
   TEAM_OPERATIONAL_ROLE_HIERARCHY,
   TEAM_OPERATIONAL_ROLES,

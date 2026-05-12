@@ -14,7 +14,7 @@ import { db } from '@/lib/db';
 import { users, teams, teamMembers } from '@/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { createTeam } from '@/server/teams/team-service';
-import { getActiveTeam } from '@/server/teams/team-context';
+
 
 /**
  * Test data cleanup

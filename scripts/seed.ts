@@ -9,7 +9,6 @@ import type {
   TeamManagementRole,
   TeamOperationalRole,
 } from "../src/config/roles";
-import { PROJECT_ROLES } from "../src/config/roles";
 import * as schema from "../src/server/db/schema";
 
 dotenv.config({ path: ".env.local" });

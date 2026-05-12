@@ -9,7 +9,7 @@
  * - Read/unread count
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { db } from "@/lib/db";
 import { notifications } from "@/server/db/schema/notifications";
 import { users } from "@/server/db/schema/users";

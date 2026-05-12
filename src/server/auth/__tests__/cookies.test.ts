@@ -8,7 +8,7 @@
  * @module server/auth/__tests__/cookies
  */
 
-import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import * as fc from 'fast-check';
 import { NextResponse } from 'next/server';
 import {

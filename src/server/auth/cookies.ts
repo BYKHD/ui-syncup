@@ -17,7 +17,7 @@
 
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { env, isProduction } from '@/lib/env';
+import { isProduction } from '@/lib/env';
 
 /**
  * Cookie configuration constants

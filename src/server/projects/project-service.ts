@@ -8,6 +8,7 @@
 import { db } from "@/lib/db";
 import { projects } from "@/server/db/schema/projects";
 import { projectMembers } from "@/server/db/schema/project-members";
+import { teamMembers } from "@/server/db/schema/team-members";
 import { issues } from "@/server/db/schema/issues";
 import { eq, and, isNull, or, like, count, inArray } from "drizzle-orm";
 import { logger } from "@/lib/logger";
@@ -389,26 +390,41 @@ export async function canAccessProject(
   userId: string,
   project: { id: string; teamId: string; visibility: string }
 ): Promise<boolean> {
-  // Public projects: any team member can view
+  // Team membership is the floor — non-team-members never see anything,
+  // regardless of project visibility. Closes cross-team "public" leak.
+  const teamMembership = await db.query.teamMembers.findFirst({
+    where: and(
+      eq(teamMembers.teamId, project.teamId),
+      eq(teamMembers.userId, userId)
+    ),
+  });
+
+  if (!teamMembership) {
+    return false;
+  }
+
+  // Public projects: any team member can view.
   if (project.visibility === "public") {
     return true;
   }
 
-  // Private projects: must be a member
-  const membership = await db.query.projectMembers.findFirst({
+  // Private projects: must be a project member.
+  const projectMembership = await db.query.projectMembers.findFirst({
     where: and(
       eq(projectMembers.projectId, project.id),
       eq(projectMembers.userId, userId)
     ),
   });
 
-  if (membership) {
+  if (projectMembership) {
     return true;
   }
 
-  // Team owners/admins can see all private projects
-  const managementRole = await getManagementRole(userId, project.teamId);
-  return managementRole === "TEAM_OWNER" || managementRole === "TEAM_ADMIN";
+  // Team owners/admins can see all private projects within their own team.
+  return (
+    teamMembership.managementRole === "TEAM_OWNER" ||
+    teamMembership.managementRole === "TEAM_ADMIN"
+  );
 }
 
 /**
@@ -523,4 +539,20 @@ export async function getProjectForAccessCheck(
     },
     hasAccess,
   };
+}
+
+export async function canViewIssue(
+  userId: string,
+  issue: { projectId: string }
+): Promise<boolean> {
+  const project = await db.query.projects.findFirst({
+    where: and(eq(projects.id, issue.projectId), isNull(projects.deletedAt)),
+    columns: { id: true, teamId: true, visibility: true },
+  });
+
+  if (!project) {
+    return false;
+  }
+
+  return canAccessProject(userId, project);
 }

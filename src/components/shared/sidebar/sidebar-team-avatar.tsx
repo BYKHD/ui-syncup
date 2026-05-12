@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { cn } from "@/lib/utils"
 
 // ============================================================================
@@ -82,10 +84,11 @@ export function TeamAvatar({
         sizeClasses,
         className
       )}>
-        <img
+        <Image
           src={team.image}
           alt={`${team.name} avatar`}
           className="h-full w-full object-cover"
+          fill
           onError={(e) => {
             // If image fails to load and fallback is enabled, show initials
             if (showFallback) {

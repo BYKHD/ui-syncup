@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { RiCloseLine, RiPushpinLine } from "@remixicon/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -153,10 +154,11 @@ export function UploadedImagePreview({
         ) : (
           /* Simple To-Be Image Preview */
           <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
-            <img
+            <Image
               src={image.preview}
               alt="To-be preview"
               className="w-full h-full max-w-full max-h-full object-contain rounded"
+              fill
               onLoad={() => setImageLoaded(true)}
             />
             {!imageLoaded && (

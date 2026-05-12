@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
-import { NextRequest } from "next/server"
+
 
 /**
  * **Feature: social-login-integration, Property 9: Provider visibility based on config**

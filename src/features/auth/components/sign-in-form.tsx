@@ -1,6 +1,7 @@
 "use client";
 
 import type { UseFormReturn } from "react-hook-form";
+import Link from "next/link";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -102,12 +103,12 @@ export function SignInForm({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
-            <a
+            <Link
               href="/forgot-password"
               className="text-xs text-primary hover:underline"
             >
               Forgot password?
-            </a>
+            </Link>
           </div>
           <Input
             id="password"
