@@ -1,3 +1,10 @@
+## [0.9.1-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.9.1-beta.1...v0.9.1-beta.2) (2026-05-12)
+
+
+### Bug Fixes
+
+* add join action for public projects ([e2b1bf7](https://github.com/BYKHD/ui-syncup/commit/e2b1bf7a240eb8224d024c16d2f1430294f71af2))
+
 ## [0.9.1-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.9.0...v0.9.1-beta.1) (2026-05-12)
 
 
