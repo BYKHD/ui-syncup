@@ -11,7 +11,7 @@ import { createTeam } from "../team-service";
 import { db } from "@/lib/db";
 import { teams } from "@/server/db/schema/teams";
 import { teamMembers } from "@/server/db/schema/team-members";
-import { teamInvitations } from "@/server/db/schema/team-invitations";
+
 import { users } from "@/server/db/schema/users";
 import { eq } from "drizzle-orm";
 

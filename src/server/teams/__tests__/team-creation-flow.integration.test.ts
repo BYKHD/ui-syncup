@@ -10,13 +10,13 @@
  * Requirements: 1.1, 3.1, 9.2, 10.1
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, afterEach } from 'vitest';
 import { db } from '@/lib/db';
 import { users, teams, teamMembers } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { createTeam } from '@/server/teams/team-service';
 import { addMember } from '@/server/teams/member-service';
-import { setActiveTeam } from '@/server/teams/team-context';
+
 import { checkMemberLimit } from '@/server/teams/resource-limits';
 
 /**
@@ -146,7 +146,7 @@ describe('Integration Test: Complete Team Creation Flow', () => {
     expect(allMembers.length).toBe(10);
     
     // Try to add 11th member - should throw error
-    const eleventhUser = await createTestUser(
+    const _eleventhUser = await createTestUser(
       `member-11-${Date.now()}@example.com`,
       'Member 11'
     );

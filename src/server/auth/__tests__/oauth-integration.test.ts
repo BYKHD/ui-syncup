@@ -10,7 +10,7 @@
  * @module server/auth/__tests__/oauth-integration
  */
 
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
+import { describe, test, expect, afterEach } from "vitest";
 import { db } from "@/lib/db";
 import { users, account } from "@/server/db/schema";
 import { eq, and } from "drizzle-orm";

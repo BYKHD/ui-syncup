@@ -72,7 +72,7 @@ describe('Protected Layout - Server-side Session Validation', () => {
           
           try {
             await ProtectedLayout({ children: 'test content' });
-          } catch (error) {
+          } catch (_error) {
             // redirect() throws an error in Next.js to stop execution
             // This is expected behavior
           }
@@ -150,7 +150,7 @@ describe('Protected Layout - Server-side Session Validation', () => {
           
           try {
             await ProtectedLayout({ children: 'test content' });
-          } catch (error) {
+          } catch (_error) {
             // redirect() throws, which is expected for null sessions
           }
 
@@ -194,7 +194,7 @@ describe('Protected Layout - Server-side Session Validation', () => {
           // and redirecting to sign-in
           try {
             await ProtectedLayout({ children: 'test content' });
-          } catch (e) {
+          } catch (_e) {
             // redirect() throws, which is expected
           }
 

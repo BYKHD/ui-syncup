@@ -10,6 +10,15 @@ import { describe, it, expect, vi } from 'vitest';
 import { ProjectActions } from '../project-actions';
 import userEvent from '@testing-library/user-event';
 
+const mockJoinProject = vi.fn();
+
+vi.mock('../../hooks/use-join-project', () => ({
+  useJoinProject: () => ({
+    mutate: mockJoinProject,
+    isPending: false,
+  }),
+}));
+
 const baseProps = {
   projectId: 'proj-1',
   projectName: 'Test Project',
@@ -60,6 +69,29 @@ describe('ProjectActions — Add Issue button', () => {
       expect(mockRender).not.toHaveBeenCalled();
     }
   );
+});
+
+describe('ProjectActions — Join Project button', () => {
+  it('renders Join Project for a public project non-member', () => {
+    render(<ProjectActions {...baseProps} userRole={null} canJoinProject />);
+
+    expect(screen.getByRole('button', { name: /join project/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add issue/i })).not.toBeInTheDocument();
+  });
+
+  it('joins the project when a public project non-member clicks Join Project', async () => {
+    render(<ProjectActions {...baseProps} userRole={null} canJoinProject />);
+
+    await userEvent.click(screen.getByRole('button', { name: /join project/i }));
+
+    expect(mockJoinProject).toHaveBeenCalledWith('proj-1');
+  });
+
+  it('does not render Join Project when joining is not allowed', () => {
+    render(<ProjectActions {...baseProps} userRole={null} canJoinProject={false} />);
+
+    expect(screen.queryByRole('button', { name: /join project/i })).not.toBeInTheDocument();
+  });
 });
 
 describe('ProjectActions — controlled member dialog', () => {

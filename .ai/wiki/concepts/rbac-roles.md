@@ -2,7 +2,7 @@
 title: Concept — RBAC & Roles
 type: concept
 tags: [rbac, security, permissions, roles]
-last_updated: 2026-05-01
+last_updated: 2026-05-12
 sources: [sources/steering-product, sources/feature-arch-rbac, sources/feature-arch-resource-limits]
 ---
 
@@ -37,6 +37,15 @@ Assigning `PROJECT_OWNER` or `PROJECT_EDITOR` triggers `autoPromoteToEditor()` /
 ## Demotion guard
 
 `updateRole` blocks demoting a user out of `TEAM_EDITOR` if they own any project. Use `getOwnedProjects(userId)` then `demoteWithOwnershipTransfer()` to transfer ownership atomically. [[sources/feature-arch-rbac]]
+
+## Project visibility access rules
+
+| Visibility | Who can view |
+|---|---|
+| `public` | Any **member of the project's team** (does not need to be a project member). |
+| `private` | Project members + that team's `TEAM_OWNER` / `TEAM_ADMIN`. |
+
+Cross-team users never see another team's projects regardless of visibility. Enforced by `canAccessProject()` in `src/server/projects/project-service.ts`. Read-only issue endpoints share this rule via `canViewIssue()`. Write/delete issue endpoints continue to require an actual project-member role via `hasPermission(ISSUE_UPDATE / ISSUE_DELETE, ...)`.
 
 ## Storage (single source of truth)
 

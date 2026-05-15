@@ -17,7 +17,7 @@ import { teamMembers } from "@/server/db/schema/team-members";
 import { teamInvitations } from "@/server/db/schema/team-invitations";
 import { projects } from "@/server/db/schema/projects";
 import { users } from "@/server/db/schema/users";
-import { eq, and, isNull, gte } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { enqueueEmail } from "@/server/email";
 import { logTeamEvent } from "./team-service";

@@ -1,3 +1,20 @@
+## [0.9.1-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.9.1-beta.1...v0.9.1-beta.2) (2026-05-12)
+
+
+### Bug Fixes
+
+* add join action for public projects ([e2b1bf7](https://github.com/BYKHD/ui-syncup/commit/e2b1bf7a240eb8224d024c16d2f1430294f71af2))
+
+## [0.9.1-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.9.0...v0.9.1-beta.1) (2026-05-12)
+
+
+### Bug Fixes
+
+* close cross-team leak in public project access ([d1927fa](https://github.com/BYKHD/ui-syncup/commit/d1927fa155e2f972cc37e2379d967104cffa480e))
+* null searchParams crashing pagination defaults in activities and projects routes ([a401eb0](https://github.com/BYKHD/ui-syncup/commit/a401eb09c25d5642fe9691b6eb8e466709eaa5a8))
+* project owner missing after demote user ([e5dae71](https://github.com/BYKHD/ui-syncup/commit/e5dae7199618e36e51c09e6c4cee451b21cddd97))
+* typecheckfailed ([24d4638](https://github.com/BYKHD/ui-syncup/commit/24d46382bb469048e6ae6f393d512a933335f7a9))
+
 # [0.9.0](https://github.com/BYKHD/ui-syncup/compare/v0.8.5...v0.9.0) (2026-05-08)
 
 

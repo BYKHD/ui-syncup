@@ -114,8 +114,8 @@ export async function GET(request: NextRequest) {
       status: searchParams.get("status") || undefined,
       visibility: searchParams.get("visibility") || undefined,
       search: searchParams.get("search") || undefined,
-      page: searchParams.get("page"),
-      limit: searchParams.get("limit"),
+      page: searchParams.get("page") ?? undefined,
+      limit: searchParams.get("limit") ?? undefined,
     };
 
     const validation = ListProjectsQuerySchema.safeParse(queryParams);

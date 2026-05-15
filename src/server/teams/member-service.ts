@@ -374,9 +374,55 @@ export interface OwnershipTransfer {
   newOwnerId: string;
 }
 
+type DbTransaction = Parameters<Parameters<(typeof db)['transaction']>[0]>[0];
+
+/**
+ * Upserts the new owner's project membership to 'owner' and demotes the previous
+ * owner to 'editor'. Using an upsert (instead of a plain UPDATE) ensures the
+ * transfer succeeds even when the new owner has no existing project_members row —
+ * a plain UPDATE silently matches 0 rows in that case, leaving the project ownerless.
+ *
+ * After writing, asserts that the new owner row exists with role='owner' so any
+ * future regression fails loudly inside the transaction (rolled back automatically).
+ */
+async function transferProjectOwnership(
+  tx: DbTransaction,
+  projectId: string,
+  fromUserId: string,
+  toUserId: string
+): Promise<void> {
+  await tx
+    .insert(projectMembers)
+    .values({ projectId, userId: toUserId, role: 'owner' })
+    .onConflictDoUpdate({
+      target: [projectMembers.projectId, projectMembers.userId],
+      set: { role: 'owner' },
+    });
+
+  await tx
+    .update(projectMembers)
+    .set({ role: 'editor' })
+    .where(and(
+      eq(projectMembers.projectId, projectId),
+      eq(projectMembers.userId, fromUserId)
+    ));
+
+  const [ownerRow] = await tx
+    .select({ role: projectMembers.role })
+    .from(projectMembers)
+    .where(and(
+      eq(projectMembers.projectId, projectId),
+      eq(projectMembers.userId, toUserId)
+    ));
+
+  if (ownerRow?.role !== 'owner') {
+    throw new Error(`TRANSFER_FAILED: project ${projectId} has no owner after transfer`);
+  }
+}
+
 /**
  * Atomically transfers project ownerships and demotes a team member's operational role.
- * Promotes each new project owner to TEAM_EDITOR if not already at that level.
+ * Auto-promotes each new project owner to TEAM_EDITOR if not already at that level.
  * Throws if any owned project within the team has no transfer target.
  */
 export async function demoteWithOwnershipTransfer(
@@ -386,7 +432,6 @@ export async function demoteWithOwnershipTransfer(
   transfers: OwnershipTransfer[],
   actorId: string
 ): Promise<TeamMember> {
-  // Check which projects the user owns in this team
   const owned = await db
     .select({ id: projects.id })
     .from(projectMembers)
@@ -397,7 +442,6 @@ export async function demoteWithOwnershipTransfer(
       eq(projects.teamId, teamId)
     ));
 
-  // Validate every owned project has a transfer target
   const transferMap = new Map(transfers.map(t => [t.projectId, t.newOwnerId]));
   for (const { id } of owned) {
     if (!transferMap.has(id)) {
@@ -407,26 +451,9 @@ export async function demoteWithOwnershipTransfer(
 
   await db.transaction(async (tx) => {
     for (const { projectId, newOwnerId } of transfers) {
-      // Promote new owner in project
-      await tx
-        .update(projectMembers)
-        .set({ role: 'owner' })
-        .where(and(
-          eq(projectMembers.projectId, projectId),
-          eq(projectMembers.userId, newOwnerId)
-        ));
-
-      // Demote previous owner to editor within the project
-      await tx
-        .update(projectMembers)
-        .set({ role: 'editor' })
-        .where(and(
-          eq(projectMembers.projectId, projectId),
-          eq(projectMembers.userId, userId)
-        ));
+      await transferProjectOwnership(tx, projectId, userId, newOwnerId);
     }
 
-    // Demote the user's operational role
     await tx
       .update(teamMembers)
       .set({ operationalRole: newOperationalRole })
@@ -449,7 +476,6 @@ export async function demoteWithOwnershipTransfer(
     }
   }
 
-  // Re-fetch the updated member with user join
   const [updatedMember] = await db
     .select({
       id: teamMembers.id,
@@ -494,7 +520,6 @@ export async function removeWithOwnershipTransfer(
   transfers: OwnershipTransfer[],
   actorId: string
 ): Promise<void> {
-  // Check which projects the user owns in this team
   const owned = await db
     .select({ id: projects.id })
     .from(projectMembers)
@@ -505,7 +530,6 @@ export async function removeWithOwnershipTransfer(
       eq(projects.teamId, teamId)
     ));
 
-  // Validate every owned project has a transfer target
   const transferMap = new Map(transfers.map(t => [t.projectId, t.newOwnerId]));
   for (const { id } of owned) {
     if (!transferMap.has(id)) {
@@ -514,28 +538,10 @@ export async function removeWithOwnershipTransfer(
   }
 
   await db.transaction(async (tx) => {
-    // Transfer ownership for each provided project
     for (const { projectId, newOwnerId } of transfers) {
-      // Promote new owner
-      await tx
-        .update(projectMembers)
-        .set({ role: 'owner' })
-        .where(and(
-          eq(projectMembers.projectId, projectId),
-          eq(projectMembers.userId, newOwnerId)
-        ));
-
-      // Demote previous owner to editor
-      await tx
-        .update(projectMembers)
-        .set({ role: 'editor' })
-        .where(and(
-          eq(projectMembers.projectId, projectId),
-          eq(projectMembers.userId, userId)
-        ));
+      await transferProjectOwnership(tx, projectId, userId, newOwnerId);
     }
 
-    // Remove from team
     await tx
       .delete(teamMembers)
       .where(and(

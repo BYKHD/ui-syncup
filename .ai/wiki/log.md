@@ -143,3 +143,42 @@ Append-only. Newest entries at the bottom. Each entry starts with `## [YYYY-MM-D
 - Redesigned requester-side `AccessRequestPanel` into a richer permission-review card with explicit private-project, team, access-level, reviewer, pending-review, and cooldown states.
 - Kept request creation/cancellation behavior unchanged and added focused component coverage for the new visible state contract.
 - Verification: focused access-request panel tests, TypeScript typecheck, and lint all pass.
+
+## [2026-05-11] ingest | CSS will-change (jakub.kr)
+
+- Created [[sources/css-will-change]] — summarises when to use `will-change`, when to avoid it, and the dynamic add/remove pattern.
+- Created [[concepts/css-will-change]] — project-facing guidance: use only after profiling confirms layer-promotion delay, avoid on layout-triggering properties, remove after animation ends.
+
+## [2026-05-12] refactor | activities route migrated to canViewIssue (Task 4)
+
+- Replaced `hasPermission(ISSUE_VIEW)` with `canViewIssue(userId, { projectId })` in `GET /api/issues/[issueId]/activities`.
+- Removed `hasPermission` and `PERMISSIONS` imports (no other usage in file).
+- Updated JSDoc to reflect membership-based access rule instead of RBAC permission name.
+- Created `src/app/api/issues/[issueId]/activities/__tests__/route.test.ts` (2 tests: 200 + 403, both GREEN).
+- Note: route has pre-existing Zod coerce-null bug with missing page/limit params (null → 0 fails min(1)); test works around it with explicit `?page=1&limit=20`.
+
+## [2026-05-12] update | concepts/rbac-roles — public-project access requires team membership
+
+Tightened `canAccessProject()` and added `canViewIssue()` to unify read-access checks across project + issue routes. Closes a cross-team leak where any authenticated user could view another team's "public" projects via direct URL, and fixes the inconsistency where same-team non-members could list issues but get 403 on the issue detail.
+
+Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts`, `src/app/api/issues/[issueId]/route.ts`, `src/app/api/issues/[issueId]/activities/route.ts`, `src/app/api/issues/[issueId]/attachments/route.ts`, plus tests.
+
+## [2026-05-12] fix | canAccessProject — close cross-team public project leak
+
+- `canAccessProject()` in `src/server/projects/project-service.ts` previously returned `true` for any authenticated user when `visibility === 'public'`, allowing outsiders from other teams to access another team's project via direct URL.
+- Fix: added a team-membership gate as the first check; non-team-members always return `false` regardless of visibility. Public projects remain fully accessible to all team members.
+- Added `teamMembers` import; removed call to `getManagementRole` in favour of reading `managementRole` directly off the found `teamMembership` row.
+- Updated test `non-member, public project: returns hasAccess true` → `non-team-member, public project: returns hasAccess false (cross-team leak closed)` and added a second test: `team-member but not project-member, public project: returns hasAccess true`.
+- 7/7 access-check tests GREEN; 56/56 (4 skipped) project-service suite GREEN.
+
+## [2026-05-12] fix | project member dialog duplicate separator
+
+- Fixed `ProjectMemberManagerDialog` rendering an empty separator before `AccessRequestList` when access requests were absent.
+- Moved the access-request section divider into `AccessRequestList`, so it only appears when pending access requests render.
+- Added regression coverage for the pending-invitations-only state.
+
+## [2026-05-12] feat | join project from detail header
+
+- Added a `Join Project` primary action for public projects when the current user can view the details page as a same-team non-member (`userRole === null`).
+- Reused the existing `useJoinProject` mutation and refreshes the project detail route after successful join so server-derived role state updates.
+- Added focused `ProjectActions` component coverage for rendering, click behavior, and hiding the join action when joining is not allowed.

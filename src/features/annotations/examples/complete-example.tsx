@@ -10,6 +10,7 @@
 import React from 'react';
 
 import { useRef } from 'react';
+import Image from 'next/image';
 import {
   useAnnotationTools,
   useAnnotationsWithHistory,
@@ -147,10 +148,11 @@ export function CompleteAnnotationExample({
           ref={overlayRef}
           className="relative h-full w-full flex items-center justify-center"
         >
-          <img
+          <Image
             src={imageUrl}
             alt="Annotatable content"
             className="max-h-full max-w-full object-contain"
+            fill
           />
 
           {/* Drawing Canvas (for creating new annotations) */}
