@@ -1,4 +1,4 @@
-import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/shared/headers'
+import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/layout/headers'
 import OtherSettingsScreen from '@/features/user-settings/screens/other-settings-screen'
 import { MOCK_USER_PROFILE } from '@/mocks/user-settings.fixtures'
 

@@ -23,9 +23,9 @@ import {
   TeamSwitcher,
   NavMain,
   NavProjects,
-} from '@/components/shared/sidebar';
+} from '@/components/layout/sidebar';
 import { useRecentProjects } from '@/features/projects/hooks';
-import type { NavItem } from '@/components/shared/sidebar';
+import type { NavItem } from '@/components/layout/sidebar';
 
 import { useTeam } from '@/hooks/use-team';
 import { useCanManageTeam } from '@/features/teams/hooks/use-can-manage-team';

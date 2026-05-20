@@ -1,4 +1,4 @@
-import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/shared/headers";
+import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/layout/headers";
 import { AccessRequestPanel } from "@/features/projects/components";
 import type { AccessRequest } from "@/features/projects/api";
 

@@ -14,8 +14,8 @@ import { AlertTriangle, ChevronDown, ChevronRight, ExternalLink } from "lucide-r
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useServiceHealth } from "@/features/setup";
-import type { ServiceHealthDTO } from "@/features/setup/api";
+import { useServiceHealth } from "../hooks";
+import type { ServiceHealthDTO } from "../api";
 
 interface ServiceInfo {
   key: keyof Omit<ServiceHealthDTO, 'database'>;

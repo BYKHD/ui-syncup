@@ -31,13 +31,13 @@ export type { Notification, NotificationType, NotificationMetadata } from '@/fea
 // ============================================================================
 //
 // Import notification components:
-// import { NotificationPanel, NotificationBell } from '@/components/shared/notifications'
+// import { NotificationPanel, NotificationBell } from '@/components/layout/notifications'
 //
 // Import types:
-// import type { Notification } from '@/components/shared/notifications'
+// import type { Notification } from '@/components/layout/notifications'
 //
 // Import utilities:
-// import { formatTimestamp, getNotificationIcon } from '@/components/shared/notifications'
+// import { formatTimestamp, getNotificationIcon } from '@/components/layout/notifications'
 //
 // Example usage in header:
 // <NotificationPanel />

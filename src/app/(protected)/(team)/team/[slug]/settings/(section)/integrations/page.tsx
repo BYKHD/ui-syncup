@@ -1,4 +1,4 @@
-import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/shared/headers";
+import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/layout/headers";
 import IntegrationsSettingsScreen from "@/features/team-settings/components/team-setting-integrations";
 
 export default async function IntegrationsSettingsPage({

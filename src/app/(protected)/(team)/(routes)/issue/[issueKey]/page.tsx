@@ -3,7 +3,7 @@
 // Next.js App Router page for viewing issue details
 // ============================================================================
 
-import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/shared/headers';
+import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/layout/headers';
 import { IssueDetailsScreen } from '@/features/issues';
 import type { IssuePermissions } from '@/features/issues/types';
 import { AccessRequestScreen } from '@/features/projects';

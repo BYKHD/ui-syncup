@@ -7,3 +7,4 @@ export * from './instance-config-step';
 export * from './mail-config-step';
 export * from './first-team-step';
 export * from './sample-data-step';
+export { ServiceStatusBanner } from './service-status-banner';

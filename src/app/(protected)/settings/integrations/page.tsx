@@ -1,4 +1,4 @@
-import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/shared/headers'
+import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/layout/headers'
 import IntegrationsScreen from '@/features/user-settings/screens/integrations-screen'
 import { MOCK_INTEGRATIONS } from '@/mocks/user-settings.fixtures'
 

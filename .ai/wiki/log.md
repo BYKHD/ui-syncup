@@ -188,3 +188,8 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - Team invitation acceptance now sets the joined team as active and existing members can revisit used/expired/cancelled invitation links without hitting a dead end.
 - Sidebar team switcher now renders all teams in a scrollable, filterable list, shows for 2+ memberships even in single-team mode, and full-reloads to `/projects` on switch.
 - Notification accept for team invitations now relies on the server-side active-team update and full-reloads to `/projects` instead of issuing a redundant client switch call.
+
+## [2026-05-20] refactor | Relocate app-shell composition from components/shared to components/layout
+
+- `sidebar/`, `headers/`, `notifications/` moved to `components/layout/`; `service-status-banner` moved to `features/setup/components/` (its true owner). Resolves the long-standing layer-contract violation where `components/shared` imported `features/*`.
+- `components/layout` is now documented as the app-shell composition layer that may import `features/*` (and may be imported back by feature screens). See [[concepts/import-rules]].
