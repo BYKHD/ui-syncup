@@ -13,8 +13,9 @@
 import { describe, test, expect, afterEach } from 'vitest';
 import { db } from '@/lib/db';
 import { users, teams, teamMembers, teamInvitations } from '@/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { createTeam } from '@/server/teams/team-service';
+import { addMember } from '@/server/teams/member-service';
 import { createInvitation, acceptInvitation, acceptInvitationById, resendInvitation, cancelInvitation } from '@/server/teams/invitation-service';
 
 /**
@@ -228,21 +229,19 @@ describe('Integration Test: Complete Invitation Flow', () => {
     expect(inviteeAfter.lastActiveTeamId).toBe(team.id);
   });
   
-  test('should reject already-used invitations', async () => {
-    // Create team owner and team
+  test('non-member cannot accept an already-used invitation', async () => {
     const owner = await createTestUser(
       `owner-used-${Date.now()}@example.com`,
       'Owner'
     );
-    
+
     const team = await createTeam({
       name: 'Used Test Team',
       description: 'Testing used invitations',
       creatorId: owner.id,
     });
     testTeamIds.push(team.id);
-    
-    // Create invitation
+
     const inviteeEmail = `invitee-used-${Date.now()}@example.com`;
     const { invitation, token } = await createInvitation({
       teamId: team.id,
@@ -251,19 +250,206 @@ describe('Integration Test: Complete Invitation Flow', () => {
       invitedBy: owner.id,
     });
     testInvitationIds.push(invitation.id);
-    
-    // Create invitee user
+
     const invitee = await createTestUser(inviteeEmail, 'Invitee');
-    
-    // Accept invitation first time
     await acceptInvitation(token, invitee.id);
-    
-    // Try to accept again - should fail
+
+    const stranger = await createTestUser(
+      `stranger-used-${Date.now()}@example.com`,
+      'Stranger'
+    );
+
     await expect(
-      acceptInvitation(token, invitee.id)
+      acceptInvitation(token, stranger.id)
     ).rejects.toThrow();
   });
-  
+
+  test('member revisiting an already-used invitation succeeds and stays in the team', async () => {
+    const owner = await createTestUser(
+      `owner-revisit-${Date.now()}@example.com`,
+      'Owner'
+    );
+
+    const team = await createTeam({
+      name: 'Revisit Test Team',
+      description: 'Testing member invitation revisit',
+      creatorId: owner.id,
+    });
+    testTeamIds.push(team.id);
+
+    const inviteeEmail = `invitee-revisit-${Date.now()}@example.com`;
+    const { invitation, token } = await createInvitation({
+      teamId: team.id,
+      email: inviteeEmail,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+    testInvitationIds.push(invitation.id);
+
+    const invitee = await createTestUser(inviteeEmail, 'Invitee');
+    await acceptInvitation(token, invitee.id);
+
+    await expect(acceptInvitation(token, invitee.id)).resolves.toBeUndefined();
+
+    const memberships = await db
+      .select()
+      .from(teamMembers)
+      .where(and(
+        eq(teamMembers.teamId, team.id),
+        eq(teamMembers.userId, invitee.id)
+      ));
+    expect(memberships).toHaveLength(1);
+
+    const [inviteeAfter] = await db
+      .select({ lastActiveTeamId: users.lastActiveTeamId })
+      .from(users)
+      .where(eq(users.id, invitee.id))
+      .limit(1);
+    expect(inviteeAfter.lastActiveTeamId).toBe(team.id);
+  });
+
+  test('acceptInvitationById is idempotent for an existing member', async () => {
+    const owner = await createTestUser(
+      `owner-byid-revisit-${Date.now()}@example.com`,
+      'Owner'
+    );
+
+    const team = await createTeam({
+      name: 'ById Revisit Test Team',
+      description: 'Testing by-id member invitation revisit',
+      creatorId: owner.id,
+    });
+    testTeamIds.push(team.id);
+
+    const inviteeEmail = `invitee-byid-revisit-${Date.now()}@example.com`;
+    const { invitation } = await createInvitation({
+      teamId: team.id,
+      email: inviteeEmail,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+    testInvitationIds.push(invitation.id);
+
+    const invitee = await createTestUser(inviteeEmail, 'Invitee');
+    await acceptInvitationById(invitation.id, invitee.id, inviteeEmail);
+
+    const second = await acceptInvitationById(invitation.id, invitee.id, inviteeEmail);
+    expect(second.teamId).toBe(team.id);
+    expect(second.teamSlug).toBe(team.slug);
+
+    const memberships = await db
+      .select()
+      .from(teamMembers)
+      .where(and(
+        eq(teamMembers.teamId, team.id),
+        eq(teamMembers.userId, invitee.id)
+      ));
+    expect(memberships).toHaveLength(1);
+  });
+
+  test('member revisiting an expired invitation succeeds without marking it used', async () => {
+    const owner = await createTestUser(
+      `owner-expired-revisit-${Date.now()}@example.com`,
+      'Owner'
+    );
+
+    const team = await createTeam({
+      name: 'Expired Revisit Team',
+      description: 'Testing expired member revisit',
+      creatorId: owner.id,
+    });
+    testTeamIds.push(team.id);
+
+    const inviteeEmail = `invitee-expired-revisit-${Date.now()}@example.com`;
+    const { invitation, token } = await createInvitation({
+      teamId: team.id,
+      email: inviteeEmail,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+    testInvitationIds.push(invitation.id);
+
+    const invitee = await createTestUser(inviteeEmail, 'Invitee');
+    await addMember({
+      teamId: team.id,
+      userId: invitee.id,
+      managementRole: null,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+
+    await db
+      .update(teamInvitations)
+      .set({ expiresAt: new Date(Date.now() - 1000) })
+      .where(eq(teamInvitations.id, invitation.id));
+
+    await expect(acceptInvitation(token, invitee.id)).resolves.toBeUndefined();
+
+    const [after] = await db
+      .select({
+        usedAt: teamInvitations.usedAt,
+        lastActiveTeamId: users.lastActiveTeamId,
+      })
+      .from(teamInvitations)
+      .innerJoin(users, eq(users.id, invitee.id))
+      .where(eq(teamInvitations.id, invitation.id))
+      .limit(1);
+
+    expect(after.usedAt).toBeNull();
+    expect(after.lastActiveTeamId).toBe(team.id);
+  });
+
+  test('member revisiting a cancelled invitation succeeds without marking it used', async () => {
+    const owner = await createTestUser(
+      `owner-cancelled-revisit-${Date.now()}@example.com`,
+      'Owner'
+    );
+
+    const team = await createTeam({
+      name: 'Cancelled Revisit Team',
+      description: 'Testing cancelled member revisit',
+      creatorId: owner.id,
+    });
+    testTeamIds.push(team.id);
+
+    const inviteeEmail = `invitee-cancelled-revisit-${Date.now()}@example.com`;
+    const { invitation, token } = await createInvitation({
+      teamId: team.id,
+      email: inviteeEmail,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+    testInvitationIds.push(invitation.id);
+
+    const invitee = await createTestUser(inviteeEmail, 'Invitee');
+    await addMember({
+      teamId: team.id,
+      userId: invitee.id,
+      managementRole: null,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+
+    await cancelInvitation(invitation.id, owner.id);
+
+    await expect(acceptInvitation(token, invitee.id)).resolves.toBeUndefined();
+
+    const [after] = await db
+      .select({
+        usedAt: teamInvitations.usedAt,
+        cancelledAt: teamInvitations.cancelledAt,
+        lastActiveTeamId: users.lastActiveTeamId,
+      })
+      .from(teamInvitations)
+      .innerJoin(users, eq(users.id, invitee.id))
+      .where(eq(teamInvitations.id, invitation.id))
+      .limit(1);
+
+    expect(after.usedAt).toBeNull();
+    expect(after.cancelledAt).toBeTruthy();
+    expect(after.lastActiveTeamId).toBe(team.id);
+  });
+
   test('should handle invitation resend with new token', async () => {
     // Create team owner and team
     const owner = await createTestUser(

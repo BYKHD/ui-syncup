@@ -290,6 +290,35 @@ export async function acceptInvitation(token: string, userId: string): Promise<v
       throw new Error("Invalid invitation token");
     }
 
+    // Existing members revisiting an invitation link are already authorized for
+    // this team, so treat the revisit as success. Non-members deliberately fall
+    // through to the normal stale-token validation below so a used, cancelled,
+    // or expired token cannot grant access to a stranger.
+    if (await validateTeamAccess(userId, invitation.teamId)) {
+      await markTeamActive(userId, invitation.teamId);
+
+      if (!invitation.usedAt && !invitation.cancelledAt && new Date() <= invitation.expiresAt) {
+        await db
+          .update(teamInvitations)
+          .set({ usedAt: new Date() })
+          .where(eq(teamInvitations.id, invitation.id));
+      }
+
+      await deleteInvitationNotification(invitation.id);
+
+      logTeamEvent("team.invitation.accept.success", {
+        outcome: "success",
+        userId,
+        teamId: invitation.teamId,
+        metadata: {
+          invitationId: invitation.id,
+          alreadyMember: true,
+        },
+      });
+
+      return undefined;
+    }
+
     if (invitation.usedAt) {
       logTeamEvent("team.invitation.accept.failure", {
         outcome: "failure",
@@ -605,6 +634,38 @@ export async function acceptInvitationById(
         metadata: { invitationId },
       });
       throw new Error("Invitation not found");
+    }
+
+    // Existing members revisiting an invitation notification are already
+    // authorized for this team, so treat the revisit as success. Non-members
+    // still continue through email and stale-token validation below.
+    if (await validateTeamAccess(userId, invitation.teamId)) {
+      await markTeamActive(userId, invitation.teamId);
+
+      if (!invitation.usedAt && !invitation.cancelledAt && new Date() <= invitation.expiresAt) {
+        await db
+          .update(teamInvitations)
+          .set({ usedAt: new Date() })
+          .where(eq(teamInvitations.id, invitation.id));
+      }
+
+      await deleteInvitationNotification(invitation.id);
+
+      const memberTeam = await db.query.teams.findFirst({
+        where: eq(teams.id, invitation.teamId),
+      });
+
+      logTeamEvent("team.invitation.accept.success", {
+        outcome: "success",
+        userId,
+        teamId: invitation.teamId,
+        metadata: {
+          invitationId: invitation.id,
+          alreadyMember: true,
+        },
+      });
+
+      return { teamId: invitation.teamId, teamSlug: memberTeam?.slug };
     }
 
     // Verify user's email matches invitation email
