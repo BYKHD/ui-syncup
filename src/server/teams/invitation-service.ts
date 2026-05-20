@@ -3,7 +3,7 @@ import { teamInvitations } from "@/server/db/schema/team-invitations";
 import { teamMembers } from "@/server/db/schema/team-members";
 import { teams } from "@/server/db/schema/teams";
 import { users } from "@/server/db/schema/users";
-import { eq, and, gt, lte, sql, isNull } from "drizzle-orm";
+import { eq, and, gt, gte, lte, sql, isNull } from "drizzle-orm";
 import { randomBytes, createHash } from "crypto";
 import { logTeamEvent } from "./team-service";
 import { addMember } from "./member-service";
@@ -315,10 +315,16 @@ export async function acceptInvitation(token: string, userId: string): Promise<v
       await markTeamActive(userId, invitation.teamId);
 
       if (!invitation.usedAt && !invitation.cancelledAt && new Date() <= invitation.expiresAt) {
+        const now = new Date();
         await db
           .update(teamInvitations)
-          .set({ usedAt: new Date() })
-          .where(eq(teamInvitations.id, invitation.id));
+          .set({ usedAt: now })
+          .where(and(
+            eq(teamInvitations.id, invitation.id),
+            isNull(teamInvitations.usedAt),
+            isNull(teamInvitations.cancelledAt),
+            gte(teamInvitations.expiresAt, now),
+          ));
       }
 
       await deleteInvitationNotification(invitation.id);
@@ -689,10 +695,16 @@ export async function acceptInvitationById(
       await markTeamActive(userId, invitation.teamId);
 
       if (!invitation.usedAt && !invitation.cancelledAt && new Date() <= invitation.expiresAt) {
+        const now = new Date();
         await db
           .update(teamInvitations)
-          .set({ usedAt: new Date() })
-          .where(eq(teamInvitations.id, invitation.id));
+          .set({ usedAt: now })
+          .where(and(
+            eq(teamInvitations.id, invitation.id),
+            isNull(teamInvitations.usedAt),
+            isNull(teamInvitations.cancelledAt),
+            gte(teamInvitations.expiresAt, now),
+          ));
       }
 
       await deleteInvitationNotification(invitation.id);
