@@ -10,7 +10,7 @@ import { AccessRequestScreen } from '@/features/projects';
 import type { AccessRequest } from '@/features/projects/api';
 import { db } from '@/lib/db';
 import { teams } from '@/server/db/schema';
-import { getIssueByKeyOnly } from '@/server/issues';
+import { getIssueByRef } from '@/server/issues';
 import { getMyLatestAccessRequest, getProjectForAccessCheck } from '@/server/projects';
 import { getProject } from '@/server/projects/project-service';
 import { getSession } from '@/server/auth/session';
@@ -33,18 +33,18 @@ const GENERIC_ISSUE_METADATA: Metadata = {
  */
 export async function generateMetadata({ params }: IssuePageProps): Promise<Metadata> {
   const { issueKey } = await params;
-  const issue = await getIssueByKeyOnly(issueKey);
+  const session = await getSession();
+  const userId = session?.id;
+  if (!userId) {
+    return GENERIC_ISSUE_METADATA;
+  }
+
+  const issue = await getIssueByRef(issueKey, userId);
 
   if (!issue) {
     return {
       title: 'Issue Not Found',
     };
-  }
-
-  const session = await getSession();
-  const userId = session?.id;
-  if (!userId) {
-    return GENERIC_ISSUE_METADATA;
   }
 
   const access = await getProjectForAccessCheck(issue.projectId, userId);
@@ -62,20 +62,12 @@ export async function generateMetadata({ params }: IssuePageProps): Promise<Meta
  * Issue Details Page
  *
  * Displays the full issue details view with attachments and activity timeline.
- * Uses real API data via getIssueByKeyOnly server function.
+ * Uses real API data via getIssueByRef server function.
  *
- * @param params - Route parameters containing the issue key (e.g., "MKT-101")
+ * @param params - Route parameters containing the issue UUID or legacy key (e.g., "MKT-101")
  */
 export default async function IssuePage({ params }: IssuePageProps) {
   const { issueKey } = await params;
-
-  // Look up issue by key from database
-  const issue = await getIssueByKeyOnly(issueKey);
-
-  // Handle not found
-  if (!issue) {
-    notFound();
-  }
 
   // Get session for user ID
   const session = await getSession();
@@ -84,6 +76,14 @@ export default async function IssuePage({ params }: IssuePageProps) {
   if (!userId) {
     // Should typically be handled by middleware, but safe guard here
     return notFound();
+  }
+
+  // Look up issue by UUID or access-aware legacy key.
+  const issue = await getIssueByRef(issueKey, userId);
+
+  // Handle not found
+  if (!issue) {
+    notFound();
   }
 
   const access = await getProjectForAccessCheck(issue.projectId, userId);

@@ -80,7 +80,7 @@ export function TeamAvatar({
   if (team.image) {
     return (
       <div className={cn(
-        "flex items-center justify-center rounded-full overflow-hidden",
+        "flex items-center justify-center rounded-full overflow-hidden relative",
         sizeClasses,
         className
       )}>

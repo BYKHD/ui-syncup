@@ -9,6 +9,7 @@ import { useInvalidateSession } from "./use-session";
 
 type UseDeleteAccountOptions = {
   onSuccess?: () => void;
+  onError?: (error: unknown) => void;
   redirectTo?: string;
 };
 
@@ -40,7 +41,7 @@ async function deleteAccount(): Promise<SuccessResponse> {
  * @returns Mutation state and delete account handler
  */
 export function useDeleteAccount(options: UseDeleteAccountOptions = {}) {
-  const { onSuccess, redirectTo = "/sign-in" } = options;
+  const { onSuccess, onError, redirectTo = "/sign-in" } = options;
   const router = useRouter();
   const invalidateSession = useInvalidateSession();
 
@@ -69,6 +70,9 @@ export function useDeleteAccount(options: UseDeleteAccountOptions = {}) {
       } else {
         console.error("Delete account error:", error);
       }
+
+      // Call custom error handler
+      onError?.(error);
     },
   });
 

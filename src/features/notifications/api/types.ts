@@ -32,6 +32,7 @@ export const EntityTypeSchema = z.enum(["issue", "project", "comment", "team"]);
 export const NotificationMetadataSchema = z.object({
   target_url: z.string(),
   issue_title: z.string().optional(),
+  issue_id: z.string().optional(),
   issue_key: z.string().optional(),
   comment_preview: z.string().optional(),
   comment_id: z.string().optional(),

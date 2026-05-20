@@ -76,6 +76,7 @@ export interface NotificationMetadata {
 
   // Issue-related metadata
   issue_title?: string;
+  issue_id?: string;
   issue_key?: string;
 
   // Comment-related metadata
@@ -199,6 +200,7 @@ export const EntityTypeSchema = z.enum(["issue", "project", "comment", "team"]);
 export const NotificationMetadataSchema = z.object({
   target_url: z.string().min(1),
   issue_title: z.string().optional(),
+  issue_id: z.string().optional(),
   issue_key: z.string().optional(),
   comment_preview: z.string().optional(),
   comment_id: z.string().optional(),

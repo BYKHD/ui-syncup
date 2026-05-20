@@ -19,67 +19,42 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
-
-interface DeleteAccountDialogProps {
-  userEmail: string
-  onConfirm?: () => void
-}
+import { useDeleteAccount } from '@/features/auth'
 
 const CONFIRM_TEXT = 'DELETE'
 
-export function DeleteAccountDialog({
-  userEmail,
-  onConfirm,
-}: DeleteAccountDialogProps) {
+export function DeleteAccountDialog() {
   const [isOpen, setIsOpen] = useState(false)
-  const [email, setEmail] = useState('')
   const [confirmText, setConfirmText] = useState('')
   const [understood, setUnderstood] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
 
-  const isValid =
-    email === userEmail &&
-    confirmText === CONFIRM_TEXT &&
-    understood
-
-  const handleConfirm = async () => {
-    if (!isValid) return
-
-    setIsDeleting(true)
-
-    // Simulate API call
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      toast.success('Account deletion initiated', {
-        description: 'You will receive a confirmation email shortly.',
+  const { deleteAccount, isLoading } = useDeleteAccount({
+    onSuccess: () => {
+      toast.success('Account deleted', {
+        description: 'You have been signed out.',
       })
-
-      setIsOpen(false)
-      onConfirm?.()
-
-      // Reset form
-      setEmail('')
-      setConfirmText('')
-      setUnderstood(false)
-    } catch (error) {
+    },
+    onError: () => {
       toast.error('Failed to delete account', {
         description: 'Please try again or contact support.',
       })
-    } finally {
-      setIsDeleting(false)
-    }
+    },
+  })
+
+  const isValid = confirmText === CONFIRM_TEXT && understood
+
+  const handleConfirm = () => {
+    if (!isValid) return
+    deleteAccount()
   }
 
   const handleOpenChange = (open: boolean) => {
-    if (!isDeleting) {
-      setIsOpen(open)
-      if (!open) {
-        // Reset form when closing
-        setEmail('')
-        setConfirmText('')
-        setUnderstood(false)
-      }
+    if (isLoading) return
+    setIsOpen(open)
+    if (!open) {
+      // Reset form when closing
+      setConfirmText('')
+      setUnderstood(false)
     }
   }
 
@@ -114,24 +89,6 @@ export function DeleteAccountDialog({
           </Alert>
 
           <div className="space-y-2">
-            <Label htmlFor="confirm-email">
-              Confirm your email address
-            </Label>
-            <Input
-              id="confirm-email"
-              type="email"
-              placeholder={userEmail}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isDeleting}
-              autoComplete="off"
-            />
-            <p className="text-xs text-muted-foreground">
-              Enter your email: {userEmail}
-            </p>
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="confirm-text">
               Type <span className="font-mono font-bold">{CONFIRM_TEXT}</span>{' '}
               to confirm
@@ -142,7 +99,7 @@ export function DeleteAccountDialog({
               placeholder={CONFIRM_TEXT}
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
-              disabled={isDeleting}
+              disabled={isLoading}
               autoComplete="off"
             />
           </div>
@@ -154,7 +111,7 @@ export function DeleteAccountDialog({
               onCheckedChange={(checked) =>
                 setUnderstood(checked === true)
               }
-              disabled={isDeleting}
+              disabled={isLoading}
             />
             <Label
               htmlFor="understood"
@@ -167,16 +124,16 @@ export function DeleteAccountDialog({
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => {
               e.preventDefault()
               handleConfirm()
             }}
-            disabled={!isValid || isDeleting}
+            disabled={!isValid || isLoading}
             variant="destructive"
           >
-            {isDeleting ? 'Deleting...' : 'Delete account permanently'}
+            {isLoading ? 'Deleting...' : 'Delete account permanently'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -21,7 +21,7 @@ export function DashboardIssueRow({ issue }: DashboardIssueRowProps) {
 
   return (
     <Link
-      href={`/issue/${issue.issueKey}`}
+      href={`/issue/${issue.id}`}
       className={cn(
         'flex items-center gap-3 rounded-sm px-3 py-2.5 transition-colors duration-150',
         statusColors.rowBorder,
