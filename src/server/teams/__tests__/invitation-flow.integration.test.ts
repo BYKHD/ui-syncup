@@ -347,6 +347,98 @@ describe('Integration Test: Complete Invitation Flow', () => {
     expect(memberships).toHaveLength(1);
   });
 
+  test('existing member cannot consume another user pending token invitation', async () => {
+    const owner = await createTestUser(
+      `owner-token-recipient-${Date.now()}@example.com`,
+      'Owner'
+    );
+
+    const team = await createTeam({
+      name: 'Token Recipient Team',
+      description: 'Testing token recipient guard',
+      creatorId: owner.id,
+    });
+    testTeamIds.push(team.id);
+
+    const existingMember = await createTestUser(
+      `existing-token-member-${Date.now()}@example.com`,
+      'Existing Member'
+    );
+    await addMember({
+      teamId: team.id,
+      userId: existingMember.id,
+      managementRole: null,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+
+    const inviteeEmail = `other-token-invitee-${Date.now()}@example.com`;
+    const { invitation, token } = await createInvitation({
+      teamId: team.id,
+      email: inviteeEmail,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+    testInvitationIds.push(invitation.id);
+
+    await expect(
+      acceptInvitation(token, existingMember.id)
+    ).rejects.toThrow('User is already a member of this team');
+
+    const [after] = await db
+      .select({ usedAt: teamInvitations.usedAt })
+      .from(teamInvitations)
+      .where(eq(teamInvitations.id, invitation.id))
+      .limit(1);
+    expect(after.usedAt).toBeNull();
+  });
+
+  test('existing member cannot consume another user pending by-id invitation', async () => {
+    const owner = await createTestUser(
+      `owner-byid-recipient-${Date.now()}@example.com`,
+      'Owner'
+    );
+
+    const team = await createTeam({
+      name: 'ById Recipient Team',
+      description: 'Testing by-id recipient guard',
+      creatorId: owner.id,
+    });
+    testTeamIds.push(team.id);
+
+    const existingMember = await createTestUser(
+      `existing-byid-member-${Date.now()}@example.com`,
+      'Existing Member'
+    );
+    await addMember({
+      teamId: team.id,
+      userId: existingMember.id,
+      managementRole: null,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+
+    const inviteeEmail = `other-byid-invitee-${Date.now()}@example.com`;
+    const { invitation } = await createInvitation({
+      teamId: team.id,
+      email: inviteeEmail,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+    testInvitationIds.push(invitation.id);
+
+    await expect(
+      acceptInvitationById(invitation.id, existingMember.id, existingMember.email)
+    ).rejects.toThrow('This invitation was sent to a different email address');
+
+    const [after] = await db
+      .select({ usedAt: teamInvitations.usedAt })
+      .from(teamInvitations)
+      .where(eq(teamInvitations.id, invitation.id))
+      .limit(1);
+    expect(after.usedAt).toBeNull();
+  });
+
   test('member revisiting an expired invitation succeeds without marking it used', async () => {
     const owner = await createTestUser(
       `owner-expired-revisit-${Date.now()}@example.com`,

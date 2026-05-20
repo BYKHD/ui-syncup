@@ -57,6 +57,20 @@ async function markTeamActive(userId: string, teamId: string): Promise<void> {
     .where(eq(users.id, userId));
 }
 
+function emailsMatch(left: string, right: string): boolean {
+  return left.trim().toLowerCase() === right.trim().toLowerCase();
+}
+
+async function isInvitationRecipient(userId: string, invitationEmail: string): Promise<boolean> {
+  const [user] = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  return Boolean(user && emailsMatch(user.email, invitationEmail));
+}
+
 /**
  * Creates a new invitation
  * Implements Requirements 2.1, 2.2, 2A.5, 14.2
@@ -294,7 +308,10 @@ export async function acceptInvitation(token: string, userId: string): Promise<v
     // this team, so treat the revisit as success. Non-members deliberately fall
     // through to the normal stale-token validation below so a used, cancelled,
     // or expired token cannot grant access to a stranger.
-    if (await validateTeamAccess(userId, invitation.teamId)) {
+    if (
+      await validateTeamAccess(userId, invitation.teamId) &&
+      await isInvitationRecipient(userId, invitation.email)
+    ) {
       await markTeamActive(userId, invitation.teamId);
 
       if (!invitation.usedAt && !invitation.cancelledAt && new Date() <= invitation.expiresAt) {
@@ -636,9 +653,23 @@ export async function acceptInvitationById(
       throw new Error("Invitation not found");
     }
 
-    // Existing members revisiting an invitation notification are already
-    // authorized for this team, so treat the revisit as success. Non-members
-    // still continue through email and stale-token validation below.
+    // Verify user's email matches invitation email
+    if (!emailsMatch(invitation.email, userEmail)) {
+      logTeamEvent("team.invitation.accept.failure", {
+        outcome: "failure",
+        userId,
+        teamId: invitation.teamId,
+        errorCode: "EMAIL_MISMATCH",
+        errorMessage: "This invitation was sent to a different email address",
+        metadata: { invitationId },
+      });
+      throw new Error("This invitation was sent to a different email address");
+    }
+
+    // Existing members revisiting their invitation notification are already
+    // authorized for this team, so treat the revisit as success. Other users
+    // cannot burn someone else's invitation because the email check above has
+    // already gated this branch to the invitation recipient.
     if (await validateTeamAccess(userId, invitation.teamId)) {
       await markTeamActive(userId, invitation.teamId);
 
@@ -667,20 +698,6 @@ export async function acceptInvitationById(
 
       return { teamId: invitation.teamId, teamSlug: memberTeam?.slug };
     }
-
-    // Verify user's email matches invitation email
-    if (invitation.email.toLowerCase() !== userEmail.toLowerCase()) {
-      logTeamEvent("team.invitation.accept.failure", {
-        outcome: "failure",
-        userId,
-        teamId: invitation.teamId,
-        errorCode: "EMAIL_MISMATCH",
-        errorMessage: "This invitation was sent to a different email address",
-        metadata: { invitationId },
-      });
-      throw new Error("This invitation was sent to a different email address");
-    }
-
     if (invitation.usedAt) {
       // Invitation was already accepted (e.g. via /join-team email link).
       // Delete the notification so it clears from the inbox on the next refetch.
