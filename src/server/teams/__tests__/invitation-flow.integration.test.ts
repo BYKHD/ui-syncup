@@ -15,7 +15,7 @@ import { db } from '@/lib/db';
 import { users, teams, teamMembers, teamInvitations } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { createTeam } from '@/server/teams/team-service';
-import { createInvitation, acceptInvitation, resendInvitation, cancelInvitation } from '@/server/teams/invitation-service';
+import { createInvitation, acceptInvitation, acceptInvitationById, resendInvitation, cancelInvitation } from '@/server/teams/invitation-service';
 
 /**
  * Test data cleanup
@@ -147,6 +147,15 @@ describe('Integration Test: Complete Invitation Flow', () => {
     expect(member.operationalRole).toBe('TEAM_MEMBER');
     expect(member.managementRole).toBeNull();
     expect(member.invitedBy).toBe(owner.id);
+
+    // Step 8: Verify the accepted team became the invitee's active team
+    const [inviteeAfterAccept] = await db
+      .select({ lastActiveTeamId: users.lastActiveTeamId })
+      .from(users)
+      .where(eq(users.id, invitee.id))
+      .limit(1);
+
+    expect(inviteeAfterAccept.lastActiveTeamId).toBe(team.id);
   });
   
   test('should reject expired invitations', async () => {
@@ -186,6 +195,37 @@ describe('Integration Test: Complete Invitation Flow', () => {
     await expect(
       acceptInvitation(token, invitee.id)
     ).rejects.toThrow();
+  });
+
+  test('acceptInvitationById sets the joined team as active', async () => {
+    const owner = await createTestUser(`owner-byid-${Date.now()}@example.com`, 'Owner');
+    const team = await createTeam({
+      name: 'ById Active Team',
+      description: 'Testing by-id auto-switch',
+      creatorId: owner.id,
+    });
+    testTeamIds.push(team.id);
+
+    const inviteeEmail = `invitee-byid-${Date.now()}@example.com`;
+    const { invitation } = await createInvitation({
+      teamId: team.id,
+      email: inviteeEmail,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+    testInvitationIds.push(invitation.id);
+
+    const invitee = await createTestUser(inviteeEmail, 'Invitee');
+
+    const result = await acceptInvitationById(invitation.id, invitee.id, inviteeEmail);
+    expect(result.teamId).toBe(team.id);
+
+    const [inviteeAfter] = await db
+      .select({ lastActiveTeamId: users.lastActiveTeamId })
+      .from(users)
+      .where(eq(users.id, invitee.id))
+      .limit(1);
+    expect(inviteeAfter.lastActiveTeamId).toBe(team.id);
   });
   
   test('should reject already-used invitations', async () => {

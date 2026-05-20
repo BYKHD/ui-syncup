@@ -13,6 +13,7 @@ import { logger } from "@/lib/logger";
 import { createNotification, buildTargetUrl, markInvitationNotificationAsResponded, deleteInvitationNotification } from "@/server/notifications";
 import type { CreateInvitationInput, Invitation } from "./types";
 import { logAdminAction } from "@/server/audit";
+import { validateTeamAccess } from "./team-context";
 
 const ACTIVE_INVITATION_UNIQUE_INDEX = "team_invitations_active_unique_idx";
 
@@ -38,6 +39,22 @@ function isUniqueViolationOnConstraint(err: unknown, constraintName: string): bo
 
   if (hasUniqueViolationCode && hasTargetConstraint) return true;
   return isUniqueViolationOnConstraint(error.cause, constraintName);
+}
+
+/**
+ * Marks `teamId` as the user's active team after they join it, so the
+ * post-acceptance redirect lands them in the team they just accepted.
+ *
+ * Updates only the `users.lastActiveTeamId` column. The `team_id` cookie is
+ * intentionally NOT written here: it re-syncs to this value on the next
+ * request via getActiveTeam(), and keeping this cookie-free makes the accept
+ * functions safe to call outside a Next.js request scope (e.g. from tests).
+ */
+async function markTeamActive(userId: string, teamId: string): Promise<void> {
+  await db
+    .update(users)
+    .set({ lastActiveTeamId: teamId })
+    .where(eq(users.id, userId));
 }
 
 /**
@@ -323,6 +340,10 @@ export async function acceptInvitation(token: string, userId: string): Promise<v
       .update(teamInvitations)
       .set({ usedAt: new Date() })
       .where(eq(teamInvitations.id, invitation.id));
+
+    // Make the joined team the user's active team so the post-accept redirect
+    // to /projects shows the team they just accepted.
+    await markTeamActive(userId, invitation.teamId);
 
     // Delete the notification so it clears from the user's inbox after acceptance.
     // Must be awaited — the route handler redirects immediately after this, and the
@@ -658,6 +679,9 @@ export async function acceptInvitationById(
       .update(teamInvitations)
       .set({ usedAt: new Date() })
       .where(eq(teamInvitations.id, invitation.id));
+
+    // Make the joined team the user's active team (see acceptInvitation).
+    await markTeamActive(userId, invitation.teamId);
 
     // Persist accepted state on the notification so the UI doesn't re-show buttons.
     // Must be awaited — the client invalidates the cache immediately after receiving
