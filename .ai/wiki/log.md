@@ -182,3 +182,9 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - Added a `Join Project` primary action for public projects when the current user can view the details page as a same-team non-member (`userRole === null`).
 - Reused the existing `useJoinProject` mutation and refreshes the project detail route after successful join so server-derived role state updates.
 - Added focused `ProjectActions` component coverage for rendering, click behavior, and hiding the join action when joining is not allowed.
+
+## [2026-05-20] feat | Team switcher fixes — uncapped switcher, accept auto-switch, invite revisit
+
+- Team invitation acceptance now sets the joined team as active and existing members can revisit used/expired/cancelled invitation links without hitting a dead end.
+- Sidebar team switcher now renders all teams in a scrollable, filterable list, shows for 2+ memberships even in single-team mode, and full-reloads to `/projects` on switch.
+- Notification accept for team invitations now relies on the server-side active-team update and full-reloads to `/projects` instead of issuing a redundant client switch call.
