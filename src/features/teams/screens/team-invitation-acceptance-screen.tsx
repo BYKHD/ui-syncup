@@ -181,7 +181,7 @@ export function TeamInvitationAcceptanceScreen({
                       You are logged in as <strong>{currentUserEmail}</strong>, but this invitation was sent to <strong>{invitation.email}</strong>.
                     </p>
                     <p className="text-xs text-orange-700 dark:text-orange-300">
-                      Accepting will add you ({currentUserEmail}) to the team.
+                      Sign in with the invited email address to accept this invitation.
                     </p>
                   </div>
                 </div>
@@ -231,7 +231,9 @@ export function TeamInvitationAcceptanceScreen({
             </div>
 
             <div className="text-center text-sm text-muted-foreground">
-              By accepting, you will gain access to this team&apos;s projects and collaboration tools.
+              {emailMismatch
+                ? "This invitation can only be accepted by the invited account."
+                : "By accepting, you will gain access to this team's projects and collaboration tools."}
             </div>
           </CardContent>
 
@@ -246,7 +248,7 @@ export function TeamInvitationAcceptanceScreen({
               className="w-full"
               size="lg"
               onClick={handleAccept}
-              disabled={isAccepting || isDeclining}
+              disabled={emailMismatch || isAccepting || isDeclining}
               aria-label={`Accept invitation to join ${teamName}`}
             >
               {isAccepting ? (

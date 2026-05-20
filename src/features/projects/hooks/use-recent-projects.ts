@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
-import type { Project } from '@/components/shared/sidebar/type'
+import type { Project } from '@/components/layout/sidebar/type'
 
 const STORAGE_KEY = 'syncup:recent-projects'
 const MAX_RECENT_PROJECTS = 5

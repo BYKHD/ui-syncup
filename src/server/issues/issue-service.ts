@@ -11,10 +11,11 @@ import { issueAttachments } from "@/server/db/schema/issue-attachments";
 import { users } from "@/server/db/schema/users";
 import { projects } from "@/server/db/schema/projects";
 import { teams } from "@/server/db/schema/teams";
-import { eq, and, or, like, desc, count, max } from "drizzle-orm";
+import { eq, and, or, like, desc, asc, count, max } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { logActivity } from "./activity-service";
 import { createNotification, buildTargetUrl } from "@/server/notifications";
+import { canViewIssue, isUUID } from "@/server/projects/project-service";
 import type {
   Issue,
   IssueWithDetails,
@@ -117,26 +118,40 @@ export async function getIssueByKey(
 }
 
 /**
- * Get an issue by its key only (e.g., "PRJ-123") without projectId
+ * Get an issue by route reference.
  *
- * Useful for direct issue key lookups where projectId is not available,
- * such as from URL routes like /issue/[issueKey].
+ * UUID refs resolve directly. Legacy issue-key refs are disambiguated by
+ * selecting the first matching issue the user can view.
  *
- * @param issueKey - Issue key string (e.g., "PRJ-123")
+ * @param issueRef - Issue UUID or legacy key string (e.g., "PRJ-123")
+ * @param userId - User ID for access-aware key resolution
  * @returns Issue with details or null if not found
  */
-export async function getIssueByKeyOnly(
-  issueKey: string
+export async function getIssueByRef(
+  issueRef: string,
+  userId: string
 ): Promise<IssueWithDetails | null> {
-  const issue = await db.query.issues.findFirst({
-    where: eq(issues.issueKey, issueKey),
-  });
+  if (isUUID(issueRef)) {
+    return getIssueById(issueRef);
+  }
 
-  if (!issue) {
+  const candidates = await db
+    .select({ id: issues.id, projectId: issues.projectId })
+    .from(issues)
+    .where(eq(issues.issueKey, issueRef))
+    .orderBy(asc(issues.createdAt));
+
+  if (candidates.length === 0) {
     return null;
   }
 
-  return getIssueById(issue.id);
+  for (const candidate of candidates) {
+    if (await canViewIssue(userId, { projectId: candidate.projectId })) {
+      return getIssueById(candidate.id);
+    }
+  }
+
+  return getIssueById(candidates[0].id);
 }
 
 /**
@@ -475,9 +490,11 @@ export async function updateIssue(
             target_url: buildTargetUrl("issue_assigned", {
               team_slug: project.teamSlug,
               project_key: project.projectKey,
+              issue_id: issueId,
               issue_key: currentIssue.issueKey,
             }),
             issue_title: updated.title,
+            issue_id: issueId,
             issue_key: currentIssue.issueKey,
             project_name: project.projectName,
             project_key: project.projectKey,
@@ -505,9 +522,11 @@ export async function updateIssue(
               target_url: buildTargetUrl("issue_status_changed", {
                 team_slug: project.teamSlug,
                 project_key: project.projectKey,
+                issue_id: issueId,
                 issue_key: currentIssue.issueKey,
               }),
               issue_title: updated.title,
+              issue_id: issueId,
               issue_key: currentIssue.issueKey,
               project_name: project.projectName,
               project_key: project.projectKey,

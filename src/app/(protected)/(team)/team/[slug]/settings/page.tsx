@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/shared/headers";
+import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/layout/headers";
 import TeamSettingsGeneral from "@/features/team-settings/components/team-settings-general";
 import { getSession } from "@/server/auth/session";
 import { db } from "@/lib/db";

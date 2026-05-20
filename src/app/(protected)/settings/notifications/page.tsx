@@ -1,4 +1,4 @@
-import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/shared/headers'
+import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/layout/headers'
 import NotificationsScreen from '@/features/user-settings/screens/notifications-screen'
 import { MOCK_NOTIFICATION_PREFERENCES } from '@/mocks/user-settings.fixtures'
 

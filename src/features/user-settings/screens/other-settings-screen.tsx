@@ -1,16 +1,8 @@
 'use client'
 
 import { OtherSettings } from '../components/other-settings'
-import type { UserProfile } from '../types'
 
-interface OtherSettingsScreenProps {
-  userProfile: UserProfile
-}
-
-export default function OtherSettingsScreen({
-  userProfile,
-}: OtherSettingsScreenProps) {
-  // TODO: [MOCKUP] Wire this component up to the actual API endpoint for user settings
+export default function OtherSettingsScreen() {
   return (
     <div className="space-y-6">
       <div>
@@ -19,7 +11,7 @@ export default function OtherSettingsScreen({
           Advanced settings and account management
         </p>
       </div>
-      <OtherSettings userProfile={userProfile} />
+      <OtherSettings />
     </div>
   )
 }

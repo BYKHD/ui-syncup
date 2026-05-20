@@ -182,3 +182,28 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - Added a `Join Project` primary action for public projects when the current user can view the details page as a same-team non-member (`userRole === null`).
 - Reused the existing `useJoinProject` mutation and refreshes the project detail route after successful join so server-derived role state updates.
 - Added focused `ProjectActions` component coverage for rendering, click behavior, and hiding the join action when joining is not allowed.
+
+## [2026-05-20] feat | Team switcher fixes — uncapped switcher, accept auto-switch, invite revisit
+
+- Team invitation acceptance now sets the joined team as active and existing members can revisit used/expired/cancelled invitation links without hitting a dead end.
+- Sidebar team switcher now renders all teams in a scrollable, filterable list, shows for 2+ memberships even in single-team mode, and full-reloads to `/projects` on switch.
+- Notification accept for team invitations now relies on the server-side active-team update and full-reloads to `/projects` instead of issuing a redundant client switch call.
+
+## [2026-05-20] refactor | Relocate app-shell composition from components/shared to components/layout
+
+- `sidebar/`, `headers/`, `notifications/` moved to `components/layout/`; `service-status-banner` moved to `features/setup/components/` (its true owner). Resolves the long-standing layer-contract violation where `components/shared` imported `features/*`.
+- `components/layout` is now documented as the app-shell composition layer that may import `features/*` (and may be imported back by feature screens). See [[concepts/import-rules]].
+
+## [2026-05-20] fix | Wire delete-account dialog to real auth hook; drop email gate
+
+- `DeleteAccountDialog` no longer requires re-typing the account email — confirmation is now the typed `DELETE` phrase + acknowledgement checkbox. The email field was unusable for real users: the page fed `MOCK_USER_PROFILE` so the required email never matched the session user, and was friction with no security value for social/OAuth users (no password). See [[features/user-settings]].
+- Dialog now calls the real `useDeleteAccount` hook (`DELETE /api/auth/delete-account`) instead of a simulated `setTimeout`; hook gained an optional `onError` callback.
+- `useDeleteAccount` is now exported from the `features/auth` barrel ([[concepts/import-rules]] — cross-feature use via public barrel).
+- Removed the now-dead `userProfile` prop chain through `OtherSettingsScreen` / `OtherSettings` / `settings/other/page.tsx`.
+- Caveat: the backend route + hook are still marked DEV-ONLY and perform no re-authentication before deletion.
+
+## [2026-05-21] fix | Issue detail route resolves by UUID with access-aware key fallback
+
+- Added `getIssueByRef(issueRef, userId)` so `/issue/[issueKey]` accepts UUIDs directly and disambiguates legacy issue keys by the first candidate the user can view.
+- Switched project issue rows, dashboard issue rows, and issue notification target URLs to prefer `issues.id`, while preserving legacy `issue_key` display and fallback links.
+- Added focused PGlite regression coverage for duplicate `PRJ-1` issues across teams.

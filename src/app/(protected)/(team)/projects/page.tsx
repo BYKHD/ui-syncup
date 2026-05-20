@@ -1,4 +1,4 @@
-import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/shared/headers";
+import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/layout/headers";
 import ProjectsListScreen from "@/features/projects/screens/projects-list-screen";
 
 const PROJECTS_BREADCRUMBS: BreadcrumbItem[] = [

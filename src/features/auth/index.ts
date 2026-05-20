@@ -49,6 +49,7 @@ export { useUnlinkAccount, LastAuthMethodError } from "./hooks/use-unlink-accoun
 export { useSelfRegistration } from "./hooks/use-self-registration";
 export type { SelfRegistrationStep } from "./hooks/use-self-registration";
 export { useAcceptInvitation } from "./hooks/use-accept-invitation";
+export { useDeleteAccount } from "./hooks/use-delete-account";
 
 // Types
 export type { OnboardingMode, SignUpField, SignUpFormData, FormErrors } from "./types";

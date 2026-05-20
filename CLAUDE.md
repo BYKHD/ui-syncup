@@ -54,7 +54,7 @@ Full schema and conventions in [.ai/wiki/WIKI.md](.ai/wiki/WIKI.md).
 ## Hard constraints (never violate)
 
 - **`bun run test` only.** Never `bun test` — Bun's native runner ignores Vitest config and can corrupt the local DB.
-- **`components/ui` and `components/shared` never import from `features/*`.** Shared UI knows nothing about features.
+- **`components/ui` and `components/shared` never import from `features/*`.** Shared UI knows nothing about features. App-shell composition that needs feature data lives in `components/layout` — the one composition layer allowed to import `features/*` (and which `features/*` may import back). See [[concepts/import-rules]].
 - **`server/*` never imported from client components.** It's server-only.
 - **Pages don't fetch.** `app/*/page.tsx` does auth/tenant gating + Zod validation, then renders one feature `Screen`. Data flows `features/api` → `features/hooks` → `features/components`.
 - **Validate every network boundary with Zod.** No untyped DTOs across the wire.

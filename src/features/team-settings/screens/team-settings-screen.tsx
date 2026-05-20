@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import type { Team, UserRole } from "../types";
 import { TeamSettingAside } from "@/components/shared/settings-sidebar";
-import { ServiceStatusBanner } from "@/components/shared/service-status-banner";
+import { ServiceStatusBanner } from "@/features/setup";
 import { TEAM_SETTINGS_NAV } from "@/config/team-settings-nav";
 
 interface TeamSettingsScreenProps {

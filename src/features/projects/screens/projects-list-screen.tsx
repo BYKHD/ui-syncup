@@ -12,7 +12,7 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty'
 import { Button } from '@/components/ui/button'
-import PageHeader from '@/components/shared/headers/page-header'
+import PageHeader from '@/components/layout/headers/page-header'
 
 import { useProjects, useProjectFilters } from '@/features/projects/hooks'
 import {
