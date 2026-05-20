@@ -155,13 +155,11 @@ export function NotificationActions({
       // requests stay in their inbox (no navigation).
       if (action === 'accept' && !isAccessRequest) {
         const isProjectInvitation = notification.type === 'project_invitation'
-        // For team invitations, switch team context first then redirect to projects
         if (!isProjectInvitation && responseData.teamId) {
-          await fetch(`/api/teams/${responseData.teamId}/switch`, {
-            method: 'POST',
-            credentials: 'include',
-          })
-          router.push('/projects')
+          // acceptInvitationById has already set the joined team as the user's
+          // active team server-side. Full-reload so /projects renders with it.
+          window.location.assign('/projects')
+          return
         } else if (notification.metadata.target_url) {
           router.push(notification.metadata.target_url)
         }
