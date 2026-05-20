@@ -6,7 +6,6 @@ import { users } from "@/server/db/schema/users";
 import { eq, and, gt, gte, lte, sql, isNull } from "drizzle-orm";
 import { randomBytes, createHash } from "crypto";
 import { logTeamEvent } from "./team-service";
-import { addMember } from "./member-service";
 import { enqueueEmail } from "@/server/email";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -16,6 +15,9 @@ import { logAdminAction } from "@/server/audit";
 import { validateTeamAccess } from "./team-context";
 
 const ACTIVE_INVITATION_UNIQUE_INDEX = "team_invitations_active_unique_idx";
+
+type DbTransaction = Parameters<Parameters<(typeof db)["transaction"]>[0]>[0];
+type TeamInvitationRow = typeof teamInvitations.$inferSelect;
 
 // Postgres unique-violation SQLSTATE. Drizzle can wrap the driver error in
 // DrizzleQueryError; inspect the cause chain so unrelated unique constraints
@@ -55,6 +57,122 @@ async function markTeamActive(userId: string, teamId: string): Promise<void> {
     .update(users)
     .set({ lastActiveTeamId: teamId })
     .where(eq(users.id, userId));
+}
+
+async function markTeamActiveInTx(
+  tx: DbTransaction,
+  userId: string,
+  teamId: string
+): Promise<void> {
+  await tx
+    .update(users)
+    .set({ lastActiveTeamId: teamId })
+    .where(eq(users.id, userId));
+}
+
+async function consumePendingInvitationInTx(
+  tx: DbTransaction,
+  invitationId: string,
+  expectedTokenHash?: string
+): Promise<void> {
+  const now = new Date();
+  const [consumed] = await tx
+    .update(teamInvitations)
+    .set({ usedAt: now })
+    .where(
+      expectedTokenHash
+        ? and(
+          eq(teamInvitations.id, invitationId),
+          eq(teamInvitations.tokenHash, expectedTokenHash),
+          isNull(teamInvitations.usedAt),
+          isNull(teamInvitations.cancelledAt),
+          gte(teamInvitations.expiresAt, now),
+        )
+        : and(
+          eq(teamInvitations.id, invitationId),
+          isNull(teamInvitations.usedAt),
+          isNull(teamInvitations.cancelledAt),
+          gte(teamInvitations.expiresAt, now),
+        )
+    )
+    .returning({ id: teamInvitations.id });
+
+  if (consumed) {
+    return;
+  }
+
+  const current = await tx.query.teamInvitations.findFirst({
+    where: eq(teamInvitations.id, invitationId),
+  });
+
+  if (!current) {
+    throw new Error("Invitation not found");
+  }
+
+  if (expectedTokenHash && current.tokenHash !== expectedTokenHash) {
+    throw new Error("Invalid invitation token");
+  }
+
+  if (current.usedAt) {
+    throw new Error("Invitation already used");
+  }
+
+  if (current.cancelledAt) {
+    throw new Error("Invitation cancelled");
+  }
+
+  if (new Date() > current.expiresAt) {
+    throw new Error("Invitation expired");
+  }
+
+  throw new Error("Invitation is no longer pending");
+}
+
+async function addInvitedMemberInTx(
+  tx: DbTransaction,
+  invitation: TeamInvitationRow,
+  userId: string
+): Promise<void> {
+  if (invitation.managementRole && !invitation.operationalRole) {
+    throw new Error("Management roles require an operational role");
+  }
+
+  const existingMember = await tx
+    .select({ id: teamMembers.id })
+    .from(teamMembers)
+    .where(and(
+      eq(teamMembers.teamId, invitation.teamId),
+      eq(teamMembers.userId, userId),
+    ))
+    .limit(1);
+
+  if (existingMember.length > 0) {
+    throw new Error("User is already a member of this team");
+  }
+
+  await tx
+    .insert(teamMembers)
+    .values({
+      teamId: invitation.teamId,
+      userId,
+      managementRole: invitation.managementRole,
+      operationalRole: invitation.operationalRole,
+      invitedBy: invitation.invitedBy,
+      joinedAt: new Date(),
+    });
+}
+
+function logInvitedMemberAdded(invitation: TeamInvitationRow, userId: string): void {
+  logTeamEvent("team.member.add.success", {
+    outcome: "success",
+    userId: invitation.invitedBy,
+    teamId: invitation.teamId,
+    metadata: {
+      addedUserId: userId,
+      managementRole: invitation.managementRole,
+      operationalRole: invitation.operationalRole,
+    },
+  });
 }
 
 function emailsMatch(left: string, right: string): boolean {
@@ -316,15 +434,27 @@ export async function acceptInvitation(token: string, userId: string): Promise<v
 
       if (!invitation.usedAt && !invitation.cancelledAt && new Date() <= invitation.expiresAt) {
         const now = new Date();
-        await db
+        const [consumed] = await db
           .update(teamInvitations)
           .set({ usedAt: now })
           .where(and(
             eq(teamInvitations.id, invitation.id),
+            eq(teamInvitations.tokenHash, tokenHash),
             isNull(teamInvitations.usedAt),
             isNull(teamInvitations.cancelledAt),
             gte(teamInvitations.expiresAt, now),
-          ));
+          ))
+          .returning({ id: teamInvitations.id });
+
+        if (!consumed) {
+          const current = await db.query.teamInvitations.findFirst({
+            where: eq(teamInvitations.id, invitation.id),
+          });
+
+          if (current?.tokenHash !== tokenHash) {
+            throw new Error("Invalid invitation token");
+          }
+        }
       }
 
       await deleteInvitationNotification(invitation.id);
@@ -393,24 +523,16 @@ export async function acceptInvitation(token: string, userId: string): Promise<v
       throw new Error("This invitation was sent to a different email address");
     }
 
-    // Requirement 2.3: Add user to team
-    await addMember({
-      teamId: invitation.teamId,
-      userId,
-      managementRole: invitation.managementRole,
-      operationalRole: invitation.operationalRole,
-      invitedBy: invitation.invitedBy,
+    await db.transaction(async (tx) => {
+      // Consume the still-pending invitation before granting membership. If the
+      // invitation was concurrently used/cancelled/expired, the transaction
+      // aborts and no access is granted.
+      await consumePendingInvitationInTx(tx, invitation.id, tokenHash);
+      await addInvitedMemberInTx(tx, invitation, userId);
+      await markTeamActiveInTx(tx, userId, invitation.teamId);
     });
 
-    // Requirement 2.4: Mark as used
-    await db
-      .update(teamInvitations)
-      .set({ usedAt: new Date() })
-      .where(eq(teamInvitations.id, invitation.id));
-
-    // Make the joined team the user's active team so the post-accept redirect
-    // to /projects shows the team they just accepted.
-    await markTeamActive(userId, invitation.teamId);
+    logInvitedMemberAdded(invitation, userId);
 
     // Delete the notification so it clears from the user's inbox after acceptance.
     // Must be awaited — the route handler redirects immediately after this, and the
@@ -770,23 +892,16 @@ export async function acceptInvitationById(
       throw new Error("Invitation expired");
     }
 
-    // Add user to team
-    await addMember({
-      teamId: invitation.teamId,
-      userId,
-      managementRole: invitation.managementRole,
-      operationalRole: invitation.operationalRole,
-      invitedBy: invitation.invitedBy,
+    await db.transaction(async (tx) => {
+      // Consume the still-pending invitation before granting membership. If the
+      // invitation was concurrently used/cancelled/expired, the transaction
+      // aborts and no access is granted.
+      await consumePendingInvitationInTx(tx, invitation.id);
+      await addInvitedMemberInTx(tx, invitation, userId);
+      await markTeamActiveInTx(tx, userId, invitation.teamId);
     });
 
-    // Mark as used
-    await db
-      .update(teamInvitations)
-      .set({ usedAt: new Date() })
-      .where(eq(teamInvitations.id, invitation.id));
-
-    // Make the joined team the user's active team (see acceptInvitation).
-    await markTeamActive(userId, invitation.teamId);
+    logInvitedMemberAdded(invitation, userId);
 
     // Persist accepted state on the notification so the UI doesn't re-show buttons.
     // Must be awaited — the client invalidates the cache immediately after receiving

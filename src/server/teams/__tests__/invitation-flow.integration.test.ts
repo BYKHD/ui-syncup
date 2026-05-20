@@ -10,10 +10,11 @@
  * Requirements: 2.1, 2.3, 2.5, 2A.5
  */
 
-import { describe, test, expect, afterEach } from 'vitest';
+import { describe, test, expect, afterEach, vi } from 'vitest';
+import { createHash } from 'crypto';
 import { db } from '@/lib/db';
 import { users, teams, teamMembers, teamInvitations } from '@/server/db/schema';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { createTeam } from '@/server/teams/team-service';
 import { addMember } from '@/server/teams/member-service';
 import { createInvitation, acceptInvitation, acceptInvitationById, resendInvitation, cancelInvitation } from '@/server/teams/invitation-service';
@@ -24,6 +25,38 @@ import { createInvitation, acceptInvitation, acceptInvitationById, resendInvitat
 const testUserIds: string[] = [];
 const testTeamIds: string[] = [];
 const testInvitationIds: string[] = [];
+
+async function installUsedAtFailureTrigger() {
+  await db.execute(sql`
+    CREATE OR REPLACE FUNCTION fail_team_invitation_used_at_update_for_test()
+    RETURNS trigger AS $$
+    BEGIN
+      IF NEW.used_at IS NOT NULL AND OLD.used_at IS NULL THEN
+        RAISE EXCEPTION 'forced used_at failure for test';
+      END IF;
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql
+  `);
+
+  await db.execute(sql`
+    CREATE TRIGGER fail_team_invitation_used_at_update_for_test
+    BEFORE UPDATE OF used_at ON team_invitations
+    FOR EACH ROW
+    EXECUTE FUNCTION fail_team_invitation_used_at_update_for_test()
+  `);
+}
+
+async function uninstallUsedAtFailureTrigger() {
+  await db.execute(sql`
+    DROP TRIGGER IF EXISTS fail_team_invitation_used_at_update_for_test
+    ON team_invitations
+  `);
+
+  await db.execute(sql`
+    DROP FUNCTION IF EXISTS fail_team_invitation_used_at_update_for_test()
+  `);
+}
 
 /**
  * Helper to create a test user
@@ -75,6 +108,7 @@ async function cleanupTestData() {
  * Clean up after each test
  */
 afterEach(async () => {
+  await uninstallUsedAtFailureTrigger();
   await cleanupTestData();
 });
 
@@ -227,6 +261,175 @@ describe('Integration Test: Complete Invitation Flow', () => {
       .where(eq(users.id, invitee.id))
       .limit(1);
     expect(inviteeAfter.lastActiveTeamId).toBe(team.id);
+  });
+
+  test('acceptInvitation does not leave membership behind if consuming the invite fails', async () => {
+    const owner = await createTestUser(
+      `owner-token-rollback-${Date.now()}@example.com`,
+      'Owner'
+    );
+
+    const team = await createTeam({
+      name: 'Token Rollback Team',
+      description: 'Testing token accept rollback',
+      creatorId: owner.id,
+    });
+    testTeamIds.push(team.id);
+
+    const inviteeEmail = `invitee-token-rollback-${Date.now()}@example.com`;
+    const { invitation, token } = await createInvitation({
+      teamId: team.id,
+      email: inviteeEmail,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+    testInvitationIds.push(invitation.id);
+
+    const invitee = await createTestUser(inviteeEmail, 'Invitee');
+    await installUsedAtFailureTrigger();
+
+    await expect(
+      acceptInvitation(token, invitee.id)
+    ).rejects.toThrow();
+
+    const memberships = await db
+      .select()
+      .from(teamMembers)
+      .where(and(
+        eq(teamMembers.teamId, team.id),
+        eq(teamMembers.userId, invitee.id)
+      ));
+    expect(memberships).toHaveLength(0);
+
+    const [after] = await db
+      .select({ usedAt: teamInvitations.usedAt })
+      .from(teamInvitations)
+      .where(eq(teamInvitations.id, invitation.id))
+      .limit(1);
+    expect(after.usedAt).toBeNull();
+  });
+
+  test('acceptInvitationById does not leave membership behind if consuming the invite fails', async () => {
+    const owner = await createTestUser(
+      `owner-byid-rollback-${Date.now()}@example.com`,
+      'Owner'
+    );
+
+    const team = await createTeam({
+      name: 'ById Rollback Team',
+      description: 'Testing by-id accept rollback',
+      creatorId: owner.id,
+    });
+    testTeamIds.push(team.id);
+
+    const inviteeEmail = `invitee-byid-rollback-${Date.now()}@example.com`;
+    const { invitation } = await createInvitation({
+      teamId: team.id,
+      email: inviteeEmail,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+    testInvitationIds.push(invitation.id);
+
+    const invitee = await createTestUser(inviteeEmail, 'Invitee');
+    await installUsedAtFailureTrigger();
+
+    await expect(
+      acceptInvitationById(invitation.id, invitee.id, inviteeEmail)
+    ).rejects.toThrow();
+
+    const memberships = await db
+      .select()
+      .from(teamMembers)
+      .where(and(
+        eq(teamMembers.teamId, team.id),
+        eq(teamMembers.userId, invitee.id)
+      ));
+    expect(memberships).toHaveLength(0);
+
+    const [after] = await db
+      .select({ usedAt: teamInvitations.usedAt })
+      .from(teamInvitations)
+      .where(eq(teamInvitations.id, invitation.id))
+      .limit(1);
+    expect(after.usedAt).toBeNull();
+  });
+
+  test('acceptInvitation rejects if the token is rotated after lookup before consume', async () => {
+    const owner = await createTestUser(
+      `owner-token-rotate-${Date.now()}@example.com`,
+      'Owner'
+    );
+
+    const team = await createTeam({
+      name: 'Token Rotate Team',
+      description: 'Testing token rotation race',
+      creatorId: owner.id,
+    });
+    testTeamIds.push(team.id);
+
+    const inviteeEmail = `invitee-token-rotate-${Date.now()}@example.com`;
+    const { invitation, token } = await createInvitation({
+      teamId: team.id,
+      email: inviteeEmail,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+    testInvitationIds.push(invitation.id);
+
+    const invitee = await createTestUser(inviteeEmail, 'Invitee');
+    const rotatedTokenHash = createHash('sha256')
+      .update(`rotated-${invitation.id}`)
+      .digest('hex');
+
+    const originalFindFirst = db.query.teamInvitations.findFirst.bind(
+      db.query.teamInvitations
+    );
+    let rotated = false;
+    const findFirstSpy = vi
+      .spyOn(db.query.teamInvitations, 'findFirst')
+      .mockImplementation(
+        ((...args: Parameters<typeof db.query.teamInvitations.findFirst>) =>
+          (async () => {
+            const row = await originalFindFirst(...args);
+            if (!rotated && row?.id === invitation.id) {
+              rotated = true;
+              await db
+                .update(teamInvitations)
+                .set({ tokenHash: rotatedTokenHash })
+                .where(eq(teamInvitations.id, invitation.id));
+            }
+            return row;
+          })() as ReturnType<typeof db.query.teamInvitations.findFirst>) as typeof db.query.teamInvitations.findFirst
+      );
+
+    try {
+      await expect(
+        acceptInvitation(token, invitee.id)
+      ).rejects.toThrow('Invalid invitation token');
+    } finally {
+      findFirstSpy.mockRestore();
+    }
+
+    const memberships = await db
+      .select()
+      .from(teamMembers)
+      .where(and(
+        eq(teamMembers.teamId, team.id),
+        eq(teamMembers.userId, invitee.id)
+      ));
+    expect(memberships).toHaveLength(0);
+
+    const [after] = await db
+      .select({
+        tokenHash: teamInvitations.tokenHash,
+        usedAt: teamInvitations.usedAt,
+      })
+      .from(teamInvitations)
+      .where(eq(teamInvitations.id, invitation.id))
+      .limit(1);
+    expect(after.tokenHash).toBe(rotatedTokenHash);
+    expect(after.usedAt).toBeNull();
   });
   
   test('non-member cannot accept an already-used invitation', async () => {
