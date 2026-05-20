@@ -372,6 +372,21 @@ export async function acceptInvitation(token: string, userId: string): Promise<v
       throw new Error("Invitation expired");
     }
 
+    // Token invitation links are recipient-bound. A signed-in user who obtains
+    // someone else's pending token must not be able to join the team, mark the
+    // invite used, or clear the intended recipient's notification.
+    if (!(await isInvitationRecipient(userId, invitation.email))) {
+      logTeamEvent("team.invitation.accept.failure", {
+        outcome: "failure",
+        userId,
+        teamId: invitation.teamId,
+        errorCode: "EMAIL_MISMATCH",
+        errorMessage: "This invitation was sent to a different email address",
+        metadata: { invitationId: invitation.id },
+      });
+      throw new Error("This invitation was sent to a different email address");
+    }
+
     // Requirement 2.3: Add user to team
     await addMember({
       teamId: invitation.teamId,

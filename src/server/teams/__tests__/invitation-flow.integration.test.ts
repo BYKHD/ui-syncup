@@ -383,7 +383,55 @@ describe('Integration Test: Complete Invitation Flow', () => {
 
     await expect(
       acceptInvitation(token, existingMember.id)
-    ).rejects.toThrow('User is already a member of this team');
+    ).rejects.toThrow('This invitation was sent to a different email address');
+
+    const [after] = await db
+      .select({ usedAt: teamInvitations.usedAt })
+      .from(teamInvitations)
+      .where(eq(teamInvitations.id, invitation.id))
+      .limit(1);
+    expect(after.usedAt).toBeNull();
+  });
+
+  test('non-recipient cannot accept another user pending token invitation', async () => {
+    const owner = await createTestUser(
+      `owner-token-stranger-${Date.now()}@example.com`,
+      'Owner'
+    );
+
+    const team = await createTeam({
+      name: 'Token Stranger Team',
+      description: 'Testing token non-recipient guard',
+      creatorId: owner.id,
+    });
+    testTeamIds.push(team.id);
+
+    const inviteeEmail = `actual-token-invitee-${Date.now()}@example.com`;
+    const { invitation, token } = await createInvitation({
+      teamId: team.id,
+      email: inviteeEmail,
+      operationalRole: 'TEAM_MEMBER',
+      invitedBy: owner.id,
+    });
+    testInvitationIds.push(invitation.id);
+
+    const stranger = await createTestUser(
+      `token-stranger-${Date.now()}@example.com`,
+      'Stranger'
+    );
+
+    await expect(
+      acceptInvitation(token, stranger.id)
+    ).rejects.toThrow('This invitation was sent to a different email address');
+
+    const memberships = await db
+      .select()
+      .from(teamMembers)
+      .where(and(
+        eq(teamMembers.teamId, team.id),
+        eq(teamMembers.userId, stranger.id)
+      ));
+    expect(memberships).toHaveLength(0);
 
     const [after] = await db
       .select({ usedAt: teamInvitations.usedAt })
