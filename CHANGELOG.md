@@ -1,3 +1,10 @@
+## [0.9.2-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.9.1...v0.9.2-beta.1) (2026-05-20)
+
+
+### Bug Fixes
+
+* Team switching is not working and Owner has unable to see issues details ([d5014e9](https://github.com/BYKHD/ui-syncup/commit/d5014e9eb2d3629956add1dab74feaa2099bcb9b))
+
 ## [0.9.1](https://github.com/BYKHD/ui-syncup/compare/v0.9.0...v0.9.1) (2026-05-15)
 
 
