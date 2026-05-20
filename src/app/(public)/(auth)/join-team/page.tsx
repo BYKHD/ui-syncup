@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/server/auth/session";
-import { getTeamInvitationByToken } from "@/server/teams/invitation-service";
+import { acceptInvitation, getTeamInvitationByToken } from "@/server/teams/invitation-service";
 import { TeamInvitationAcceptanceScreen } from "@/features/teams";
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,15 @@ function StatusCard({ title, description, actionLabel, actionHref }: {
   );
 }
 
+async function routeExistingMemberRevisit(token: string, userId: string): Promise<boolean> {
+  try {
+    await acceptInvitation(token, userId);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export default async function JoinTeamPage({ searchParams }: JoinTeamPageProps) {
   const { token } = await searchParams;
 
@@ -81,17 +90,26 @@ export default async function JoinTeamPage({ searchParams }: JoinTeamPageProps) 
     notFound();
   }
 
-  const { invitation, teamName, teamSlug, inviterName } = data;
+  const { invitation, teamName, inviterName } = data;
 
   if (invitation.usedAt) {
+    if (await routeExistingMemberRevisit(token, user.id)) {
+      redirect("/projects");
+    }
     return <StatusCard {...INVITATION_STATUS_MESSAGES.used} actionLabel={INVITATION_STATUS_MESSAGES.used.action.label} actionHref={INVITATION_STATUS_MESSAGES.used.action.href} />;
   }
 
   if (invitation.cancelledAt) {
+    if (await routeExistingMemberRevisit(token, user.id)) {
+      redirect("/projects");
+    }
     return <StatusCard {...INVITATION_STATUS_MESSAGES.cancelled} actionLabel={INVITATION_STATUS_MESSAGES.cancelled.action.label} actionHref={INVITATION_STATUS_MESSAGES.cancelled.action.href} />;
   }
 
   if (new Date() > invitation.expiresAt) {
+    if (await routeExistingMemberRevisit(token, user.id)) {
+      redirect("/projects");
+    }
     return <StatusCard {...INVITATION_STATUS_MESSAGES.expired} actionLabel={INVITATION_STATUS_MESSAGES.expired.action.label} actionHref={INVITATION_STATUS_MESSAGES.expired.action.href} />;
   }
 
