@@ -119,9 +119,9 @@ export async function isDuplicate(
  * Build a deep-link URL for navigation based on notification type and metadata.
  *
  * URL patterns:
- * - Issue notifications: /teams/{teamSlug}/projects/{projectKey}/issues/{issueKey}#comment-{commentId}
- * - Project invitations: /teams/{teamSlug}/projects/{projectKey}
- * - Team invitations: /teams/{teamSlug}
+ * - Issue notifications: /issue/{issueId}#comment-{commentId}, falling back to legacy issue keys
+ * - Project invitations: /{projectKey}
+ * - Team invitations: /projects
  *
  * @param type - The notification type
  * @param metadata - Partial metadata containing URL components
@@ -131,23 +131,24 @@ export function buildTargetUrl(
   type: NotificationType,
   metadata: Partial<NotificationMetadata>
 ): string {
-  const { project_key, issue_key, comment_id, team_slug } = metadata;
+  const { project_key, issue_id, issue_key, comment_id, team_slug } = metadata;
+  const issueRef = issue_id ?? issue_key;
 
   switch (type) {
     case "mention":
     case "comment_created":
     case "reply":
       // Navigate to issue page with optional comment anchor
-      if (issue_key) {
-        return comment_id ? `/issue/${issue_key}#comment-${comment_id}` : `/issue/${issue_key}`;
+      if (issueRef) {
+        return comment_id ? `/issue/${issueRef}#comment-${comment_id}` : `/issue/${issueRef}`;
       }
       break;
 
     case "issue_assigned":
     case "issue_status_changed":
       // Navigate to the issue page
-      if (issue_key) {
-        return `/issue/${issue_key}`;
+      if (issueRef) {
+        return `/issue/${issueRef}`;
       }
       break;
 

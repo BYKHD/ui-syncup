@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import type { AppHeaderProps } from '@/components/shared/headers/app-header'
+import type { AppHeaderProps } from '@/components/layout/headers/app-header'
 
 type HeaderContextValue = {
   headerConfig: AppHeaderProps | null

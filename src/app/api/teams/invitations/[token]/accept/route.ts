@@ -22,6 +22,7 @@ import { logger } from '@/lib/logger';
  * Error responses:
  * - 400: Invalid token
  * - 401: Not authenticated
+ * - 403: Email mismatch (invitation for different user)
  * - 409: Already a member
  * - 410: Invitation expired, used, or cancelled
  * - 500: Internal server error
@@ -123,6 +124,18 @@ export async function GET(
             },
           },
           { status: 409 }
+        );
+      }
+
+      if (error.message.includes('different email')) {
+        return NextResponse.json(
+          {
+            error: {
+              code: 'EMAIL_MISMATCH',
+              message: 'This invitation was sent to a different email address',
+            },
+          },
+          { status: 403 }
         );
       }
     }

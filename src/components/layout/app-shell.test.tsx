@@ -24,11 +24,11 @@ vi.mock('@/components/ui/sidebar', () => ({
   SidebarInset: ({ children }: { children: React.ReactNode }) => <div data-testid="sidebar-inset">{children}</div>,
 }));
 
-vi.mock('@/components/shared/sidebar/app-sidebar', () => ({
+vi.mock('@/components/layout/sidebar/app-sidebar', () => ({
   AppSidebar: () => <div data-testid="app-sidebar">Sidebar</div>,
 }));
 
-vi.mock('@/components/shared/headers', () => ({
+vi.mock('@/components/layout/headers', () => ({
   AppHeader: () => <div data-testid="app-header">Header</div>,
 }));
 

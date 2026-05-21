@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 
 interface IssuesListProps {
   issues: IssueSummary[]
-  onIssueClick?: (issueKey: string) => void
+  onIssueClick?: (issueId: string) => void
 }
 
 /**
@@ -63,9 +63,9 @@ export default function IssuesList({
   // Track if we've already preloaded to avoid redundant calls
   const hasPreloaded = useRef(false);
 
-  const handleIssueClick = (issueKey: string) => {
+  const handleIssueClick = (issueId: string) => {
     if (onIssueClick) {
-      onIssueClick(issueKey);
+      onIssueClick(issueId);
     }
   };
 
@@ -110,7 +110,7 @@ export default function IssuesList({
                     statusColors.rowBorder,
                     statusColors.rowHoverBg
                   )}
-                  onClick={() => handleIssueClick(issue.issueKey)}
+                  onClick={() => handleIssueClick(issue.id)}
                   onMouseEnter={handleRowHover}
                   onFocus={handleRowHover}
                 >
@@ -148,4 +148,3 @@ export default function IssuesList({
     </div>
   );
 }
-

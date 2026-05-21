@@ -10,18 +10,8 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { DeleteAccountDialog } from './delete-account-dialog'
-import type { UserProfile } from '../types'
 
-interface OtherSettingsProps {
-  userProfile: UserProfile
-}
-
-export function OtherSettings({ userProfile }: OtherSettingsProps) {
-  const handleAccountDeleted = () => {
-    // Mock: In production, this would redirect to sign-out or goodbye page
-    console.log('Account deletion confirmed')
-  }
-
+export function OtherSettings() {
   return (
     <div className="space-y-6">
       <Card>
@@ -114,10 +104,7 @@ export function OtherSettings({ userProfile }: OtherSettingsProps) {
                 action cannot be undone.
               </p>
             </div>
-            <DeleteAccountDialog
-              userEmail={userProfile.email}
-              onConfirm={handleAccountDeleted}
-            />
+            <DeleteAccountDialog />
           </div>
         </CardContent>
       </Card>

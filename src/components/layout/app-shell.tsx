@@ -7,8 +7,8 @@ import { useTeams } from "@/features/teams"
 
 import { AppShellHeaderContext } from "@/components/layout/app-shell-header-store"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/shared/sidebar/app-sidebar"
-import { AppHeader, type AppHeaderProps } from "@/components/shared/headers"
+import { AppSidebar } from "@/components/layout/sidebar/app-sidebar"
+import { AppHeader, type AppHeaderProps } from "@/components/layout/headers"
 
 type Variant = "sidebar" | "blank"
 

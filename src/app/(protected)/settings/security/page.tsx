@@ -1,4 +1,4 @@
-import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/shared/headers";
+import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/layout/headers";
 import { SecuritySettings } from "@/features/user-settings/components";
 import type { Metadata } from "next";
 import { getSession } from "@/server/auth/session";

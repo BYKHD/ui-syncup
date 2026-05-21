@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/shared/headers";
+import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/layout/headers";
 import { InstanceSettingsScreen } from "@/features/instance-settings";
 import { getSession } from "@/server/auth/session";
 import { getInstanceStatus } from "@/server/setup";

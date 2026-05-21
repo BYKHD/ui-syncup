@@ -1,4 +1,4 @@
-import { AppHeaderConfigurator } from '@/components/shared/headers'
+import { AppHeaderConfigurator } from '@/components/layout/headers'
 import { DashboardScreen } from '@/features/dashboard'
 
 export default function DashboardPage() {

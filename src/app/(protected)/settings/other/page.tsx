@@ -1,6 +1,5 @@
-import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/shared/headers'
+import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/layout/headers'
 import OtherSettingsScreen from '@/features/user-settings/screens/other-settings-screen'
-import { MOCK_USER_PROFILE } from '@/mocks/user-settings.fixtures'
 
 const OTHER_SETTINGS_BREADCRUMBS: BreadcrumbItem[] = [
   { label: 'Settings', href: '/settings' },
@@ -17,7 +16,7 @@ export default function OtherPage() {
         pageName="Other Settings"
         breadcrumbs={OTHER_SETTINGS_BREADCRUMBS}
       />
-      <OtherSettingsScreen userProfile={MOCK_USER_PROFILE} />
+      <OtherSettingsScreen />
     </>
   )
 }

@@ -184,7 +184,16 @@ describe("Team Invitation Properties", () => {
 
         // Test already used token
         await acceptInvitation(token, invitee.id);
-        await expect(acceptInvitation(token, invitee.id)).rejects.toThrow("Invitation already used");
+        await expect(acceptInvitation(token, invitee.id)).resolves.toBeUndefined();
+
+        const [stranger] = await db.insert(users).values({
+          email: `stranger-${Date.now()}-${Math.random()}@example.com`,
+          emailVerified: true,
+          name: "Stranger",
+        }).returning();
+        testUserIds.push(stranger.id);
+
+        await expect(acceptInvitation(token, stranger.id)).rejects.toThrow("Invitation already used");
 
         return true;
       }),

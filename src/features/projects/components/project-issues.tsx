@@ -47,8 +47,8 @@ export default function ProjectIssues({
   const hasIssues = totalCount > 0
 
   // Navigate to issue details page when clicking on an issue row
-  const handleIssueClick = (issueKey: string) => {
-    router.push(`/issue/${issueKey}`)
+  const handleIssueClick = (issueId: string) => {
+    router.push(`/issue/${issueId}`)
   }
 
   return (
@@ -125,4 +125,3 @@ export default function ProjectIssues({
     </Card>
   )
 }
-
