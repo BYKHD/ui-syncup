@@ -1,18 +1,10 @@
 'use client';
 
 import { memo } from 'react';
-import { motion, useTransform, type MotionValue } from 'motion/react';
+import { motion, motionValue, MotionValue, useTransform } from 'motion/react';
 import { cn } from '@/lib/utils';
 
-interface InfiniteCanvasBackgroundProps {
-  /**
-   * Pan X offset - can be a number or a MotionValue for animated updates
-   */
-  panX: number | MotionValue<number>;
-  /**
-   * Pan Y offset - can be a number or a MotionValue for animated updates
-   */
-  panY: number | MotionValue<number>;
+interface InfiniteCanvasBackgroundBaseProps {
   /**
    * Zoom level (1 = 100%)
    */
@@ -31,6 +23,96 @@ interface InfiniteCanvasBackgroundProps {
    * Additional CSS classes
    */
   className?: string;
+}
+
+interface InfiniteCanvasBackgroundProps extends InfiniteCanvasBackgroundBaseProps {
+  /**
+   * Pan X offset - can be a number or a MotionValue for animated updates
+   */
+  panX: number | MotionValue<number>;
+  /**
+   * Pan Y offset - can be a number or a MotionValue for animated updates
+   */
+  panY: number | MotionValue<number>;
+}
+
+interface AnimatedInfiniteCanvasBackgroundProps extends InfiniteCanvasBackgroundBaseProps {
+  panX: MotionValue<number>;
+  panY: MotionValue<number>;
+}
+
+interface StaticInfiniteCanvasBackgroundProps extends InfiniteCanvasBackgroundBaseProps {
+  panX: number;
+  panY: number;
+}
+
+const getGridBackgroundStyles = (zoom: number, gridSize: number, dotSize: number) => {
+  const scaledGridSize = gridSize * zoom;
+  const scaledDotSize = Math.max(dotSize * Math.min(zoom, 1), 0.5);
+
+  return {
+    backgroundImage: `radial-gradient(circle at ${scaledDotSize}px ${scaledDotSize}px, var(--color-canvas-dotted) ${scaledDotSize}px, transparent 0)`,
+    backgroundSize: `${scaledGridSize}px ${scaledGridSize}px`,
+  };
+};
+
+const isMotionValue = (value: number | MotionValue<number>): value is MotionValue<number> => (
+  value instanceof MotionValue
+);
+
+function AnimatedInfiniteCanvasBackground({
+  panX,
+  panY,
+  zoom,
+  gridSize = 16,
+  dotSize = 1,
+  className,
+}: AnimatedInfiniteCanvasBackgroundProps) {
+  const backgroundPosition = useTransform(
+    [panX, panY],
+    ([x, y]) => `${x}px ${y}px`
+  );
+
+  return (
+    <motion.div
+      className={cn(
+        'absolute inset-0 z-0 pointer-events-none',
+        className
+      )}
+      style={{
+        ...getGridBackgroundStyles(zoom, gridSize, dotSize),
+        backgroundPosition,
+        opacity: 0.7,
+        willChange: 'background-position',
+      }}
+      aria-hidden="true"
+    />
+  );
+}
+
+function StaticInfiniteCanvasBackground({
+  panX,
+  panY,
+  zoom,
+  gridSize = 16,
+  dotSize = 1,
+  className,
+}: StaticInfiniteCanvasBackgroundProps) {
+  return (
+    <div
+      className={cn(
+        'absolute inset-0 z-0 pointer-events-none',
+        className
+      )}
+      style={{
+        ...getGridBackgroundStyles(zoom, gridSize, dotSize),
+        backgroundPosition: `${panX}px ${panY}px`,
+        opacity: 0.7,
+        willChange: 'background-position, background-size',
+      }}
+      aria-hidden="true"
+    />
+  );
 }
 
 /**
@@ -62,72 +144,27 @@ function InfiniteCanvasBackgroundComponent({
   dotSize = 1,
   className,
 }: InfiniteCanvasBackgroundProps) {
-  // Calculate scaled grid size
-  const scaledGridSize = gridSize * zoom;
-  
-  // Scale dot size with zoom, but keep it visible at low zoom levels
-  // Minimum dot size of 0.5px for visibility
-  const scaledDotSize = Math.max(dotSize * Math.min(zoom, 1), 0.5);
-
-  // Check if we're using motion values (for animated panning)
-  const isMotionX = typeof panX !== 'number';
-  const isMotionY = typeof panY !== 'number';
-
-  // Create the background position transform
-  // If using motion values, transform them to CSS string
-  const _backgroundPositionX = isMotionX
-    ? useTransform(panX as MotionValue<number>, (x) => `${x}px`)
-    : `${panX}px`;
-  
-  const _backgroundPositionY = isMotionY
-    ? useTransform(panY as MotionValue<number>, (y) => `${y}px`)
-    : `${panY}px`;
-
-  // If either pan value is a motion value, we need to use motion.div
-  if (isMotionX || isMotionY) {
-    // Create combined background-position motion value
-    const bgPosition = isMotionX && isMotionY
-      ? useTransform(
-          [panX as MotionValue<number>, panY as MotionValue<number>],
-          ([x, y]) => `${x}px ${y}px`
-        )
-      : isMotionX
-        ? useTransform(panX as MotionValue<number>, (x) => `${x}px ${panY}px`)
-        : useTransform(panY as MotionValue<number>, (y) => `${panX}px ${y}px`);
-
+  if (isMotionValue(panX) || isMotionValue(panY)) {
     return (
-      <motion.div
-        className={cn(
-          'absolute inset-0 z-0 pointer-events-none',
-          className
-        )}
-        style={{
-          backgroundImage: `radial-gradient(circle at ${scaledDotSize}px ${scaledDotSize}px, var(--color-canvas-dotted) ${scaledDotSize}px, transparent 0)`,
-          backgroundSize: `${scaledGridSize}px ${scaledGridSize}px`,
-          backgroundPosition: bgPosition,
-          opacity: 0.7,
-          willChange: 'background-position',
-        }}
-        aria-hidden="true"
+      <AnimatedInfiniteCanvasBackground
+        panX={isMotionValue(panX) ? panX : motionValue(panX)}
+        panY={isMotionValue(panY) ? panY : motionValue(panY)}
+        zoom={zoom}
+        gridSize={gridSize}
+        dotSize={dotSize}
+        className={className}
       />
     );
   }
 
-  // Static values - use regular div (more performant)
   return (
-    <div
-      className={cn(
-        'absolute inset-0 z-0 pointer-events-none',
-        className
-      )}
-      style={{
-        backgroundImage: `radial-gradient(circle at ${scaledDotSize}px ${scaledDotSize}px, var(--color-canvas-dotted) ${scaledDotSize}px, transparent 0)`,
-        backgroundSize: `${scaledGridSize}px ${scaledGridSize}px`,
-        backgroundPosition: `${panX}px ${panY}px`,
-        opacity: 0.7,
-        willChange: 'background-position, background-size',
-      }}
-      aria-hidden="true"
+    <StaticInfiniteCanvasBackground
+      panX={panX}
+      panY={panY}
+      zoom={zoom}
+      gridSize={gridSize}
+      dotSize={dotSize}
+      className={className}
     />
   );
 }
@@ -142,10 +179,18 @@ export const InfiniteCanvasBackground = memo(
   InfiniteCanvasBackgroundComponent,
   (prevProps, nextProps) => {
     // If using motion values, always allow updates (Framer handles it)
-    if (typeof prevProps.panX !== 'number' || typeof nextProps.panX !== 'number') {
+    if (
+      isMotionValue(prevProps.panX) ||
+      isMotionValue(prevProps.panY) ||
+      isMotionValue(nextProps.panX) ||
+      isMotionValue(nextProps.panY)
+    ) {
       return prevProps.panX === nextProps.panX && 
              prevProps.panY === nextProps.panY &&
-             prevProps.zoom === nextProps.zoom;
+             prevProps.zoom === nextProps.zoom &&
+             prevProps.gridSize === nextProps.gridSize &&
+             prevProps.dotSize === nextProps.dotSize &&
+             prevProps.className === nextProps.className;
     }
     
     // Only re-render if pan/zoom/config actually changed
