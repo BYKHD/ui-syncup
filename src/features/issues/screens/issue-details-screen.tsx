@@ -6,7 +6,7 @@
 // All logic is handled by hooks and API layer
 // ============================================================================
 
-import { useIssueDetails, useIssueActivities, useIssueUpdate, useIssueDelete } from '../hooks';
+import { useIssueDetails, useIssueActivities, useIssueUpdate, useIssueDelete, useIssuePermissions } from '../hooks';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -97,15 +97,8 @@ export default function IssueDetailsScreen({
   // Local state for UI interactions
   const [_activityCursor, _setActivityCursor] = useState<string | null>(null);
 
-  // Default permissions - in production, derive from user role and project membership
-  // TODO: Wire useIssuePermissions hook when RBAC integration is complete
-  const basePermissions: IssuePermissions = permissions ?? {
-    canEdit: true,
-    canDelete: true,
-    canComment: true,
-    canAssign: true,
-    canChangeStatus: true,
-  };
+  const hookPermissions = useIssuePermissions({ issueId });
+  const basePermissions: IssuePermissions = permissions ?? hookPermissions;
 
   // Archived projects are a frozen historical record (see features/projects
   // wiki page). Force read-only UI regardless of role; the server-side

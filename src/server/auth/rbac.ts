@@ -729,6 +729,8 @@ export async function getUserPermissions(
   const permissionsSet = new Set<Permission>();
 
   if (resourceType === "project") {
+    const archived = await isProjectArchived(resourceId);
+
     const rows = await db
       .select()
       .from(projectMembers)
@@ -742,7 +744,9 @@ export async function getUserPermissions(
 
     if (rows.length > 0) {
       for (const p of ROLE_PERMISSIONS[rows[0].role as Role] ?? []) {
-        permissionsSet.add(p);
+        if (!archived || !ARCHIVE_BLOCKED_PERMISSIONS.has(p)) {
+          permissionsSet.add(p);
+        }
       }
     }
     return Array.from(permissionsSet);

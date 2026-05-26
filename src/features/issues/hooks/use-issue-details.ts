@@ -6,6 +6,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getIssueDetails } from '../api';
 import type { IssueDetailData } from '@/features/issues/types';
+import type { GetIssueDetailsResponse } from '../api/get-issue-details';
 
 // ============================================================================
 // QUERY KEYS
@@ -31,6 +32,7 @@ export interface UseIssueDetailsParams {
 
 export interface UseIssueDetailsResult {
   issue: IssueDetailData | undefined;
+  permissions: string[] | undefined;
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
@@ -52,16 +54,17 @@ export interface UseIssueDetailsResult {
  * - Currently uses mock data from fixtures
  */
 export function useIssueDetails({ issueId, enabled = true }: UseIssueDetailsParams): UseIssueDetailsResult {
-  const query = useQuery({
+  const query = useQuery<GetIssueDetailsResponse>({
     queryKey: issueKeys.detail(issueId),
-    queryFn: () => getIssueDetails({ issueId }).then(res => res.issue),
+    queryFn: () => getIssueDetails({ issueId }),
     enabled: enabled && !!issueId,
     staleTime: 30 * 1000, // 30 seconds
     retry: 1,
   });
 
   return {
-    issue: query.data,
+    issue: query.data?.issue,
+    permissions: query.data?.permissions,
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,

@@ -259,3 +259,12 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - Friendlier toasts on handler short-circuit: "This project is archived. Unarchive to edit." instead of generic "Update failed".
 - New test: Property 16.8 in [`use-annotation-permissions.property.test.tsx`](../../src/features/annotations/hooks/__tests__/use-annotation-permissions.property.test.tsx) (12/12 passing; tsc clean).
 - Caveat (not addressed here): the broader `useIssuePermissions` hook in `issue-details-screen.tsx:101` is still a TODO — non-archive role gating still relies on server 403s. Tracked as a follow-up.
+
+## [2026-05-27] feat | Wire real RBAC permissions to issue-details-screen (close the default-true TODO)
+
+- `getUserPermissions` in `src/server/auth/rbac.ts` now strips `ARCHIVE_BLOCKED_PERMISSIONS` on archived projects, mirroring `hasPermission`.
+- `GET /api/issues/[issueId]` response now includes `permissions: string[]` — the viewer's resolved permission set for the issue's project.
+- `use-issue-details` surfaces `permissions: string[] | undefined`; `use-issue-permissions({ issueId })` maps strings to `IssuePermissions` flags.
+- `issue-details-screen.tsx`: replaced the `canEdit: true` defaults with `useIssuePermissions`; archive override kept for defence-in-depth.
+- Tests: `rbac.test.ts` (4 new integration cases for archive gating), `hooks/__tests__/use-issue-permissions.test.tsx` (5 unit cases), route mock updated.
+- Affected files: `rbac.ts`, `route.ts` (GET), `get-issue-details.ts`, `use-issue-details.ts`, `use-issue-permissions.ts` (new), `hooks/index.ts`, `issue-details-screen.tsx`.
