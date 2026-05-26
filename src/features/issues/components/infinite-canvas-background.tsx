@@ -75,11 +75,11 @@ function InfiniteCanvasBackgroundComponent({
 
   // Create the background position transform
   // If using motion values, transform them to CSS string
-  const backgroundPositionX = isMotionX
+  const _backgroundPositionX = isMotionX
     ? useTransform(panX as MotionValue<number>, (x) => `${x}px`)
     : `${panX}px`;
   
-  const backgroundPositionY = isMotionY
+  const _backgroundPositionY = isMotionY
     ? useTransform(panY as MotionValue<number>, (y) => `${y}px`)
     : `${panY}px`;
 

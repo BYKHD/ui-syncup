@@ -14,7 +14,7 @@
 
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import type { IssueAttachment, CanvasViewState } from '@/features/issues/types';
-import type { AttachmentAnnotation, AnnotationPosition, AnnotationHistoryEntry, AnnotationShape, AnnotationToolId, AnnotationSaveStatus, AnnotationPermissions } from '../types';
+import type { AttachmentAnnotation, AnnotationShape, AnnotationToolId, AnnotationSaveStatus, AnnotationPermissions } from '../types';
 import { CenteredCanvasView } from '@/features/issues/components/centered-canvas-view';
 import { AnnotationLayer } from './annotation-layer';
 import { AnnotationCanvas } from './annotation-canvas';
@@ -22,7 +22,7 @@ import { AnnotationToolbar } from './annotation-toolbar';
 import { AnnotationCommentInput } from './annotation-comment-input';
 import { useAnnotationIntegration } from '../hooks/use-annotation-integration';
 import { useAnnotationPermissions } from '../hooks/use-annotation-permissions';
-import { useAnnotationDrafts, draftToAnnotation } from '../hooks/use-annotation-drafts';
+import { useAnnotationDrafts } from '../hooks/use-annotation-drafts';
 import { useAnnotationEditState } from '../hooks/use-annotation-edit-state';
 import { KeyboardShortcutsModal } from './keyboard-shortcuts-modal';
 
@@ -183,7 +183,7 @@ export function AnnotatedAttachmentView({
     redo: apiRedo,
     setShowShortcutsHelp: apiSetShowShortcutsHelp,
     setDragging: apiSetDragging,
-    refetch,
+    refetch: _refetch,
   } = useAnnotationIntegration({
     issueId: issueId || '',
     attachmentId: attachment.id,

@@ -7,7 +7,6 @@ import {
   RiArchiveLine,
   RiUserAddLine,
   RiUserLine,
-  RiSettingsLine,
   RiMailSendLine,
   RiMailCloseLine,
   RiCloseCircleLine,
