@@ -80,6 +80,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
             name: project.name,
             description: project.description,
             visibility: project.visibility,
+            status: project.status,
             stats: project.stats,
             createdAt: project.createdAt,
             updatedAt: project.updatedAt,
@@ -101,4 +102,3 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     notFound();
   }
 }
-

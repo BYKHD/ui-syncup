@@ -132,6 +132,12 @@ Append-only. Newest entries at the bottom. Each entry starts with `## [YYYY-MM-D
 - Added coverage that non-managers do not see pending access requests even when request data exists.
 - Focused dialog tests and TypeScript typecheck are clean.
 
+## [2026-05-26] add | archive-project feature shipped
+
+- Added owner-only project archive/unarchive workflow with transactional service functions, archive activity events, API route coverage, frontend actions, read-only archived detail banner, and active-by-default project list filtering.
+- Local Postgres-dependent migration/manual UI smoke was blocked because `localhost:5432` was not reachable in this environment; focused PGlite route/service/component tests and TypeScript verification were used for code validation.
+- See `docs/superpowers/specs/2026-05-26-archive-project-design.md`.
+
 ## [2026-05-07] add | concepts/access-requests
 
 - Project-scoped request-to-join feature: replaces the dead-end "no permission" error on shared issue links with an in-place access-request panel.
@@ -207,3 +213,8 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - Added `getIssueByRef(issueRef, userId)` so `/issue/[issueKey]` accepts UUIDs directly and disambiguates legacy issue keys by the first candidate the user can view.
 - Switched project issue rows, dashboard issue rows, and issue notification target URLs to prefer `issues.id`, while preserving legacy `issue_key` display and fallback links.
 - Added focused PGlite regression coverage for duplicate `PRJ-1` issues across teams.
+
+## [2026-05-26] fix | issue list drops status row border color
+
+- `IssuesList` no longer applies `statusColors.rowBorder` to issue rows, while preserving status-aware hover background styling.
+- Added focused component coverage for the row class contract.

@@ -10,7 +10,8 @@ import { projects } from "@/server/db/schema/projects";
 import { projectMembers } from "@/server/db/schema/project-members";
 import { teamMembers } from "@/server/db/schema/team-members";
 import { issues } from "@/server/db/schema/issues";
-import { eq, and, isNull, or, like, count, inArray } from "drizzle-orm";
+import { projectActivities } from "@/server/db/schema/project-activities";
+import { eq, and, isNull, or, like, count, inArray, sql } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { generateUniqueSlug, validateProjectKey, validateProjectName } from "./utils";
 import { autoPromoteToEditor, getManagementRole } from "@/server/auth/rbac";
@@ -115,7 +116,9 @@ export async function listProjects(
       const stats = await getProjectStats(project.id);
       const userRole = await getUserProjectRole(userId, project.id);
       const canJoin =
-        project.visibility === "public" && userRole === null;
+        project.status === "active" &&
+        project.visibility === "public" &&
+        userRole === null;
 
       return {
         ...project,
@@ -184,7 +187,10 @@ export async function getProject(
   // Get stats and user context
   const stats = await getProjectStats(project.id);
   const userRole = await getUserProjectRole(userId, project.id);
-  const canJoin = project.visibility === "public" && userRole === null;
+  const canJoin =
+    project.status === "active" &&
+    project.visibility === "public" &&
+    userRole === null;
 
   return {
     ...project,
@@ -291,7 +297,7 @@ export async function updateProject(
   projectId: string,
   data: UpdateProjectData
 ): Promise<Project> {
-  const { name, description, icon, visibility, status } = data;
+  const { name, description, icon, visibility } = data;
 
   // Validate name if provided
   if (name !== undefined && !validateProjectName(name)) {
@@ -307,7 +313,6 @@ export async function updateProject(
   if (description !== undefined) updates.description = description;
   if (icon !== undefined) updates.icon = icon;
   if (visibility !== undefined) updates.visibility = visibility;
-  if (status !== undefined) updates.status = status;
 
   // Update project
   const [updated] = await db
@@ -326,6 +331,120 @@ export async function updateProject(
   });
 
   return updated as Project;
+}
+
+/**
+ * Archive a project.
+ *
+ * Locks the project row with FOR UPDATE so concurrent archive/unarchive calls
+ * serialize on the same project. The count-gate recheck inside the transaction
+ * is best-effort against concurrent issue writes, since issue write APIs do not
+ * participate in this project row lock.
+ *
+ * @throws "Project not found"
+ * @throws "All issues must be resolved before archiving"
+ */
+export async function archiveProject(
+  projectId: string,
+  actorId: string
+): Promise<Project> {
+  return db.transaction(async (tx) => {
+    const [project] = await tx
+      .select()
+      .from(projects)
+      .where(and(eq(projects.id, projectId), isNull(projects.deletedAt)))
+      .for('update');
+
+    if (!project) {
+      throw new Error('Project not found');
+    }
+
+    if (project.status === 'archived') {
+      return project as Project;
+    }
+
+    const [{ count: totalTickets }] = await tx
+      .select({ count: count() })
+      .from(issues)
+      .where(and(eq(issues.projectId, projectId), isNull(issues.deletedAt)));
+
+    const [{ count: completedTickets }] = await tx
+      .select({ count: count() })
+      .from(issues)
+      .where(
+        and(
+          eq(issues.projectId, projectId),
+          isNull(issues.deletedAt),
+          inArray(issues.status, ['resolved', 'archived'])
+        )
+      );
+
+    if (totalTickets === 0 || completedTickets !== totalTickets) {
+      throw new Error('All issues must be resolved before archiving');
+    }
+
+    const [updated] = await tx
+      .update(projects)
+      .set({ status: 'archived', updatedAt: new Date() })
+      .where(eq(projects.id, projectId))
+      .returning();
+
+    await tx.insert(projectActivities).values({
+      teamId: updated.teamId,
+      projectId: updated.id,
+      actorId,
+      type: 'project_archived',
+      metadata: sql`'{}'::jsonb`,
+    });
+
+    logger.info('project.archived', { projectId, actorId });
+
+    return updated as Project;
+  });
+}
+
+/**
+ * Unarchive a project. Inverse of archiveProject with no issue count gate.
+ *
+ * @throws "Project not found"
+ */
+export async function unarchiveProject(
+  projectId: string,
+  actorId: string
+): Promise<Project> {
+  return db.transaction(async (tx) => {
+    const [project] = await tx
+      .select()
+      .from(projects)
+      .where(and(eq(projects.id, projectId), isNull(projects.deletedAt)))
+      .for('update');
+
+    if (!project) {
+      throw new Error('Project not found');
+    }
+
+    if (project.status === 'active') {
+      return project as Project;
+    }
+
+    const [updated] = await tx
+      .update(projects)
+      .set({ status: 'active', updatedAt: new Date() })
+      .where(eq(projects.id, projectId))
+      .returning();
+
+    await tx.insert(projectActivities).values({
+      teamId: updated.teamId,
+      projectId: updated.id,
+      actorId,
+      type: 'project_unarchived',
+      metadata: sql`'{}'::jsonb`,
+    });
+
+    logger.info('project.unarchived', { projectId, actorId });
+
+    return updated as Project;
+  });
 }
 
 /**

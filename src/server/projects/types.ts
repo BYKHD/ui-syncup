@@ -98,7 +98,6 @@ export interface UpdateProjectData {
   description?: string | null;
   icon?: string | null;
   visibility?: ProjectVisibility;
-  status?: ProjectStatus;
 }
 
 /**

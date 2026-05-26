@@ -2,7 +2,7 @@
 title: Feature — projects
 type: feature
 tags: [feature, projects, members, invitations, access-requests]
-last_updated: 2026-05-07
+last_updated: 2026-05-26
 sources: [sources/feature-arch-invitations, sources/feature-arch-rbac]
 ---
 
@@ -19,7 +19,7 @@ Project CRUD, membership, role updates, project-level invitations (incl. accept 
 
 ## API
 
-CRUD: `create-project`, `update-project`, `delete-project`, `get-project`, `get-projects`.
+CRUD: `create-project`, `update-project`, `delete-project`, `get-project`, `get-projects`, `archive-project`, `unarchive-project`.
 Members: `get-project-members`, `update-member-role`, `remove-member`, `leave-project`, `join-project`.
 Invitations: `create-invitation`, `list-invitations`, `resend-invitation`, `revoke-invitation`.
 Access requests: `create-access-request`, `list-access-requests`, `approve-access-request`, `decline-access-request`, `cancel-access-request`.
@@ -29,6 +29,7 @@ Activity: `get-project-activities`.
 
 `use-create-project`, `use-delete-project`, `use-project-activities`, `use-project-filters`, `use-project-invitations`, `use-project-members`, `use-create-invitation`, `use-join-project`, `use-leave-project`.
 `use-create-access-request`, `use-my-access-request`, `use-project-access-requests`, `use-approve-access-request`, `use-decline-access-request`, `use-cancel-access-request`.
+`use-archive-project`, `use-unarchive-project`.
 
 ## Permissions
 
@@ -41,6 +42,12 @@ Project invitation flow includes unauthenticated decline and email-delivery trac
 ## Access requests
 
 Project-scoped request-to-join flow for private projects; see [[concepts/access-requests]].
+
+## Archive workflow
+
+Project owners can archive active projects through `POST /api/projects/[id]/archive` when the project has at least one issue and every non-deleted issue is `resolved` or `archived`. `DELETE /api/projects/[id]/archive` restores the project to active. The archive/unarchive service functions do their own transactional DB work and write `project_archived` / `project_unarchived` activity rows.
+
+Archived projects are hidden from the default project list via the active status filter, show a read-only banner on the detail screen, hide issue creation and join actions, and cannot be joined through the public-project join route.
 
 ## Related
 

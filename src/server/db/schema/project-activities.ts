@@ -23,6 +23,8 @@ import { users } from "./users";
  * - member_role_changed: When an existing member's role is updated
  * - member_added: When a member is added (via invitation or direct)
  * - member_removed: When a member is removed from the project
+ * - project_archived: When a project is archived
+ * - project_unarchived: When a project is unarchived
  */
 export const projectActivityTypeEnum = pgEnum("project_activity_type", [
   "invitation_sent",
@@ -33,6 +35,8 @@ export const projectActivityTypeEnum = pgEnum("project_activity_type", [
   "member_role_changed",
   "member_added",
   "member_removed",
+  "project_archived",
+  "project_unarchived",
 ]);
 
 /**

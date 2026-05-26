@@ -29,6 +29,13 @@
       "when": 1778141793910,
       "tag": "0003_lowly_cassandra_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779787803538,
+      "tag": "0004_hesitant_whistler",
+      "breakpoints": true
     }
   ]
 }

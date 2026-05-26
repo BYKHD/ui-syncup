@@ -4,6 +4,7 @@ import { type ReactNode } from 'react';
 import { ProjectTitleSection } from './project-title-section';
 import { ProjectStats } from './project-stats';
 import { ProjectActions } from './project-actions';
+import { useArchiveProject, useUnarchiveProject } from '../hooks';
 
 interface ProjectStats {
   memberCount: number;
@@ -17,6 +18,7 @@ interface Project {
   name: string;
   description: string | null;
   visibility: 'private' | 'public';
+  status: 'active' | 'archived';
   stats: ProjectStats;
 }
 
@@ -61,13 +63,24 @@ export function ProjectDetailHeader({
   memberDialogOpen,
   onMemberDialogOpenChange,
 }: ProjectDetailHeaderRefactoredProps) {
+  const archiveProject = useArchiveProject({
+    onSuccess: onProjectUpdated,
+  });
+  const unarchiveProject = useUnarchiveProject({
+    onSuccess: onProjectUpdated,
+  });
+
   // Permission calculations
   const canViewMembers = userRole !== null;
-  const canJoinProject = project.visibility === 'public' && userRole === null;
+  const canJoinProject =
+    project.status === 'active' && project.visibility === 'public' && userRole === null;
   const canManageMembers = userRole === 'owner' || userRole === 'editor';
-  const canEditSettings = userRole === 'owner' || userRole === 'editor';
+  const canEditSettings =
+    project.status === 'active' && (userRole === 'owner' || userRole === 'editor');
   const canLeaveProject = userRole !== null && userRole !== 'owner';
   const canDeleteProject = userRole === 'owner';
+  const canArchiveProject = userRole === 'owner' && project.status === 'active';
+  const canUnarchiveProject = userRole === 'owner' && project.status === 'archived';
 
   return (
     <div className="border-b bg-card">
@@ -90,12 +103,22 @@ export function ProjectDetailHeader({
             projectId={project.id}
             projectName={project.name}
             userRole={userRole}
+            isArchived={project.status === 'archived'}
             canJoinProject={canJoinProject}
             canViewMembers={canViewMembers}
             canManageMembers={canManageMembers}
             canEditSettings={canEditSettings}
             canLeaveProject={canLeaveProject}
             canDeleteProject={canDeleteProject}
+            canArchiveProject={canArchiveProject}
+            canUnarchiveProject={canUnarchiveProject}
+            onArchive={() =>
+              archiveProject.mutate({
+                projectId: project.id,
+                projectName: project.name,
+              })
+            }
+            onUnarchive={() => unarchiveProject.mutate({ projectId: project.id })}
             onMembershipChanged={onMembershipChanged}
             onProjectUpdated={onProjectUpdated}
             onLeftProject={onLeftProject}

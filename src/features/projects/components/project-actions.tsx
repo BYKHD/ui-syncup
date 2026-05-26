@@ -30,6 +30,8 @@ import {
   RiMore2Line,
   RiLoader4Line,
   RiUserAddLine,
+  RiArchiveLine,
+  RiInboxUnarchiveLine,
 } from "@remixicon/react";
 import { toast } from "sonner";
 import { PermissionTooltip } from "@/components/shared/permission-guard/permission-tooltip";
@@ -39,12 +41,17 @@ interface ProjectActionsProps {
   projectId: string;
   projectName: string;
   userRole: "owner" | "editor" | "member" | "viewer" | null;
+  isArchived?: boolean;
   canJoinProject?: boolean;
   canViewMembers: boolean;
   canManageMembers: boolean;
   canEditSettings: boolean;
   canLeaveProject: boolean;
   canDeleteProject: boolean;
+  canArchiveProject?: boolean;
+  canUnarchiveProject?: boolean;
+  onArchive?: () => void;
+  onUnarchive?: () => void;
   onMembershipChanged?: () => void;
   onProjectUpdated?: () => void;
   onLeftProject?: () => void;
@@ -84,12 +91,17 @@ export function ProjectActions({
   projectId,
   projectName,
   userRole,
+  isArchived = false,
   canJoinProject = false,
   canViewMembers,
   canManageMembers,
   canEditSettings,
   canLeaveProject,
   canDeleteProject,
+  canArchiveProject = false,
+  canUnarchiveProject = false,
+  onArchive,
+  onUnarchive,
   onMembershipChanged,
   onProjectDeleted,
   renderIssueDialog,
@@ -123,7 +135,15 @@ export function ProjectActions({
   });
 
   const hasSecondaryActions =
-    canViewMembers || canEditSettings || canLeaveProject || canDeleteProject;
+    canViewMembers ||
+    canEditSettings ||
+    canArchiveProject ||
+    canUnarchiveProject ||
+    canLeaveProject ||
+    canDeleteProject;
+
+  const canCreateIssue =
+    !isArchived && (userRole === "owner" || userRole === "editor");
 
   const handleJoinProject = () => {
     joinProject(projectId);
@@ -186,14 +206,14 @@ export function ProjectActions({
             )}
             {isJoining ? "Joining..." : "Join Project"}
           </Button>
-        ) : userRole === "owner" || userRole === "editor" ? (
+        ) : canCreateIssue ? (
           renderIssueDialog(
             <Button>
               <RiAddLine className="mr-1.5 h-3.5 w-3.5" />
               Add Issue
             </Button>,
           )
-        ) : (
+        ) : !isArchived ? (
           <PermissionTooltip
             tooltipContent="You don't have permission to create issues"
             asChild
@@ -203,7 +223,7 @@ export function ProjectActions({
               Add Issue
             </Button>
           </PermissionTooltip>
-        )}
+        ) : null}
 
         {/* Secondary Actions Menu */}
         {hasSecondaryActions && (
@@ -222,22 +242,36 @@ export function ProjectActions({
                 </DropdownMenuItem>
               )}
 
-              {canEditSettings && (
+              {canEditSettings && !isArchived && (
                 <DropdownMenuItem onClick={() => setShowSettingsDialog(true)}>
                   <RiSettingsLine className="h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
               )}
 
-              {(canViewMembers || canEditSettings) &&
-                (canLeaveProject || canDeleteProject) && (
+              {canArchiveProject && (
+                <DropdownMenuItem onClick={onArchive}>
+                  <RiArchiveLine className="h-4 w-4" />
+                  Archive Project
+                </DropdownMenuItem>
+              )}
+
+              {(canViewMembers || (canEditSettings && !isArchived) || canArchiveProject) &&
+                (canUnarchiveProject || (canLeaveProject && !isArchived) || canDeleteProject) && (
                   <DropdownMenuSeparator />
                 )}
 
-              {canLeaveProject && (
+              {canLeaveProject && !isArchived && (
                 <DropdownMenuItem onClick={() => setShowLeaveDialog(true)}>
                   <RiLogoutBoxLine className="h-4 w-4" />
                   Leave Project
+                </DropdownMenuItem>
+              )}
+
+              {canUnarchiveProject && (
+                <DropdownMenuItem onClick={onUnarchive}>
+                  <RiInboxUnarchiveLine className="h-4 w-4" />
+                  Unarchive Project
                 </DropdownMenuItem>
               )}
 
