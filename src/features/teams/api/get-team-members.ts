@@ -17,7 +17,7 @@ export async function getTeamMembers(
     `/api/teams/${teamId}/members`,
     {
       method: 'GET',
-      query: params as any,
+      query: params ? { ...params } : undefined,
     }
   );
 

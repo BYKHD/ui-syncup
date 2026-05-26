@@ -17,7 +17,7 @@ export async function getInvitations(
     `/api/teams/${teamId}/invitations`,
     {
       method: 'GET',
-      query: params as any,
+      query: params ? { ...params } : undefined,
     }
   );
 

@@ -45,14 +45,14 @@ export function useCreateInvitation(
   return useMutation({
     mutationFn: ({ teamId, input }: CreateInvitationVariables) =>
       createInvitation(teamId, input),
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, onMutateResult, context) => {
       // Invalidate invitations list
       queryClient.invalidateQueries({
         queryKey: [INVITATIONS_QUERY_KEY, variables.teamId],
       });
 
       // Call user's onSuccess if provided
-      options?.onSuccess?.(data, variables, context, undefined as any);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });

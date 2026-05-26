@@ -40,7 +40,7 @@ export function useRemoveMember(
   return useMutation({
     mutationFn: ({ teamId, userId, ownershipTransfers }: RemoveMemberVariables) =>
       removeMember(teamId, userId, ownershipTransfers),
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, onMutateResult, context) => {
       // Invalidate team members list
       queryClient.invalidateQueries({
         queryKey: [TEAM_MEMBERS_QUERY_KEY, variables.teamId],
@@ -52,7 +52,7 @@ export function useRemoveMember(
       });
 
       // Call user's onSuccess if provided
-      options?.onSuccess?.(data, variables, context, undefined as any);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });

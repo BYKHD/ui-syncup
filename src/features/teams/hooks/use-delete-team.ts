@@ -28,7 +28,7 @@ export function useDeleteTeam(
 
   return useMutation({
     mutationFn: deleteTeam,
-    onSuccess: (data, teamId, context) => {
+    onSuccess: (data, teamId, onMutateResult, context) => {
       // Invalidate specific team query
       queryClient.invalidateQueries({ queryKey: [TEAM_QUERY_KEY, teamId] });
       
@@ -36,7 +36,7 @@ export function useDeleteTeam(
       queryClient.invalidateQueries({ queryKey: [TEAMS_QUERY_KEY] });
       
       // Call user's onSuccess if provided
-      options?.onSuccess?.(data, teamId, context, undefined as any);
+      options?.onSuccess?.(data, teamId, onMutateResult, context);
     },
     ...options,
   });

@@ -28,13 +28,13 @@ export function useSwitchTeam(
 
   return useMutation({
     mutationFn: switchTeam,
-    onSuccess: (data, teamId, context) => {
+    onSuccess: (data, teamId, onMutateResult, context) => {
       // Invalidate all team-related queries to ensure fresh data with new context
       queryClient.invalidateQueries({ queryKey: [TEAMS_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [TEAM_QUERY_KEY] });
       
       // Call user's onSuccess if provided
-      options?.onSuccess?.(data, teamId, context, undefined as any);
+      options?.onSuccess?.(data, teamId, onMutateResult, context);
     },
     ...options,
   });
