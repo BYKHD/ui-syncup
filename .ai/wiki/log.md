@@ -1,7 +1,7 @@
 ---
 title: Wiki Log
 type: log
-last_updated: 2026-05-07
+last_updated: 2026-05-27
 ---
 
 # Wiki Log
@@ -232,3 +232,21 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 
 - Removed the archived-state muted override from the `ProjectCard` folder panel so archived cards keep the normal `bg-card` panel background while retaining the archived badge and outer card treatment.
 - Added focused component coverage for the archived folder-panel class contract.
+
+## [2026-05-26] fix | eslint JSX text and decorative image warnings
+
+- Replaced literal JSX text-node quote characters with HTML entities in issue, project, team-settings, and user-settings UI components.
+- Added explicit empty `alt` props to decorative issue attachment tab/image icons targeted by the a11y lint rule.
+
+## [2026-05-26] fix | eslint no-unused-vars warnings
+
+- Removed dead type/icon imports and prefixed intentionally retained unused bindings in annotations, issues canvas, and project activity components.
+- `bun run lint 2>&1 | grep 'no-unused-vars'` now returns no output; remaining lint warnings are from other rules.
+
+## [2026-05-27] feat | archive write-freeze on issues, annotations, comments
+
+- Added [`isProjectArchived`](../../src/server/projects/archive-status.ts) as a leaf module (kept out of `project-service.ts` to avoid a cycle with `rbac.ts`).
+- Gated `hasPermission` in [src/server/auth/rbac.ts](../../src/server/auth/rbac.ts): issue + annotation write permissions short-circuit to `false` when the project is archived. `project:archive` and reads stay granted so owners can unarchive.
+- Gated `getAnnotationPermissions` in [src/server/annotations/permission-utils.ts](../../src/server/annotations/permission-utils.ts): zeros out all write flags on archived projects while keeping `canView`.
+- Strict freeze (no role bypass): TEAM_OWNER edits also blocked — to modify, unarchive first.
+- Updated [[features/projects]] and [[concepts/issue-workflow]]; new tests in [`archive-permissions.integration.test.ts`](../../src/server/projects/__tests__/archive-permissions.integration.test.ts) (4/4 passing; full related suite 32/32 passing; `tsc --noEmit` clean).

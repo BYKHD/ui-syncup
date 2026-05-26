@@ -16,6 +16,7 @@ import {
   ALL_ROLES,
   isManagementRole,
   type Permission,
+  PERMISSIONS,
   PROJECT_ROLES,
   type ProjectRole,
   type Role,
@@ -28,6 +29,26 @@ import {
   type TeamRole,
 } from "@/config/roles";
 import { logger } from "@/lib/logger";
+import { isProjectArchived } from "@/server/projects/archive-status";
+
+/**
+ * Permissions that are denied on archived projects, regardless of role.
+ * Archived projects are a frozen historical record — issue, annotation,
+ * comment, and attachment writes are blocked. Project-level admin actions
+ * (rename, manage members, unarchive, delete) remain allowed so owners
+ * can still administer the archived project.
+ */
+const ARCHIVE_BLOCKED_PERMISSIONS = new Set<Permission>([
+  PERMISSIONS.ISSUE_CREATE,
+  PERMISSIONS.ISSUE_UPDATE,
+  PERMISSIONS.ISSUE_DELETE,
+  PERMISSIONS.ISSUE_ASSIGN,
+  PERMISSIONS.ISSUE_COMMENT,
+  PERMISSIONS.ANNOTATION_CREATE,
+  PERMISSIONS.ANNOTATION_UPDATE,
+  PERMISSIONS.ANNOTATION_DELETE,
+  PERMISSIONS.ANNOTATION_COMMENT,
+]);
 
 // ============================================================================
 // TYPES
@@ -614,6 +635,13 @@ export async function hasPermission(check: PermissionCheck): Promise<boolean> {
   const { userId, permission, resourceId, resourceType } = check;
 
   if (resourceType === "project") {
+    if (
+      ARCHIVE_BLOCKED_PERMISSIONS.has(permission) &&
+      (await isProjectArchived(resourceId))
+    ) {
+      return false;
+    }
+
     const rows = await db
       .select()
       .from(projectMembers)
