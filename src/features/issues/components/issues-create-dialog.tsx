@@ -107,6 +107,8 @@ export function IssuesCreateDialog({
   const [isLoadingToBe, setIsLoadingToBe] = useState(false);
   const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const asIsPreview = formData.asIsImage?.preview;
+  const toBePreview = formData.toBeImage?.preview;
 
   // Extract image dimensions using Image API
   const extractImageMetadata = async (file: File): Promise<{ width: number; height: number }> => {
@@ -209,14 +211,14 @@ export function IssuesCreateDialog({
   // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
-      if (formData.asIsImage?.preview) {
-        URL.revokeObjectURL(formData.asIsImage.preview);
+      if (asIsPreview) {
+        URL.revokeObjectURL(asIsPreview);
       }
-      if (formData.toBeImage?.preview) {
-        URL.revokeObjectURL(formData.toBeImage.preview);
+      if (toBePreview) {
+        URL.revokeObjectURL(toBePreview);
       }
     };
-  }, []);
+  }, [asIsPreview, toBePreview]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

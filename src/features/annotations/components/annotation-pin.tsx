@@ -84,9 +84,7 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
       // When props update (save completed), sync effective base to new props
       effectiveBaseRef.current = { x: annotation.x, y: annotation.y };
       // Clear any lingering offset since props now reflect the committed position
-      if (dragOffset !== null) {
-        setDragOffset(null);
-      }
+      setDragOffset((currentOffset) => (currentOffset === null ? currentOffset : null));
     }
   }, [annotation.x, annotation.y]);
 

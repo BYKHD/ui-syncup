@@ -92,9 +92,17 @@ export default function IssueAttachmentsView({
 
   const isControlled = controlledSelectedId !== undefined;
   const selectedAttachmentId = isControlled ? controlledSelectedId : internalSelectedId;
-  const setSelectedAttachmentId = isControlled 
-    ? (id: string) => controlledSetSelectedId?.(id) 
-    : setInternalSelectedId;
+  const setSelectedAttachmentId = useCallback(
+    (id: string) => {
+      if (isControlled) {
+        controlledSetSelectedId?.(id);
+        return;
+      }
+
+      setInternalSelectedId(id);
+    },
+    [isControlled, controlledSetSelectedId],
+  );
 
   const [viewMode, setViewMode] = useState<AttachmentViewMode>('annotate');
   const [canvasState, setCanvasState] = useState<CanvasViewState>({
@@ -121,7 +129,7 @@ export default function IssueAttachmentsView({
       setSelectedAttachmentId(fallbackId);
       setCanvasState({ zoom: 1, panX: 0, panY: 0, fitMode: 'fit' });
     }
-  }, [imageAttachments, selectedAttachmentId, asIsAttachment]);
+  }, [imageAttachments, selectedAttachmentId, asIsAttachment, setSelectedAttachmentId]);
 
   const selectedAttachment = useMemo(
     () => imageAttachments.find((att) => att.id === selectedAttachmentId) || imageAttachments[0],

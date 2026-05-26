@@ -41,6 +41,8 @@ export const annotationKeys = {
     [...annotationKeys.detail(annotationId), 'comments'] as const,
 };
 
+const HARD_ERROR_CODES = [403, 404, 402, 422] as const;
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -356,12 +358,9 @@ export function useAnnotationIntegration(
     return () => clearInterval(cleanupInterval);
   }, []);
 
-  // Helper: Hard error codes that should trigger rollback
-  const HARD_ERROR_CODES = [403, 404, 402, 422];
-
   const isHardSaveError = useCallback((error: unknown): boolean => {
     if (error instanceof Error && 'status' in error) {
-      return HARD_ERROR_CODES.includes((error as { status: number }).status);
+      return (HARD_ERROR_CODES as readonly number[]).includes((error as { status: number }).status);
     }
     return false;
   }, []);

@@ -131,13 +131,11 @@ export function AnnotationBox({
     if (!dragStateRef.current) {
       // When props update (save completed), sync effective base to new props
       effectiveBaseRef.current = {
-        start: { ...annotation.start },
-        end: { ...annotation.end },
+        start: { x: annotation.start.x, y: annotation.start.y },
+        end: { x: annotation.end.x, y: annotation.end.y },
       };
       // Clear any lingering delta since props now reflect the committed position
-      if (visualDelta !== null) {
-        setVisualDelta(null);
-      }
+      setVisualDelta((currentDelta) => (currentDelta === null ? currentDelta : null));
     }
   }, [annotation.start.x, annotation.start.y, annotation.end.x, annotation.end.y]);
 
