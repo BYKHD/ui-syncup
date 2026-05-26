@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import ResponsiveIssueLayout from '../components/responsive-issue-layout';
 import { EnhancedResponsiveIssueLayoutSkeleton } from './issue-details-skeletons';
-import type { IssuePermissions } from '@/features/issues/types';
+import type { IssuePermissions, IssueUpdateHandler } from '@/features/issues/types';
 
 interface IssueDetailsScreenProps {
   issueId: string;
@@ -95,7 +95,7 @@ export default function IssueDetailsScreen({
   });
 
   // Local state for UI interactions
-  const [activityCursor, setActivityCursor] = useState<string | null>(null);
+  const [_activityCursor, _setActivityCursor] = useState<string | null>(null);
 
   // Default permissions - in production, derive from user role and project membership
   // TODO: Wire useIssuePermissions hook when RBAC integration is complete
@@ -108,8 +108,8 @@ export default function IssueDetailsScreen({
   };
 
   // Handlers
-  const handleUpdate = useCallback(
-    async (field: string, value: any) => {
+  const handleUpdate: IssueUpdateHandler = useCallback(
+    async (field, value) => {
       if (!resolvedPermissions.canEdit) {
         toast.info('View-only link. Editing is disabled.');
         return;

@@ -96,7 +96,7 @@ export interface UseAnnotationIntegrationResult {
 // DEBOUNCE HELPER WITH FLUSH/CANCEL
 // ============================================================================
 
-interface DebouncedCallback<T extends (...args: any[]) => void> {
+interface DebouncedCallback<T extends (...args: never[]) => void> {
   /** Call the debounced function */
   (...args: Parameters<T>): void;
   /** Immediately execute with the last pending args (if any) */
@@ -107,7 +107,7 @@ interface DebouncedCallback<T extends (...args: any[]) => void> {
   isPending: () => boolean;
 }
 
-function useDebouncedCallback<T extends (...args: any[]) => void>(
+function useDebouncedCallback<T extends (...args: never[]) => void>(
   callback: T,
   delay: number
 ): DebouncedCallback<T> {
@@ -259,7 +259,7 @@ export function useAnnotationIntegration(
   // ============================================================================
 
   /** Get annotation state (defaults to 'idle') */
-  const getAnnotationState = useCallback((annotationId: string): AnnotationSaveState => {
+  const _getAnnotationState = useCallback((annotationId: string): AnnotationSaveState => {
     return annotationStateRef.current.get(annotationId)?.state ?? 'idle';
   }, []);
 
@@ -650,7 +650,7 @@ export function useAnnotationIntegration(
       annotationId,
       shape,
       description,
-      clientRevision,
+      clientRevision: _clientRevision,
     }: {
       annotationId: string;
       shape?: AnnotationShape;

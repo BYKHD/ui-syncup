@@ -30,6 +30,7 @@ import type {
   IssuePermissions,
   ActivityEntry,
   IssueAttachment,
+  IssueUpdateHandler,
 } from "@/features/issues/types";
 import { useAnnotationIntegration } from "@/features/annotations";
 
@@ -59,7 +60,7 @@ interface ResponsiveIssueLayoutProps {
   activitiesLoading: boolean;
   hasMoreActivities: boolean;
   onLoadMoreActivities: () => void;
-  onUpdate: (field: string, value: any) => Promise<void>;
+  onUpdate: IssueUpdateHandler;
   onDelete: () => Promise<void>;
   isLoading: boolean;
   // Error handling props

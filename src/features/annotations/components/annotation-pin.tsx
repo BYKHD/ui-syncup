@@ -56,7 +56,7 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   isSaving = false,
   isPopoverOpen = false,
   onSelect,
-  onMove,
+  onMove: _onMove,
   onMoveComplete,
   onDragStart,
   onDragEnd,
@@ -120,7 +120,7 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
 
     // Call long-press handler on mobile
     if (isMobile && longPressHandlers.onPointerDown) {
-      longPressHandlers.onPointerDown(event as any);
+      longPressHandlers.onPointerDown(event);
     }
 
     // Always allow selection, even in non-interactive (view) mode
@@ -152,7 +152,7 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
     // Call long-press handler on mobile
     if (isMobile && longPressHandlers.onPointerMove) {
-      longPressHandlers.onPointerMove(event as any);
+      longPressHandlers.onPointerMove(event);
     }
 
     if (!interactive) return;
@@ -197,7 +197,7 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   const handlePointerUp = (event: PointerEvent<HTMLButtonElement>) => {
     // Call long-press handler on mobile
     if (isMobile && longPressHandlers.onPointerUp) {
-      longPressHandlers.onPointerUp(event as any);
+      longPressHandlers.onPointerUp(event);
     }
 
     if (!interactive) return;

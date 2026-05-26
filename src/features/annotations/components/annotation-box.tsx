@@ -83,7 +83,7 @@ export function AnnotationBox({
   isSaving = false,
   isPopoverOpen = false,
   onSelect,
-  onMove,
+  onMove: _onMove,
   onMoveComplete,
   onDragStart,
   onDragEnd,
@@ -259,7 +259,7 @@ export function AnnotationBox({
 
       // Call long-press handler on mobile
       if (isMobile && longPressHandlers.onPointerDown) {
-        longPressHandlers.onPointerDown(event as any);
+        longPressHandlers.onPointerDown(event);
       }
 
       // Only enable dragging/resizing in interactive (edit) mode
@@ -313,7 +313,7 @@ export function AnnotationBox({
     (event: PointerEvent<HTMLDivElement>) => {
       // Call long-press handler on mobile
       if (isMobile && longPressHandlers.onPointerMove) {
-        longPressHandlers.onPointerMove(event as any);
+        longPressHandlers.onPointerMove(event);
       }
 
       if (!interactive || !activeHandle) return;
@@ -355,7 +355,7 @@ export function AnnotationBox({
     (event: PointerEvent<HTMLDivElement>) => {
       // Call long-press handler on mobile
       if (isMobile && longPressHandlers.onPointerUp) {
-        longPressHandlers.onPointerUp(event as any);
+        longPressHandlers.onPointerUp(event);
       }
 
       const dragState = dragStateRef.current;

@@ -21,14 +21,14 @@ import { InlineEditableUserSelect } from './inline-editable-user-select';
 import { TYPE_OPTIONS, PRIORITY_OPTIONS } from '@/features/issues/config';
 
 // Types
-import type { IssueDetailData, IssuePermissions } from '@/features/issues/types';
+import type { IssueDetailData, IssuePermissions, IssueUpdateHandler } from '@/features/issues/types';
 
 // Hooks
 import { useProjectMembers } from '@/features/projects/hooks/use-project-members';
 
 interface MetadataSectionProps {
   issue: IssueDetailData;
-  onUpdate: (field: string, value: any) => Promise<void>;
+  onUpdate: IssueUpdateHandler;
   isLoading?: boolean;
   permissions?: IssuePermissions;
   // Editing state props for keyboard shortcuts

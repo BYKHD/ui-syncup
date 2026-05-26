@@ -220,9 +220,26 @@ export interface IssueDetailResponse {
   issue: IssueDetailData
 }
 
+export interface IssueUpdateValueMap {
+  title: string
+  description: string | null
+  type: IssueType
+  priority: IssuePriority
+  status: IssueStatus
+  assigneeId: string | null
+  coverImageUrl: string | null
+  page: string | null
+  figmaLink: string | null
+  jiraLink: string | null
+}
+
+export type IssueUpdateField = keyof IssueUpdateValueMap
+export type IssueUpdateValue = IssueUpdateValueMap[IssueUpdateField]
+export type IssueUpdateHandler = (field: IssueUpdateField, value: IssueUpdateValue) => Promise<void>
+
 export interface IssueUpdatePayload {
-  field: string
-  value: any
+  field: IssueUpdateField
+  value: IssueUpdateValue
   actorId: string
 }
 
