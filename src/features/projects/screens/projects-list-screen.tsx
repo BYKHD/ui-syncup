@@ -147,7 +147,7 @@ function NoFilteredResults({ onClearFilters }: { onClearFilters: () => void }) {
       <EmptyHeader>
         <EmptyTitle>No projects match your filters</EmptyTitle>
         <EmptyDescription>
-          Try adjusting your search terms or filters to find what you're looking for.
+          Try adjusting your search terms or filters to find what you&apos;re looking for.
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>

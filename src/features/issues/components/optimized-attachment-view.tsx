@@ -239,7 +239,7 @@ export default function IssueAttachmentsView({
           <div className="space-y-2">
             <h3 className="text-sm font-medium">No attachments</h3>
             <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-              This issue doesn't have any attachments yet. Add screenshots or files to provide more context.
+              This issue doesn&apos;t have any attachments yet. Add screenshots or files to provide more context.
             </p>
           </div>
           <div className="flex gap-2 justify-center">
@@ -525,4 +525,3 @@ function CompareCanvasView({
     </div>
   );
 }
-

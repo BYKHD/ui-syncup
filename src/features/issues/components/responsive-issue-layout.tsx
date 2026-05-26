@@ -5,10 +5,9 @@ import React, {
   useEffect,
   lazy,
   Suspense,
-  useCallback,
   useRef,
 } from "react";
-import { motion, AnimatePresence, useDragControls, PanInfo } from "motion/react";
+import { motion, AnimatePresence, useDragControls } from "motion/react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Image, FileText, Keyboard } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, FileText, Keyboard } from "lucide-react";
 import {
   formatShortcut,
   type KeyboardShortcut,
@@ -136,7 +135,7 @@ export default function ResponsiveIssueLayout({
   // This powers the side panel
   const { 
     annotations, 
-    activeTool, // We might want to pass tool state down too if needed
+    activeTool: _activeTool,
     // ... potentially other properties for coordination
   } = useAnnotationIntegration({
     issueId,
@@ -176,8 +175,8 @@ export default function ResponsiveIssueLayout({
     // Auto-collapse on initial load if viewport is 768-991px
     return width < 992;
   });
-  const dragControls = useDragControls();
-  const sheetRef = useRef<HTMLDivElement>(null);
+  const _dragControls = useDragControls();
+  const _sheetRef = useRef<HTMLDivElement>(null);
 
 
 
@@ -294,7 +293,7 @@ export default function ResponsiveIssueLayout({
                 aria-controls="attachments-panel"
                 aria-selected={activeTab === "attachments"}
               >
-                <Image className="h-4 w-4" />
+                <ImageIcon className="h-4 w-4" aria-hidden="true" />
                 Attachments
                 {attachments.length > 0 && (
                   <span

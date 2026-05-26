@@ -79,7 +79,7 @@ function getActivityMessage(activity: ProjectActivity) {
     case 'member_role_changed':
       return (
         <span>
-          <strong>{actorName}</strong> changed <strong>{metadata?.userName}</strong>'s role
+          <strong>{actorName}</strong> changed <strong>{metadata?.userName}</strong>&apos;s role
           {metadata?.oldRole && metadata?.newRole && (
             <span className="ml-2">
               from <Badge variant="outline" className="text-xs">{metadata.oldRole}</Badge> to{' '}

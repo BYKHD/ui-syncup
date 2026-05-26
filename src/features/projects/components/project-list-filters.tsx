@@ -255,7 +255,7 @@ export function ProjectFiltersComponent({
           <span className="text-sm text-muted-foreground">Active filters:</span>
           {filters.search && (
             <Badge variant="secondary" className="gap-1">
-              Search: "{filters.search}"
+              Search: &quot;{filters.search}&quot;
               <button
                 onClick={() => updateFilter('search', '')}
                 className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"

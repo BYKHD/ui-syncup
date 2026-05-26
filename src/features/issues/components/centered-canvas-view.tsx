@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, type ReactNode, type RefObject, useRef, useCallback, useEffect, useMemo } from "react";
+import { useState, type ReactNode, type RefObject, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
-import { motion, useMotionValue, useSpring, animate } from "motion/react";
+import { motion, useMotionValue, animate } from "motion/react";
 import type { IssueAttachment, CanvasViewState } from "@/features/issues/types";
 import type { AnnotationSaveStatus } from "@/features/annotations/types";
 import { CanvasStateIndicator } from "./canvas-state-indicator";
@@ -607,7 +607,7 @@ export function CenteredCanvasView({
             <p><strong>URL:</strong> {displayUrl}</p>
             <p className="mt-1"><strong>Possible causes:</strong></p>
             <ul className="list-disc list-inside mt-1 space-y-1">
-              <li>File doesn't exist on disk</li>
+              <li>File doesn&apos;t exist on disk</li>
               <li>Incorrect file path</li>
               <li>Permission issues</li>
               <li>Network error</li>
