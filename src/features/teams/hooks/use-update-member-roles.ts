@@ -47,7 +47,7 @@ export function useUpdateMemberRoles(
   return useMutation({
     mutationFn: ({ teamId, userId, input, ownershipTransfers }: UpdateMemberRolesVariables) =>
       updateMemberRoles(teamId, userId, input, ownershipTransfers),
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, onMutateResult, context) => {
       // Invalidate team members list
       queryClient.invalidateQueries({
         queryKey: [TEAM_MEMBERS_QUERY_KEY, variables.teamId],
@@ -59,7 +59,7 @@ export function useUpdateMemberRoles(
       });
 
       // Call user's onSuccess if provided
-      options?.onSuccess?.(data, variables, context, undefined as any);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });

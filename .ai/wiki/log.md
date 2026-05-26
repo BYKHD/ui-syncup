@@ -1,7 +1,7 @@
 ---
 title: Wiki Log
 type: log
-last_updated: 2026-05-07
+last_updated: 2026-05-27
 ---
 
 # Wiki Log
@@ -132,6 +132,12 @@ Append-only. Newest entries at the bottom. Each entry starts with `## [YYYY-MM-D
 - Added coverage that non-managers do not see pending access requests even when request data exists.
 - Focused dialog tests and TypeScript typecheck are clean.
 
+## [2026-05-26] add | archive-project feature shipped
+
+- Added owner-only project archive/unarchive workflow with transactional service functions, archive activity events, API route coverage, frontend actions, read-only archived detail banner, and active-by-default project list filtering.
+- Local Postgres-dependent migration/manual UI smoke was blocked because `localhost:5432` was not reachable in this environment; focused PGlite route/service/component tests and TypeScript verification were used for code validation.
+- See `docs/superpowers/specs/2026-05-26-archive-project-design.md`.
+
 ## [2026-05-07] add | concepts/access-requests
 
 - Project-scoped request-to-join feature: replaces the dead-end "no permission" error on shared issue links with an in-place access-request panel.
@@ -207,3 +213,58 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - Added `getIssueByRef(issueRef, userId)` so `/issue/[issueKey]` accepts UUIDs directly and disambiguates legacy issue keys by the first candidate the user can view.
 - Switched project issue rows, dashboard issue rows, and issue notification target URLs to prefer `issues.id`, while preserving legacy `issue_key` display and fallback links.
 - Added focused PGlite regression coverage for duplicate `PRJ-1` issues across teams.
+
+## [2026-05-26] fix | issue list drops status row border color
+
+- `IssuesList` no longer applies `statusColors.rowBorder` to issue rows, while preserving status-aware hover background styling.
+- Added focused component coverage for the row class contract.
+
+## [2026-05-26] fix | project archive confetti visibility
+
+- Delayed the project detail refresh callback until the `canvas-confetti` animation promise settles, so archiving a completed project does not immediately remove the body-mounted confetti canvas.
+- Added focused hook coverage for the archive success callback order.
+
+## [2026-05-26] query | project list card archive state
+
+- Confirmed `ProjectCard` derives archived list-card UI from `project.status === "archived"` and does not own archive/unarchive state locally.
+
+## [2026-05-26] fix | project list card archived folder background
+
+- Removed the archived-state muted override from the `ProjectCard` folder panel so archived cards keep the normal `bg-card` panel background while retaining the archived badge and outer card treatment.
+- Added focused component coverage for the archived folder-panel class contract.
+
+## [2026-05-26] fix | eslint JSX text and decorative image warnings
+
+- Replaced literal JSX text-node quote characters with HTML entities in issue, project, team-settings, and user-settings UI components.
+- Added explicit empty `alt` props to decorative issue attachment tab/image icons targeted by the a11y lint rule.
+
+## [2026-05-26] fix | eslint no-unused-vars warnings
+
+- Removed dead type/icon imports and prefixed intentionally retained unused bindings in annotations, issues canvas, and project activity components.
+- `bun run lint 2>&1 | grep 'no-unused-vars'` now returns no output; remaining lint warnings are from other rules.
+
+## [2026-05-27] feat | archive write-freeze on issues, annotations, comments
+
+- Added [`isProjectArchived`](../../src/server/projects/archive-status.ts) as a leaf module (kept out of `project-service.ts` to avoid a cycle with `rbac.ts`).
+- Gated `hasPermission` in [src/server/auth/rbac.ts](../../src/server/auth/rbac.ts): issue + annotation write permissions short-circuit to `false` when the project is archived. `project:archive` and reads stay granted so owners can unarchive.
+- Gated `getAnnotationPermissions` in [src/server/annotations/permission-utils.ts](../../src/server/annotations/permission-utils.ts): zeros out all write flags on archived projects while keeping `canView`.
+- Strict freeze (no role bypass): TEAM_OWNER edits also blocked — to modify, unarchive first.
+- Updated [[features/projects]] and [[concepts/issue-workflow]]; new tests in [`archive-permissions.integration.test.ts`](../../src/server/projects/__tests__/archive-permissions.integration.test.ts) (4/4 passing; full related suite 32/32 passing; `tsc --noEmit` clean).
+
+## [2026-05-27] feat | archive read-only UI parity for issues + annotations
+
+- Server: `getIssueById` ([src/server/issues/issue-service.ts](../../src/server/issues/issue-service.ts)) now returns `projectStatus` on `IssueWithDetails`; surfaces through `IssueDetailData` ([src/features/issues/types/issue.ts](../../src/features/issues/types/issue.ts)) so the client has archive state without a second round-trip.
+- Issue UI: [issue-details-screen.tsx](../../src/features/issues/screens/issue-details-screen.tsx) forces `IssuePermissions` to all-false when `projectStatus === 'archived'`. Existing `InlineEditable*` + `MetadataSection` already render read-only when `canEdit=false`, so the viewer-like look is automatic.
+- Annotation UI: [`useAnnotationPermissions`](../../src/features/annotations/hooks/use-annotation-permissions.ts) gains an `isArchived` option → returns `READ_ONLY_PERMISSIONS`. [responsive-issue-layout.tsx](../../src/features/issues/components/responsive-issue-layout.tsx) threads `issueData.projectStatus === 'archived'` through `IssueAttachmentsView` → `AnnotatedAttachmentView`.
+- Friendlier toasts on handler short-circuit: "This project is archived. Unarchive to edit." instead of generic "Update failed".
+- New test: Property 16.8 in [`use-annotation-permissions.property.test.tsx`](../../src/features/annotations/hooks/__tests__/use-annotation-permissions.property.test.tsx) (12/12 passing; tsc clean).
+- Caveat (not addressed here): the broader `useIssuePermissions` hook in `issue-details-screen.tsx:101` is still a TODO — non-archive role gating still relies on server 403s. Tracked as a follow-up.
+
+## [2026-05-27] feat | Wire real RBAC permissions to issue-details-screen (close the default-true TODO)
+
+- `getUserPermissions` in `src/server/auth/rbac.ts` now strips `ARCHIVE_BLOCKED_PERMISSIONS` on archived projects, mirroring `hasPermission`.
+- `GET /api/issues/[issueId]` response now includes `permissions: string[]` — the viewer's resolved permission set for the issue's project.
+- `use-issue-details` surfaces `permissions: string[] | undefined`; `use-issue-permissions({ issueId })` maps strings to `IssuePermissions` flags.
+- `issue-details-screen.tsx`: replaced the `canEdit: true` defaults with `useIssuePermissions`; archive override kept for defence-in-depth.
+- Tests: `rbac.test.ts` (4 new integration cases for archive gating), `hooks/__tests__/use-issue-permissions.test.tsx` (5 unit cases), route mock updated.
+- Affected files: `rbac.ts`, `route.ts` (GET), `get-issue-details.ts`, `use-issue-details.ts`, `use-issue-permissions.ts` (new), `hooks/index.ts`, `issue-details-screen.tsx`.

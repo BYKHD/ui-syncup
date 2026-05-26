@@ -26,12 +26,12 @@ export function useCreateTeam(
 
   return useMutation({
     mutationFn: createTeam,
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, onMutateResult, context) => {
       // Invalidate teams list to refetch
       queryClient.invalidateQueries({ queryKey: [TEAMS_QUERY_KEY] });
       
       // Call user's onSuccess if provided
-      options?.onSuccess?.(data, variables, context, undefined as any);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });

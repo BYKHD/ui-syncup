@@ -7,8 +7,6 @@ import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import type {
   AnnotationSaveState,
-  AnnotationSaveStatus,
-  AnnotationShape,
   AttachmentAnnotation,
 } from '@/features/annotations/types';
 import {

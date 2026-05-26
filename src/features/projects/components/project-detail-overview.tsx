@@ -43,9 +43,9 @@ function formatDate(dateString: string) {
 
 export function ProjectOverview({
   project,
-  userRole,
-  canManageMembers,
-  onMembershipChanged,
+  userRole: _userRole,
+  canManageMembers: _canManageMembers,
+  onMembershipChanged: _onMembershipChanged,
 }: ProjectOverviewProps) {
   return (
     <div className="grid gap-6 md:grid-cols-2">

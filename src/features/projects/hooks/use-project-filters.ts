@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { ProjectSummary } from '@/features/projects/types'
 
 export interface ProjectFilters {
@@ -12,18 +12,16 @@ export interface ProjectFilters {
   sortOrder: 'asc' | 'desc'
 }
 
-const DEFAULT_FILTERS: ProjectFilters = {
+export const DEFAULT_FILTERS: ProjectFilters = {
   search: '',
-  status: 'all',
+  status: 'active',
   visibility: 'all',
   userRole: 'all',
   sortBy: 'updated',
   sortOrder: 'desc',
 }
 
-export function useProjectFilters(projects: ProjectSummary[]) {
-  const [filters, setFilters] = useState<ProjectFilters>(DEFAULT_FILTERS)
-
+export function useProjectFilters(projects: ProjectSummary[], filters: ProjectFilters) {
   const filteredProjects = useMemo(() => {
     let result = [...projects]
 
@@ -35,11 +33,6 @@ export function useProjectFilters(projects: ProjectSummary[]) {
           p.name.toLowerCase().includes(searchLower) ||
           p.description?.toLowerCase().includes(searchLower)
       )
-    }
-
-    // Status filter
-    if (filters.status !== 'all') {
-      result = result.filter((p) => p.status === filters.status)
     }
 
     // Visibility filter
@@ -77,8 +70,6 @@ export function useProjectFilters(projects: ProjectSummary[]) {
   }, [projects, filters])
 
   return {
-    filters,
-    setFilters,
     filteredProjects,
     totalCount: projects.length,
     filteredCount: filteredProjects.length,

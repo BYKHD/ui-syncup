@@ -18,6 +18,7 @@ interface ProjectDetailScreenWrapperProps {
     name: string;
     description: string | null;
     visibility: "private" | "public";
+    status: "active" | "archived";
     stats: ProjectStats;
     createdAt: string;
     updatedAt: string;
@@ -44,4 +45,3 @@ const ProjectDetailScreen = dynamic(
 export function ProjectDetailScreenWrapper(props: ProjectDetailScreenWrapperProps) {
   return <ProjectDetailScreen {...props} />;
 }
-

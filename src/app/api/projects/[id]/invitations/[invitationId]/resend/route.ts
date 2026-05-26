@@ -50,7 +50,7 @@ export async function POST(
       );
     }
 
-    const { token } = await resendProjectInvitation(invitationId, user.id);
+    const { token: _token } = await resendProjectInvitation(invitationId, user.id);
 
     logger.info("api.projects.invitations.resend.success", {
       requestId,

@@ -1,6 +1,6 @@
 'use server';
 
-import { renderTemplate, EmailTemplate } from '@/server/email/render-template';
+import { renderTemplate } from '@/server/email/render-template';
 import { MOCK_EMAIL_TEMPLATES } from '@/mocks/email.fixtures';
 
 export async function renderEmailPreview(templateKey: string): Promise<string> {

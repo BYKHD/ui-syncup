@@ -187,7 +187,7 @@ export async function POST(
       );
     }
 
-    const { invitation, token } = await createProjectInvitation({
+    const { invitation, token: _token } = await createProjectInvitation({
       projectId,
       email: validation.data.email,
       role: validation.data.role,

@@ -8,6 +8,7 @@ import type {
   IssueDetailData,
   IssuePermissions,
   ActivityEntry,
+  IssueUpdateHandler,
 } from '@/features/issues/types';
 
 interface IssueDetailsPanelProps {
@@ -17,7 +18,7 @@ interface IssueDetailsPanelProps {
   activitiesLoading: boolean;
   hasMoreActivities: boolean;
   onLoadMoreActivities: () => void;
-  onUpdate: (field: string, value: any) => Promise<void>;
+  onUpdate: IssueUpdateHandler;
   onDelete: () => Promise<void>;
   isLoading: boolean;
   activityError?: Error | null;

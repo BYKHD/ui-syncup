@@ -23,7 +23,7 @@ export interface ActivityItem {
     id: string
     name: string
   }
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   timestamp: string
 }
 

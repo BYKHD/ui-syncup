@@ -1,4 +1,4 @@
-import type { AttachmentAnnotation, AnnotationShape } from '@/features/annotations/types';
+import type { AnnotationShape } from '@/features/annotations/types';
 
 export const COMMENT_INPUT_WIDTH = 320; // 80 * 4 = 320px (w-80)
 export const COMMENT_INPUT_HEIGHT = 200; // Approximate height

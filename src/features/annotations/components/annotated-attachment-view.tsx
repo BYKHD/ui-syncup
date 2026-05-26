@@ -14,7 +14,7 @@
 
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import type { IssueAttachment, CanvasViewState } from '@/features/issues/types';
-import type { AttachmentAnnotation, AnnotationPosition, AnnotationHistoryEntry, AnnotationShape, AnnotationToolId, AnnotationSaveStatus, AnnotationPermissions } from '../types';
+import type { AttachmentAnnotation, AnnotationShape, AnnotationToolId, AnnotationSaveStatus, AnnotationPermissions } from '../types';
 import { CenteredCanvasView } from '@/features/issues/components/centered-canvas-view';
 import { AnnotationLayer } from './annotation-layer';
 import { AnnotationCanvas } from './annotation-canvas';
@@ -22,7 +22,7 @@ import { AnnotationToolbar } from './annotation-toolbar';
 import { AnnotationCommentInput } from './annotation-comment-input';
 import { useAnnotationIntegration } from '../hooks/use-annotation-integration';
 import { useAnnotationPermissions } from '../hooks/use-annotation-permissions';
-import { useAnnotationDrafts, draftToAnnotation } from '../hooks/use-annotation-drafts';
+import { useAnnotationDrafts } from '../hooks/use-annotation-drafts';
 import { useAnnotationEditState } from '../hooks/use-annotation-edit-state';
 import { KeyboardShortcutsModal } from './keyboard-shortcuts-modal';
 
@@ -39,6 +39,12 @@ export interface AnnotatedAttachmentViewProps {
   projectId?: string;
   /** Team ID for permission checking */
   teamId?: string;
+  /**
+   * When true, force annotation UI into read-only mode regardless of role.
+   * Set by the parent when the project is archived (see features/projects
+   * wiki — archived projects are a frozen historical record).
+   */
+  isArchived?: boolean;
   /** Canvas state from parent (for sync with compare mode) */
   canvasState?: CanvasViewState;
   /** Callback when canvas state changes */
@@ -97,6 +103,7 @@ export function AnnotatedAttachmentView({
   attachment,
   projectId,
   teamId,
+  isArchived,
   canvasState: externalCanvasState,
   onCanvasStateChange: externalOnCanvasStateChange,
   interactive = true,
@@ -152,6 +159,7 @@ export function AnnotatedAttachmentView({
   const { permissions: hookPermissions, isLoading: permissionsLoading, userId } = useAnnotationPermissions({
     projectId,
     teamId,
+    isArchived,
   });
 
   const permissions = useMemo(() => ({
@@ -183,7 +191,7 @@ export function AnnotatedAttachmentView({
     redo: apiRedo,
     setShowShortcutsHelp: apiSetShowShortcutsHelp,
     setDragging: apiSetDragging,
-    refetch,
+    refetch: _refetch,
   } = useAnnotationIntegration({
     issueId: issueId || '',
     attachmentId: attachment.id,

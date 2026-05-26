@@ -25,7 +25,7 @@ const EXPORT_VERSION = "1.0";
  * Returns instance configuration as downloadable JSON.
  * Excludes sensitive data (passwords, tokens, user IDs).
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const requestId = crypto.randomUUID();
 
   try {

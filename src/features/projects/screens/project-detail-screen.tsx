@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { usePathname, useSearchParams } from "next/navigation";
+import { RiArchiveLine } from "@remixicon/react";
 import { IssuesCreateDialog, type ImageData } from "@/features/issues/components/issues-create-dialog";
 import { useCreateIssue, uploadAttachment } from "@/features/issues";
 import { ProjectMemberManagerDialog } from "../components/project-member-manager-dialog";
@@ -29,6 +30,7 @@ interface ProjectDetailScreenProps {
     name: string;
     description: string | null;
     visibility: "private" | "public";
+    status: "active" | "archived";
     stats: ProjectStats;
     createdAt: string;
     updatedAt: string;
@@ -82,7 +84,7 @@ export default function ProjectDetailScreen({
     }
   }, [project, addRecentProject, pathname]);
 
-  const canManageMembers = userRole === "owner" || userRole === "editor";
+  const _canManageMembers = userRole === "owner" || userRole === "editor";
   const { mutateAsync: createIssueMutation } = useCreateIssue();
   const { mutateAsync: updateProjectMutation } = useUpdateProject();
   // Issue dialog state
@@ -537,13 +539,30 @@ export default function ProjectDetailScreen({
     );
   }
 
+  const isArchived = project.status === "archived";
+
   return (
     <div className="min-h-screen bg-background">
+      {isArchived && (
+        <div className="border-b border-amber-200 bg-amber-50 text-amber-950">
+          <div className="mx-auto flex max-w-7xl items-start gap-3 px-6 py-3 text-sm lg:px-8">
+            <RiArchiveLine className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <div>
+              <p className="font-medium">This project is archived</p>
+              <p className="text-amber-800">
+                The project view is read-only. Only the project owner can unarchive it.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Project Header - Full Width */}
       <ProjectDetailHeader
         project={project}
         userRole={userRole}
         onMembershipChanged={handleMembershipChanged}
+        onProjectUpdated={() => router.refresh()}
         renderIssueDialog={(trigger) => (
           <IssuesCreateDialog
             open={issueDialogOpen}
@@ -602,7 +621,7 @@ export default function ProjectDetailScreen({
               projectId={project.id}
               projectName={project.name}
               userRole={userRole}
-              canManageMembers={userRole === "owner" || userRole === "editor"}
+              canManageMembers={!isArchived && (userRole === "owner" || userRole === "editor")}
               open={open}
               onOpenChange={handleOpenChange}
               members={members}
@@ -627,7 +646,7 @@ export default function ProjectDetailScreen({
               name: project.name,
               description: project.description,
               visibility: project.visibility,
-              status: "active",
+              status: project.status,
             }}
             userRole={userRole}
             open={open}

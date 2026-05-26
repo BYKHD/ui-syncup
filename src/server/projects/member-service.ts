@@ -349,6 +349,10 @@ export async function joinProject(
     throw new Error("Project not found");
   }
 
+  if (project.status === "archived") {
+    throw new Error("Cannot join an archived project");
+  }
+
   // Check if project is public
   if (project.visibility !== "public") {
     throw new Error("Cannot join a private project without invitation");

@@ -216,9 +216,9 @@ export async function POST(request: NextRequest) {
  * - 401: Not authenticated
  * - 500: Internal server error
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const requestId = crypto.randomUUID();
-  
+
   try {
     // Authenticate user
     const user = await getSession();

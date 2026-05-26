@@ -9,11 +9,13 @@ export { useProjectMembers } from './use-project-members'
 export { useProjectInvitations } from './use-project-invitations'
 
 // Mutation Hooks
+export { useArchiveProject } from './use-archive-project'
 export { useCreateProject } from './use-create-project'
 export { useUpdateProject } from './use-update-project'
 export { useDeleteProject } from './use-delete-project'
 export { useJoinProject } from './use-join-project'
 export { useLeaveProject } from './use-leave-project'
+export { useUnarchiveProject } from './use-unarchive-project'
 export { useUpdateMemberRole } from './use-update-member-role'
 export { useRemoveMember } from './use-remove-member'
 export { useCreateInvitation } from './use-create-invitation'
@@ -27,7 +29,7 @@ export { useDeclineAccessRequest } from './use-decline-access-request'
 export { useCancelAccessRequest } from './use-cancel-access-request'
 
 // Filter Hooks
-export { useProjectFilters, type ProjectFilters } from './use-project-filters'
+export { DEFAULT_FILTERS, useProjectFilters, type ProjectFilters } from './use-project-filters'
 
 // UI Hooks
 export { useRecentProjects } from './use-recent-projects'

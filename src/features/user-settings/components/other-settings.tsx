@@ -24,7 +24,7 @@ export function OtherSettings() {
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Request an export of your account data including projects, issues,
-            comments, and profile information. You'll receive an email with a
+            comments, and profile information. You&apos;ll receive an email with a
             download link when your export is ready.
           </p>
           <div>

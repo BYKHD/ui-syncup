@@ -22,6 +22,9 @@ export type {
 export { useProjectIssues } from './use-project-issues';
 export type { UseProjectIssuesParams } from './use-project-issues';
 
+export { useIssuePermissions } from './use-issue-permissions';
+export type { UseIssuePermissionsParams } from './use-issue-permissions';
+
 // Mutation hooks (data modification)
 export { useCreateIssue } from './use-create-issue';
 export type { UseCreateIssueOptions } from './use-create-issue';

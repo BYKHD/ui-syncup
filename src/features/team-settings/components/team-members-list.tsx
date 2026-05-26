@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { MoreHorizontal, UserMinus } from "lucide-react";
-import { RiShieldUserLine, RiUserLine, RiEyeLine, RiAdminLine } from "@remixicon/react";
+import { useState, type ComponentType } from "react";
+import { MoreHorizontal } from "lucide-react";
+import { RiUserLine, RiEyeLine } from "@remixicon/react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ import type { TeamMember } from "@/features/teams/api";
 import { SettingsCard } from "./settings-card";
 import { TeamMembersLoadingSkeleton } from "./loading-states";
 
-const operationalRoleIcons: Record<string, any> = {
+const operationalRoleIcons: Record<string, ComponentType<{ className?: string }>> = {
   TEAM_EDITOR: RiUserLine,
   TEAM_MEMBER: RiUserLine,
   TEAM_VIEWER: RiEyeLine,
@@ -320,4 +320,3 @@ export function TeamMembersList({ teamId, currentUserId }: TeamMembersListProps)
     </>
   );
 }
-

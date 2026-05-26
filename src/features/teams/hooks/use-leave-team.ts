@@ -29,14 +29,14 @@ export function useLeaveTeam(
 
   return useMutation({
     mutationFn: leaveTeam,
-    onSuccess: (data, teamId, context) => {
+    onSuccess: (data, teamId, onMutateResult, context) => {
       // Invalidate all team-related queries
       queryClient.invalidateQueries({ queryKey: [TEAMS_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [TEAM_QUERY_KEY, teamId] });
       queryClient.invalidateQueries({ queryKey: [TEAM_MEMBERS_QUERY_KEY, teamId] });
 
       // Call user's onSuccess if provided
-      options?.onSuccess?.(data, teamId, context, undefined as any);
+      options?.onSuccess?.(data, teamId, onMutateResult, context);
     },
     ...options,
   });

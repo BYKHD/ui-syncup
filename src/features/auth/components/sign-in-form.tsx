@@ -34,7 +34,7 @@ export function SignInForm({
   message,
   retryAfter,
   onSubmit,
-  onOAuthSignIn,
+  onOAuthSignIn: _onOAuthSignIn,
   oauthStatus,
   oauthError,
   description = "Sign in to your account to continue",

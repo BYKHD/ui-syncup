@@ -85,7 +85,7 @@ describe('validateEmailUrl', () => {
 
       try {
         validateEmailUrl(url, context)
-      } catch (error) {
+      } catch {
         // Expected to throw
       }
 

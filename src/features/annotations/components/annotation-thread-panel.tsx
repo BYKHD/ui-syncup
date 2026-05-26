@@ -19,8 +19,6 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
 } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -33,7 +31,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { useAnnotationComments } from '../hooks/use-annotation-comments';
-import type { AnnotationComment, AnnotationAuthor, AttachmentAnnotation } from '../types';
+import type { AnnotationComment, AttachmentAnnotation } from '../types';
 import { cn } from '@/lib/utils';
 
 // ============================================================================

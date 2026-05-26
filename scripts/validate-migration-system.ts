@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Migration System Validation Script
- * 
+ *
  * This script validates that the automated migration system is properly configured
  * and ready for production deployment. It checks:
  * - Environment configuration
@@ -9,7 +9,7 @@
  * - Migration script functionality
  * - GitHub Actions workflow configuration
  * - Documentation completeness
- * 
+ *
  * Run this script before deploying to production to ensure everything is set up correctly.
  */
 
@@ -48,7 +48,7 @@ function addResult(
   check: string,
   passed: boolean,
   message: string,
-  severity: "error" | "warning" | "info" = "error"
+  severity: "error" | "warning" | "info" = "error",
 ): void {
   results.push({ category, check, passed, message, severity });
 }
@@ -68,7 +68,7 @@ function validateEnvironment(): void {
     envLocalExists
       ? ".env.local file found"
       : ".env.local file not found (required for local testing)",
-    envLocalExists ? "info" : "warning"
+    envLocalExists ? "info" : "warning",
   );
 
   // Check for DIRECT_URL in environment
@@ -80,7 +80,7 @@ function validateEnvironment(): void {
     hasDirectUrl
       ? "DIRECT_URL environment variable is set"
       : "DIRECT_URL not set (required for migration testing)",
-    hasDirectUrl ? "info" : "warning"
+    hasDirectUrl ? "info" : "warning",
   );
 
   // Validate DIRECT_URL format if present
@@ -94,14 +94,14 @@ function validateEnvironment(): void {
         isPostgres,
         isPostgres
           ? "DIRECT_URL has valid PostgreSQL format"
-          : `Invalid protocol: ${url.protocol} (expected postgres:// or postgresql://)`
+          : `Invalid protocol: ${url.protocol} (expected postgres:// or postgresql://)`,
       );
     } catch (error) {
       addResult(
         "Environment",
         "DIRECT_URL format valid",
         false,
-        `Invalid URL format: ${error instanceof Error ? error.message : String(error)}`
+        `Invalid URL format: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -122,7 +122,7 @@ function validateMigrationScript(): void {
     scriptExists,
     scriptExists
       ? "Migration script found at scripts/migrate.ts"
-      : "Migration script not found at scripts/migrate.ts"
+      : "Migration script not found at scripts/migrate.ts",
   );
 
   if (scriptExists) {
@@ -136,13 +136,17 @@ function validateMigrationScript(): void {
       hasShebang
         ? "Script has correct shebang (#!/usr/bin/env bun)"
         : "Script missing shebang",
-      "warning"
+      "warning",
     );
 
     // Check for key functions
-    const hasValidateEnvironment = scriptContent.includes("validateEnvironment");
+    const hasValidateEnvironment = scriptContent.includes(
+      "validateEnvironment",
+    );
     const hasTestConnection = scriptContent.includes("testDatabaseConnection");
-    const hasValidateMigrations = scriptContent.includes("validateMigrationFiles");
+    const hasValidateMigrations = scriptContent.includes(
+      "validateMigrationFiles",
+    );
     const hasFormatError = scriptContent.includes("formatError");
 
     addResult(
@@ -151,7 +155,7 @@ function validateMigrationScript(): void {
       hasValidateEnvironment,
       hasValidateEnvironment
         ? "validateEnvironment function found"
-        : "validateEnvironment function missing"
+        : "validateEnvironment function missing",
     );
 
     addResult(
@@ -160,7 +164,7 @@ function validateMigrationScript(): void {
       hasTestConnection,
       hasTestConnection
         ? "testDatabaseConnection function found"
-        : "testDatabaseConnection function missing"
+        : "testDatabaseConnection function missing",
     );
 
     addResult(
@@ -169,14 +173,16 @@ function validateMigrationScript(): void {
       hasValidateMigrations,
       hasValidateMigrations
         ? "validateMigrationFiles function found"
-        : "validateMigrationFiles function missing"
+        : "validateMigrationFiles function missing",
     );
 
     addResult(
       "Migration Script",
       "Error formatting function",
       hasFormatError,
-      hasFormatError ? "formatError function found" : "formatError function missing"
+      hasFormatError
+        ? "formatError function found"
+        : "formatError function missing",
     );
   }
 }
@@ -196,7 +202,7 @@ function validateMigrationFiles(): void {
     folderExists,
     folderExists
       ? "drizzle/ folder found"
-      : "drizzle/ folder not found (will be created on first migration)"
+      : "drizzle/ folder not found (will be created on first migration)",
   );
 
   if (folderExists) {
@@ -208,7 +214,7 @@ function validateMigrationFiles(): void {
       "Migration files found",
       sqlFiles.length > 0,
       `Found ${sqlFiles.length} migration file(s)`,
-      "info"
+      "info",
     );
 
     // Validate naming convention
@@ -229,7 +235,7 @@ function validateMigrationFiles(): void {
       validNaming
         ? "All migration files follow naming convention"
         : `Invalid file names: ${invalidFiles.join(", ")}`,
-      validNaming ? "info" : "warning"
+      validNaming ? "info" : "warning",
     );
 
     // Check for meta folder
@@ -241,7 +247,7 @@ function validateMigrationFiles(): void {
       metaExists
         ? "drizzle/meta/ folder found"
         : "drizzle/meta/ folder not found",
-      metaExists ? "info" : "warning"
+      metaExists ? "info" : "warning",
     );
   }
 }
@@ -261,7 +267,7 @@ function validateGitHubWorkflow(): void {
     workflowExists,
     workflowExists
       ? "deploy.yml workflow found"
-      : "deploy.yml workflow not found at .github/workflows/deploy.yml"
+      : "deploy.yml workflow not found at .github/workflows/deploy.yml",
   );
 
   if (workflowExists) {
@@ -277,7 +283,7 @@ function validateGitHubWorkflow(): void {
       hasMigratePreview,
       hasMigratePreview
         ? "migrate-preview job found"
-        : "migrate-preview job missing"
+        : "migrate-preview job missing",
     );
 
     addResult(
@@ -286,12 +292,14 @@ function validateGitHubWorkflow(): void {
       hasMigrateProduction,
       hasMigrateProduction
         ? "migrate-production job found"
-        : "migrate-production job missing"
+        : "migrate-production job missing",
     );
 
     // Check for environment configuration
     const hasPreviewEnv = workflowContent.includes("environment: Preview");
-    const hasProductionEnv = workflowContent.includes("environment: Production");
+    const hasProductionEnv = workflowContent.includes(
+      "environment: Production",
+    );
 
     addResult(
       "GitHub Actions",
@@ -299,7 +307,7 @@ function validateGitHubWorkflow(): void {
       hasPreviewEnv,
       hasPreviewEnv
         ? "Preview environment configured"
-        : "Preview environment not configured"
+        : "Preview environment not configured",
     );
 
     addResult(
@@ -308,11 +316,13 @@ function validateGitHubWorkflow(): void {
       hasProductionEnv,
       hasProductionEnv
         ? "Production environment configured"
-        : "Production environment not configured"
+        : "Production environment not configured",
     );
 
     // Check for secret validation
-    const hasSecretValidation = workflowContent.includes("Verify environment secrets");
+    const hasSecretValidation = workflowContent.includes(
+      "Verify environment secrets",
+    );
 
     addResult(
       "GitHub Actions",
@@ -321,7 +331,7 @@ function validateGitHubWorkflow(): void {
       hasSecretValidation
         ? "Secret validation step found"
         : "Secret validation step missing",
-      hasSecretValidation ? "info" : "warning"
+      hasSecretValidation ? "info" : "warning",
     );
 
     // Check for migration summary
@@ -334,7 +344,7 @@ function validateGitHubWorkflow(): void {
       hasSummary
         ? "Migration summary generation found"
         : "Migration summary generation missing",
-      hasSummary ? "info" : "warning"
+      hasSummary ? "info" : "warning",
     );
   }
 }
@@ -347,10 +357,22 @@ function validateDocumentation(): void {
 
   const docs = [
     { path: "docs/ci-cd/CI_CD_SETUP.md", name: "CI/CD Setup Guide" },
-    { path: "docs/database/MIGRATION_TROUBLESHOOTING.md", name: "Migration Troubleshooting" },
-    { path: "docs/database/MIGRATION_BEST_PRACTICES.md", name: "Migration Best Practices" },
-    { path: "docs/database/MIGRATION_ROLLBACK.md", name: "Migration Rollback Guide" },
-    { path: "docs/ci-cd/PRODUCTION_READINESS_CHECKLIST.md", name: "Production Readiness Checklist" },
+    {
+      path: "docs/database/MIGRATION_TROUBLESHOOTING.md",
+      name: "Migration Troubleshooting",
+    },
+    {
+      path: "docs/database/MIGRATION_BEST_PRACTICES.md",
+      name: "Migration Best Practices",
+    },
+    {
+      path: "docs/database/MIGRATION_ROLLBACK.md",
+      name: "Migration Rollback Guide",
+    },
+    {
+      path: "docs/ci-cd/PRODUCTION_READINESS_CHECKLIST.md",
+      name: "Production Readiness Checklist",
+    },
   ];
 
   for (const doc of docs) {
@@ -360,7 +382,7 @@ function validateDocumentation(): void {
       doc.name,
       exists,
       exists ? `${doc.name} found` : `${doc.name} not found at ${doc.path}`,
-      exists ? "info" : "warning"
+      exists ? "info" : "warning",
     );
   }
 }
@@ -373,8 +395,14 @@ function validateTests(): void {
 
   const testFiles = [
     { path: "scripts/__tests__/migrate.test.ts", name: "Unit tests" },
-    { path: "scripts/__tests__/migrate.property.test.ts", name: "Property tests" },
-    { path: "scripts/__tests__/migrate.integration.test.ts", name: "Integration tests" },
+    {
+      path: "scripts/__tests__/migrate.property.test.ts",
+      name: "Property tests",
+    },
+    {
+      path: "scripts/__tests__/migrate.integration.test.ts",
+      name: "Integration tests",
+    },
   ];
 
   for (const test of testFiles) {
@@ -384,7 +412,7 @@ function validateTests(): void {
       test.name,
       exists,
       exists ? `${test.name} found` : `${test.name} not found at ${test.path}`,
-      exists ? "info" : "warning"
+      exists ? "info" : "warning",
     );
   }
 
@@ -395,20 +423,14 @@ function validateTests(): void {
       stdio: "pipe",
       encoding: "utf-8",
     });
-    addResult(
-      "Tests",
-      "Test execution",
-      true,
-      "All tests passed",
-      "info"
-    );
+    addResult("Tests", "Test execution", true, "All tests passed", "info");
   } catch {
     addResult(
       "Tests",
       "Test execution",
       false,
       "Some tests failed - review test output",
-      "warning"
+      "warning",
     );
   }
 }
@@ -425,7 +447,7 @@ function validatePackageScripts(): void {
       "Package Scripts",
       "package.json exists",
       false,
-      "package.json not found"
+      "package.json not found",
     );
     return;
   }
@@ -449,7 +471,7 @@ function validatePackageScripts(): void {
       exists
         ? `${script.name} script found (${script.description})`
         : `${script.name} script missing`,
-      exists ? "info" : "warning"
+      exists ? "info" : "warning",
     );
   }
 }
@@ -476,8 +498,16 @@ function printSummary(summary: ValidationSummary): void {
   for (const [category, categoryResults] of categories) {
     console.log(`\n${category}:`);
     for (const result of categoryResults) {
-      const icon = result.passed ? "✅" : result.severity === "warning" ? "⚠️ " : "❌";
-      const status = result.passed ? "PASS" : result.severity === "warning" ? "WARN" : "FAIL";
+      const icon = result.passed
+        ? "✅"
+        : result.severity === "warning"
+          ? "⚠️ "
+          : "❌";
+      const status = result.passed
+        ? "PASS"
+        : result.severity === "warning"
+          ? "WARN"
+          : "FAIL";
       console.log(`  ${icon} [${status}] ${result.check}`);
       console.log(`      ${result.message}`);
     }
@@ -493,12 +523,18 @@ function printSummary(summary: ValidationSummary): void {
 
   // Determine overall status
   if (summary.failed === 0) {
-    console.log("\n🎉 All critical checks passed! System is ready for production.");
+    console.log(
+      "\n🎉 All critical checks passed! System is ready for production.",
+    );
     if (summary.warnings > 0) {
-      console.log(`⚠️  Note: ${summary.warnings} warning(s) found. Review and address if needed.`);
+      console.log(
+        `⚠️  Note: ${summary.warnings} warning(s) found. Review and address if needed.`,
+      );
     }
   } else {
-    console.log(`\n❌ ${summary.failed} critical check(s) failed. Address these before production deployment.`);
+    console.log(
+      `\n❌ ${summary.failed} critical check(s) failed. Address these before production deployment.`,
+    );
   }
 
   console.log("\n📋 Next Steps:");
@@ -517,7 +553,9 @@ function printSummary(summary: ValidationSummary): void {
 
   console.log("\n📚 Documentation:");
   console.log("   - CI/CD Setup: docs/ci-cd/CI_CD_SETUP.md");
-  console.log("   - Troubleshooting: docs/database/MIGRATION_TROUBLESHOOTING.md");
+  console.log(
+    "   - Troubleshooting: docs/database/MIGRATION_TROUBLESHOOTING.md",
+  );
   console.log("   - Best Practices: docs/database/MIGRATION_BEST_PRACTICES.md");
   console.log("   - Rollback Guide: docs/database/MIGRATION_ROLLBACK.md");
   console.log();
@@ -530,7 +568,9 @@ function printSummary(summary: ValidationSummary): void {
 async function main(): Promise<void> {
   console.log("🔍 Migration System Validation");
   console.log("=".repeat(80));
-  console.log("This script validates that the automated migration system is properly");
+  console.log(
+    "This script validates that the automated migration system is properly",
+  );
   console.log("configured and ready for production deployment.");
   console.log("=".repeat(80));
 
@@ -548,7 +588,8 @@ async function main(): Promise<void> {
     total: results.length,
     passed: results.filter((r) => r.passed).length,
     failed: results.filter((r) => !r.passed && r.severity === "error").length,
-    warnings: results.filter((r) => !r.passed && r.severity === "warning").length,
+    warnings: results.filter((r) => !r.passed && r.severity === "warning")
+      .length,
     results,
   };
 

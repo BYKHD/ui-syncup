@@ -5,7 +5,7 @@ import type { GetProjectsResponse } from '@/features/projects/api/types'
 
 interface UseProjectsParams {
   teamId?: string
-  status?: 'active' | 'archived'
+  status?: 'active' | 'archived' | 'all'
   visibility?: 'public' | 'private'
   search?: string
   page?: number
@@ -20,20 +20,23 @@ interface UseProjectsResult {
   refetch: () => void
 }
 
-export function useProjects({ 
-  teamId, 
-  status, 
-  visibility, 
-  search, 
-  page = 1, 
+export function useProjects({
+  teamId,
+  status = 'active',
+  visibility,
+  search,
+  page = 1,
   limit = 20,
-  enabled = true 
+  enabled = true
 }: UseProjectsParams): UseProjectsResult {
+  // 'all' means no status filter; undefined callers get the 'active' default above
+  const apiStatus = status === 'all' ? undefined : status
+
   const query = useQuery({
     queryKey: projectKeys.list({ teamId, status, visibility, search, page, limit }),
     queryFn: () => {
       if (!teamId) throw new Error('Team ID is required')
-      return getProjects({ teamId, status, visibility, search, page, limit })
+      return getProjects({ teamId, status: apiStatus, visibility, search, page, limit })
     },
     enabled: enabled && !!teamId,
     staleTime: 60 * 1000, // 1 minute

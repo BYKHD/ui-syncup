@@ -12,11 +12,13 @@ import {
   RiVipCrownLine,
   RiUserAddLine,
   RiFileLine,
+  RiArchiveLine,
 } from "@remixicon/react";
 
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 import type { ProjectSummary } from "@/features/projects/types";
 import {
@@ -90,7 +92,12 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
     >
       <Link href={`/${project.key}`} className="block h-full">
         {/* Outer card with themed border */}
-        <div className="h-full rounded-4xl p-2.5 shadow-lg transition-shadow duration-200 hover:shadow-xl flex flex-col bg-border">
+        <div
+          className={cn(
+            "h-full rounded-4xl p-2.5 shadow-lg transition-shadow duration-200 hover:shadow-xl flex flex-col bg-border",
+            project.status === "archived" && "bg-muted"
+          )}
+        >
           {/* Inner card - light in light mode, darker in dark mode */}
           <div className="flex-1 rounded-3xl overflow-hidden flex flex-col">
             {/* Papers stack area */}
@@ -200,7 +207,13 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-muted-foreground shrink-0">
+                <div className="flex items-center gap-2 text-muted-foreground shrink-0">
+                  {project.status === "archived" && (
+                    <Badge variant="secondary" className="gap-1 text-xs text-muted-foreground">
+                      <RiArchiveLine className="h-3 w-3" />
+                      Archived
+                    </Badge>
+                  )}
                   {project.visibility === "private" ? (
                     <RiLockLine className="h-4 w-4" />
                   ) : (
@@ -248,7 +261,7 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
       </Link>
 
       {/* Join button overlay for non-members */}
-      {!project.userRole && isHovered && (
+      {!project.userRole && project.status !== "archived" && isHovered && (
         <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center rounded-4xl transition-opacity">
           <Button
             variant="outline"

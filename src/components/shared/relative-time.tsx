@@ -23,9 +23,6 @@ export function RelativeTime({
   const [timeString, setTimeString] = useState(() => formatRelativeTime(date));
 
   useEffect(() => {
-    // Initial update in case prop changed
-    setTimeString(formatRelativeTime(date));
-
     // Disable if interval is 0
     if (updateInterval <= 0) return;
 

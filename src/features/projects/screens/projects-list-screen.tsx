@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { RiBox2Line } from '@remixicon/react'
 
@@ -14,7 +15,12 @@ import {
 import { Button } from '@/components/ui/button'
 import PageHeader from '@/components/layout/headers/page-header'
 
-import { useProjects, useProjectFilters } from '@/features/projects/hooks'
+import {
+  DEFAULT_FILTERS,
+  useProjects,
+  useProjectFilters,
+  type ProjectFilters,
+} from '@/features/projects/hooks'
 import {
   ProjectCard,
   ProjectCreateDialog,
@@ -28,16 +34,18 @@ export default function ProjectsListScreen() {
   const { currentTeam, isLoading: isTeamLoading } = useTeam()
   const teamId = currentTeam?.id
 
-  const { data: allProjects, isLoading, refetch } = useProjects({ teamId })
+  const [filters, setFilters] = useState<ProjectFilters>(DEFAULT_FILTERS)
+  const { data: allProjects, isLoading, refetch } = useProjects({
+    teamId,
+    status: filters.status,
+  })
   const projectsLoading = isTeamLoading || !teamId || isLoading
 
   const {
-    filters,
-    setFilters,
     filteredProjects,
     totalCount,
     filteredCount,
-  } = useProjectFilters(allProjects?.projects || [])
+  } = useProjectFilters(allProjects?.projects || [], filters)
 
   const hasProjects = totalCount > 0
   const hasFilteredProjects = filteredCount > 0
@@ -93,16 +101,7 @@ export default function ProjectsListScreen() {
             </section>
           ) : (
             <NoFilteredResults
-              onClearFilters={() =>
-                setFilters({
-                  search: '',
-                  status: 'all',
-                  visibility: 'all',
-                  userRole: 'all',
-                  sortBy: 'updated',
-                  sortOrder: 'desc',
-                })
-              }
+              onClearFilters={() => setFilters(DEFAULT_FILTERS)}
             />
           )}
         </>
@@ -148,7 +147,7 @@ function NoFilteredResults({ onClearFilters }: { onClearFilters: () => void }) {
       <EmptyHeader>
         <EmptyTitle>No projects match your filters</EmptyTitle>
         <EmptyDescription>
-          Try adjusting your search terms or filters to find what you're looking for.
+          Try adjusting your search terms or filters to find what you&apos;re looking for.
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>

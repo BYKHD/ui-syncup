@@ -69,6 +69,22 @@ describe('ProjectActions — Add Issue button', () => {
       expect(mockRender).not.toHaveBeenCalled();
     }
   );
+
+  it('hides Add Issue when the project is archived', () => {
+    const mockRender = vi.fn((t: React.ReactNode) => t);
+
+    render(
+      <ProjectActions
+        {...baseProps}
+        userRole="owner"
+        isArchived
+        renderIssueDialog={mockRender}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: /add issue/i })).not.toBeInTheDocument();
+    expect(mockRender).not.toHaveBeenCalled();
+  });
 });
 
 describe('ProjectActions — Join Project button', () => {
@@ -91,6 +107,45 @@ describe('ProjectActions — Join Project button', () => {
     render(<ProjectActions {...baseProps} userRole={null} canJoinProject={false} />);
 
     expect(screen.queryByRole('button', { name: /join project/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('ProjectActions — archive controls', () => {
+  it('renders Archive Project when archive is allowed', async () => {
+    const onArchive = vi.fn();
+
+    render(
+      <ProjectActions
+        {...baseProps}
+        userRole="owner"
+        canArchiveProject
+        onArchive={onArchive}
+      />
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /more actions/i }));
+    await userEvent.click(await screen.findByText('Archive Project'));
+
+    expect(onArchive).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders Unarchive Project and hides Settings/Leave when archived', async () => {
+    render(
+      <ProjectActions
+        {...baseProps}
+        userRole="owner"
+        isArchived
+        canEditSettings
+        canLeaveProject
+        canUnarchiveProject
+      />
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /more actions/i }));
+
+    expect(await screen.findByText('Unarchive Project')).toBeInTheDocument();
+    expect(screen.queryByText('Settings')).not.toBeInTheDocument();
+    expect(screen.queryByText('Leave Project')).not.toBeInTheDocument();
   });
 });
 

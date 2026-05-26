@@ -4,7 +4,7 @@
  * Tests invitation display, actions, and email failure indicators
  */
 
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, beforeEach } from 'vitest';

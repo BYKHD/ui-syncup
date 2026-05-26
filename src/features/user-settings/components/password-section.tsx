@@ -54,7 +54,7 @@ export interface PasswordSectionProps {
 }
 
 export function PasswordSection({ hasPassword }: PasswordSectionProps) {
-  const { invalidateSession } = useSession();
+  const { invalidateSession: _invalidateSession } = useSession();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -114,7 +114,7 @@ export function PasswordSection({ hasPassword }: PasswordSectionProps) {
 // ... existing imports
 
 function SetPasswordForm({ onSuccess }: { onSuccess: () => void }) {
-  const { user } = useSession();
+  const { user: _user } = useSession();
   const [loading, setLoading] = useState(false);
   const {
     register,
@@ -144,7 +144,7 @@ function SetPasswordForm({ onSuccess }: { onSuccess: () => void }) {
         toast.success("Password set successfully");
         onSuccess();
         window.location.reload(); 
-    } catch (err) {
+    } catch {
       toast.error("Failed to set password");
     } finally {
       setLoading(false);
@@ -224,7 +224,7 @@ function ChangePasswordForm({ onSuccess }: { onSuccess: () => void }) {
 
         toast.success("Password changed successfully");
         onSuccess();
-    } catch (err) {
+    } catch {
       toast.error("Failed to change password");
     } finally {
       setLoading(false);
