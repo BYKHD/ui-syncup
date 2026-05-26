@@ -1267,7 +1267,7 @@ export function useArchiveProject() {
     mutationFn: ({ projectId }: ArchiveArgs) => archiveProject(projectId),
     onSuccess: (_data, { projectName }) => {
       confetti({ particleCount: 150, spread: 80, origin: { y: 0.4 } });
-      toast.success(`🎉 ${projectName} is a wrap! All issues resolved.`);
+      toast.success(`${projectName} is a wrap! All issues resolved.`);
     },
     onError: (err: Error) => {
       toast.error(err.message ?? 'Failed to archive project');
@@ -1858,3 +1858,4 @@ git commit -m "docs(wiki): log archive-project feature"
 - `bun run db:migrate` is unchecked because local Postgres at `localhost:5432` was not reachable in this environment.
 - Manual UI verification steps are unchecked because the dev server exits during instrumentation when it cannot connect to the local Postgres instance, and the in-app browser blocked direct localhost navigation before that failure surfaced.
 - Package changes were installed with Bun. `package-lock.json` was updated only for the new package entries and validated as JSON; npm should not be used for follow-up work.
+- Follow-up confetti investigation found the archive route refresh could run immediately after firing confetti. `useArchiveProject` now waits for the `canvas-confetti` promise before invoking the external success callback, and `src/features/projects/hooks/__tests__/use-archive-project.test.tsx` covers that ordering.

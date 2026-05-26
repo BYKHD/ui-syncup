@@ -1,9 +1,6 @@
-/**
- * USE ARCHIVE PROJECT HOOK
- * React Query mutation for archiving a completed project.
- */
+"use client"
 
-import confetti from 'canvas-confetti'
+import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { archiveProject } from '../api'
@@ -27,10 +24,15 @@ export interface UseArchiveProjectResult {
   isError: boolean
   error: Error | null
   reset: () => void
+  showCelebration: boolean
+  celebrationProjectName: string | null
+  dismissCelebration: () => void
 }
 
 export function useArchiveProject(options?: UseArchiveProjectOptions): UseArchiveProjectResult {
   const queryClient = useQueryClient()
+  const [showCelebration, setShowCelebration] = useState(false)
+  const [celebrationProjectName, setCelebrationProjectName] = useState<string | null>(null)
 
   const mutation = useMutation({
     mutationFn: ({ projectId }: UseArchiveProjectParams) => archiveProject(projectId),
@@ -38,14 +40,8 @@ export function useArchiveProject(options?: UseArchiveProjectOptions): UseArchiv
       queryClient.invalidateQueries({ queryKey: projectKeys.detail(variables.projectId) })
       queryClient.invalidateQueries({ queryKey: projectKeys.activities(variables.projectId) })
       queryClient.invalidateQueries({ queryKey: projectKeys.lists() })
-
-      confetti({
-        particleCount: 150,
-        spread: 80,
-        origin: { y: 0.4 },
-      })
-
-      toast.success(`🎉 ${variables.projectName} is a wrap! All issues resolved.`)
+      setCelebrationProjectName(variables.projectName)
+      setShowCelebration(true)
       options?.onSuccess?.(data)
     },
     onError: (error: Error) => {
@@ -61,5 +57,8 @@ export function useArchiveProject(options?: UseArchiveProjectOptions): UseArchiv
     isError: mutation.isError,
     error: mutation.error,
     reset: mutation.reset,
+    showCelebration,
+    celebrationProjectName,
+    dismissCelebration: () => setShowCelebration(false),
   }
 }

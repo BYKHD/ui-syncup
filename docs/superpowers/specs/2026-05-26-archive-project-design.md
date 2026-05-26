@@ -217,7 +217,7 @@ Grant only to `PROJECT_OWNER` (same tier as `PROJECT_DELETE`).
 ### Hooks
 
 - `src/features/projects/hooks/use-archive-project.ts`
-  - `onSuccess`: fire `canvas-confetti` burst, then show celebratory toast: `"🎉 {projectName} is a wrap! All issues resolved."`
+  - `onSuccess`: fire `canvas-confetti` burst, then show celebratory toast: `"{projectName} is a wrap! All issues resolved."`
   - `onError`:
     - `400` "All issues must be resolved before archiving" → `toast.error(serverMessage)`
     - other → generic toast with server message

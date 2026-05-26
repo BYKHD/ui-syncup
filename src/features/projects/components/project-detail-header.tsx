@@ -1,9 +1,11 @@
 'use client';
 
 import { type ReactNode } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { ProjectTitleSection } from './project-title-section';
 import { ProjectStats } from './project-stats';
 import { ProjectActions } from './project-actions';
+import { ProjectArchivedCelebration } from './project-archived-celebration';
 import { useArchiveProject, useUnarchiveProject } from '../hooks';
 
 interface ProjectStats {
@@ -83,6 +85,15 @@ export function ProjectDetailHeader({
   const canUnarchiveProject = userRole === 'owner' && project.status === 'archived';
 
   return (
+    <>
+    <AnimatePresence>
+      {archiveProject.showCelebration && archiveProject.celebrationProjectName && (
+        <ProjectArchivedCelebration
+          projectName={archiveProject.celebrationProjectName}
+          onDismiss={archiveProject.dismissCelebration}
+        />
+      )}
+    </AnimatePresence>
     <div className="border-b bg-card">
       <div className="mx-auto max-w-7xl px-6 py-6 lg:px-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -133,5 +144,6 @@ export function ProjectDetailHeader({
         </div>
       </div>
     </div>
+    </>
   );
 }

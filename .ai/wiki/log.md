@@ -218,3 +218,8 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 
 - `IssuesList` no longer applies `statusColors.rowBorder` to issue rows, while preserving status-aware hover background styling.
 - Added focused component coverage for the row class contract.
+
+## [2026-05-26] fix | project archive confetti visibility
+
+- Delayed the project detail refresh callback until the `canvas-confetti` animation promise settles, so archiving a completed project does not immediately remove the body-mounted confetti canvas.
+- Added focused hook coverage for the archive success callback order.
