@@ -286,8 +286,6 @@ function CenteredCanvasViewInner({
     return Math.max(MIN_FIT_ZOOM, Math.min(MAX_FIT_ZOOM, naturalFit));
   }, [containerRef, imageDimensions, imageLoaded, containerSize]);
 
-  const _fitZoom = calculateFitZoom();
-
   // Compute button disabled states
   const isActualSize = canvasState.fitMode === 'actual' && Math.abs(canvasState.zoom - 1) < 0.001;
   const isFitted = canvasState.fitMode === 'fit';

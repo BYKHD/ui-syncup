@@ -5,9 +5,8 @@ import React, {
   useEffect,
   lazy,
   Suspense,
-  useRef,
 } from "react";
-import { motion, AnimatePresence, useDragControls } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -178,11 +177,6 @@ export default function ResponsiveIssueLayout({
     // Auto-collapse on initial load if viewport is 768-991px
     return width < 992;
   });
-  const _dragControls = useDragControls();
-  const _sheetRef = useRef<HTMLDivElement>(null);
-
-
-
   // Track window width and handle responsive behavior
   // This combines width tracking and auto-collapse logic to avoid cascading renders
   useEffect(() => {
