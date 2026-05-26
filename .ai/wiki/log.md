@@ -223,3 +223,12 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 
 - Delayed the project detail refresh callback until the `canvas-confetti` animation promise settles, so archiving a completed project does not immediately remove the body-mounted confetti canvas.
 - Added focused hook coverage for the archive success callback order.
+
+## [2026-05-26] query | project list card archive state
+
+- Confirmed `ProjectCard` derives archived list-card UI from `project.status === "archived"` and does not own archive/unarchive state locally.
+
+## [2026-05-26] fix | project list card archived folder background
+
+- Removed the archived-state muted override from the `ProjectCard` folder panel so archived cards keep the normal `bg-card` panel background while retaining the archived badge and outer card treatment.
+- Added focused component coverage for the archived folder-panel class contract.

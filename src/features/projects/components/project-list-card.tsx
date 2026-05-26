@@ -174,10 +174,7 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
             {/* Folder panel - themed background */}
             <div
               ref={folderRef}
-              className={cn(
-                "rounded-t-3xl px-5 py-4 bg-card text-card-foreground flex flex-col gap-4 shadow-lg",
-                project.status === "archived" && "bg-muted/40"
-              )}
+              className="rounded-t-3xl px-5 py-4 bg-card text-card-foreground flex flex-col gap-4 shadow-lg"
               style={{ clipPath: clipPath || undefined }}
             >
               {/* Header */}
