@@ -3,12 +3,8 @@ import {
   ANNOTATION_TOOL_IDS,
   type AnnotationHistoryEntry,
   type AnnotationToolId,
-  type AnnotationSnapshot,
-  type AnnotationActionType,
 } from '../types';
-import { createHistoryEntry, createSnapshot, addToHistory } from '../utils/history-manager';
-
-const HISTORY_LIMIT = 50;
+import { addToHistory } from '../utils/history-manager';
 
 const TOOL_SHORTCUTS: Record<AnnotationToolId, string[]> = {
   cursor: ['1', 'c'],
@@ -211,6 +207,8 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
 
   useEffect(() => {
     if (!editModeEnabled) {
+      // Reset hand tool when edit mode is disabled
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHandToolActive(false);
     }
   }, [editModeEnabled]);

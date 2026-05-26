@@ -128,6 +128,8 @@ export default function ResponsiveIssueLayout({
     const isValid = imageAttachments.some(a => a.id === selectedAttachmentId);
     if (!isValid) {
       const asIs = imageAttachments.find(att => att.reviewVariant === 'as_is');
+      // Intentional: reset selected attachment when the current attachment disappears
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedAttachmentId(asIs?.id || imageAttachments[0]?.id || '');
     }
   }, [imageAttachments, selectedAttachmentId]);
@@ -188,9 +190,6 @@ export default function ResponsiveIssueLayout({
 
     // Track local prevWidth inside the closure of the effect for threshold detection
     let prevWidth = window.innerWidth;
-    
-    // Initial sync
-    setWindowWidth(prevWidth);
 
     const handleResize = () => {
       const currentWidth = window.innerWidth;

@@ -43,6 +43,8 @@ export function AnnotationAnnotationsPanel<A extends AnnotationThread>({
   // Auto-open sheet when annotation is selected
   useEffect(() => {
     if (resolvedActiveId && !isSheetOpen) {
+      // Intentional: opens sheet when an annotation is activated externally
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsSheetOpen(true);
       setPrevThreadId(resolvedActiveId);
     } else if (resolvedActiveId && isSheetOpen && resolvedActiveId !== prevThreadId) {
