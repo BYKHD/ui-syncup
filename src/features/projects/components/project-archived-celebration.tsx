@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import { motion } from "framer-motion";
 import { RiArchiveLine } from "@remixicon/react";
@@ -14,11 +14,61 @@ export function ProjectArchivedCelebration({
   projectName,
   onDismiss,
 }: ProjectArchivedCelebrationProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const firedRef = useRef(false);
+
+  // Auto-dismiss timer — runs on every mount so Strict Mode's fake remount
+  // still schedules a dismiss after cleanup clears the first one.
   useEffect(() => {
-    void confetti({ particleCount: 150, spread: 80, origin: { y: 0.4 } });
-    const timer = setTimeout(onDismiss, 2000);
-    return () => clearTimeout(timer);
+    const dismissTimer = setTimeout(onDismiss, 2500);
+    return () => clearTimeout(dismissTimer);
   }, [onDismiss]);
+
+  // Fire confetti exactly once per component lifetime. The ref survives
+  // Strict Mode's unmount/remount, so the second mount bails out. We
+  // intentionally omit cleanup so in-flight particles are not reset —
+  // letting them finish even through Strict Mode's fake unmount.
+  useEffect(() => {
+    if (firedRef.current) return;
+    firedRef.current = true;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Canvas defaults to 300x150 unless given explicit pixel dimensions.
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const fire = confetti.create(canvas, { resize: true });
+
+    const defaults = {
+      spread: 360,
+      ticks: 50,
+      gravity: 0,
+      decay: 0.94,
+      startVelocity: 30,
+      colors: ["FFE400", "FFBD00", "E89400", "FFCA6C", "FDFFB8"],
+    };
+
+    const shoot = () => {
+      void fire({
+        ...defaults,
+        particleCount: 40,
+        scalar: 1.2,
+        shapes: ["star"],
+      });
+      void fire({
+        ...defaults,
+        particleCount: 10,
+        scalar: 0.75,
+        shapes: ["circle"],
+      });
+    };
+
+    shoot();
+    setTimeout(shoot, 100);
+    setTimeout(shoot, 200);
+  }, []);
 
   return (
     <motion.div
@@ -29,11 +79,15 @@ export function ProjectArchivedCelebration({
       aria-live="polite"
       aria-atomic="true"
     >
+      <canvas
+        ref={canvasRef}
+        className="pointer-events-none absolute inset-0 h-full w-full"
+      />
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", duration: 0.5, delay: 0.1 }}
-        className="flex flex-col items-center gap-4"
+        className="relative flex flex-col items-center gap-4"
       >
         <motion.div
           initial={{ scale: 0 }}
