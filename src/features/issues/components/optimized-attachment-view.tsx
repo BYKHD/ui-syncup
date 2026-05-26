@@ -39,6 +39,8 @@ interface IssueAttachmentsViewProps {
   projectId?: string;
   /** Team ID for permission checking */
   teamId?: string;
+  /** When true, force annotation UI read-only (archived projects). */
+  isArchived?: boolean;
   /** Selected Attachment ID (controlled) */
   selectedAttachmentId?: string;
   /** Callback for selecting attachment (controlled) */
@@ -63,6 +65,7 @@ export default function IssueAttachmentsView({
   onRetry,
   projectId,
   teamId,
+  isArchived,
   selectedAttachmentId: controlledSelectedId,
   onSelectAttachment: controlledSetSelectedId,
   permissions,
@@ -364,6 +367,7 @@ export default function IssueAttachmentsView({
                 attachment={selectedAttachment}
                 projectId={projectId}
                 teamId={teamId}
+                isArchived={isArchived}
                 canvasState={canvasState}
                 onCanvasStateChange={handleCanvasStateChange}
                 interactive={true}

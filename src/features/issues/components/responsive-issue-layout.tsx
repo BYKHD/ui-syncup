@@ -352,6 +352,7 @@ export default function ResponsiveIssueLayout({
                     onRetry={onRetryAttachments}
                     projectId={issueData.projectId}
                     teamId={issueData.teamId}
+                    isArchived={issueData.projectStatus === 'archived'}
                     selectedAttachmentId={selectedAttachmentId}
                     onSelectAttachment={setSelectedAttachmentId}
                     permissions={{
@@ -503,6 +504,7 @@ export default function ResponsiveIssueLayout({
             onRetry={onRetryAttachments}
             projectId={issueData.projectId}
             teamId={issueData.teamId}
+            isArchived={issueData.projectStatus === 'archived'}
             selectedAttachmentId={selectedAttachmentId}
             onSelectAttachment={setSelectedAttachmentId}
             permissions={{

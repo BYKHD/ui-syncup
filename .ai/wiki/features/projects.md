@@ -58,6 +58,17 @@ Archived projects are a frozen historical record. Two server-side permission cho
 
 Both call into [`isProjectArchived`](../../src/server/projects/archive-status.ts), a leaf helper kept out of `project-service.ts` to avoid an import cycle with rbac. Tests: [`archive-permissions.integration.test.ts`](../../src/server/projects/__tests__/archive-permissions.integration.test.ts).
 
+#### Client UI parity
+
+To match the server freeze in the UI (avoid showing edit affordances that then 403 on submit):
+
+- `getIssueById` returns `projectStatus` on `IssueWithDetails` so the issue detail response carries archive state in one round-trip.
+- [issue-details-screen.tsx](../../src/features/issues/screens/issue-details-screen.tsx) overrides resolved `IssuePermissions` to all-false when `issue.projectStatus === 'archived'`. The existing `InlineEditable*` components and `MetadataSection` already render read-only when `canEdit=false`, so we inherit a viewer-like UI for free.
+- [`useAnnotationPermissions`](../../src/features/annotations/hooks/use-annotation-permissions.ts) takes an `isArchived` option that short-circuits to `READ_ONLY_PERMISSIONS`. [responsive-issue-layout.tsx](../../src/features/issues/components/responsive-issue-layout.tsx) threads `issueData.projectStatus === 'archived'` down through `IssueAttachmentsView` → `AnnotatedAttachmentView`.
+- The screen-level handlers also short-circuit with a friendlier toast ("This project is archived. Unarchive to edit.") instead of letting the request hit the server.
+
+> Caveat — the broader `useIssuePermissions` hook called out in [issue-details-screen.tsx:101](../../src/features/issues/screens/issue-details-screen.tsx) is still a TODO. Today, the client defaults `canEdit: true` for everyone and relies on server-side 403s for non-archive role gating. The archive-specific override is a targeted patch on top of that; the proper hook is tracked separately.
+
 ## Related
 
 - Features: [[features/teams]], [[features/issues]], [[features/annotations]]

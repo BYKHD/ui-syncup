@@ -250,3 +250,12 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - Gated `getAnnotationPermissions` in [src/server/annotations/permission-utils.ts](../../src/server/annotations/permission-utils.ts): zeros out all write flags on archived projects while keeping `canView`.
 - Strict freeze (no role bypass): TEAM_OWNER edits also blocked — to modify, unarchive first.
 - Updated [[features/projects]] and [[concepts/issue-workflow]]; new tests in [`archive-permissions.integration.test.ts`](../../src/server/projects/__tests__/archive-permissions.integration.test.ts) (4/4 passing; full related suite 32/32 passing; `tsc --noEmit` clean).
+
+## [2026-05-27] feat | archive read-only UI parity for issues + annotations
+
+- Server: `getIssueById` ([src/server/issues/issue-service.ts](../../src/server/issues/issue-service.ts)) now returns `projectStatus` on `IssueWithDetails`; surfaces through `IssueDetailData` ([src/features/issues/types/issue.ts](../../src/features/issues/types/issue.ts)) so the client has archive state without a second round-trip.
+- Issue UI: [issue-details-screen.tsx](../../src/features/issues/screens/issue-details-screen.tsx) forces `IssuePermissions` to all-false when `projectStatus === 'archived'`. Existing `InlineEditable*` + `MetadataSection` already render read-only when `canEdit=false`, so the viewer-like look is automatic.
+- Annotation UI: [`useAnnotationPermissions`](../../src/features/annotations/hooks/use-annotation-permissions.ts) gains an `isArchived` option → returns `READ_ONLY_PERMISSIONS`. [responsive-issue-layout.tsx](../../src/features/issues/components/responsive-issue-layout.tsx) threads `issueData.projectStatus === 'archived'` through `IssueAttachmentsView` → `AnnotatedAttachmentView`.
+- Friendlier toasts on handler short-circuit: "This project is archived. Unarchive to edit." instead of generic "Update failed".
+- New test: Property 16.8 in [`use-annotation-permissions.property.test.tsx`](../../src/features/annotations/hooks/__tests__/use-annotation-permissions.property.test.tsx) (12/12 passing; tsc clean).
+- Caveat (not addressed here): the broader `useIssuePermissions` hook in `issue-details-screen.tsx:101` is still a TODO — non-archive role gating still relies on server 403s. Tracked as a follow-up.

@@ -113,7 +113,7 @@ const EDITOR_PERMISSIONS: AnnotationPermissions = {
 export function useAnnotationPermissions(
   options: UseAnnotationPermissionsOptions = {}
 ): UseAnnotationPermissionsResult {
-  const { projectId: _projectId, teamId: _teamId } = options;
+  const { projectId: _projectId, teamId: _teamId, isArchived } = options;
 
   // Get current session with roles
   const { session, isLoading: isSessionLoading } = useSession();
@@ -122,6 +122,13 @@ export function useAnnotationPermissions(
   const permissions = useMemo((): AnnotationPermissions => {
     if (!session?.user) {
       return NO_PERMISSIONS;
+    }
+
+    // Archived project — frozen historical record. View allowed, all
+    // writes denied regardless of role. Mirrors the server-side gate in
+    // `getAnnotationPermissions`.
+    if (isArchived) {
+      return READ_ONLY_PERMISSIONS;
     }
 
     // Get roles from session user
@@ -149,7 +156,7 @@ export function useAnnotationPermissions(
 
     // Default to member permissions
     return MEMBER_PERMISSIONS;
-  }, [session]);
+  }, [session, isArchived]);
 
   return {
     permissions,

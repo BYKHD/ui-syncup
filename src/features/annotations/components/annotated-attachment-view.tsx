@@ -39,6 +39,12 @@ export interface AnnotatedAttachmentViewProps {
   projectId?: string;
   /** Team ID for permission checking */
   teamId?: string;
+  /**
+   * When true, force annotation UI into read-only mode regardless of role.
+   * Set by the parent when the project is archived (see features/projects
+   * wiki — archived projects are a frozen historical record).
+   */
+  isArchived?: boolean;
   /** Canvas state from parent (for sync with compare mode) */
   canvasState?: CanvasViewState;
   /** Callback when canvas state changes */
@@ -97,6 +103,7 @@ export function AnnotatedAttachmentView({
   attachment,
   projectId,
   teamId,
+  isArchived,
   canvasState: externalCanvasState,
   onCanvasStateChange: externalOnCanvasStateChange,
   interactive = true,
@@ -152,6 +159,7 @@ export function AnnotatedAttachmentView({
   const { permissions: hookPermissions, isLoading: permissionsLoading, userId } = useAnnotationPermissions({
     projectId,
     teamId,
+    isArchived,
   });
 
   const permissions = useMemo(() => ({
