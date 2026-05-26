@@ -4,7 +4,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Image, FileText } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, FileText } from "lucide-react";
 
 const DETAIL_ROWS = Array.from({ length: 3 });
 
@@ -39,7 +39,7 @@ export function ResponsiveIssueLayoutSkeleton() {
                 className="flex items-center gap-2 data-[state=active]:bg-background h-full text-sm"
                 disabled
               >
-                <Image className="h-4 w-4" />
+                <ImageIcon className="h-4 w-4" aria-hidden="true" />
                 Attachments
               </TabsTrigger>
               <TabsTrigger

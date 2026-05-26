@@ -140,6 +140,24 @@ export async function POST(
       );
     } catch (error) {
       if (error instanceof Error) {
+        if (error.message === "Cannot join an archived project") {
+          logger.warn("api.projects.join.archived", {
+            requestId,
+            userId: user.id,
+            projectId,
+          });
+
+          return NextResponse.json(
+            {
+              error: {
+                code: "PROJECT_ARCHIVED",
+                message: "Cannot join an archived project",
+              },
+            },
+            { status: 403 }
+          );
+        }
+
         if (error.message === "Project not found") {
           return NextResponse.json(
             {

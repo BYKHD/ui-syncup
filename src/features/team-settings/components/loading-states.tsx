@@ -57,9 +57,9 @@ export function LoadingButton({
 }
 
 // Settings page loading skeleton
-export function SettingsPageSkeleton({ 
-  title = "Loading Settings...",
-  description = "Please wait while we load your settings."
+export function SettingsPageSkeleton({
+  title: _title = "Loading Settings...",
+  description: _description = "Please wait while we load your settings."
 }: {
   title?: string;
   description?: string;

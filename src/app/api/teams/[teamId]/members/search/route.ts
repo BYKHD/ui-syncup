@@ -13,7 +13,7 @@ import { db } from '@/lib/db';
 import { teamMembers } from '@/server/db/schema/team-members';
 import { projectMembers } from '@/server/db/schema/project-members';
 import { users } from '@/server/db/schema/users';
-import { eq, and, sql, ilike, or, notInArray } from 'drizzle-orm';
+import { eq, and, ilike, or } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
 

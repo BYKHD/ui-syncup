@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence, useDragControls, PanInfo } from 'motion/react';
+import { motion, AnimatePresence, useDragControls, type PanInfo } from 'motion/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageSquare, Pin } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -43,6 +43,8 @@ export function AnnotationAnnotationsPanel<A extends AnnotationThread>({
   // Auto-open sheet when annotation is selected
   useEffect(() => {
     if (resolvedActiveId && !isSheetOpen) {
+      // Intentional: opens sheet when an annotation is activated externally
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsSheetOpen(true);
       setPrevThreadId(resolvedActiveId);
     } else if (resolvedActiveId && isSheetOpen && resolvedActiveId !== prevThreadId) {
@@ -70,7 +72,7 @@ export function AnnotationAnnotationsPanel<A extends AnnotationThread>({
   }, [hasExternalControl, onAnnotationSelect]);
 
   const handleDragEnd = useCallback(
-    (event: any, info: PanInfo) => {
+    (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       const threshold = isMobile ? 100 : 80;
       if (info.offset.y > threshold) {
         handleClose();

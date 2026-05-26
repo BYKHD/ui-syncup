@@ -41,6 +41,8 @@ export const annotationKeys = {
     [...annotationKeys.detail(annotationId), 'comments'] as const,
 };
 
+const HARD_ERROR_CODES = [403, 404, 402, 422] as const;
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -96,7 +98,7 @@ export interface UseAnnotationIntegrationResult {
 // DEBOUNCE HELPER WITH FLUSH/CANCEL
 // ============================================================================
 
-interface DebouncedCallback<T extends (...args: any[]) => void> {
+interface DebouncedCallback<T extends (...args: never[]) => void> {
   /** Call the debounced function */
   (...args: Parameters<T>): void;
   /** Immediately execute with the last pending args (if any) */
@@ -107,7 +109,7 @@ interface DebouncedCallback<T extends (...args: any[]) => void> {
   isPending: () => boolean;
 }
 
-function useDebouncedCallback<T extends (...args: any[]) => void>(
+function useDebouncedCallback<T extends (...args: never[]) => void>(
   callback: T,
   delay: number
 ): DebouncedCallback<T> {
@@ -259,7 +261,7 @@ export function useAnnotationIntegration(
   // ============================================================================
 
   /** Get annotation state (defaults to 'idle') */
-  const getAnnotationState = useCallback((annotationId: string): AnnotationSaveState => {
+  const _getAnnotationState = useCallback((annotationId: string): AnnotationSaveState => {
     return annotationStateRef.current.get(annotationId)?.state ?? 'idle';
   }, []);
 
@@ -356,12 +358,9 @@ export function useAnnotationIntegration(
     return () => clearInterval(cleanupInterval);
   }, []);
 
-  // Helper: Hard error codes that should trigger rollback
-  const HARD_ERROR_CODES = [403, 404, 402, 422];
-
   const isHardSaveError = useCallback((error: unknown): boolean => {
     if (error instanceof Error && 'status' in error) {
-      return HARD_ERROR_CODES.includes((error as { status: number }).status);
+      return (HARD_ERROR_CODES as readonly number[]).includes((error as { status: number }).status);
     }
     return false;
   }, []);
@@ -650,7 +649,7 @@ export function useAnnotationIntegration(
       annotationId,
       shape,
       description,
-      clientRevision,
+      clientRevision: _clientRevision,
     }: {
       annotationId: string;
       shape?: AnnotationShape;

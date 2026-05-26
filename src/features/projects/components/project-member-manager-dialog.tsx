@@ -15,7 +15,7 @@ import {
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip'
-import { RiTeamLine, RiMore2Line, RiUserLine, RiDeleteBinLine, RiAddLine, RiVipCrownLine, RiMailSendLine, RiAlertLine } from '@remixicon/react'
+import { RiMore2Line, RiUserLine, RiDeleteBinLine, RiAddLine, RiVipCrownLine, RiMailSendLine, RiAlertLine } from '@remixicon/react'
 import { getRoleDisplayName, getRoleBadgeVariant, getRoleDescription } from '@/features/projects/utils/role-helpers'
 import { AccessRequestList } from './access-requests/access-request-list'
 
@@ -77,7 +77,7 @@ interface ProjectMemberManagerDialogProps {
  */
 export function ProjectMemberManagerDialog({
   projectId,
-  projectName,
+  projectName: _projectName,
   userRole,
   canManageMembers,
   open,

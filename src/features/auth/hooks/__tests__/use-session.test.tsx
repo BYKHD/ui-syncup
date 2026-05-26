@@ -33,7 +33,7 @@ describe("Session Cache Management - Property-Based Tests", () => {
           email: fc.string({ minLength: 3, maxLength: 50 }).map(s => `${s}@example.com`),
           name: fc.string({ minLength: 1, maxLength: 120 }),
         }),
-        (userData) => {
+        (_userData) => {
           // Create a QueryClient with a spy on invalidateQueries
           const queryClient = new QueryClient();
           const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");

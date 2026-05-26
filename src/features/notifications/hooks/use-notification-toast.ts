@@ -6,7 +6,6 @@
 import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
-import { notificationKeys } from './use-notifications'
 import type { Notification } from '../api'
 
 // ============================================================================

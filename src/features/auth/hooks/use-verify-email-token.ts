@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { successResponseSchema, type SuccessResponse, type ErrorResponse } from "../api/types";
@@ -100,13 +100,16 @@ export function useVerifyEmailToken(options: UseVerifyEmailTokenOptions = {}) {
       }
     },
   });
+  const mutationRef = useRef(mutation);
+  mutationRef.current = mutation;
 
   // Auto-verify on mount if token is provided
   useEffect(() => {
-    if (token && autoVerify && !mutation.isSuccess && !mutation.isPending) {
-      mutation.mutate(token);
+    const currentMutation = mutationRef.current;
+    if (token && autoVerify && !currentMutation.isSuccess && !currentMutation.isPending) {
+      currentMutation.mutate(token);
     }
-  }, [token, autoVerify]); // Intentionally omitting mutation to avoid re-triggering
+  }, [token, autoVerify]);
 
   const retry = () => {
     if (token) {

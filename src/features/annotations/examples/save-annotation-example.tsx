@@ -34,7 +34,7 @@ export function AnnotationSaveExample() {
   // ============================================================================
   // WITH TOAST NOTIFICATIONS
   // ============================================================================
-  const withToasts = useAnnotationSave({
+  const _withToasts = useAnnotationSave({
     enableToasts: true,        // Shows "Annotation saved" / error toasts
     autoResetDelay: 3000,      // Reset to idle after 3 seconds
     onSaveSuccess: (annotation) => {
@@ -162,7 +162,7 @@ export function OptimisticAnnotationSave() {
     },
   });
 
-  const handleDragComplete = async (
+  const _handleDragComplete = async (
     annotationId: string,
     finalShape: AnnotationShape
   ) => {
@@ -212,7 +212,7 @@ export function IntegratedExample() {
    */
 
   // 1. Initialize save hook
-  const { saveState, saveAnnotationPosition, createNewAnnotation } = useAnnotationSave({
+  const { saveState: _saveState, saveAnnotationPosition: _saveAnnotationPosition, createNewAnnotation: _createNewAnnotation } = useAnnotationSave({
     onSaveSuccess: (annotation) => {
       console.log('Saved:', annotation);
     },
@@ -270,7 +270,7 @@ export function IntegratedExample() {
 // ERROR HANDLING PATTERNS
 // ============================================================================
 export function ErrorHandlingExample() {
-  const { saveAnnotationPosition, saveState } = useAnnotationSave({
+  const { saveAnnotationPosition: _saveAnnotationPositionErr, saveState } = useAnnotationSave({
     enableToasts: true,
     onSaveError: (error) => {
       // Pattern 1: Retry logic

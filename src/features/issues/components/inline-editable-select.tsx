@@ -82,7 +82,7 @@ export function InlineEditableSelect({
     try {
       await onSave(value);
       toast.success('Undone');
-    } catch (err) {
+    } catch {
       toast.error('Failed to undo');
     }
   };

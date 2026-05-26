@@ -4,13 +4,14 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  RiArchiveLine,
   RiUserAddLine,
   RiUserLine,
-  RiSettingsLine,
   RiMailSendLine,
   RiMailCloseLine,
   RiCloseCircleLine,
   RiErrorWarningLine,
+  RiInboxUnarchiveLine,
   RiTimeLine,
   RiUserUnfollowLine,
   RiCheckDoubleLine,
@@ -40,6 +41,10 @@ function getActivityIcon(type: ProjectActivity['type']) {
       return <RiMailCloseLine className="h-4 w-4 text-orange-500" />;
     case 'invitation_email_failed':
       return <RiErrorWarningLine className="h-4 w-4 text-red-500" />;
+    case 'project_archived':
+      return <RiArchiveLine className="h-4 w-4 text-amber-500" />;
+    case 'project_unarchived':
+      return <RiInboxUnarchiveLine className="h-4 w-4 text-green-500" />;
     default:
       return <RiTimeLine className="h-4 w-4 text-muted-foreground" />;
   }
@@ -73,7 +78,7 @@ function getActivityMessage(activity: ProjectActivity) {
     case 'member_role_changed':
       return (
         <span>
-          <strong>{actorName}</strong> changed <strong>{metadata?.userName}</strong>'s role
+          <strong>{actorName}</strong> changed <strong>{metadata?.userName}</strong>&apos;s role
           {metadata?.oldRole && metadata?.newRole && (
             <span className="ml-2">
               from <Badge variant="outline" className="text-xs">{metadata.oldRole}</Badge> to{' '}
@@ -118,6 +123,18 @@ function getActivityMessage(activity: ProjectActivity) {
           {metadata?.reason && (
              <span className="ml-1 text-red-500 text-xs">({metadata.reason})</span>
           )}
+        </span>
+      );
+    case 'project_archived':
+      return (
+        <span>
+          <strong>{actorName}</strong> archived this project
+        </span>
+      );
+    case 'project_unarchived':
+      return (
+        <span>
+          <strong>{actorName}</strong> restored this project
         </span>
       );
     default:

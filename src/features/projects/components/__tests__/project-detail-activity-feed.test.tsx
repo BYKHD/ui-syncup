@@ -43,6 +43,34 @@ const mockActivities: ProjectActivity[] = [
       userName: "Bob",
       role: "editor",
     },
+  },
+  {
+    id: "3",
+    type: "project_archived",
+    projectId: "p1",
+    teamId: "t1",
+    actorId: "u1",
+    createdAt: new Date().toISOString(),
+    actor: {
+      id: "u1",
+      name: "Alice",
+      avatarUrl: null,
+    },
+    metadata: {},
+  },
+  {
+    id: "4",
+    type: "project_unarchived",
+    projectId: "p1",
+    teamId: "t1",
+    actorId: "u1",
+    createdAt: new Date().toISOString(),
+    actor: {
+      id: "u1",
+      name: "Alice",
+      avatarUrl: null,
+    },
+    metadata: {},
   }
 ];
 
@@ -98,6 +126,10 @@ describe("ProjectActivityFeed", () => {
     // Check for member added text
     expect(screen.getByText("added a member")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
+
+    // Check for archive lifecycle text
+    expect(screen.getByText("archived this project")).toBeInTheDocument();
+    expect(screen.getByText("restored this project")).toBeInTheDocument();
     
     // Check for roles
     const roles = screen.getAllByText("editor");

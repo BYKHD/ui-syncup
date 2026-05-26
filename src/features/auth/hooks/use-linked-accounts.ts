@@ -46,9 +46,9 @@ export function useLinkedAccounts() {
 
       // Map the response to our LinkedAccount type (ensure date parsing if needed, 
       // though apiClient usually handles JSON parsing so dates will be strings)
-      return accounts.map((account: any) => ({
+      return accounts.map((account) => ({
         id: account.id,
-        providerId: account.providerId as LinkedAccount["providerId"],
+        providerId: account.providerId,
         accountId: account.accountId,
         createdAt: account.createdAt,
       }));

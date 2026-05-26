@@ -9,7 +9,6 @@ import { SettingsCard } from "./settings-card";
 import { LoadingButton } from "./loading-states";
 import type { TeamGeneralFormData } from "../types";
 import type { Team } from "@/features/teams/api";
-import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES } from "../utils";
 
 export interface TeamInformationFormProps {
   form: UseFormReturn<TeamGeneralFormData>;
@@ -30,7 +29,7 @@ export function TeamInformationForm({
   isLoading,
   isUploading,
   onImageChange,
-  onRemoveImage,
+  onRemoveImage: _onRemoveImage,
   onCancel,
   onSubmit,
 }: TeamInformationFormProps) {
@@ -40,7 +39,7 @@ export function TeamInformationForm({
     watch,
   } = form;
 
-  const watchedImage = watch("image");
+  const _watchedImage = watch("image");
 
   return (
     <form onSubmit={onSubmit}>
@@ -72,8 +71,7 @@ export function TeamInformationForm({
             <Input
               id="team-name"
               {...register("name", {
-                onChange: (e) => {
-                  // Trigger validation on change for real-time feedback
+                onChange: () => {
                   form.trigger("name");
                 }
               })}

@@ -10,6 +10,14 @@ import { validateTeamName } from "./validation";
 import { enqueueEmail } from "@/server/email";
 import type { CreateTeamInput, UpdateTeamInput, Team, TeamWithMemberInfo } from "./types";
 
+type TeamMemberWithUser = typeof teamMembers.$inferSelect & {
+  user: typeof users.$inferSelect;
+};
+
+type TeamMemberWithUserAndTeam = TeamMemberWithUser & {
+  team: typeof teams.$inferSelect;
+};
+
 /**
  * Creates a new team with the creator as TEAM_OWNER + TEAM_EDITOR
  * Implements Requirements 1.1, 1.2, 1.4, 13.1, 14.1
@@ -493,11 +501,11 @@ export async function transferOwnership(
             eq(teamMembers.teamId, teamId),
             eq(teamMembers.userId, newOwnerId)
           )
-        );
+      );
 
       // 4. Send emails
-      const owner = currentOwnerMember as any;
-      const newOwner = newOwnerMember as any;
+      const owner = currentOwnerMember as TeamMemberWithUserAndTeam;
+      const newOwner = newOwnerMember as TeamMemberWithUser;
       const teamUrl = `${process.env.NEXT_PUBLIC_APP_URL}/team/${owner.team.slug}/settings`;
 
       // Email to previous owner

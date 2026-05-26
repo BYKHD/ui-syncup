@@ -38,7 +38,7 @@ export function useResetRateLimit(options: ResetRateLimitOptions = {}) {
 
   const mutation = useMutation({
     mutationFn: resetRateLimit,
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       onSuccess?.();
     },
     onError: (error: unknown) => {

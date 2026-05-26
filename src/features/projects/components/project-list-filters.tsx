@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 
-import type { ProjectFilters } from '@/features/projects/hooks'
+import { DEFAULT_FILTERS, type ProjectFilters } from '@/features/projects/hooks'
 
 interface ProjectFiltersProps {
   filters: ProjectFilters
@@ -56,26 +56,19 @@ export function ProjectFiltersComponent({
   }
 
   const clearFilters = () => {
-    onFiltersChange({
-      search: '',
-      status: 'all',
-      visibility: 'all',
-      userRole: 'all',
-      sortBy: 'updated',
-      sortOrder: 'desc',
-    })
+    onFiltersChange(DEFAULT_FILTERS)
   }
 
   const hasActiveFilters =
     filters.search !== '' ||
-    filters.status !== 'all' ||
+    filters.status !== DEFAULT_FILTERS.status ||
     filters.visibility !== 'all' ||
     filters.userRole !== 'all'
 
   const getActiveFilterCount = () => {
     let count = 0
     if (filters.search !== '') count++
-    if (filters.status !== 'all') count++
+    if (filters.status !== DEFAULT_FILTERS.status) count++
     if (filters.visibility !== 'all') count++
     if (filters.userRole !== 'all') count++
     return count
@@ -262,7 +255,7 @@ export function ProjectFiltersComponent({
           <span className="text-sm text-muted-foreground">Active filters:</span>
           {filters.search && (
             <Badge variant="secondary" className="gap-1">
-              Search: "{filters.search}"
+              Search: &quot;{filters.search}&quot;
               <button
                 onClick={() => updateFilter('search', '')}
                 className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
@@ -271,11 +264,11 @@ export function ProjectFiltersComponent({
               </button>
             </Badge>
           )}
-          {filters.status !== 'all' && (
+          {filters.status !== DEFAULT_FILTERS.status && (
             <Badge variant="secondary" className="gap-1">
               Status: {filters.status}
               <button
-                onClick={() => updateFilter('status', 'all')}
+                onClick={() => updateFilter('status', DEFAULT_FILTERS.status)}
                 className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
               >
                 <RiCloseLine className="h-3 w-3" />

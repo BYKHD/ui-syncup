@@ -6,7 +6,7 @@
 // All logic is handled by hooks and API layer
 // ============================================================================
 
-import { useIssueDetails, useIssueActivities, useIssueUpdate, useIssueDelete } from '../hooks';
+import { useIssueDetails, useIssueActivities, useIssueUpdate, useIssueDelete, useIssuePermissions } from '../hooks';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import ResponsiveIssueLayout from '../components/responsive-issue-layout';
 import { EnhancedResponsiveIssueLayoutSkeleton } from './issue-details-skeletons';
-import type { IssuePermissions } from '@/features/issues/types';
+import type { IssuePermissions, IssueUpdateHandler } from '@/features/issues/types';
 
 interface IssueDetailsScreenProps {
   issueId: string;
@@ -95,37 +95,52 @@ export default function IssueDetailsScreen({
   });
 
   // Local state for UI interactions
-  const [activityCursor, setActivityCursor] = useState<string | null>(null);
+  const [_activityCursor, _setActivityCursor] = useState<string | null>(null);
 
-  // Default permissions - in production, derive from user role and project membership
-  // TODO: Wire useIssuePermissions hook when RBAC integration is complete
-  const resolvedPermissions: IssuePermissions = permissions ?? {
-    canEdit: true,
-    canDelete: true,
-    canComment: true,
-    canAssign: true,
-    canChangeStatus: true,
-  };
+  const hookPermissions = useIssuePermissions({ issueId });
+  const basePermissions: IssuePermissions = permissions ?? hookPermissions;
+
+  // Archived projects are a frozen historical record (see features/projects
+  // wiki page). Force read-only UI regardless of role; the server-side
+  // permission gate (rbac.ts ARCHIVE_BLOCKED_PERMISSIONS) is the safety net.
+  const isArchived = issue?.projectStatus === 'archived';
+  const resolvedPermissions: IssuePermissions = isArchived
+    ? {
+        canEdit: false,
+        canDelete: false,
+        canComment: false,
+        canAssign: false,
+        canChangeStatus: false,
+      }
+    : basePermissions;
 
   // Handlers
-  const handleUpdate = useCallback(
-    async (field: string, value: any) => {
+  const handleUpdate: IssueUpdateHandler = useCallback(
+    async (field, value) => {
+      if (isArchived) {
+        toast.info('This project is archived. Unarchive to edit.');
+        return;
+      }
       if (!resolvedPermissions.canEdit) {
         toast.info('View-only link. Editing is disabled.');
         return;
       }
       await updateIssue({ issueId, field, value, actorId: userId });
     },
-    [issueId, userId, updateIssue, resolvedPermissions.canEdit]
+    [issueId, userId, updateIssue, resolvedPermissions.canEdit, isArchived]
   );
 
   const handleDelete = useCallback(async () => {
+    if (isArchived) {
+      toast.info('This project is archived. Unarchive to delete issues.');
+      return;
+    }
     if (!resolvedPermissions.canDelete) {
       toast.info('View-only link. Delete is disabled.');
       return;
     }
     await deleteIssue({ issueId, actorId: userId });
-  }, [deleteIssue, issueId, resolvedPermissions.canDelete, userId]);
+  }, [deleteIssue, issueId, resolvedPermissions.canDelete, userId, isArchived]);
 
   const handleLoadMoreActivities = useCallback(() => {
     // In real implementation, this would trigger pagination

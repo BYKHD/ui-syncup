@@ -11,11 +11,13 @@ export { getProject } from './get-project'
 export { getProjectMembers } from './get-project-members'
 
 // Mutation APIs
+export { archiveProject } from './archive-project'
 export { createProject } from './create-project'
 export { updateProject } from './update-project'
 export { deleteProject } from './delete-project'
 export { joinProject } from './join-project'
 export { leaveProject } from './leave-project'
+export { unarchiveProject } from './unarchive-project'
 export { updateMemberRole } from './update-member-role'
 export { removeMember } from './remove-member'
 
@@ -31,4 +33,3 @@ export { listAccessRequests } from './list-access-requests'
 export { approveAccessRequest } from './approve-access-request'
 export { declineAccessRequest } from './decline-access-request'
 export { cancelAccessRequest } from './cancel-access-request'
-

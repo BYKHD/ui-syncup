@@ -12,7 +12,7 @@ export interface GetTeamsParams {
 export async function getTeams(params?: GetTeamsParams): Promise<TeamsResponse> {
   const response = await apiClient<TeamsResponse>('/api/teams', {
     method: 'GET',
-    query: params as any,
+    query: params ? { ...params } : undefined,
   });
 
   return teamsResponseSchema.parse(response);

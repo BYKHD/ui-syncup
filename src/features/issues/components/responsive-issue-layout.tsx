@@ -5,10 +5,8 @@ import React, {
   useEffect,
   lazy,
   Suspense,
-  useCallback,
-  useRef,
 } from "react";
-import { motion, AnimatePresence, useDragControls, PanInfo } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -19,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Image, FileText, Keyboard } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, FileText, Keyboard } from "lucide-react";
 import {
   formatShortcut,
   type KeyboardShortcut,
@@ -31,6 +29,7 @@ import type {
   IssuePermissions,
   ActivityEntry,
   IssueAttachment,
+  IssueUpdateHandler,
 } from "@/features/issues/types";
 import { useAnnotationIntegration } from "@/features/annotations";
 
@@ -60,7 +59,7 @@ interface ResponsiveIssueLayoutProps {
   activitiesLoading: boolean;
   hasMoreActivities: boolean;
   onLoadMoreActivities: () => void;
-  onUpdate: (field: string, value: any) => Promise<void>;
+  onUpdate: IssueUpdateHandler;
   onDelete: () => Promise<void>;
   isLoading: boolean;
   // Error handling props
@@ -128,6 +127,8 @@ export default function ResponsiveIssueLayout({
     const isValid = imageAttachments.some(a => a.id === selectedAttachmentId);
     if (!isValid) {
       const asIs = imageAttachments.find(att => att.reviewVariant === 'as_is');
+      // Intentional: reset selected attachment when the current attachment disappears
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedAttachmentId(asIs?.id || imageAttachments[0]?.id || '');
     }
   }, [imageAttachments, selectedAttachmentId]);
@@ -136,7 +137,7 @@ export default function ResponsiveIssueLayout({
   // This powers the side panel
   const { 
     annotations, 
-    activeTool, // We might want to pass tool state down too if needed
+    activeTool: _activeTool,
     // ... potentially other properties for coordination
   } = useAnnotationIntegration({
     issueId,
@@ -176,11 +177,6 @@ export default function ResponsiveIssueLayout({
     // Auto-collapse on initial load if viewport is 768-991px
     return width < 992;
   });
-  const dragControls = useDragControls();
-  const sheetRef = useRef<HTMLDivElement>(null);
-
-
-
   // Track window width and handle responsive behavior
   // This combines width tracking and auto-collapse logic to avoid cascading renders
   useEffect(() => {
@@ -188,9 +184,6 @@ export default function ResponsiveIssueLayout({
 
     // Track local prevWidth inside the closure of the effect for threshold detection
     let prevWidth = window.innerWidth;
-    
-    // Initial sync
-    setWindowWidth(prevWidth);
 
     const handleResize = () => {
       const currentWidth = window.innerWidth;
@@ -294,7 +287,7 @@ export default function ResponsiveIssueLayout({
                 aria-controls="attachments-panel"
                 aria-selected={activeTab === "attachments"}
               >
-                <Image className="h-4 w-4" />
+                <ImageIcon className="h-4 w-4" aria-hidden="true" />
                 Attachments
                 {attachments.length > 0 && (
                   <span
@@ -359,6 +352,7 @@ export default function ResponsiveIssueLayout({
                     onRetry={onRetryAttachments}
                     projectId={issueData.projectId}
                     teamId={issueData.teamId}
+                    isArchived={issueData.projectStatus === 'archived'}
                     selectedAttachmentId={selectedAttachmentId}
                     onSelectAttachment={setSelectedAttachmentId}
                     permissions={{
@@ -510,6 +504,7 @@ export default function ResponsiveIssueLayout({
             onRetry={onRetryAttachments}
             projectId={issueData.projectId}
             teamId={issueData.teamId}
+            isArchived={issueData.projectStatus === 'archived'}
             selectedAttachmentId={selectedAttachmentId}
             onSelectAttachment={setSelectedAttachmentId}
             permissions={{

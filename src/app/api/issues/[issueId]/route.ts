@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/server/auth/session";
-import { hasPermission } from "@/server/auth/rbac";
+import { hasPermission, getUserPermissions } from "@/server/auth/rbac";
 import { PERMISSIONS } from "@/config/roles";
 import {
   getIssueById,
@@ -168,7 +168,9 @@ export async function GET(
       attachments: serializedAttachments,
     };
 
-    return NextResponse.json({ issue: serializedIssue }, { status: 200 });
+    const permissions = await getUserPermissions(user.id, issue.projectId, "project");
+
+    return NextResponse.json({ issue: serializedIssue, permissions }, { status: 200 });
   } catch (error) {
     console.error("GET issue error:", error);
     logger.error("api.issue.get.error", {

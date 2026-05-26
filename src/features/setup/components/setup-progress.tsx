@@ -9,7 +9,7 @@ import {
   Database,
   Check
 } from 'lucide-react';
-import { getStepNumber, SETUP_WIZARD_STEPS } from '../utils';
+import { SETUP_WIZARD_STEPS } from '../utils';
 import type { SetupWizardStep } from '../types';
 
 interface SetupProgressProps {

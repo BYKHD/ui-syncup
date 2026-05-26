@@ -9,7 +9,7 @@ import { Field, FieldDescription } from '@/components/ui/field'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { RiSettingsLine, RiLockLine, RiGlobalLine, RiSaveLine } from '@remixicon/react'
+import { RiLockLine, RiGlobalLine, RiSaveLine } from '@remixicon/react'
 
 interface Project {
   id: string
@@ -48,7 +48,7 @@ interface ProjectSettingsDialogProps {
 }
 
 export function ProjectSettingsDialog({
-  project,
+  project: _project,
   userRole,
   open,
   onOpenChange,
@@ -70,7 +70,7 @@ export function ProjectSettingsDialog({
   // Permission check - only owners can edit settings
   // Note: We don't return null here because in controlled mode (open prop),
   // the dialog should still mount. Permission is enforced at the menu item level.
-  const canEditSettings = userRole === 'owner'
+  const _canEditSettings = userRole === 'owner'
 
   return (
     <>
@@ -180,11 +180,11 @@ export function ProjectSettingsDialog({
             <AlertDialogDescription>
               {pendingVisibility === 'public' ? (
                 <>
-                  You're about to make this project <strong>public</strong>. All team members will be able to see and join this project.
+                  You&apos;re about to make this project <strong>public</strong>. All team members will be able to see and join this project.
                 </>
               ) : (
                 <>
-                  You're about to make this project <strong>private</strong>. Only invited members will be able to access this project. Existing members will retain their access.
+                  You&apos;re about to make this project <strong>private</strong>. Only invited members will be able to access this project. Existing members will retain their access.
                 </>
               )}
             </AlertDialogDescription>

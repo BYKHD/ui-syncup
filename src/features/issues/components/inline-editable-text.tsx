@@ -119,7 +119,7 @@ export function InlineEditableText({
     try {
       await onSave(value);
       toast.success('Undone');
-    } catch (err) {
+    } catch {
       toast.error('Failed to undo');
     }
   };

@@ -1,8 +1,18 @@
 "use client";
 
-import { useState, type ReactNode, type RefObject, useRef, useCallback, useEffect, useMemo } from "react";
+import {
+  useState,
+  type Dispatch,
+  type MutableRefObject,
+  type ReactNode,
+  type RefObject,
+  type SetStateAction,
+  useRef,
+  useCallback,
+  useEffect,
+} from "react";
 import Image from "next/image";
-import { motion, useMotionValue, useSpring, animate } from "motion/react";
+import { motion, useMotionValue, animate, type MotionValue } from "motion/react";
 import type { IssueAttachment, CanvasViewState } from "@/features/issues/types";
 import type { AnnotationSaveStatus } from "@/features/annotations/types";
 import { CanvasStateIndicator } from "./canvas-state-indicator";
@@ -28,6 +38,39 @@ interface CenteredCanvasViewProps {
   hideZoomControls?: boolean;
   /** Hide the save status indicator */
   hideStateIndicator?: boolean;
+}
+
+interface CenteredCanvasViewInnerProps {
+  attachment: IssueAttachment;
+  canvasState: CanvasViewState;
+  onCanvasStateChange: (updates: Partial<CanvasViewState>) => void;
+  overlayContent?: ReactNode;
+  resolvedOverlayRef: RefObject<HTMLDivElement | null>;
+  interactionLayerRef?: RefObject<HTMLDivElement | null>;
+  pointerPanEnabled: boolean;
+  scrollPanEnabled: boolean;
+  saveStatus?: AnnotationSaveStatus;
+  saveError?: string;
+  elasticScrollEnabled: boolean;
+  hideZoomControls: boolean;
+  hideStateIndicator: boolean;
+  containerRef: RefObject<HTMLDivElement | null>;
+  imageRef: RefObject<HTMLImageElement | null>;
+  isDragging: boolean;
+  setIsDragging: Dispatch<SetStateAction<boolean>>;
+  dragStart: { x: number; y: number };
+  setDragStart: Dispatch<SetStateAction<{ x: number; y: number }>>;
+  imageLoaded: boolean;
+  setImageLoaded: Dispatch<SetStateAction<boolean>>;
+  imageError: boolean;
+  setImageError: Dispatch<SetStateAction<boolean>>;
+  imageDimensions: { width: number; height: number };
+  setImageDimensions: Dispatch<SetStateAction<{ width: number; height: number }>>;
+  displayUrl: string;
+  containerSize: { width: number; height: number };
+  visualPanX: MotionValue<number>;
+  visualPanY: MotionValue<number>;
+  rawPanRef: MutableRefObject<{ x: number; y: number }>;
 }
 
 // Minimum zoom levels
@@ -124,6 +167,76 @@ export function CenteredCanvasView({
     );
   }
 
+  const resolvedDisplayUrl = displayUrl ?? attachment.url;
+
+  return (
+    <CenteredCanvasViewInner
+      attachment={attachment}
+      canvasState={canvasState}
+      onCanvasStateChange={onCanvasStateChange}
+      overlayContent={overlayContent}
+      resolvedOverlayRef={resolvedOverlayRef}
+      interactionLayerRef={interactionLayerRef}
+      pointerPanEnabled={pointerPanEnabled}
+      scrollPanEnabled={scrollPanEnabled}
+      saveStatus={saveStatus}
+      saveError={saveError}
+      elasticScrollEnabled={elasticScrollEnabled}
+      hideZoomControls={hideZoomControls}
+      hideStateIndicator={hideStateIndicator}
+      containerRef={containerRef}
+      imageRef={imageRef}
+      isDragging={isDragging}
+      setIsDragging={setIsDragging}
+      dragStart={dragStart}
+      setDragStart={setDragStart}
+      imageLoaded={imageLoaded}
+      setImageLoaded={setImageLoaded}
+      imageError={imageError}
+      setImageError={setImageError}
+      imageDimensions={imageDimensions}
+      setImageDimensions={setImageDimensions}
+      displayUrl={resolvedDisplayUrl}
+      containerSize={containerSize}
+      visualPanX={visualPanX}
+      visualPanY={visualPanY}
+      rawPanRef={rawPanRef}
+    />
+  );
+}
+
+function CenteredCanvasViewInner({
+  attachment,
+  canvasState,
+  onCanvasStateChange,
+  overlayContent,
+  resolvedOverlayRef,
+  interactionLayerRef,
+  pointerPanEnabled,
+  scrollPanEnabled,
+  saveStatus,
+  saveError,
+  elasticScrollEnabled,
+  hideZoomControls,
+  hideStateIndicator,
+  containerRef,
+  imageRef,
+  isDragging,
+  setIsDragging,
+  dragStart,
+  setDragStart,
+  imageLoaded,
+  setImageLoaded,
+  imageError,
+  setImageError,
+  imageDimensions,
+  setImageDimensions,
+  displayUrl,
+  containerSize,
+  visualPanX,
+  visualPanY,
+  rawPanRef,
+}: CenteredCanvasViewInnerProps) {
   // Video playback - delegate to VideoPlayer (no pan/zoom for video)
   const isVideo = attachment.fileType.startsWith('video/');
 
@@ -141,7 +254,7 @@ export function CenteredCanvasView({
       height: imageDimensions.height * scale,
       scale,
     };
-  }, [imageDimensions, canvasState.zoom, imageLoaded]);
+  }, [containerRef, imageDimensions, canvasState.zoom, imageLoaded]);
 
   const displaySize = calculateDisplaySize();
 
@@ -171,9 +284,7 @@ export function CenteredCanvasView({
 
     // Smart fit: clamp to readable range
     return Math.max(MIN_FIT_ZOOM, Math.min(MAX_FIT_ZOOM, naturalFit));
-  }, [imageDimensions, imageLoaded, containerSize]);
-
-  const fitZoom = calculateFitZoom();
+  }, [containerRef, imageDimensions, imageLoaded, containerSize]);
 
   // Compute button disabled states
   const isActualSize = canvasState.fitMode === 'actual' && Math.abs(canvasState.zoom - 1) < 0.001;
@@ -195,7 +306,7 @@ export function CenteredCanvasView({
       visualPanY.set(canvasState.panY);
       rawPanRef.current = { x: canvasState.panX, y: canvasState.panY };
     }
-  }, [canvasState.panX, canvasState.panY, isDragging, visualPanX, visualPanY]);
+  }, [canvasState.panX, canvasState.panY, isDragging, visualPanX, visualPanY, rawPanRef]);
 
   // Handle image load
   const handleImageLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
@@ -304,7 +415,7 @@ export function CenteredCanvasView({
         onCanvasStateChange({ panX: newPanX, panY: newPanY, fitMode: 'free' });
       }
     },
-    [canvasState, scrollPanEnabled, elasticScrollEnabled, onCanvasStateChange, getClampedPosition]
+    [containerRef, canvasState, scrollPanEnabled, elasticScrollEnabled, onCanvasStateChange, getClampedPosition]
   );
 
   // Mouse drag pan
@@ -321,7 +432,7 @@ export function CenteredCanvasView({
       });
       event.preventDefault();
     },
-    [pointerPanEnabled, canvasState.panX, canvasState.panY]
+    [pointerPanEnabled, canvasState.panX, canvasState.panY, setIsDragging, rawPanRef, setDragStart]
   );
 
   const handleMouseMove = useCallback(
@@ -346,7 +457,7 @@ export function CenteredCanvasView({
         onCanvasStateChange({ panX: rawX, panY: rawY, fitMode: 'free' });
       }
     },
-    [isDragging, dragStart, elasticScrollEnabled, applyRubberBand, visualPanX, visualPanY, onCanvasStateChange]
+    [isDragging, dragStart, elasticScrollEnabled, applyRubberBand, visualPanX, visualPanY, onCanvasStateChange, rawPanRef]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -375,7 +486,7 @@ export function CenteredCanvasView({
       // Within bounds - just update state
       onCanvasStateChange({ panX: rawPanRef.current.x, panY: rawPanRef.current.y, fitMode: 'free' });
     }
-  }, [isDragging, elasticScrollEnabled, isOverscrolled, getClampedPosition, visualPanX, visualPanY, onCanvasStateChange]);
+  }, [isDragging, elasticScrollEnabled, isOverscrolled, getClampedPosition, visualPanX, visualPanY, onCanvasStateChange, setIsDragging, rawPanRef]);
 
   // Touch events for mobile (Pinch + Pan)
   const handleTouchStart = useCallback(
@@ -417,7 +528,7 @@ export function CenteredCanvasView({
         setIsDragging(false);
       }
     },
-    [pointerPanEnabled, canvasState.panX, canvasState.panY, canvasState.zoom]
+    [pointerPanEnabled, canvasState.panX, canvasState.panY, canvasState.zoom, setIsDragging, rawPanRef, setDragStart]
   );
 
   const handleTouchMove = useCallback(
@@ -497,7 +608,7 @@ export function CenteredCanvasView({
         }
       }
     },
-    [isDragging, dragStart, elasticScrollEnabled, applyRubberBand, visualPanX, visualPanY, onCanvasStateChange]
+    [containerRef, isDragging, dragStart, elasticScrollEnabled, applyRubberBand, visualPanX, visualPanY, onCanvasStateChange, rawPanRef]
   );
 
   const handleTouchEnd = useCallback(() => {
@@ -528,7 +639,7 @@ export function CenteredCanvasView({
     } else {
       onCanvasStateChange({ panX: rawPanRef.current.x, panY: rawPanRef.current.y, fitMode: 'free' });
     }
-  }, [isDragging, elasticScrollEnabled, isOverscrolled, getClampedPosition, visualPanX, visualPanY, onCanvasStateChange]);
+  }, [isDragging, elasticScrollEnabled, isOverscrolled, getClampedPosition, visualPanX, visualPanY, onCanvasStateChange, setIsDragging, rawPanRef]);
 
   // Set up event listeners
   useEffect(() => {
@@ -551,7 +662,7 @@ export function CenteredCanvasView({
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [handleWheel, isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+  }, [containerRef, handleWheel, isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
   // Reset pan when fit mode changes
   useEffect(() => {
@@ -607,7 +718,7 @@ export function CenteredCanvasView({
             <p><strong>URL:</strong> {displayUrl}</p>
             <p className="mt-1"><strong>Possible causes:</strong></p>
             <ul className="list-disc list-inside mt-1 space-y-1">
-              <li>File doesn't exist on disk</li>
+              <li>File doesn&apos;t exist on disk</li>
               <li>Incorrect file path</li>
               <li>Permission issues</li>
               <li>Network error</li>
@@ -643,9 +754,9 @@ export function CenteredCanvasView({
         <div
           ref={(el) => {
             // Merge refs
-            (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+            (containerRef as MutableRefObject<HTMLDivElement | null>).current = el;
             if (interactionLayerRef) {
-              (interactionLayerRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+              (interactionLayerRef as MutableRefObject<HTMLDivElement | null>).current = el;
             }
           }}
           className={cn(

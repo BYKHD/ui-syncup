@@ -39,6 +39,8 @@ interface IssueAttachmentsViewProps {
   projectId?: string;
   /** Team ID for permission checking */
   teamId?: string;
+  /** When true, force annotation UI read-only (archived projects). */
+  isArchived?: boolean;
   /** Selected Attachment ID (controlled) */
   selectedAttachmentId?: string;
   /** Callback for selecting attachment (controlled) */
@@ -63,6 +65,7 @@ export default function IssueAttachmentsView({
   onRetry,
   projectId,
   teamId,
+  isArchived,
   selectedAttachmentId: controlledSelectedId,
   onSelectAttachment: controlledSetSelectedId,
   permissions,
@@ -92,9 +95,17 @@ export default function IssueAttachmentsView({
 
   const isControlled = controlledSelectedId !== undefined;
   const selectedAttachmentId = isControlled ? controlledSelectedId : internalSelectedId;
-  const setSelectedAttachmentId = isControlled 
-    ? (id: string) => controlledSetSelectedId?.(id) 
-    : setInternalSelectedId;
+  const setSelectedAttachmentId = useCallback(
+    (id: string) => {
+      if (isControlled) {
+        controlledSetSelectedId?.(id);
+        return;
+      }
+
+      setInternalSelectedId(id);
+    },
+    [isControlled, controlledSetSelectedId],
+  );
 
   const [viewMode, setViewMode] = useState<AttachmentViewMode>('annotate');
   const [canvasState, setCanvasState] = useState<CanvasViewState>({
@@ -121,7 +132,7 @@ export default function IssueAttachmentsView({
       setSelectedAttachmentId(fallbackId);
       setCanvasState({ zoom: 1, panX: 0, panY: 0, fitMode: 'fit' });
     }
-  }, [imageAttachments, selectedAttachmentId, asIsAttachment]);
+  }, [imageAttachments, selectedAttachmentId, asIsAttachment, setSelectedAttachmentId]);
 
   const selectedAttachment = useMemo(
     () => imageAttachments.find((att) => att.id === selectedAttachmentId) || imageAttachments[0],
@@ -239,7 +250,7 @@ export default function IssueAttachmentsView({
           <div className="space-y-2">
             <h3 className="text-sm font-medium">No attachments</h3>
             <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-              This issue doesn't have any attachments yet. Add screenshots or files to provide more context.
+              This issue doesn&apos;t have any attachments yet. Add screenshots or files to provide more context.
             </p>
           </div>
           <div className="flex gap-2 justify-center">
@@ -356,6 +367,7 @@ export default function IssueAttachmentsView({
                 attachment={selectedAttachment}
                 projectId={projectId}
                 teamId={teamId}
+                isArchived={isArchived}
                 canvasState={canvasState}
                 onCanvasStateChange={handleCanvasStateChange}
                 interactive={true}
@@ -525,4 +537,3 @@ function CompareCanvasView({
     </div>
   );
 }
-

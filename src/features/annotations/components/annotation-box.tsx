@@ -83,7 +83,7 @@ export function AnnotationBox({
   isSaving = false,
   isPopoverOpen = false,
   onSelect,
-  onMove,
+  onMove: _onMove,
   onMoveComplete,
   onDragStart,
   onDragEnd,
@@ -131,13 +131,11 @@ export function AnnotationBox({
     if (!dragStateRef.current) {
       // When props update (save completed), sync effective base to new props
       effectiveBaseRef.current = {
-        start: { ...annotation.start },
-        end: { ...annotation.end },
+        start: { x: annotation.start.x, y: annotation.start.y },
+        end: { x: annotation.end.x, y: annotation.end.y },
       };
       // Clear any lingering delta since props now reflect the committed position
-      if (visualDelta !== null) {
-        setVisualDelta(null);
-      }
+      setVisualDelta((currentDelta) => (currentDelta === null ? currentDelta : null));
     }
   }, [annotation.start.x, annotation.start.y, annotation.end.x, annotation.end.y]);
 
@@ -259,7 +257,7 @@ export function AnnotationBox({
 
       // Call long-press handler on mobile
       if (isMobile && longPressHandlers.onPointerDown) {
-        longPressHandlers.onPointerDown(event as any);
+        longPressHandlers.onPointerDown(event);
       }
 
       // Only enable dragging/resizing in interactive (edit) mode
@@ -313,7 +311,7 @@ export function AnnotationBox({
     (event: PointerEvent<HTMLDivElement>) => {
       // Call long-press handler on mobile
       if (isMobile && longPressHandlers.onPointerMove) {
-        longPressHandlers.onPointerMove(event as any);
+        longPressHandlers.onPointerMove(event);
       }
 
       if (!interactive || !activeHandle) return;
@@ -355,7 +353,7 @@ export function AnnotationBox({
     (event: PointerEvent<HTMLDivElement>) => {
       // Call long-press handler on mobile
       if (isMobile && longPressHandlers.onPointerUp) {
-        longPressHandlers.onPointerUp(event as any);
+        longPressHandlers.onPointerUp(event);
       }
 
       const dragState = dragStateRef.current;

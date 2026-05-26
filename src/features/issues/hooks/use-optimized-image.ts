@@ -97,7 +97,7 @@ export function generateSrcSet(
 export function useOptimizedImage({
   src,
   width,
-  height,
+  height: _height,
   lazy = true,
   priority = false,
   fallbackSrc,
@@ -173,6 +173,8 @@ export function useOptimizedImage({
   useEffect(() => {
     if (priority || !lazy) {
       const newSrc = generateOptimizedSrc(src, width, quality);
+      // Intentional: currentSrc also changes through lazy-loading and fallback paths
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentSrc((prev) => (prev !== newSrc ? newSrc : prev));
     }
   }, [priority, lazy, src, width, quality]);

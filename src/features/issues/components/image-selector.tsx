@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Image, Video, File } from "lucide-react";
+import { ChevronDown, Image as ImageIcon, Video, File } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ImageSelector({
@@ -22,7 +22,7 @@ export function ImageSelector({
 
   const getAttachmentIcon = (attachment: IssueAttachment) => {
     if (attachment.fileType.startsWith('image/')) {
-      return <Image className="h-4 w-4" />;
+      return <ImageIcon className="h-4 w-4" aria-hidden="true" />;
     } else if (attachment.fileType.startsWith('video/')) {
       return <Video className="h-4 w-4" />;
     } else {

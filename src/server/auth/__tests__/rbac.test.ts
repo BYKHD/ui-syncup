@@ -14,10 +14,13 @@ import { db } from '@/lib/db';
 import { users } from '@/server/db/schema/users';
 import { teams } from '@/server/db/schema/teams';
 import { teamMembers } from '@/server/db/schema/team-members';
+import { projects } from '@/server/db/schema/projects';
+import { projectMembers } from '@/server/db/schema/project-members';
 import { eq, and } from 'drizzle-orm';
 import {
   assignRole,
   getUserRoles,
+  getUserPermissions,
 } from '@/server/auth/rbac';
 import {
   type Role,
@@ -25,6 +28,7 @@ import {
   TEAM_ROLES,
   TEAM_OPERATIONAL_ROLES,
   PROJECT_ROLES,
+  PERMISSIONS,
 } from '@/config/roles';
 
 /**
@@ -366,5 +370,126 @@ describe('RBAC - Property-Based Tests', () => {
 
     expect(team1Role?.role).toBe(TEAM_ROLES.TEAM_EDITOR);
     expect(team2Role?.role).toBe(TEAM_ROLES.TEAM_MEMBER);
+  });
+});
+
+// ============================================================================
+// getUserPermissions — archive gating
+// ============================================================================
+
+let archiveTestUserIds: string[] = [];
+let archiveTestTeamIds: string[] = [];
+let archiveTestProjectIds: string[] = [];
+
+afterEach(async () => {
+  for (const projectId of archiveTestProjectIds) {
+    try { await db.delete(projects).where(eq(projects.id, projectId)); } catch { /* ignore */ }
+  }
+  for (const teamId of archiveTestTeamIds) {
+    try { await db.delete(teams).where(eq(teams.id, teamId)); } catch { /* ignore */ }
+  }
+  for (const userId of archiveTestUserIds) {
+    try { await db.delete(users).where(eq(users.id, userId)); } catch { /* ignore */ }
+  }
+  archiveTestProjectIds = [];
+  archiveTestTeamIds = [];
+  archiveTestUserIds = [];
+});
+
+async function createArchiveTestUser(): Promise<string> {
+  const [user] = await db
+    .insert(users)
+    .values({ email: `archive-test-${crypto.randomUUID()}@example.com`, emailVerified: true, name: 'Archive Test User' })
+    .returning();
+  archiveTestUserIds.push(user.id);
+  return user.id;
+}
+
+async function createArchiveTestTeam(): Promise<string> {
+  const [team] = await db
+    .insert(teams)
+    .values({ name: 'Archive Test Team', slug: `archive-team-${crypto.randomUUID()}` })
+    .returning();
+  archiveTestTeamIds.push(team.id);
+  return team.id;
+}
+
+async function createProject(teamId: string, status: 'active' | 'archived'): Promise<string> {
+  const key = `AT${crypto.randomUUID().replace(/-/g, '').slice(0, 4).toUpperCase()}`;
+  const [project] = await db
+    .insert(projects)
+    .values({ teamId, name: 'Archive Test Project', key, slug: `archive-proj-${crypto.randomUUID()}`, status })
+    .returning();
+  archiveTestProjectIds.push(project.id);
+  return project.id;
+}
+
+async function addProjectMember(userId: string, projectId: string, role: string): Promise<void> {
+  await db.insert(projectMembers).values({ projectId, userId, role });
+}
+
+describe('getUserPermissions — archive gating', () => {
+  test('returns write permissions for PROJECT_OWNER on an active project', async () => {
+    const userId = await createArchiveTestUser();
+    const teamId = await createArchiveTestTeam();
+    const projectId = await createProject(teamId, 'active');
+    await addProjectMember(userId, projectId, 'owner');
+
+    const perms = await getUserPermissions(userId, projectId, 'project');
+
+    expect(perms).toContain(PERMISSIONS.ISSUE_UPDATE);
+    expect(perms).toContain(PERMISSIONS.ISSUE_DELETE);
+    expect(perms).toContain(PERMISSIONS.ISSUE_COMMENT);
+    expect(perms).toContain(PERMISSIONS.ISSUE_ASSIGN);
+    expect(perms).toContain(PERMISSIONS.ISSUE_CREATE);
+    expect(perms).toContain(PERMISSIONS.ANNOTATION_CREATE);
+  });
+
+  test('strips all archive-blocked permissions for PROJECT_OWNER on an archived project', async () => {
+    const userId = await createArchiveTestUser();
+    const teamId = await createArchiveTestTeam();
+    const projectId = await createProject(teamId, 'archived');
+    await addProjectMember(userId, projectId, 'owner');
+
+    const perms = await getUserPermissions(userId, projectId, 'project');
+
+    // Read-only permissions survive
+    expect(perms).toContain(PERMISSIONS.ISSUE_VIEW);
+    expect(perms).toContain(PERMISSIONS.PROJECT_VIEW);
+
+    // All write permissions are stripped
+    expect(perms).not.toContain(PERMISSIONS.ISSUE_CREATE);
+    expect(perms).not.toContain(PERMISSIONS.ISSUE_UPDATE);
+    expect(perms).not.toContain(PERMISSIONS.ISSUE_DELETE);
+    expect(perms).not.toContain(PERMISSIONS.ISSUE_ASSIGN);
+    expect(perms).not.toContain(PERMISSIONS.ISSUE_COMMENT);
+    expect(perms).not.toContain(PERMISSIONS.ANNOTATION_CREATE);
+    expect(perms).not.toContain(PERMISSIONS.ANNOTATION_UPDATE);
+    expect(perms).not.toContain(PERMISSIONS.ANNOTATION_DELETE);
+    expect(perms).not.toContain(PERMISSIONS.ANNOTATION_COMMENT);
+  });
+
+  test('PROJECT_VIEWER on archived project retains view permissions', async () => {
+    const userId = await createArchiveTestUser();
+    const teamId = await createArchiveTestTeam();
+    const projectId = await createProject(teamId, 'archived');
+    await addProjectMember(userId, projectId, 'viewer');
+
+    const perms = await getUserPermissions(userId, projectId, 'project');
+
+    expect(perms).toContain(PERMISSIONS.ISSUE_VIEW);
+    expect(perms).toContain(PERMISSIONS.PROJECT_VIEW);
+    expect(perms).not.toContain(PERMISSIONS.ISSUE_UPDATE);
+  });
+
+  test('returns empty array for a non-member', async () => {
+    const userId = await createArchiveTestUser();
+    const teamId = await createArchiveTestTeam();
+    const projectId = await createProject(teamId, 'active');
+    // No project_members row inserted
+
+    const perms = await getUserPermissions(userId, projectId, 'project');
+
+    expect(perms).toEqual([]);
   });
 });

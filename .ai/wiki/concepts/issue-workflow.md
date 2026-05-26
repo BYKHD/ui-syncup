@@ -2,7 +2,7 @@
 title: Concept — Issue Workflow
 type: concept
 tags: [workflow, issues, states]
-last_updated: 2026-05-01
+last_updated: 2026-05-27
 sources: [sources/steering-product]
 ---
 
@@ -19,6 +19,8 @@ Open → In Progress → In Review → Resolved → Archived
 ## Who can transition
 
 Status updates require `issue:update`, granted to TEAM_OWNER, TEAM_ADMIN, TEAM_EDITOR, PROJECT_OWNER, PROJECT_EDITOR, PROJECT_DEVELOPER. Note: `PROJECT_DEVELOPER` *can* update status — this is the typical developer workflow [[sources/feature-arch-rbac]].
+
+When the parent project is archived, **all** issue writes (status transitions included) are denied at the permission layer — the project must be unarchived first. See the archive write-freeze section in [[features/projects]].
 
 ## Code surface
 
