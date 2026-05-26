@@ -84,7 +84,7 @@ export default function ProjectDetailScreen({
     }
   }, [project, addRecentProject, pathname]);
 
-  const canManageMembers = userRole === "owner" || userRole === "editor";
+  const _canManageMembers = userRole === "owner" || userRole === "editor";
   const { mutateAsync: createIssueMutation } = useCreateIssue();
   const { mutateAsync: updateProjectMutation } = useUpdateProject();
   // Issue dialog state

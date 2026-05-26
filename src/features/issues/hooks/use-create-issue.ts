@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { createIssue, type CreateIssueParams } from '../api/create-issue';
+import { createIssue } from '../api/create-issue';
 import type { IssueDetailData } from '../types';
 
 export interface UseCreateIssueOptions {

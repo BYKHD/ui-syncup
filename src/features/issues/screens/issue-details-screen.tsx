@@ -99,7 +99,7 @@ export default function IssueDetailsScreen({
 
   // Default permissions - in production, derive from user role and project membership
   // TODO: Wire useIssuePermissions hook when RBAC integration is complete
-  const resolvedPermissions: IssuePermissions = permissions ?? {
+  const basePermissions: IssuePermissions = permissions ?? {
     canEdit: true,
     canDelete: true,
     canComment: true,
@@ -107,25 +107,47 @@ export default function IssueDetailsScreen({
     canChangeStatus: true,
   };
 
+  // Archived projects are a frozen historical record (see features/projects
+  // wiki page). Force read-only UI regardless of role; the server-side
+  // permission gate (rbac.ts ARCHIVE_BLOCKED_PERMISSIONS) is the safety net.
+  const isArchived = issue?.projectStatus === 'archived';
+  const resolvedPermissions: IssuePermissions = isArchived
+    ? {
+        canEdit: false,
+        canDelete: false,
+        canComment: false,
+        canAssign: false,
+        canChangeStatus: false,
+      }
+    : basePermissions;
+
   // Handlers
   const handleUpdate: IssueUpdateHandler = useCallback(
     async (field, value) => {
+      if (isArchived) {
+        toast.info('This project is archived. Unarchive to edit.');
+        return;
+      }
       if (!resolvedPermissions.canEdit) {
         toast.info('View-only link. Editing is disabled.');
         return;
       }
       await updateIssue({ issueId, field, value, actorId: userId });
     },
-    [issueId, userId, updateIssue, resolvedPermissions.canEdit]
+    [issueId, userId, updateIssue, resolvedPermissions.canEdit, isArchived]
   );
 
   const handleDelete = useCallback(async () => {
+    if (isArchived) {
+      toast.info('This project is archived. Unarchive to delete issues.');
+      return;
+    }
     if (!resolvedPermissions.canDelete) {
       toast.info('View-only link. Delete is disabled.');
       return;
     }
     await deleteIssue({ issueId, actorId: userId });
-  }, [deleteIssue, issueId, resolvedPermissions.canDelete, userId]);
+  }, [deleteIssue, issueId, resolvedPermissions.canDelete, userId, isArchived]);
 
   const handleLoadMoreActivities = useCallback(() => {
     // In real implementation, this would trigger pagination

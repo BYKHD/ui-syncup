@@ -51,7 +51,7 @@ export function CompleteAnnotationExample({
     handleAnnotationMove,
     handleBoxAnnotationMove,
     handleAnnotationCreate,
-    handleAnnotationDelete,
+    handleAnnotationDelete: _handleAnnotationDelete,
     applyUndo,
     applyRedo,
   } = useAnnotationsWithHistory({
@@ -76,7 +76,7 @@ export function CompleteAnnotationExample({
     toggleEditMode,
     undo,
     redo,
-    pushHistory,
+    pushHistory: _pushHistory,
     handToolActive,
   } = useAnnotationTools({
     initialTool: 'box',

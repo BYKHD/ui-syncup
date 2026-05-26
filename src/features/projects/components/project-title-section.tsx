@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { RiLockLine, RiGlobalLine, RiVipCrownLine } from '@remixicon/react';
+import { RiLockLine, RiGlobalLine } from '@remixicon/react';
 
 interface ProjectTitleSectionProps {
   name: string;
@@ -7,23 +7,6 @@ interface ProjectTitleSectionProps {
   visibility: 'private' | 'public';
   userRole?: 'owner' | 'editor' | 'member' | 'viewer' | null;
 }
-
-const getRoleBadgeVariant = (role: string) => {
-  switch (role) {
-    case 'owner':
-      return 'default';
-    case 'editor':
-      return 'secondary';
-    case 'member':
-    case 'viewer':
-    default:
-      return 'outline';
-  }
-};
-
-const getRoleDisplayName = (role: string) => {
-  return role.charAt(0).toUpperCase() + role.slice(1);
-};
 
 /**
  * ProjectTitleSection

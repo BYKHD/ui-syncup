@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Trash2, Download } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useDeleteTeam } from "@/features/teams/hooks/use-delete-team";
 import { useTeams } from "@/features/teams/hooks/use-teams";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,7 +60,7 @@ export function TeamDangerZone({
         throw new Error(error.error?.message || "Failed to export team data");
       }
 
-      const data = await response.json();
+      const _data = await response.json();
       toast.success(
         "Export queued successfully. You will receive an email with the download link.",
         { duration: 5000 }

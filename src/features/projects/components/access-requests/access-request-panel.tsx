@@ -10,9 +10,7 @@ import {
   RiSendPlane2Line,
   RiShieldCheckLine,
   RiShieldCrossLine,
-  RiTeamLine,
   RiTimeLine,
-  RiUserFollowLine,
 } from "@remixicon/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +28,6 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
-import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import type { AccessRequest } from "@/features/projects/api";

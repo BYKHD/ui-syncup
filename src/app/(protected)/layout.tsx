@@ -12,7 +12,7 @@ export default async function ProtectedLayout({
   
   try {
     session = await getSession();
-  } catch (error) {
+  } catch {
     // Treat any session validation error as no session
     // This prevents information leakage and ensures security
     session = null;

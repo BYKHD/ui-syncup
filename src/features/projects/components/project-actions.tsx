@@ -94,7 +94,7 @@ export function ProjectActions({
   isArchived = false,
   canJoinProject = false,
   canViewMembers,
-  canManageMembers,
+  canManageMembers: _canManageMembers,
   canEditSettings,
   canLeaveProject,
   canDeleteProject,

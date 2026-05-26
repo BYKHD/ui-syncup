@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     });
 
     return withCors(response, origin);
-  } catch (error) {
+  } catch {
     const response = NextResponse.json(
       { error: 'Invalid JSON' },
       { status: 400 }

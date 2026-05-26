@@ -108,7 +108,7 @@ export function useOnboarding(
 
             // Requirement 17.4: Redirect to projects page with new team context
             router.push("/projects");
-          } catch (err) {
+          } catch {
             setError("Team created but failed to switch context. Please refresh the page.");
           }
         },

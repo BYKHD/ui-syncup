@@ -4,12 +4,7 @@ import { useState, useCallback, useEffect, type PointerEvent, type RefObject } f
 import type { AnnotationToolId, AnnotationPosition, AnnotationDraft } from '../types';
 import { AnnotationCommentInput } from './annotation-comment-input';
 import { cn } from '@/lib/utils';
-import {
-  calculateCommentInputPosition,
-  COMMENT_INPUT_WIDTH,
-  COMMENT_INPUT_HEIGHT,
-  PADDING,
-} from '../utils/position-comment-input';
+import { calculateCommentInputPosition } from '../utils/position-comment-input';
 
 export interface AnnotationCanvasProps {
   overlayRef: RefObject<HTMLDivElement | null>;

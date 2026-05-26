@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MoreHorizontal, Mail, RefreshCw, X, Plus, Copy } from "lucide-react";
+import { MoreHorizontal, Mail, RefreshCw, X, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";

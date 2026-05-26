@@ -110,7 +110,7 @@ async function permissionDeniedResponse({
   );
 }
 
-async function projectNotFoundResponse(userId: string, projectId: string) {
+async function projectNotFoundResponse(userId: string, _projectId: string) {
   if (await userHasKnownWorkspaceRelationship(userId)) {
     return NextResponse.json(
       {

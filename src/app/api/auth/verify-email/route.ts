@@ -14,7 +14,6 @@ import { db } from '@/lib/db';
 import { users } from '@/server/db/schema';
 import { verifyToken, markTokenAsUsed } from '@/server/auth/tokens';
 import { logAuthEvent } from '@/lib/logger';
-import { env } from '@/lib/env';
 import { eq } from 'drizzle-orm';
 
 /**

@@ -24,6 +24,12 @@ export interface UseAnnotationPermissionsOptions {
   projectId?: string;
   /** Team ID for checking team-level roles */
   teamId?: string;
+  /**
+   * When true, force READ_ONLY_PERMISSIONS regardless of role. Used to
+   * render archived projects as frozen (see features/projects wiki).
+   * Mirrors the server-side gate in `getAnnotationPermissions`.
+   */
+  isArchived?: boolean;
 }
 
 export interface UseAnnotationPermissionsResult {

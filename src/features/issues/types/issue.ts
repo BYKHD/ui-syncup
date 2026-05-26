@@ -201,6 +201,13 @@ export interface IssueDetailData {
   teamId: string
   projectKey?: string
   projectName?: string
+  /**
+   * Status of the parent project. When 'archived', UI surfaces should
+   * render the issue read-only (no edit affordances, no comment input).
+   * Optional for back-compat with surfaces that don't carry it (e.g.
+   * the share/view-only screen which sets its own permissions).
+   */
+  projectStatus?: 'active' | 'archived'
   assignee?: IssueUser | null
   reporter: IssueUser
   attachments?: IssueAttachment[]

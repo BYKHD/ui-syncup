@@ -44,7 +44,7 @@ import { logger } from '@/lib/logger';
  * - 401: Unauthorized (no valid session)
  * - 500: Internal server error
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const requestId = crypto.randomUUID();
   
   try {

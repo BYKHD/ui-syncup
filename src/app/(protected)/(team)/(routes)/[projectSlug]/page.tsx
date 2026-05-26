@@ -1,6 +1,5 @@
 import { AppHeaderConfigurator, type BreadcrumbItem } from "@/components/layout/headers";
 import { ProjectDetailScreenWrapper } from "@/features/projects/screens/project-detail-screen-wrapper";
-import { getProject } from "@/features/projects/api";
 import { getProjectIssuesServer } from "@/features/issues/api/get-project-issues-server";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";

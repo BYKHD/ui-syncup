@@ -53,7 +53,7 @@ export function useAnnotationsWithHistory(options: UseAnnotationsWithHistoryOpti
    * Apply undo operation from history entry
    */
   const applyUndo = useCallback((entry: AnnotationHistoryEntry) => {
-    const { action, annotationId, previousSnapshot, snapshot } = entry;
+    const { action, annotationId, previousSnapshot, snapshot: _snapshot } = entry;
 
     // Prevent double-processing
     if (entry.id === lastProcessedHistoryId) return;
