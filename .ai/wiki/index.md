@@ -48,7 +48,7 @@ One page per feature module in `src/features/<name>/`.
 - [[features/teams]] — team CRUD, switching, team invitations
 - [[features/user-settings]] — per-user preferences
 
-## Concepts (18)
+## Concepts (19)
 
 Cross-cutting topics referenced by multiple features.
 
@@ -70,6 +70,7 @@ Cross-cutting topics referenced by multiple features.
 - [[concepts/tech-stack]] — runtimes, libraries, conventions
 - [[concepts/testing]] — Vitest + PGlite + Playwright
 - [[concepts/css-will-change]] — when/how to use `will-change` for animation performance; dynamic add/remove pattern
+- [[concepts/annotations-canvas-performance]] — drag/draw/zoom 60fps patterns for the annotation canvas; framer-motion transform-ownership gotcha
 
 ## Entities (5)
 
@@ -87,7 +88,7 @@ Domain nouns referenced across many pages.
 |---|---|
 | Sources | 13 |
 | Features | 15 |
-| Concepts | 18 |
+| Concepts | 19 |
 | Entities | 5 |
 | Meta (WIKI, index, log, overview) | 4 |
-| **Total** | **55** |
+| **Total** | **56** |

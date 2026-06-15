@@ -314,7 +314,23 @@ export function AnnotatedAttachmentView({
   const handleAnnotationMove = localMode ? localHandleAnnotationMove : apiHandleAnnotationMove;
   const handleBoxAnnotationMove = localMode ? localHandleBoxAnnotationMove : apiHandleBoxAnnotationMove;
   const deleteAnnotation = localMode ? localDeleteAnnotation : apiDeleteAnnotation;
-  const setDragging = localMode ? () => {} : apiSetDragging;
+
+  // Stable setDragging ref pattern: the identity of the chosen setDragging function may
+  // change between renders (localMode toggle, or apiSetDragging identity). Storing it in a
+  // ref and calling through stable callbacks lets React.memo on AnnotationPin/AnnotationBox
+  // hold — the memo never sees a new function reference for onDragStart/onDragEnd.
+  const setDraggingImpl = localMode ? undefined : apiSetDragging;
+  const setDraggingRef = useRef(setDraggingImpl);
+  // eslint-disable-next-line react-hooks/refs
+  setDraggingRef.current = setDraggingImpl;
+
+  const handleDragStart = useCallback((annotationId: string) => {
+    setDraggingRef.current?.(annotationId, true);
+  }, []);
+
+  const handleDragEnd = useCallback((annotationId: string) => {
+    setDraggingRef.current?.(annotationId, false);
+  }, []);
 
   // Choose annotation source
   const annotationsToUse = localMode ? localAnnotations : (propAnnotations || apiAnnotations);
@@ -333,11 +349,20 @@ export function AnnotatedAttachmentView({
 
   const { editState, openEdit, closeEdit, submitEdit } = useAnnotationEditState();
 
+  // Refs for values read by stable callbacks below. Written on every render so the
+  // callback always sees the latest value without being in the dep array.
+  const currentAnnotationsRef = useRef(currentAnnotations);
+  // eslint-disable-next-line react-hooks/refs
+  currentAnnotationsRef.current = currentAnnotations;
+
+  // openEdit identity is stable (from useAnnotationEditState), no ref needed.
+
   const handleAnnotationEdit = useCallback(
     (annotationId: string) => {
-      openEdit(annotationId, currentAnnotations, annotationOverlayRef);
+      openEdit(annotationId, currentAnnotationsRef.current, annotationOverlayRef);
     },
-    [openEdit, currentAnnotations]
+    // openEdit is stable; annotationOverlayRef is a ref object (stable identity).
+    [openEdit]
   );
 
   const handleEditSubmit = useCallback(
@@ -347,7 +372,7 @@ export function AnnotatedAttachmentView({
       // For now, close the edit dialog (the real update is handled by submitEdit)
       submitEdit(newDescription, async (annotationId, updates) => {
         // Find annotation and update via integration hook
-        const annotation = currentAnnotations.find((a) => a.id === annotationId);
+        const annotation = currentAnnotationsRef.current.find((a) => a.id === annotationId);
         if (annotation?.shape) {
           // Re-create annotation with updated description using the update mutation
           // Note: useAnnotationIntegration doesn't expose updateAnnotation directly,
@@ -356,14 +381,18 @@ export function AnnotatedAttachmentView({
         }
       });
     },
-    [editState.editingAnnotation, submitEdit, currentAnnotations]
+    [editState.editingAnnotation, submitEdit]
   );
 
   // ============================================================================
   // DRAFT CREATION
   // ============================================================================
 
-  const { createDraft, updateDraft, commitDraft, cancelDraft } = useAnnotationDrafts({
+  // NOTE: `updateDraft` is intentionally not consumed. The live drawing preview
+  // is rendered locally inside AnnotationCanvas (renderDraftPreview); wiring an
+  // onDraftUpdate handler here only triggered a full-view re-render per pointermove
+  // with zero visible effect. See perf fix: annotation draw re-render storm.
+  const { createDraft, commitDraft, cancelDraft } = useAnnotationDrafts({
     onCommit: async (draft, message) => {
       // Generate label based on current count
       const nextLabel = String(currentAnnotations.length + 1);
@@ -378,26 +407,46 @@ export function AnnotatedAttachmentView({
   // ANNOTATION DELETE HANDLER
   // ============================================================================
 
+  // Refs for all values read by handleAnnotationDelete so the callback has a stable
+  // identity (empty deps). Written on every render to stay fresh (no stale closures).
+  const permissionsRef = useRef(permissions);
+  // eslint-disable-next-line react-hooks/refs
+  permissionsRef.current = permissions;
+  const userIdRef = useRef(userId);
+  // eslint-disable-next-line react-hooks/refs
+  userIdRef.current = userId;
+  const activeAnnotationIdRef = useRef(activeAnnotationId);
+  // eslint-disable-next-line react-hooks/refs
+  activeAnnotationIdRef.current = activeAnnotationId;
+  const handleAnnotationSelectRef = useRef(handleAnnotationSelect);
+  // eslint-disable-next-line react-hooks/refs
+  handleAnnotationSelectRef.current = handleAnnotationSelect;
+  const deleteAnnotationRef = useRef(deleteAnnotation);
+  // eslint-disable-next-line react-hooks/refs
+  deleteAnnotationRef.current = deleteAnnotation;
+
   const handleAnnotationDelete = useCallback(
     async (annotationId: string) => {
-      // Check permissions
-      const annotation = currentAnnotations.find((a) => a.id === annotationId);
+      // Read fresh values from refs to avoid stale closures
+      const annotation = currentAnnotationsRef.current.find((a) => a.id === annotationId);
       if (!annotation) return;
 
-      const isOwner = annotation.author?.id === userId;
-      if (!permissions.canDeleteAll && !(permissions.canDelete && isOwner)) {
+      const isOwner = annotation.author?.id === userIdRef.current;
+      const perms = permissionsRef.current;
+      if (!perms.canDeleteAll && !(perms.canDelete && isOwner)) {
         console.warn('No permission to delete annotation');
         return;
       }
 
-      await deleteAnnotation(annotationId);
+      await deleteAnnotationRef.current(annotationId);
 
       // Clear active if deleted
-      if (activeAnnotationId === annotationId) {
-        handleAnnotationSelect(null);
+      if (activeAnnotationIdRef.current === annotationId) {
+        handleAnnotationSelectRef.current(null);
       }
     },
-    [currentAnnotations, userId, permissions, deleteAnnotation, activeAnnotationId, handleAnnotationSelect]
+    // Empty dep array — all live values are read through refs that are synced every render.
+    []
   );
 
   // ============================================================================
@@ -501,8 +550,8 @@ export function AnnotatedAttachmentView({
             onSelect={handleAnnotationSelect}
             onMoveComplete={handleAnnotationMove}
             onBoxMoveComplete={handleBoxAnnotationMove}
-            onDragStart={(annotationId) => setDragging(annotationId, true)}
-            onDragEnd={(annotationId) => setDragging(annotationId, false)}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
             onEdit={handleAnnotationEdit}
             onDelete={handleAnnotationDelete}
             issueId={issueId}
@@ -517,7 +566,6 @@ export function AnnotatedAttachmentView({
             editModeEnabled={editModeEnabled}
             handToolActive={handToolActive}
             onDraftCreate={createDraft}
-            onDraftUpdate={updateDraft}
             onDraftCommit={commitDraft}
             onDraftCancel={cancelDraft}
             requireCommentForPin={true}

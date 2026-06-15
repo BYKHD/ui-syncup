@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import type { RefObject } from 'react';
 
 export type PopoverMode = 'preview' | 'expanded';
 
@@ -14,8 +15,8 @@ interface UseAnnotationPopoverOptions {
   hoverDelay?: number;
   /** Delay in ms before closing preview when mouse leaves (default: 100) */
   closeDelay?: number;
-  /** Whether dragging is currently active (prevents popover from showing) */
-  isDragging?: boolean;
+  /** Ref to live dragging flag — read at handler/timer execution time to avoid stale snapshots */
+  isDraggingRef?: RefObject<boolean>;
 }
 
 /**
@@ -23,7 +24,7 @@ interface UseAnnotationPopoverOptions {
  * Ensures only one popover is open at a time with hover preview → click expand behavior.
  */
 export function useAnnotationPopover(options: UseAnnotationPopoverOptions = {}) {
-  const { hoverDelay = 200, closeDelay = 150, isDragging = false } = options;
+  const { hoverDelay = 200, closeDelay = 150, isDraggingRef } = options;
   
   const [state, setState] = useState<PopoverState | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -50,9 +51,9 @@ export function useAnnotationPopover(options: UseAnnotationPopoverOptions = {}) 
    * Starts hover delay timer to show preview.
    */
   const handleHoverStart = useCallback((annotationId: string) => {
-    // Don't show popover during drag operations
-    if (isDragging) return;
-    
+    // Don't show popover during drag operations — read ref live at call time
+    if (isDraggingRef?.current ?? false) return;
+
     hoveredIdRef.current = annotationId;
     clearHoverTimer();
     clearCloseTimer(); // Cancel any pending close
@@ -63,12 +64,12 @@ export function useAnnotationPopover(options: UseAnnotationPopoverOptions = {}) 
     }
 
     hoverTimerRef.current = setTimeout(() => {
-      // Double-check we're still hovering the same annotation
-      if (hoveredIdRef.current === annotationId && !isDragging) {
+      // Double-check we're still hovering the same annotation and not dragging
+      if (hoveredIdRef.current === annotationId && !(isDraggingRef?.current ?? false)) {
         setState({ annotationId, mode: 'preview' });
       }
     }, hoverDelay);
-  }, [isDragging, hoverDelay, clearHoverTimer, clearCloseTimer, state]);
+  }, [isDraggingRef, hoverDelay, clearHoverTimer, clearCloseTimer, state]);
 
   /**
    * Called when mouse leaves an annotation.
@@ -119,12 +120,12 @@ export function useAnnotationPopover(options: UseAnnotationPopoverOptions = {}) 
    * Expands to full thread view.
    */
   const handleClick = useCallback((annotationId: string) => {
-    // Don't open popover during drag operations
-    if (isDragging) return;
+    // Don't open popover during drag operations — read ref live at call time
+    if (isDraggingRef?.current ?? false) return;
 
     clearHoverTimer();
     clearCloseTimer();
-    
+
     // If clicking the same annotation that's already expanded, close it
     if (state?.annotationId === annotationId && state.mode === 'expanded') {
       setState(null);
@@ -132,7 +133,7 @@ export function useAnnotationPopover(options: UseAnnotationPopoverOptions = {}) 
     }
 
     setState({ annotationId, mode: 'expanded' });
-  }, [isDragging, clearHoverTimer, clearCloseTimer, state]);
+  }, [isDraggingRef, clearHoverTimer, clearCloseTimer, state]);
 
   /**
    * Close the popover.
