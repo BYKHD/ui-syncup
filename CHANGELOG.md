@@ -1,3 +1,10 @@
+## [0.9.3-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.9.3-beta.1...v0.9.3-beta.2) (2026-06-15)
+
+
+### Bug Fixes
+
+* preferences screen, project activity drawer, and landing-view routing ([#152](https://github.com/BYKHD/ui-syncup/issues/152)) ([15b1696](https://github.com/BYKHD/ui-syncup/commit/15b16961e7dd8331095c581614d849707487536e))
+
 ## [0.9.3-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.9.2...v0.9.3-beta.1) (2026-05-26)
 
 
