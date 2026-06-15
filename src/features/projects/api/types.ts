@@ -256,8 +256,18 @@ export const ProjectActivitySchema = z.object({
   }).nullable(),
 })
 
+export const ProjectActivityPaginationSchema = z.object({
+  // Coerce numeric fields — count(*) can arrive as a string from the pg driver.
+  page: z.coerce.number(),
+  limit: z.coerce.number(),
+  total: z.coerce.number(),
+  totalPages: z.coerce.number(),
+  hasMore: z.boolean(),
+})
+
 export const ListProjectActivitiesResponseSchema = z.object({
   activities: z.array(ProjectActivitySchema),
+  pagination: ProjectActivityPaginationSchema.optional(),
 })
 
 // ============================================================================
@@ -294,6 +304,7 @@ export type ResendInvitationResponse = z.infer<typeof ResendInvitationResponseSc
 // Activity type exports
 export type ProjectActivityType = z.infer<typeof ProjectActivityTypeSchema>
 export type ProjectActivity = z.infer<typeof ProjectActivitySchema>
+export type ProjectActivityPagination = z.infer<typeof ProjectActivityPaginationSchema>
 export type ListProjectActivitiesResponse = z.infer<typeof ListProjectActivitiesResponseSchema>
 
 // ============================================================================

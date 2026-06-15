@@ -32,9 +32,11 @@ import {
   RiUserAddLine,
   RiArchiveLine,
   RiInboxUnarchiveLine,
+  RiHistoryLine,
 } from "@remixicon/react";
 import { toast } from "sonner";
 import { PermissionTooltip } from "@/components/shared/permission-guard/permission-tooltip";
+import { ProjectActivityDrawer } from "./project-activity-drawer";
 import { useJoinProject } from "../hooks/use-join-project";
 
 interface ProjectActionsProps {
@@ -127,6 +129,7 @@ export function ProjectActions({
   };
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [showActivityDrawer, setShowActivityDrawer] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -242,6 +245,11 @@ export function ProjectActions({
                 </DropdownMenuItem>
               )}
 
+              <DropdownMenuItem onClick={() => setShowActivityDrawer(true)}>
+                <RiHistoryLine className="h-4 w-4" />
+                Activity
+              </DropdownMenuItem>
+
               {canEditSettings && !isArchived && (
                 <DropdownMenuItem onClick={() => setShowSettingsDialog(true)}>
                   <RiSettingsLine className="h-4 w-4" />
@@ -249,18 +257,18 @@ export function ProjectActions({
                 </DropdownMenuItem>
               )}
 
+              {(canViewMembers ||
+                (canEditSettings && !isArchived) ||
+                canArchiveProject) &&
+                (canUnarchiveProject ||
+                  (canLeaveProject && !isArchived) ||
+                  canDeleteProject) && <DropdownMenuSeparator />}
               {canArchiveProject && (
                 <DropdownMenuItem onClick={onArchive}>
                   <RiArchiveLine className="h-4 w-4" />
                   Archive Project
                 </DropdownMenuItem>
               )}
-
-              {(canViewMembers || (canEditSettings && !isArchived) || canArchiveProject) &&
-                (canUnarchiveProject || (canLeaveProject && !isArchived) || canDeleteProject) && (
-                  <DropdownMenuSeparator />
-                )}
-
               {canLeaveProject && !isArchived && (
                 <DropdownMenuItem onClick={() => setShowLeaveDialog(true)}>
                   <RiLogoutBoxLine className="h-4 w-4" />
@@ -312,6 +320,13 @@ export function ProjectActions({
           open: showLeaveDialog,
           onOpenChange: setShowLeaveDialog,
         })}
+
+      {/* Recent Activity Drawer - controlled by internal state */}
+      <ProjectActivityDrawer
+        projectId={projectId}
+        open={showActivityDrawer}
+        onOpenChange={setShowActivityDrawer}
+      />
 
       {/* Delete Project Confirmation Dialog */}
       <AlertDialog
