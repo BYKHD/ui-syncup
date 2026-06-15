@@ -32,7 +32,8 @@
     "verify:vercel": "bun run scripts/verify-vercel-integration.ts",
     "validate:migration-system": "bun run scripts/validate-migration-system.ts",
     "admin:reset-password": "bun run scripts/admin-reset-password.ts",
-    "docker:build-test": "docker build --target builder -t ui-syncup-build-test . && echo '✓ Docker build succeeded' || echo '✗ Docker build failed'"
+    "docker:build-test": "docker build --target builder -t ui-syncup-build-test . && echo '✓ Docker build succeeded' || echo '✗ Docker build failed'",
+    "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1014.0",
@@ -121,6 +122,7 @@
     "jsdom": "^29.0.1",
     "pg": "^8.20.0",
     "prettier": "^3.8.1",
+    "react-doctor": "^0.2.8",
     "react-email": "^5.2.10",
     "semantic-release": "^25.0.3",
     "tailwindcss": "^4",

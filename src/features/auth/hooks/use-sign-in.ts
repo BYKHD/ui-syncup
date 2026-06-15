@@ -53,6 +53,9 @@ async function signIn(credentials: SignInSchema): Promise<SignInResponse> {
   };
 }
 
+/** Default sign-in destination — routes through the landing-view resolver in app/page.tsx. */
+const DEFAULT_REDIRECT = "/";
+
 /**
  * Hook for user sign-in
  * 
@@ -61,13 +64,13 @@ async function signIn(credentials: SignInSchema): Promise<SignInResponse> {
  * - Invalidates session cache on success
  * - Handles validation errors
  * - Handles rate limit errors with retry-after
- * - Redirects to projects page on success (configurable)
+ * - Redirects to `/` on success; the landing-view resolver picks the destination (configurable)
  * 
  * @param options Configuration options
  * @returns Form state, handlers, and mutation state
  */
 export function useSignIn(options: UseSignInOptions = {}) {
-  const { defaultEmail = "", onSuccess, redirectTo = "/projects" } = options;
+  const { defaultEmail = "", onSuccess, redirectTo = DEFAULT_REDIRECT } = options;
   const router = useRouter();
   const invalidateSession = useInvalidateSession();
 
@@ -167,7 +170,7 @@ export function useSignIn(options: UseSignInOptions = {}) {
           // resend flow can restore the invitation destination after re-verification
           const email = form.getValues("email");
           const params = new URLSearchParams({ email });
-          if (redirectTo && redirectTo !== "/projects") {
+          if (redirectTo && redirectTo !== DEFAULT_REDIRECT) {
             params.set("callbackUrl", redirectTo);
           }
           router.push(`/verify-email?${params.toString()}`);
@@ -210,7 +213,7 @@ export function useSignIn(options: UseSignInOptions = {}) {
     // better-auth may not honor callbackURL for brand-new users (first-time
     // social sign-up vs sign-in), so we store it independently and consume it
     // in AppShell after the user lands on a protected route.
-    if (redirectTo && redirectTo !== "/projects") {
+    if (redirectTo && redirectTo !== DEFAULT_REDIRECT) {
       localStorage.setItem("invitation_callback_url", redirectTo);
     }
 

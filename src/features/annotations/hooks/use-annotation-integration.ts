@@ -25,6 +25,7 @@ import {
   deleteAnnotation as apiDeleteAnnotation,
   transformToAttachmentAnnotation,
 } from '../api/annotations-api';
+import { shapesAreEqual } from '../utils/history-manager';
 
 // ============================================================================
 // QUERY KEYS
@@ -457,10 +458,17 @@ export function useAnnotationIntegration(
       return serverAnn ?? localAnn;
     });
     
-    // Only update if there are actual changes to unblocked annotations
+    // Only update if there are actual changes to unblocked annotations.
+    // Also compare shapes so that box geometry changes (start/end) whose center
+    // (x/y) stayed the same are correctly detected.
     const hasChanges = mergedAnnotations.some((merged, idx) => {
       const local = localAnnotations[idx];
-      return merged.id !== local?.id || merged.x !== local?.x || merged.y !== local?.y;
+      const shapeChanged =
+        // One has a shape and the other does not
+        (merged.shape == null) !== (local?.shape == null)
+        // Both have shapes but they differ
+        || (merged.shape != null && local?.shape != null && !shapesAreEqual(merged.shape, local.shape));
+      return merged.id !== local?.id || merged.x !== local?.x || merged.y !== local?.y || shapeChanged;
     });
     
     if (hasChanges) {
@@ -857,6 +865,19 @@ export function useAnnotationIntegration(
     void query.refetch();
   }, [query]);
 
+  // Stable setDragging — wrapped in useCallback so its identity never changes across
+  // renders, which is required for React.memo on AnnotationPin/AnnotationBox to hold.
+  // setStateDragging and setStateDebouncing are already stable useCallbacks (empty deps).
+  const setDragging = useCallback((annotationId: string, isDragging: boolean) => {
+    if (isDragging) {
+      setStateDragging(annotationId);
+    } else {
+      // Transition to debouncing state with grace period
+      // This prevents sync from overwriting local state before save mutation starts
+      setStateDebouncing(annotationId);
+    }
+  }, [setStateDragging, setStateDebouncing]);
+
   // ============================================================================
   // RETURN
   // ============================================================================
@@ -895,15 +916,7 @@ export function useAnnotationIntegration(
     setShowShortcutsHelp: tools.setShowShortcutsHelp,
 
     // Drag state - per-annotation tracking via state machine
-    setDragging: (annotationId: string, isDragging: boolean) => {
-      if (isDragging) {
-        setStateDragging(annotationId);
-      } else {
-        // Transition to debouncing state with grace period
-        // This prevents sync from overwriting local state before save mutation starts
-        setStateDebouncing(annotationId);
-      }
-    },
+    setDragging,
 
     // Unsaved changes tracking
     hasUnsavedChanges,

@@ -81,7 +81,7 @@ export function AnnotationLayer<A extends AttachmentAnnotation>({
   
   // Popover state management (desktop only)
   const popover = useAnnotationPopover({
-    isDragging: isDraggingRef.current,
+    isDraggingRef,
     hoverDelay: 200,
   });
 

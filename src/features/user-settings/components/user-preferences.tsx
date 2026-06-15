@@ -1,5 +1,8 @@
 'use client'
 
+import { useState, useSyncExternalStore, useTransition } from 'react'
+import { useTheme } from 'next-themes'
+import { toast } from 'sonner'
 import {
   Card,
   CardContent,
@@ -7,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -16,19 +18,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useUserPreferences } from '../hooks/use-user-preferences'
-import type { UserPreferences } from '../types'
+import { setLandingView } from '../actions/set-landing-view'
+import type { LandingView } from '@/server/preferences/landing-view'
 
 interface UserPreferencesComponentProps {
-  initialPreferences: UserPreferences
+  initialLandingView: LandingView
 }
 
 export function UserPreferencesComponent({
-  initialPreferences,
+  initialLandingView,
 }: UserPreferencesComponentProps) {
-  const { preferences, isPending, updatePreference } = useUserPreferences({
-    initialPreferences,
-  })
+  const { theme, setTheme } = useTheme()
+  // Hydration-safe mount flag: false on the server + first client render, true after.
+  // next-themes returns undefined on the server, so the Theme select defers to its
+  // placeholder until mounted. useSyncExternalStore avoids a set-state-in-effect cascade.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
+
+  const [landingView, setLandingViewState] =
+    useState<LandingView>(initialLandingView)
+  const [isPending, startTransition] = useTransition()
+
+  const handleLandingChange = (value: LandingView) => {
+    if (value === landingView) return // re-selected the current view — nothing to save
+    const previous = landingView
+    setLandingViewState(value) // optimistic
+    startTransition(async () => {
+      const result = await setLandingView(value)
+      if (result.success) {
+        toast.success('Preferences updated')
+      } else {
+        setLandingViewState(previous) // revert
+        toast.error('Failed to update preferences')
+      }
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -39,18 +66,16 @@ export function UserPreferencesComponent({
             Customize how the application looks and feels
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent>
           <div className="space-y-2">
             <Label htmlFor="theme">Theme</Label>
             <Select
-              value={preferences.theme}
-              onValueChange={(value: UserPreferences['theme']) =>
-                updatePreference('theme', value)
-              }
-              disabled={isPending}
+              value={mounted ? theme : undefined}
+              onValueChange={setTheme}
+              disabled={!mounted}
             >
               <SelectTrigger id="theme" className="w-full sm:w-64">
-                <SelectValue />
+                <SelectValue placeholder="System" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="light">Light</SelectItem>
@@ -62,82 +87,33 @@ export function UserPreferencesComponent({
               Choose your preferred color scheme
             </p>
           </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="compact-mode">Compact mode</Label>
-              <p className="text-sm text-muted-foreground">
-                Reduce spacing and size of UI elements
-              </p>
-            </div>
-            <Switch
-              id="compact-mode"
-              checked={preferences.compactMode}
-              onCheckedChange={(checked) =>
-                updatePreference('compactMode', checked)
-              }
-              disabled={isPending}
-            />
-          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Email digest</CardTitle>
-          <CardDescription>
-            Control how often you receive email summaries
-          </CardDescription>
+          <CardTitle>Startup</CardTitle>
+          <CardDescription>Choose where you land after signing in</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           <div className="space-y-2">
-            <Label htmlFor="email-digest">Frequency</Label>
+            <Label htmlFor="landing-view">Default view</Label>
             <Select
-              value={preferences.emailDigest}
-              onValueChange={(value: UserPreferences['emailDigest']) =>
-                updatePreference('emailDigest', value)
-              }
+              value={landingView}
+              onValueChange={handleLandingChange}
               disabled={isPending}
             >
-              <SelectTrigger id="email-digest" className="w-full sm:w-64">
+              <SelectTrigger id="landing-view" className="w-full sm:w-64">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="never">Never</SelectItem>
+                <SelectItem value="dashboard">Dashboard</SelectItem>
+                <SelectItem value="projects">Projects</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground">
-              Get a summary of your activity and updates
+              The page you see first when you open the app
             </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Sound</CardTitle>
-          <CardDescription>
-            Manage audio notifications and sounds
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="sound-enabled">Enable sounds</Label>
-              <p className="text-sm text-muted-foreground">
-                Play sounds for notifications and actions
-              </p>
-            </div>
-            <Switch
-              id="sound-enabled"
-              checked={preferences.soundEnabled}
-              onCheckedChange={(checked) =>
-                updatePreference('soundEnabled', checked)
-              }
-              disabled={isPending}
-            />
           </div>
         </CardContent>
       </Card>

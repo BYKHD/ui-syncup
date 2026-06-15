@@ -1,15 +1,13 @@
 import { AppHeaderConfigurator, type BreadcrumbItem } from '@/components/layout/headers'
 import PreferencesScreen from '@/features/user-settings/screens/setting-preferences-screen'
-import { MOCK_USER_PREFERENCES } from '@/mocks/user-settings.fixtures'
+import { getLandingView } from '@/server/preferences/landing-view'
 
 const SETTINGS_BREADCRUMBS: BreadcrumbItem[] = [
   { label: 'Settings' },
 ]
 
-export default function SettingsPage() {
-  // Server component - thin page that delegates to feature screen
-  // In a real implementation, fetch user preferences from server
-  // const preferences = await getUserPreferences();
+export default async function SettingsPage() {
+  const landingView = await getLandingView()
 
   return (
     <>
@@ -17,7 +15,7 @@ export default function SettingsPage() {
         pageName="Settings"
         breadcrumbs={SETTINGS_BREADCRUMBS}
       />
-      <PreferencesScreen initialPreferences={MOCK_USER_PREFERENCES} />
+      <PreferencesScreen initialLandingView={landingView} />
     </>
   )
 }

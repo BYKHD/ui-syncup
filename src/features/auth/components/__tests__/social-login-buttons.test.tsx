@@ -310,4 +310,55 @@ describe("SocialLoginButtons", () => {
       });
     });
   });
+
+  describe("Redirect target", () => {
+    beforeEach(() => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          providers: {
+            google: { enabled: true },
+            microsoft: { enabled: false },
+            atlassian: { enabled: false },
+          },
+        }),
+      });
+    });
+
+    it("defaults the OAuth callbackURL to '/' so the landing-view resolver picks the destination", async () => {
+      const { authClient } = await import("@/lib/auth-client");
+
+      render(<SocialLoginButtons />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Continue with Google")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /sign in with google/i }));
+
+      await waitFor(() => {
+        expect(authClient.signIn.social).toHaveBeenCalledWith(
+          expect.objectContaining({ provider: "google", callbackURL: "/" })
+        );
+      });
+    });
+
+    it("uses an explicit redirectTo (e.g. an invitation deep-link) as the callbackURL", async () => {
+      const { authClient } = await import("@/lib/auth-client");
+
+      render(<SocialLoginButtons redirectTo="/join-team?token=abc" />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Continue with Google")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /sign in with google/i }));
+
+      await waitFor(() => {
+        expect(authClient.signIn.social).toHaveBeenCalledWith(
+          expect.objectContaining({ callbackURL: "/join-team?token=abc" })
+        );
+      });
+    });
+  });
 });
