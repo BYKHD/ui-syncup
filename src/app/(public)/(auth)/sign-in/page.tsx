@@ -3,6 +3,7 @@ import { getSessionCookie } from "@/server/auth/cookies";
 import { getSession } from "@/server/auth/session";
 import { redirect } from "next/navigation";
 import { mapOAuthError } from "@/lib/oauth-errors";
+import { getLandingView, resolveLandingPath } from "@/server/preferences/landing-view";
 
 // Force dynamic rendering to prevent SSR issues with client components
 export const dynamic = 'force-dynamic';
@@ -29,9 +30,10 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   if (sessionToken) {
     const session = await getSession();
 
-    // Redirect to Projects if already authenticated
+    // Already authenticated — send them to their preferred landing view
     if (session) {
-      redirect("/projects");
+      const landingView = await getLandingView();
+      redirect(resolveLandingPath(landingView));
     }
   }
 
