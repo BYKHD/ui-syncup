@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useState, useSyncExternalStore, useTransition } from 'react'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import {
@@ -29,8 +29,14 @@ export function UserPreferencesComponent({
   initialLandingView,
 }: UserPreferencesComponentProps) {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  // Hydration-safe mount flag: false on the server + first client render, true after.
+  // next-themes returns undefined on the server, so the Theme select defers to its
+  // placeholder until mounted. useSyncExternalStore avoids a set-state-in-effect cascade.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
 
   const [landingView, setLandingViewState] =
     useState<LandingView>(initialLandingView)
