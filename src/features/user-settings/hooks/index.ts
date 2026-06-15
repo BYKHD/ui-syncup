@@ -5,4 +5,3 @@
  */
 
 export { useNotificationPreferences } from './use-notification-preferences'
-export { useUserPreferences } from './use-user-preferences'

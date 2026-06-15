@@ -1,7 +1,6 @@
 import type {
   UserProfile,
   NotificationPreference,
-  UserPreferences,
   Integration,
 } from '@/features/user-settings/types'
 
@@ -49,13 +48,6 @@ export const MOCK_NOTIFICATION_PREFERENCES: NotificationPreference[] = [
     email: true,
   },
 ]
-
-export const MOCK_USER_PREFERENCES: UserPreferences = {
-  theme: 'system',
-  emailDigest: 'weekly',
-  soundEnabled: true,
-  compactMode: false,
-}
 
 export const MOCK_INTEGRATIONS: Integration[] = [
   {
