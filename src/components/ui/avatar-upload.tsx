@@ -2,8 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Camera, Loader2, UploadCloud } from "lucide-react";
+import { Camera, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ImageCropperDialog } from "./image-cropper-dialog";
 

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { isSetupComplete } from "@/server/setup"
 import { getSessionCookie } from "@/server/auth/cookies"
 import { getSession } from "@/server/auth/session"
+import { getLandingView, resolveLandingPath } from "@/server/preferences/landing-view"
 
 export default async function HomePage() {
   try {
@@ -11,7 +12,10 @@ export default async function HomePage() {
     const sessionToken = await getSessionCookie()
     if (sessionToken) {
       const session = await getSession()
-      if (session) redirect("/dashboard")
+      if (session) {
+        const landingView = await getLandingView()
+        redirect(resolveLandingPath(landingView))
+      }
     }
 
     redirect("/sign-in")

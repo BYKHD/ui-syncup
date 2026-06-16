@@ -99,6 +99,7 @@ export const PERMISSIONS = {
   PROJECT_CREATE: "project:create",
   PROJECT_UPDATE: "project:update",
   PROJECT_DELETE: "project:delete",
+  PROJECT_ARCHIVE: "project:archive",
   PROJECT_MANAGE_MEMBERS: "project:manage_members",
   PROJECT_MANAGE_SETTINGS: "project:manage_settings",
   PROJECT_ACCESS_REQUEST_CREATE: "project:access_request:create",
@@ -225,6 +226,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     PERMISSIONS.PROJECT_VIEW,
     PERMISSIONS.PROJECT_UPDATE,
     PERMISSIONS.PROJECT_DELETE,
+    PERMISSIONS.PROJECT_ARCHIVE,
     PERMISSIONS.PROJECT_MANAGE_MEMBERS,
     PERMISSIONS.PROJECT_MANAGE_SETTINGS,
     // PROJECT_ACCESS_REQUEST_CREATE is intentionally omitted — any authenticated

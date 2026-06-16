@@ -32,6 +32,19 @@ interface UserFlowMetrics {
   optimisticUpdate: number;
 }
 
+type PerformanceEventTimingEntry = PerformanceEntry & {
+  processingStart: number;
+};
+
+type LayoutShiftEntry = PerformanceEntry & {
+  hadRecentInput: boolean;
+  value: number;
+};
+
+type WindowWithGarbageCollector = Window & {
+  gc?: () => void;
+};
+
 class PerformanceMonitor {
   private metrics: Partial<PerformanceMetrics> = {};
   private userFlowMetrics: Partial<UserFlowMetrics> = {};
@@ -56,8 +69,8 @@ class PerformanceMonitor {
 
       // First Input Delay
       const fidObserver = new PerformanceObserver((list) => {
-        const entries = list.getEntries();
-        entries.forEach((entry: any) => {
+        const entries = list.getEntries() as PerformanceEventTimingEntry[];
+        entries.forEach((entry) => {
           this.metrics.firstInputDelay = entry.processingStart - entry.startTime;
         });
       });
@@ -67,8 +80,8 @@ class PerformanceMonitor {
       // Cumulative Layout Shift
       const clsObserver = new PerformanceObserver((list) => {
         let clsValue = 0;
-        const entries = list.getEntries();
-        entries.forEach((entry: any) => {
+        const entries = list.getEntries() as LayoutShiftEntry[];
+        entries.forEach((entry) => {
           if (!entry.hadRecentInput) {
             clsValue += entry.value;
           }
@@ -165,7 +178,7 @@ export function useMemoryOptimization() {
     
     // Force garbage collection in development
     if (process.env.NODE_ENV === 'development' && 'gc' in window) {
-      (window as any).gc();
+      (window as WindowWithGarbageCollector).gc?.();
     }
   }, []);
 
@@ -201,7 +214,7 @@ export const optimizedSWRConfig = {
   
   // Performance optimizations
   keepPreviousData: true,
-  compare: (a: any, b: any) => {
+  compare: (a: unknown, b: unknown) => {
     // Custom comparison to prevent unnecessary re-renders
     return JSON.stringify(a) === JSON.stringify(b);
   }
@@ -330,7 +343,7 @@ export function measureTimeToInteractive(): Promise<number> {
   });
 }
 
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: never[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -342,7 +355,7 @@ export function debounce<T extends (...args: any[]) => any>(
   };
 }
 
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: never[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {

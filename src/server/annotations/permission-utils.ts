@@ -8,6 +8,7 @@
 
 import { getHighestTeamRole, getHighestProjectRole } from '@/server/auth/rbac';
 import { TEAM_ROLES, PROJECT_ROLES } from '@/config/roles';
+import { isProjectArchived } from '@/server/projects/archive-status';
 import type { AnnotationPermissions } from '@/features/annotations/types';
 
 // ============================================================================
@@ -32,10 +33,11 @@ export async function getAnnotationPermissions(
   teamId: string,
   projectId: string
 ): Promise<AnnotationPermissions> {
-  // Get user's highest roles
-  const [teamRole, projectRole] = await Promise.all([
+  // Get user's highest roles + project archive status in parallel
+  const [teamRole, projectRole, archived] = await Promise.all([
     getHighestTeamRole(userId, teamId),
     getHighestProjectRole(userId, projectId),
+    isProjectArchived(projectId),
   ]);
 
   // No access if user has no role in team
@@ -58,6 +60,19 @@ export async function getAnnotationPermissions(
 
   // Check if user is a viewer (lowest level)
   const isViewerOnly = teamRole === TEAM_ROLES.TEAM_VIEWER && !projectRole;
+
+  // Archived projects are frozen — view stays, all writes denied regardless of role.
+  if (archived) {
+    return {
+      canView: true,
+      canCreate: false,
+      canEdit: false,
+      canEditAll: false,
+      canDelete: false,
+      canDeleteAll: false,
+      canComment: false,
+    };
+  }
 
   return {
     canView: true, // All authenticated team members can view

@@ -25,6 +25,7 @@ import {
   deleteAnnotation as apiDeleteAnnotation,
   transformToAttachmentAnnotation,
 } from '../api/annotations-api';
+import { shapesAreEqual } from '../utils/history-manager';
 
 // ============================================================================
 // QUERY KEYS
@@ -40,6 +41,8 @@ export const annotationKeys = {
   comments: (annotationId: string) =>
     [...annotationKeys.detail(annotationId), 'comments'] as const,
 };
+
+const HARD_ERROR_CODES = [403, 404, 402, 422] as const;
 
 // ============================================================================
 // TYPES
@@ -96,7 +99,7 @@ export interface UseAnnotationIntegrationResult {
 // DEBOUNCE HELPER WITH FLUSH/CANCEL
 // ============================================================================
 
-interface DebouncedCallback<T extends (...args: any[]) => void> {
+interface DebouncedCallback<T extends (...args: never[]) => void> {
   /** Call the debounced function */
   (...args: Parameters<T>): void;
   /** Immediately execute with the last pending args (if any) */
@@ -107,7 +110,7 @@ interface DebouncedCallback<T extends (...args: any[]) => void> {
   isPending: () => boolean;
 }
 
-function useDebouncedCallback<T extends (...args: any[]) => void>(
+function useDebouncedCallback<T extends (...args: never[]) => void>(
   callback: T,
   delay: number
 ): DebouncedCallback<T> {
@@ -259,7 +262,7 @@ export function useAnnotationIntegration(
   // ============================================================================
 
   /** Get annotation state (defaults to 'idle') */
-  const getAnnotationState = useCallback((annotationId: string): AnnotationSaveState => {
+  const _getAnnotationState = useCallback((annotationId: string): AnnotationSaveState => {
     return annotationStateRef.current.get(annotationId)?.state ?? 'idle';
   }, []);
 
@@ -356,12 +359,9 @@ export function useAnnotationIntegration(
     return () => clearInterval(cleanupInterval);
   }, []);
 
-  // Helper: Hard error codes that should trigger rollback
-  const HARD_ERROR_CODES = [403, 404, 402, 422];
-
   const isHardSaveError = useCallback((error: unknown): boolean => {
     if (error instanceof Error && 'status' in error) {
-      return HARD_ERROR_CODES.includes((error as { status: number }).status);
+      return (HARD_ERROR_CODES as readonly number[]).includes((error as { status: number }).status);
     }
     return false;
   }, []);
@@ -458,10 +458,17 @@ export function useAnnotationIntegration(
       return serverAnn ?? localAnn;
     });
     
-    // Only update if there are actual changes to unblocked annotations
+    // Only update if there are actual changes to unblocked annotations.
+    // Also compare shapes so that box geometry changes (start/end) whose center
+    // (x/y) stayed the same are correctly detected.
     const hasChanges = mergedAnnotations.some((merged, idx) => {
       const local = localAnnotations[idx];
-      return merged.id !== local?.id || merged.x !== local?.x || merged.y !== local?.y;
+      const shapeChanged =
+        // One has a shape and the other does not
+        (merged.shape == null) !== (local?.shape == null)
+        // Both have shapes but they differ
+        || (merged.shape != null && local?.shape != null && !shapesAreEqual(merged.shape, local.shape));
+      return merged.id !== local?.id || merged.x !== local?.x || merged.y !== local?.y || shapeChanged;
     });
     
     if (hasChanges) {
@@ -650,7 +657,7 @@ export function useAnnotationIntegration(
       annotationId,
       shape,
       description,
-      clientRevision,
+      clientRevision: _clientRevision,
     }: {
       annotationId: string;
       shape?: AnnotationShape;
@@ -858,6 +865,19 @@ export function useAnnotationIntegration(
     void query.refetch();
   }, [query]);
 
+  // Stable setDragging — wrapped in useCallback so its identity never changes across
+  // renders, which is required for React.memo on AnnotationPin/AnnotationBox to hold.
+  // setStateDragging and setStateDebouncing are already stable useCallbacks (empty deps).
+  const setDragging = useCallback((annotationId: string, isDragging: boolean) => {
+    if (isDragging) {
+      setStateDragging(annotationId);
+    } else {
+      // Transition to debouncing state with grace period
+      // This prevents sync from overwriting local state before save mutation starts
+      setStateDebouncing(annotationId);
+    }
+  }, [setStateDragging, setStateDebouncing]);
+
   // ============================================================================
   // RETURN
   // ============================================================================
@@ -896,15 +916,7 @@ export function useAnnotationIntegration(
     setShowShortcutsHelp: tools.setShowShortcutsHelp,
 
     // Drag state - per-annotation tracking via state machine
-    setDragging: (annotationId: string, isDragging: boolean) => {
-      if (isDragging) {
-        setStateDragging(annotationId);
-      } else {
-        // Transition to debouncing state with grace period
-        // This prevents sync from overwriting local state before save mutation starts
-        setStateDebouncing(annotationId);
-      }
-    },
+    setDragging,
 
     // Unsaved changes tracking
     hasUnsavedChanges,

@@ -179,7 +179,8 @@ export function useLongPress(options: UseLongPressOptions): UseLongPressReturn {
   );
 
   const handlePointerCancel = useCallback(
-    (event: React.PointerEvent) => {
+
+    (_event: React.PointerEvent) => {
       if (!enabled) return;
       reset();
     },

@@ -29,6 +29,7 @@ vi.mock('@/lib/logger', () => ({
 }));
 vi.mock('@/server/auth/rbac', () => ({
   hasPermission: vi.fn(),
+  getUserPermissions: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('@/config/roles', () => ({
   PERMISSIONS: {

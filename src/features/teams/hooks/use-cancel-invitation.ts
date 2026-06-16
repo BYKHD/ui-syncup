@@ -38,14 +38,14 @@ export function useCancelInvitation(
   return useMutation({
     mutationFn: ({ teamId, invitationId }: CancelInvitationVariables) =>
       cancelInvitation(teamId, invitationId),
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, onMutateResult, context) => {
       // Invalidate invitations list
       queryClient.invalidateQueries({
         queryKey: [INVITATIONS_QUERY_KEY, variables.teamId],
       });
 
       // Call user's onSuccess if provided
-      options?.onSuccess?.(data, variables, context, undefined as any);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });

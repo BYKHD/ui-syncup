@@ -201,6 +201,13 @@ export interface IssueDetailData {
   teamId: string
   projectKey?: string
   projectName?: string
+  /**
+   * Status of the parent project. When 'archived', UI surfaces should
+   * render the issue read-only (no edit affordances, no comment input).
+   * Optional for back-compat with surfaces that don't carry it (e.g.
+   * the share/view-only screen which sets its own permissions).
+   */
+  projectStatus?: 'active' | 'archived'
   assignee?: IssueUser | null
   reporter: IssueUser
   attachments?: IssueAttachment[]
@@ -220,9 +227,26 @@ export interface IssueDetailResponse {
   issue: IssueDetailData
 }
 
+export interface IssueUpdateValueMap {
+  title: string
+  description: string | null
+  type: IssueType
+  priority: IssuePriority
+  status: IssueStatus
+  assigneeId: string | null
+  coverImageUrl: string | null
+  page: string | null
+  figmaLink: string | null
+  jiraLink: string | null
+}
+
+export type IssueUpdateField = keyof IssueUpdateValueMap
+export type IssueUpdateValue = IssueUpdateValueMap[IssueUpdateField]
+export type IssueUpdateHandler = (field: IssueUpdateField, value: IssueUpdateValue) => Promise<void>
+
 export interface IssueUpdatePayload {
-  field: string
-  value: any
+  field: IssueUpdateField
+  value: IssueUpdateValue
   actorId: string
 }
 

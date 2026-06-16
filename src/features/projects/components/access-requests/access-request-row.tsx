@@ -31,7 +31,7 @@ export function AccessRequestRow({
           <span className='text-muted-foreground text-sm truncate'>{request.requester.email}</span>
         </div>
         <div className='text-xs text-muted-foreground'>Requested {requested}</div>
-        {request.message ? <p className='text-sm mt-1 italic'>"{request.message}"</p> : null}
+        {request.message ? <p className='text-sm mt-1 italic'>&quot;{request.message}&quot;</p> : null}
       </div>
       {request.status === 'pending' ? (
         <div className='flex items-center gap-2 shrink-0'>

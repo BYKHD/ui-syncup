@@ -1,10 +1,21 @@
 "use client";
 
-import { useState, type ReactNode, type RefObject, useRef, useCallback, useEffect, useMemo } from "react";
+import {
+  useState,
+  type Dispatch,
+  type MutableRefObject,
+  type ReactNode,
+  type RefObject,
+  type SetStateAction,
+  useRef,
+  useCallback,
+  useEffect,
+} from "react";
 import Image from "next/image";
-import { motion, useMotionValue, useSpring, animate } from "motion/react";
+import { motion, useMotionValue, animate, type MotionValue } from "motion/react";
 import type { IssueAttachment, CanvasViewState } from "@/features/issues/types";
 import type { AnnotationSaveStatus } from "@/features/annotations/types";
+import { CanvasScaleProvider } from "@/features/annotations/components/annotation-scale-context";
 import { CanvasStateIndicator } from "./canvas-state-indicator";
 import { InfiniteCanvasBackground } from "./infinite-canvas-background";
 import { ZoomControls } from "./zoom-controls";
@@ -28,6 +39,41 @@ interface CenteredCanvasViewProps {
   hideZoomControls?: boolean;
   /** Hide the save status indicator */
   hideStateIndicator?: boolean;
+}
+
+interface CenteredCanvasViewInnerProps {
+  attachment: IssueAttachment;
+  canvasState: CanvasViewState;
+  onCanvasStateChange: (updates: Partial<CanvasViewState>) => void;
+  overlayContent?: ReactNode;
+  resolvedOverlayRef: RefObject<HTMLDivElement | null>;
+  interactionLayerRef?: RefObject<HTMLDivElement | null>;
+  pointerPanEnabled: boolean;
+  scrollPanEnabled: boolean;
+  saveStatus?: AnnotationSaveStatus;
+  saveError?: string;
+  elasticScrollEnabled: boolean;
+  hideZoomControls: boolean;
+  hideStateIndicator: boolean;
+  containerRef: RefObject<HTMLDivElement | null>;
+  imageRef: RefObject<HTMLImageElement | null>;
+  isDragging: boolean;
+  setIsDragging: Dispatch<SetStateAction<boolean>>;
+  dragStart: { x: number; y: number };
+  setDragStart: Dispatch<SetStateAction<{ x: number; y: number }>>;
+  imageLoaded: boolean;
+  setImageLoaded: Dispatch<SetStateAction<boolean>>;
+  imageError: boolean;
+  setImageError: Dispatch<SetStateAction<boolean>>;
+  imageDimensions: { width: number; height: number };
+  setImageDimensions: Dispatch<SetStateAction<{ width: number; height: number }>>;
+  displayUrl: string;
+  containerSize: { width: number; height: number };
+  visualPanX: MotionValue<number>;
+  visualPanY: MotionValue<number>;
+  transientScale: MotionValue<number>;
+  liveZoomRef: MutableRefObject<number>;
+  rawPanRef: MutableRefObject<{ x: number; y: number }>;
 }
 
 // Minimum zoom levels
@@ -96,6 +142,14 @@ export function CenteredCanvasView({
   const visualPanX = useMotionValue(canvasState.panX);
   const visualPanY = useMotionValue(canvasState.panY);
 
+  // Transient zoom multiplier applied to the transform layer during a single-pane
+  // wheel gesture. transientScale = liveZoom / committedZoom. 1 at rest. Pins/boxes
+  // counter-scale by 1/transientScale via CanvasScaleProvider so they stay constant size.
+  const transientScale = useMotionValue(1);
+
+  // Live (uncommitted) zoom during a wheel gesture; committed to canvasState on end.
+  const liveZoomRef = useRef(canvasState.zoom);
+
   // Track raw pan during drag (before rubber band is applied)
   const rawPanRef = useRef({ x: canvasState.panX, y: canvasState.panY });
 
@@ -124,6 +178,80 @@ export function CenteredCanvasView({
     );
   }
 
+  const resolvedDisplayUrl = displayUrl ?? attachment.url;
+
+  return (
+    <CenteredCanvasViewInner
+      attachment={attachment}
+      canvasState={canvasState}
+      onCanvasStateChange={onCanvasStateChange}
+      overlayContent={overlayContent}
+      resolvedOverlayRef={resolvedOverlayRef}
+      interactionLayerRef={interactionLayerRef}
+      pointerPanEnabled={pointerPanEnabled}
+      scrollPanEnabled={scrollPanEnabled}
+      saveStatus={saveStatus}
+      saveError={saveError}
+      elasticScrollEnabled={elasticScrollEnabled}
+      hideZoomControls={hideZoomControls}
+      hideStateIndicator={hideStateIndicator}
+      containerRef={containerRef}
+      imageRef={imageRef}
+      isDragging={isDragging}
+      setIsDragging={setIsDragging}
+      dragStart={dragStart}
+      setDragStart={setDragStart}
+      imageLoaded={imageLoaded}
+      setImageLoaded={setImageLoaded}
+      imageError={imageError}
+      setImageError={setImageError}
+      imageDimensions={imageDimensions}
+      setImageDimensions={setImageDimensions}
+      displayUrl={resolvedDisplayUrl}
+      containerSize={containerSize}
+      visualPanX={visualPanX}
+      visualPanY={visualPanY}
+      transientScale={transientScale}
+      liveZoomRef={liveZoomRef}
+      rawPanRef={rawPanRef}
+    />
+  );
+}
+
+function CenteredCanvasViewInner({
+  attachment,
+  canvasState,
+  onCanvasStateChange,
+  overlayContent,
+  resolvedOverlayRef,
+  interactionLayerRef,
+  pointerPanEnabled,
+  scrollPanEnabled,
+  saveStatus,
+  saveError,
+  elasticScrollEnabled,
+  hideZoomControls,
+  hideStateIndicator,
+  containerRef,
+  imageRef,
+  isDragging,
+  setIsDragging,
+  dragStart,
+  setDragStart,
+  imageLoaded,
+  setImageLoaded,
+  imageError,
+  setImageError,
+  imageDimensions,
+  setImageDimensions,
+  displayUrl,
+  containerSize,
+  visualPanX,
+  visualPanY,
+  transientScale,
+  liveZoomRef,
+  rawPanRef,
+}: CenteredCanvasViewInnerProps) {
   // Video playback - delegate to VideoPlayer (no pan/zoom for video)
   const isVideo = attachment.fileType.startsWith('video/');
 
@@ -141,7 +269,7 @@ export function CenteredCanvasView({
       height: imageDimensions.height * scale,
       scale,
     };
-  }, [imageDimensions, canvasState.zoom, imageLoaded]);
+  }, [containerRef, imageDimensions, canvasState.zoom, imageLoaded]);
 
   const displaySize = calculateDisplaySize();
 
@@ -171,9 +299,7 @@ export function CenteredCanvasView({
 
     // Smart fit: clamp to readable range
     return Math.max(MIN_FIT_ZOOM, Math.min(MAX_FIT_ZOOM, naturalFit));
-  }, [imageDimensions, imageLoaded, containerSize]);
-
-  const fitZoom = calculateFitZoom();
+  }, [containerRef, imageDimensions, imageLoaded, containerSize]);
 
   // Compute button disabled states
   const isActualSize = canvasState.fitMode === 'actual' && Math.abs(canvasState.zoom - 1) < 0.001;
@@ -195,7 +321,7 @@ export function CenteredCanvasView({
       visualPanY.set(canvasState.panY);
       rawPanRef.current = { x: canvasState.panX, y: canvasState.panY };
     }
-  }, [canvasState.panX, canvasState.panY, isDragging, visualPanX, visualPanY]);
+  }, [canvasState.panX, canvasState.panY, isDragging, visualPanX, visualPanY, rawPanRef]);
 
   // Handle image load
   const handleImageLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
@@ -222,6 +348,36 @@ export function CenteredCanvasView({
     midpoint: { x: number; y: number };
   } | null>(null);
 
+  // A pinch is tracked through state (not just the ref above) so the listener
+  // effect re-runs and keeps the document touch listeners attached while two
+  // fingers are down. The bug this fixes: those listeners were gated on isDragging
+  // only, but a pinch sets isDragging=false, so touchmove never fired the pinch
+  // branch and pinch-to-zoom silently did nothing on touchscreens.
+  const [isPinching, setIsPinching] = useState(false);
+
+  // Wheel has no native gesture-end. We debounce: ~120ms after the last ctrl/cmd
+  // wheel event we COMMIT liveZoom into canvasState.zoom and reset transientScale→1.
+  const wheelCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Keep liveZoomRef in lockstep with committed zoom whenever no wheel gesture is
+  // mid-flight, so the next gesture starts from the correct base (e.g. after a
+  // zoom-control button changes canvasState.zoom).
+  useEffect(() => {
+    if (wheelCommitTimerRef.current === null) {
+      liveZoomRef.current = canvasState.zoom;
+    }
+  }, [canvasState.zoom, liveZoomRef]);
+
+  // Clear any pending wheel-commit on unmount.
+  useEffect(() => {
+    return () => {
+      if (wheelCommitTimerRef.current !== null) {
+        clearTimeout(wheelCommitTimerRef.current);
+        wheelCommitTimerRef.current = null;
+      }
+    };
+  }, []);
+
   // Mouse wheel zoom with zoom-to-cursor
   const handleWheel = useCallback(
     (event: WheelEvent) => {
@@ -230,58 +386,81 @@ export function CenteredCanvasView({
       // Ctrl/Cmd + scroll = zoom (standard for trackpad pinch or mouse+key)
       if (event.ctrlKey || event.metaKey) {
         event.preventDefault();
-        
+
         const rect = containerRef.current.getBoundingClientRect();
-        
+
         // Calculate cursor position relative to container
         const cursorX = event.clientX - rect.left;
         const cursorY = event.clientY - rect.top;
-        
+
         // Use continuous zoom formula: new = old * (1 - delta * sensitivity)
-        // Sensitivity needs to be tuned. 0.01 is a good starting point for pixels.
         const ZOOM_SENSITIVITY = 0.006;
         const delta = event.deltaY; // Positive = scroll down = zoom out
-        
-        // Prevent huge jumps if delta is large (e.g. mouse wheel vs trackpad)
+
         // Clamp delta impact to max 20% change per event to prevent disorientation
         const rawFactor = Math.exp(-delta * ZOOM_SENSITIVITY);
         const clampedFactor = Math.max(0.8, Math.min(1.2, rawFactor));
-        
-        const newZoom = clampZoom(canvasState.zoom * clampedFactor);
-        const scaleDiff = newZoom / canvasState.zoom;
 
-        // Calculate the point on the canvas that's under the cursor
-        // This point should match visual position, so we subtract current pan
+        // Compare mode (linked panes share canvasState; signalled by hideZoomControls)
+        // keeps the ORIGINAL per-event commit so both panes zoom in lockstep. Single-pane
+        // uses the smooth GPU path: integrate against the live (uncommitted) zoom/pan and
+        // commit on gesture end. The pan/zoom math is identical in both; only the source
+        // of prev-state and the destination (state vs motion values) differ.
+        const smoothZoom = !hideZoomControls;
+        const prevZoom = smoothZoom ? liveZoomRef.current : canvasState.zoom;
+        const prevPanX = smoothZoom ? visualPanX.get() : canvasState.panX;
+        const prevPanY = smoothZoom ? visualPanY.get() : canvasState.panY;
+
+        const newZoom = clampZoom(prevZoom * clampedFactor);
+        const scaleDiff = newZoom / prevZoom;
+
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
-        
+
         // Vector from center of screen to cursor
         const vectorX = cursorX - centerX;
         const vectorY = cursorY - centerY;
-        
-        // The point relative to the image center (0,0) that is under the cursor
-        // point = (vector - pan) / zoom 
-        // We want to keep this point under the cursor.
-        // newPan = vector - point * newZoom
-        // newPan = vector - ((vector - pan) / oldZoom) * newZoom
-        // newPan = vector - (vector - pan) * scaleDiff
-        // newPan = vector - (vector * scaleDiff - pan * scaleDiff)
-        // newPan = vector * (1 - scaleDiff) + pan * scaleDiff
-        
-        // Simplified equivalent from previous code:
-        // pan correction = (cursor relative to content) * (1 - scaleDiff)
-        const contentX = vectorX - canvasState.panX;
-        const contentY = vectorY - canvasState.panY;
-        
-        const newPanX = canvasState.panX + contentX * (1 - scaleDiff);
-        const newPanY = canvasState.panY + contentY * (1 - scaleDiff);
 
-        onCanvasStateChange({
-          zoom: newZoom,
-          panX: newPanX,
-          panY: newPanY,
-          fitMode: 'free',
-        });
+        // pan correction = (cursor relative to content) * (1 - scaleDiff)
+        const contentX = vectorX - prevPanX;
+        const contentY = vectorY - prevPanY;
+
+        const newPanX = prevPanX + contentX * (1 - scaleDiff);
+        const newPanY = prevPanY + contentY * (1 - scaleDiff);
+
+        if (!smoothZoom) {
+          // Compare/embedded: original behavior — commit every event (keeps panes in sync).
+          onCanvasStateChange({ zoom: newZoom, panX: newPanX, panY: newPanY, fitMode: 'free' });
+          return;
+        }
+
+        // GPU PATH: move the transient multiplier + pan on the compositor (no re-render).
+        // transientScale = liveZoom / committedZoom; committed zoom stays frozen until commit.
+        liveZoomRef.current = newZoom;
+        transientScale.set(newZoom / canvasState.zoom);
+        visualPanX.set(newPanX);
+        visualPanY.set(newPanY);
+
+        // Debounced commit: fold liveZoom into canvasState and reset transient→1. The
+        // committed values equal exactly what the per-event math would have produced, so
+        // the net on-screen transform is unchanged across the commit (image re-rasterizes
+        // crisp at the new committed zoom).
+        if (wheelCommitTimerRef.current !== null) {
+          clearTimeout(wheelCommitTimerRef.current);
+        }
+        wheelCommitTimerRef.current = setTimeout(() => {
+          wheelCommitTimerRef.current = null;
+          const committedZoom = liveZoomRef.current;
+          const committedPanX = visualPanX.get();
+          const committedPanY = visualPanY.get();
+          transientScale.set(1);
+          onCanvasStateChange({
+            zoom: committedZoom,
+            panX: committedPanX,
+            panY: committedPanY,
+            fitMode: 'free',
+          });
+        }, 120);
         return;
       }
 
@@ -304,7 +483,7 @@ export function CenteredCanvasView({
         onCanvasStateChange({ panX: newPanX, panY: newPanY, fitMode: 'free' });
       }
     },
-    [canvasState, scrollPanEnabled, elasticScrollEnabled, onCanvasStateChange, getClampedPosition]
+    [containerRef, canvasState, scrollPanEnabled, elasticScrollEnabled, onCanvasStateChange, getClampedPosition, hideZoomControls, transientScale, liveZoomRef, visualPanX, visualPanY]
   );
 
   // Mouse drag pan
@@ -321,7 +500,7 @@ export function CenteredCanvasView({
       });
       event.preventDefault();
     },
-    [pointerPanEnabled, canvasState.panX, canvasState.panY]
+    [pointerPanEnabled, canvasState.panX, canvasState.panY, setIsDragging, rawPanRef, setDragStart]
   );
 
   const handleMouseMove = useCallback(
@@ -346,7 +525,7 @@ export function CenteredCanvasView({
         onCanvasStateChange({ panX: rawX, panY: rawY, fitMode: 'free' });
       }
     },
-    [isDragging, dragStart, elasticScrollEnabled, applyRubberBand, visualPanX, visualPanY, onCanvasStateChange]
+    [isDragging, dragStart, elasticScrollEnabled, applyRubberBand, visualPanX, visualPanY, onCanvasStateChange, rawPanRef]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -375,7 +554,7 @@ export function CenteredCanvasView({
       // Within bounds - just update state
       onCanvasStateChange({ panX: rawPanRef.current.x, panY: rawPanRef.current.y, fitMode: 'free' });
     }
-  }, [isDragging, elasticScrollEnabled, isOverscrolled, getClampedPosition, visualPanX, visualPanY, onCanvasStateChange]);
+  }, [isDragging, elasticScrollEnabled, isOverscrolled, getClampedPosition, visualPanX, visualPanY, onCanvasStateChange, setIsDragging, rawPanRef]);
 
   // Touch events for mobile (Pinch + Pan)
   const handleTouchStart = useCallback(
@@ -410,14 +589,20 @@ export function CenteredCanvasView({
           startDist: dist,
           startZoom: canvasState.zoom,
           startPan: { x: canvasState.panX, y: canvasState.panY },
-          midpoint: { x: midX, y: midY }
+          midpoint: { x: midX, y: midY },
         };
+        // Seed live zoom from committed (they're in lockstep at rest) so the touchend
+        // commit reads the right base even if no touchmove fires.
+        liveZoomRef.current = canvasState.zoom;
         
-        // Stop dragging if we were
+        // A pinch is not a drag. Flip modes: isPinching keeps the document touch
+        // listeners attached (see the listener effect) so the pinch branch of
+        // handleTouchMove actually runs.
         setIsDragging(false);
+        setIsPinching(true);
       }
     },
-    [pointerPanEnabled, canvasState.panX, canvasState.panY, canvasState.zoom]
+    [pointerPanEnabled, canvasState.panX, canvasState.panY, canvasState.zoom, setIsDragging, setIsPinching, rawPanRef, setDragStart, liveZoomRef]
   );
 
   const handleTouchMove = useCallback(
@@ -466,15 +651,22 @@ export function CenteredCanvasView({
         const newPanX = vectorX - contentX * scaleDiff;
         const newPanY = vectorY - contentY * scaleDiff;
         
-        // Direct update for responsiveness
-        visualPanX.set(newPanX);
-        visualPanY.set(newPanY);
-        onCanvasStateChange({
-           zoom: newZoom,
-           panX: newPanX,
-           panY: newPanY,
-           fitMode: 'free'
-        });
+        // Compare mode (linked panes, signalled by hideZoomControls) keeps the
+        // ORIGINAL per-event commit so both panes pinch in lockstep. Single-pane uses
+        // the smooth GPU path that mirrors handleWheel: drive the transient scale + pan
+        // on the compositor (no re-render) and commit on touchend. transientScale is
+        // liveZoom / committedZoom; committed zoom is frozen at startZoom during the
+        // gesture, so it equals scaleDiff (newZoom / startZoom) computed above.
+        if (hideZoomControls) {
+          visualPanX.set(newPanX);
+          visualPanY.set(newPanY);
+          onCanvasStateChange({ zoom: newZoom, panX: newPanX, panY: newPanY, fitMode: 'free' });
+        } else {
+          liveZoomRef.current = newZoom;
+          transientScale.set(scaleDiff);
+          visualPanX.set(newPanX);
+          visualPanY.set(newPanY);
+        }
         return;
       }
 
@@ -497,14 +689,29 @@ export function CenteredCanvasView({
         }
       }
     },
-    [isDragging, dragStart, elasticScrollEnabled, applyRubberBand, visualPanX, visualPanY, onCanvasStateChange]
+    [containerRef, isDragging, dragStart, elasticScrollEnabled, applyRubberBand, visualPanX, visualPanY, onCanvasStateChange, rawPanRef, hideZoomControls, transientScale, liveZoomRef]
   );
 
   const handleTouchEnd = useCallback(() => {
-    // If we were pinching, just clear pinch state
+    // End of a pinch gesture.
     if (pinchRef.current) {
+      const { startZoom } = pinchRef.current;
       pinchRef.current = null;
-      return; 
+      setIsPinching(false);
+      // Single-pane: commit the transient zoom now (compare mode already committed
+      // per-event). Skip a no-op 2-finger tap that never changed zoom. Folding liveZoom
+      // into canvasState.zoom and resetting transientScale to 1 is net-zero on screen —
+      // the image just re-rasterizes crisp at the new zoom.
+      if (!hideZoomControls && liveZoomRef.current !== startZoom) {
+        transientScale.set(1);
+        onCanvasStateChange({
+          zoom: liveZoomRef.current,
+          panX: visualPanX.get(),
+          panY: visualPanY.get(),
+          fitMode: 'free',
+        });
+      }
+      return;
     }
 
     if (!isDragging) return;
@@ -528,7 +735,7 @@ export function CenteredCanvasView({
     } else {
       onCanvasStateChange({ panX: rawPanRef.current.x, panY: rawPanRef.current.y, fitMode: 'free' });
     }
-  }, [isDragging, elasticScrollEnabled, isOverscrolled, getClampedPosition, visualPanX, visualPanY, onCanvasStateChange]);
+  }, [isDragging, elasticScrollEnabled, isOverscrolled, getClampedPosition, visualPanX, visualPanY, onCanvasStateChange, setIsDragging, setIsPinching, rawPanRef, hideZoomControls, transientScale, liveZoomRef]);
 
   // Set up event listeners
   useEffect(() => {
@@ -537,11 +744,19 @@ export function CenteredCanvasView({
 
     container.addEventListener('wheel', handleWheel, { passive: false });
     
+    // Mouse drag needs document listeners only while dragging. Touch needs them while
+    // dragging (1-finger pan) OR pinching (2-finger zoom); gating touch on isDragging
+    // alone was the pinch-to-zoom bug — a pinch sets isDragging=false, so touchmove was
+    // never attached. touchcancel commits/cleans up if the OS interrupts the gesture.
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    if (isDragging || isPinching) {
       document.addEventListener('touchmove', handleTouchMove, { passive: false });
       document.addEventListener('touchend', handleTouchEnd);
+      document.addEventListener('touchcancel', handleTouchEnd);
     }
 
     return () => {
@@ -550,8 +765,9 @@ export function CenteredCanvasView({
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [handleWheel, isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+  }, [containerRef, handleWheel, isDragging, isPinching, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
   // Reset pan when fit mode changes
   useEffect(() => {
@@ -607,7 +823,7 @@ export function CenteredCanvasView({
             <p><strong>URL:</strong> {displayUrl}</p>
             <p className="mt-1"><strong>Possible causes:</strong></p>
             <ul className="list-disc list-inside mt-1 space-y-1">
-              <li>File doesn't exist on disk</li>
+              <li>File doesn&apos;t exist on disk</li>
               <li>Incorrect file path</li>
               <li>Permission issues</li>
               <li>Network error</li>
@@ -643,9 +859,9 @@ export function CenteredCanvasView({
         <div
           ref={(el) => {
             // Merge refs
-            (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+            (containerRef as MutableRefObject<HTMLDivElement | null>).current = el;
             if (interactionLayerRef) {
-              (interactionLayerRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+              (interactionLayerRef as MutableRefObject<HTMLDivElement | null>).current = el;
             }
           }}
           className={cn(
@@ -670,12 +886,15 @@ export function CenteredCanvasView({
               y: visualPanY,
             }}
           >
-            {/* Image + Overlay Container */}
-            <div
-              className="relative"
+            {/* SCALE LAYER - transient zoom multiplier (1 at rest). Scales about its own
+                center, which coincides with the viewport center because the parent
+                flex-centers it. Pins/boxes inside counter-scale via CanvasScaleProvider. */}
+            <motion.div
+              className="relative will-change-transform"
               style={{
                 width: displaySize.width,
                 height: displaySize.height,
+                scale: transientScale,
               }}
             >
               {/* Loading state */}
@@ -709,10 +928,12 @@ export function CenteredCanvasView({
               {/* Overlay (Annotations) */}
               {overlayContent && (
                 <div ref={resolvedOverlayRef} className="absolute inset-0">
-                  {overlayContent}
+                  <CanvasScaleProvider transientScale={transientScale}>
+                    {overlayContent}
+                  </CanvasScaleProvider>
                 </div>
               )}
-            </div>
+            </motion.div>
           </motion.div>
         </div>
 

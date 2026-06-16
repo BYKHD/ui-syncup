@@ -34,7 +34,7 @@ export interface ActivityTimelineProps {
 // ============================================================================
 
 export function ActivityTimeline({
-  issueId,
+  issueId: _issueId,
   activities,
   isLoading = false,
   hasMore = false,
@@ -149,7 +149,7 @@ export function ActivityTimeline({
 // COMPACT ACTIVITY ENTRY (Single line)
 // ============================================================================
 
-function CompactActivityEntry({ activity, isLast }: { activity: ActivityEntry; isLast?: boolean }) {
+function CompactActivityEntry({ activity, isLast: _isLast }: { activity: ActivityEntry; isLast?: boolean }) {
   const content = getActivityContent(activity);
   
   return (
@@ -270,7 +270,7 @@ function getActivityContent(activity: ActivityEntry): React.ReactNode {
           : activity.comment;
         return (
           <>
-            commented: <span className="italic">"{truncated}"</span>
+            commented: <span className="italic">&quot;{truncated}&quot;</span>
           </>
         );
       }

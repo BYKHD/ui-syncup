@@ -15,18 +15,29 @@ import { ListProjectActivitiesResponseSchema, type ListProjectActivitiesResponse
  * @example
  * const { activities } = await getProjectActivities('proj_123')
  */
-export async function getProjectActivities(projectId: string): Promise<ListProjectActivitiesResponse> {
+export async function getProjectActivities(
+  projectId: string,
+  params?: { page?: number; limit?: number }
+): Promise<ListProjectActivitiesResponse> {
   if (!projectId) {
     throw new Error('Project ID is required')
   }
 
-  const response = await fetch(`/api/projects/${projectId}/activities`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-  })
+  const query = new URLSearchParams()
+  if (params?.page != null) query.set('page', String(params.page))
+  if (params?.limit != null) query.set('limit', String(params.limit))
+  const queryString = query.toString()
+
+  const response = await fetch(
+    `/api/projects/${projectId}/activities${queryString ? `?${queryString}` : ''}`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    }
+  )
 
   if (!response.ok) {
     if (response.status === 404) {

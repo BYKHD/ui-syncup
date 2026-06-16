@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { updateIssue } from '../api';
 import { issueKeys } from './use-issue-details';
-import type { IssueUpdateResponse } from '@/features/issues/types';
+import type { IssueUpdatePayload, IssueUpdateResponse } from '@/features/issues/types';
 
 // ============================================================================
 // HOOK
@@ -18,11 +18,8 @@ export interface UseIssueUpdateOptions {
   onError?: (error: Error) => void;
 }
 
-export interface UseIssueUpdateParams {
+export interface UseIssueUpdateParams extends IssueUpdatePayload {
   issueId: string;
-  field: string;
-  value: any;
-  actorId: string;
 }
 
 export interface UseIssueUpdateResult {

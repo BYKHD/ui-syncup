@@ -52,7 +52,7 @@ export default function TeamSettingsGeneral({
     return (
       <div className="p-4">
         <p className="text-amber-600">
-          Team not found or you don't have access to it.
+          Team not found or you don&apos;t have access to it.
         </p>
       </div>
     );
@@ -86,7 +86,7 @@ function TeamSettingsContent({
     handleSubmit,
   } = useTeamSettings({
     initialTeam: team,
-    onSuccess: (updatedTeam) => {
+    onSuccess: (_updatedTeam) => {
       // Optional: Additional logic on success
     }
   });

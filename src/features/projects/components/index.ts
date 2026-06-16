@@ -10,7 +10,8 @@ export { ProjectInvitationDialog } from './project-invitation-dialog'
 
 // Detail components
 export { ProjectOverview } from './project-detail-overview'
-export { ProjectActivityFeed } from './project-detail-activity-feed'
+export { ProjectActivityFeed, ProjectActivityList } from './project-detail-activity-feed'
+export { ProjectActivityDrawer } from './project-activity-drawer'
 export { ProjectDetailHeader } from './project-detail-header'
 export { ProjectTitleSection } from './project-title-section'
 export { ProjectStats } from './project-stats'

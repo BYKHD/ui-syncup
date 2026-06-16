@@ -187,7 +187,9 @@ export function useSignUp(options: UseSignUpOptions = {}) {
     try {
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: callbackUrl ?? "/projects",
+        // Default to "/" so the landing-view resolver in app/page.tsx picks the
+        // destination; an explicit invitation callbackUrl still takes precedence.
+        callbackURL: callbackUrl ?? "/",
       });
     } catch (error) {
       setOauthStatus("error");

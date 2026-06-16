@@ -1,3 +1,18 @@
+## [0.9.3-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.9.3-beta.1...v0.9.3-beta.2) (2026-06-15)
+
+
+### Bug Fixes
+
+* preferences screen, project activity drawer, and landing-view routing ([#152](https://github.com/BYKHD/ui-syncup/issues/152)) ([15b1696](https://github.com/BYKHD/ui-syncup/commit/15b16961e7dd8331095c581614d849707487536e))
+
+## [0.9.3-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.9.2...v0.9.3-beta.1) (2026-05-26)
+
+
+### Bug Fixes
+
+* resolve project archive feature ([#151](https://github.com/BYKHD/ui-syncup/issues/151)) ([5bada97](https://github.com/BYKHD/ui-syncup/commit/5bada97cb38a7ed944f7576a6cfc18fa46506c9b))
+* Team switching is not working and Owner has unable to see issues details ([d5014e9](https://github.com/BYKHD/ui-syncup/commit/d5014e9eb2d3629956add1dab74feaa2099bcb9b))
+
 ## [0.9.2](https://github.com/BYKHD/ui-syncup/compare/v0.9.1...v0.9.2) (2026-05-21)
 
 

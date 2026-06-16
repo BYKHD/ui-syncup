@@ -10,7 +10,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import IssueStatusBadge from "./issues-status-badge";
 import PriorityBadge from "./issues-priority-badge";
 import { preloadIssueDetailComponents } from "./preload";
@@ -21,15 +20,18 @@ import { RelativeTime } from "@/components/shared/relative-time";
 import { cn } from "@/lib/utils";
 
 interface IssuesListProps {
-  issues: IssueSummary[]
-  onIssueClick?: (issueId: string) => void
+  issues: IssueSummary[];
+  onIssueClick?: (issueId: string) => void;
 }
 
 /**
  * Safely get status color config
  */
 function getStatusColor(status: string) {
-  const normalized = status?.trim().toLowerCase().replace(/\s+/g, '_') as IssueStatus;
+  const normalized = status
+    ?.trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_") as IssueStatus;
   return STATUS_COLORS[normalized] ?? DEFAULT_STATUS_COLOR;
 }
 
@@ -37,29 +39,26 @@ function getStatusColor(status: string) {
  * Format date to normal date format (e.g., "Jan 5, 2026")
  */
 function formatDate(date: Date | string): string {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  return dateObj.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
+  const dateObj = typeof date === "string" ? new Date(date) : date;
+  return dateObj.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
   });
 }
 
 /**
  * IssuesList - Pure presentational component for rendering issues table
- * 
+ *
  * NOTE: Loading state is intentionally NOT handled here.
  * The parent component (ProjectIssues) manages loading via React Query
  * to prevent duplicate skeleton layers with route-level loading.tsx
- * 
+ *
  * Features:
- * - Colored left border per status for visual scanning
+ * - Status-aware hover styling for visual scanning
  * - Preloads issue detail components on hover for faster navigation.
  */
-export default function IssuesList({
-  issues,
-  onIssueClick,
-}: IssuesListProps) {
+export default function IssuesList({ issues, onIssueClick }: IssuesListProps) {
   // Track if we've already preloaded to avoid redundant calls
   const hasPreloaded = useRef(false);
 
@@ -88,14 +87,21 @@ export default function IssuesList({
               Title
             </TableHead>
             <TableHead className="text-muted-foreground">Status</TableHead>
-            <TableHead className="text-right text-muted-foreground">Created</TableHead>
-            <TableHead className="text-right text-muted-foreground">Updated</TableHead>
+            <TableHead className="text-right text-muted-foreground">
+              Created
+            </TableHead>
+            <TableHead className="text-right text-muted-foreground">
+              Updated
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {issues.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+              <TableCell
+                colSpan={6}
+                className="text-center text-sm text-muted-foreground"
+              >
                 No issues recorded yet. Create one to get started.
               </TableCell>
             </TableRow>
@@ -106,9 +112,8 @@ export default function IssuesList({
                 <TableRow
                   key={issue.id}
                   className={cn(
-                    "cursor-pointer border-l-2 transition-colors duration-150",
-                    statusColors.rowBorder,
-                    statusColors.rowHoverBg
+                    "cursor-pointer transition-colors duration-150",
+                    statusColors.rowHoverBg,
                   )}
                   onClick={() => handleIssueClick(issue.id)}
                   onMouseEnter={handleRowHover}

@@ -179,8 +179,10 @@ export async function getProjectActivities(
     .limit(limit)
     .offset(offset);
 
-  // Get total from first row (window function provides same value for all rows)
-  const total = rows[0]?.totalCount ?? 0;
+  // Get total from first row (window function provides same value for all rows).
+  // postgres.js returns count(*) (bigint) as a string, so coerce to a number before
+  // it crosses the typed/Zod boundary (matches team-service / resource-limits).
+  const total = parseInt(String(rows[0]?.totalCount ?? "0"), 10);
 
   const items: ProjectActivityWithActor[] = rows.map((row) => ({
     id: row.activity.id,

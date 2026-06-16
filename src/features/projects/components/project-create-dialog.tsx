@@ -1,15 +1,14 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Field, FieldDescription } from '@/components/ui/field'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { RiAddLine, RiFolderFill, RiLockLine, RiGlobalLine } from '@remixicon/react'
+import { RiAddLine, RiLockLine, RiGlobalLine } from '@remixicon/react'
 import { ProjectIconSelector } from './project-icon-selector'
 import { useTeam } from '@/hooks/use-team'
 

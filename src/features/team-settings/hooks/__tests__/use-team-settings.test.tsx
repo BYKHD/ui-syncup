@@ -1,4 +1,4 @@
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useTeamSettings } from "../use-team-settings";
 import { useUpdateTeam } from "@/features/teams";
@@ -54,7 +54,7 @@ describe("useTeamSettings", () => {
     );
 
     const file = new File(["(⌐□_□)"], "chucknorris.png", { type: "image/png" });
-    const event = {
+    const _event = {
       target: {
         files: [file],
       },

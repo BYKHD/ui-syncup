@@ -1,6 +1,7 @@
 'use client'
 
 import { IntegrationsList } from '../components/integrations-list'
+import { MockupBanner } from '../components/mockup-banner'
 import type { Integration } from '../types'
 
 interface IntegrationsScreenProps {
@@ -13,6 +14,7 @@ export default function IntegrationsScreen({
   // TODO: [MOCKUP] Wire this component up to the actual API endpoint for user settings
   return (
     <div className="space-y-6">
+      <MockupBanner />
       <div>
         <h2 className="text-xl font-semibold">Integrations</h2>
         <p className="text-muted-foreground mt-1">

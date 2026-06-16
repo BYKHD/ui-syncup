@@ -1,8 +1,8 @@
 'use client';
 
-import { motion } from 'motion/react';
+import { motion, useMotionValue, useReducedMotion } from 'motion/react';
 import type { PointerEvent, RefObject } from 'react';
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import type { AnnotationPosition } from '../types';
 import { cn } from '@/lib/utils';
 import { useLongPress } from '@/hooks/use-long-press';
@@ -74,7 +74,7 @@ export interface AnnotationBoxProps {
 
 type DragHandle = 'box' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
-export function AnnotationBox({
+function AnnotationBoxInner({
   annotation,
   overlayRef,
   isActive = false,
@@ -83,7 +83,7 @@ export function AnnotationBox({
   isSaving = false,
   isPopoverOpen = false,
   onSelect,
-  onMove,
+  onMove: _onMove,
   onMoveComplete,
   onDragStart,
   onDragEnd,
@@ -111,6 +111,25 @@ export function AnnotationBox({
   
   // Last calculated position for final onMove call
   const lastPositionRef = useRef<{ start: AnnotationPosition; end: AnnotationPosition } | null>(null);
+
+  // Overlay bounding rect cached at pointerdown (cleared on pointerup) so pointermove
+  // never forces a reflow via getBoundingClientRect(). The overlay does not resize mid-drag.
+  const overlayRectRef = useRef<DOMRect | null>(null);
+
+  // GPU translate channel for whole-box MOVE. Writing these does NOT trigger a React
+  // render — framer mutates the compositor transform directly. Pixels, relative to the
+  // committed (left/top) origin. Resize does NOT use these (it changes width/height).
+  const moveX = useMotionValue(0);
+  const moveY = useMotionValue(0);
+
+  // rAF handle + latest pending position for RESIZE coalescing (one setState per frame).
+  const resizeRafRef = useRef<number | null>(null);
+  const pendingResizePositionRef = useRef<{ start: AnnotationPosition; end: AnnotationPosition } | null>(null);
+
+  // Respect reduced-motion: framer's useReducedMotion already neutralizes the entrance
+  // animation; we read it only to keep intent explicit. Movement itself is direct
+  // manipulation (user-driven), so the translate is unconditional.
+  const prefersReducedMotion = useReducedMotion();
   
   // Track the effective base position for drag calculations
   // This is annotation position + any uncommitted delta from previous drag
@@ -131,15 +150,26 @@ export function AnnotationBox({
     if (!dragStateRef.current) {
       // When props update (save completed), sync effective base to new props
       effectiveBaseRef.current = {
-        start: { ...annotation.start },
-        end: { ...annotation.end },
+        start: { x: annotation.start.x, y: annotation.start.y },
+        end: { x: annotation.end.x, y: annotation.end.y },
       };
       // Clear any lingering delta since props now reflect the committed position
-      if (visualDelta !== null) {
-        setVisualDelta(null);
-      }
+      setVisualDelta((currentDelta) => (currentDelta === null ? currentDelta : null));
+      // Committed left/top now include the moved position — release the GPU translate.
+      moveX.set(0);
+      moveY.set(0);
     }
-  }, [annotation.start.x, annotation.start.y, annotation.end.x, annotation.end.y]);
+  }, [annotation.start.x, annotation.start.y, annotation.end.x, annotation.end.y, moveX, moveY]);
+
+  // Cancel any in-flight resize frame on unmount.
+  useEffect(() => {
+    return () => {
+      if (resizeRafRef.current !== null) {
+        cancelAnimationFrame(resizeRafRef.current);
+        resizeRafRef.current = null;
+      }
+    };
+  }, []);
 
   // Context menu state (desktop)
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
@@ -185,11 +215,12 @@ export function AnnotationBox({
 
   const calculateNewPosition = useCallback(
     (event: PointerEvent, handle: DragHandle): { start: AnnotationPosition; end: AnnotationPosition } | null => {
-      const overlay = overlayRef.current;
       const dragState = dragStateRef.current;
-      if (!overlay || !dragState) return null;
+      // Use the rect cached at pointerdown to avoid a forced reflow every pointermove.
+      // Fall back to a live measurement only if the cache is somehow absent.
+      const rect = overlayRectRef.current ?? overlayRef.current?.getBoundingClientRect();
+      if (!rect || !dragState) return null;
 
-      const rect = overlay.getBoundingClientRect();
       const currentX = (event.clientX - rect.left) / rect.width;
       const currentY = (event.clientY - rect.top) / rect.height;
 
@@ -259,7 +290,7 @@ export function AnnotationBox({
 
       // Call long-press handler on mobile
       if (isMobile && longPressHandlers.onPointerDown) {
-        longPressHandlers.onPointerDown(event as any);
+        longPressHandlers.onPointerDown(event);
       }
 
       // Only enable dragging/resizing in interactive (edit) mode
@@ -268,6 +299,10 @@ export function AnnotationBox({
       // IMPORTANT: If there's an existing visual delta (from a previous drag that's still saving),
       // "bake" it into the effective base. This prevents snap-back when starting a new drag
       // before the previous save completes and props have updated.
+      // The delta can come from a RESIZE (visualDelta state) or a MOVE (moveX/moveY motion
+      // values). Fold whichever is present into the base, then reset both channels.
+      const pendingMoveDxPx = moveX.get();
+      const pendingMoveDyPx = moveY.get();
       if (visualDelta !== null) {
         effectiveBaseRef.current = {
           start: {
@@ -281,13 +316,31 @@ export function AnnotationBox({
         };
         // Clear the delta since we've incorporated it into the base
         setVisualDelta(null);
+      } else if (pendingMoveDxPx !== 0 || pendingMoveDyPx !== 0) {
+        // An in-flight MOVE (still saving) left a GPU translate. Convert px → normalized
+        // using the live overlay rect and bake it into the base so the new drag starts
+        // from the visually-correct origin (no snap-back).
+        const liveRect = overlayRef.current?.getBoundingClientRect();
+        if (liveRect && liveRect.width > 0 && liveRect.height > 0) {
+          const ndx = pendingMoveDxPx / liveRect.width;
+          const ndy = pendingMoveDyPx / liveRect.height;
+          effectiveBaseRef.current = {
+            start: { x: effectiveBaseRef.current.start.x + ndx, y: effectiveBaseRef.current.start.y + ndy },
+            end: { x: effectiveBaseRef.current.end.x + ndx, y: effectiveBaseRef.current.end.y + ndy },
+          };
+        }
       }
+      // Reset the GPU translate channel for the fresh drag (geometry now lives in base).
+      moveX.set(0);
+      moveY.set(0);
 
       // Initialize drag state with all needed info - use EFFECTIVE BASE not stale props
       const overlay = overlayRef.current;
       if (overlay) {
         const rect = overlay.getBoundingClientRect();
         const effectiveBase = effectiveBaseRef.current;
+        // Cache the rect for this drag so pointermove avoids forced reflow.
+        overlayRectRef.current = rect;
         dragStateRef.current = {
           originalStart: { ...effectiveBase.start },
           originalEnd: { ...effectiveBase.end },
@@ -306,14 +359,14 @@ export function AnnotationBox({
       // Notify parent immediately that drag might start (prevents sync during potential drag)
       onDragStart?.(annotation.id);
     },
-    [interactive, isMobile, longPressHandlers, overlayRef, visualDelta, onDragStart, annotation.id],
+    [interactive, isMobile, longPressHandlers, overlayRef, visualDelta, onDragStart, annotation.id, moveX, moveY],
   );
 
   const handlePointerMove = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
       // Call long-press handler on mobile
       if (isMobile && longPressHandlers.onPointerMove) {
-        longPressHandlers.onPointerMove(event as any);
+        longPressHandlers.onPointerMove(event);
       }
 
       if (!interactive || !activeHandle) return;
@@ -338,24 +391,50 @@ export function AnnotationBox({
       const newPosition = calculateNewPosition(event, activeHandle);
       if (newPosition) {
         lastPositionRef.current = newPosition;
-        
-        // Calculate visual delta for smooth rendering (works for both move and resize)
-        setVisualDelta({
-          startDx: newPosition.start.x - annotation.start.x,
-          startDy: newPosition.start.y - annotation.start.y,
-          endDx: newPosition.end.x - annotation.end.x,
-          endDy: newPosition.end.y - annotation.end.y,
-        });
+
+        if (activeHandle === 'box') {
+          // MOVE: pure translation. Drive framer motion values (compositor transform,
+          // no React render). Translate = post-clamp committed delta from the drag origin,
+          // converted to pixels via the cached rect. This matches exactly what will be
+          // persisted on pointerup, including center-clamp adjustments.
+          const dragState = dragStateRef.current;
+          const rect = overlayRectRef.current;
+          if (dragState && rect) {
+            const dxPx = (newPosition.start.x - dragState.originalStart.x) * rect.width;
+            const dyPx = (newPosition.start.y - dragState.originalStart.y) * rect.height;
+            moveX.set(dxPx);
+            moveY.set(dyPx);
+          }
+        } else {
+          // RESIZE: width/height + origin change — cannot use transform without distorting
+          // the border/handles. Keep the percentage geometry but COALESCE to one React
+          // render per animation frame via requestAnimationFrame.
+          pendingResizePositionRef.current = newPosition;
+          if (resizeRafRef.current === null) {
+            resizeRafRef.current = requestAnimationFrame(() => {
+              resizeRafRef.current = null;
+              const pending = pendingResizePositionRef.current;
+              pendingResizePositionRef.current = null;
+              if (!pending) return;
+              setVisualDelta({
+                startDx: pending.start.x - annotation.start.x,
+                startDy: pending.start.y - annotation.start.y,
+                endDx: pending.end.x - annotation.end.x,
+                endDy: pending.end.y - annotation.end.y,
+              });
+            });
+          }
+        }
       }
     },
-    [interactive, activeHandle, calculateNewPosition, annotation.start, annotation.end, isMobile, longPressHandlers],
+    [interactive, activeHandle, calculateNewPosition, annotation.start, annotation.end, isMobile, longPressHandlers, moveX, moveY],
   );
 
   const handlePointerUp = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
       // Call long-press handler on mobile
       if (isMobile && longPressHandlers.onPointerUp) {
-        longPressHandlers.onPointerUp(event as any);
+        longPressHandlers.onPointerUp(event);
       }
 
       const dragState = dragStateRef.current;
@@ -376,10 +455,22 @@ export function AnnotationBox({
         onMoveComplete?.(annotation.id, lastPositionRef.current.start, lastPositionRef.current.end);
       }
 
-      // Clear state - visualDelta will be cleared by useEffect when annotation updates
+      // Cancel any queued resize frame so it can't setState after teardown.
+      if (resizeRafRef.current !== null) {
+        cancelAnimationFrame(resizeRafRef.current);
+        resizeRafRef.current = null;
+      }
+      pendingResizePositionRef.current = null;
+
+      // Clear state - visualDelta will be cleared by useEffect when annotation updates.
+      // NOTE: moveX/moveY are intentionally NOT reset here. The committed left/top only
+      // updates once the async save lands; zeroing the translate now would snap the box
+      // back for a frame. They are released on the props-sync effect or re-baked on re-drag,
+      // matching the visualDelta lifetime exactly.
       setActiveHandle(null);
       dragStateRef.current = null;
       lastPositionRef.current = null;
+      overlayRectRef.current = null;
 
       // Always notify parent that drag ended (matches onDragStart in pointerDown)
       onDragEnd?.(annotation.id);
@@ -439,12 +530,17 @@ export function AnnotationBox({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
+        transition={prefersReducedMotion ? { duration: 0 } : undefined}
         className="annotation-box-container absolute"
         style={{
           left: `${x1 * 100}%`,
           top: `${y1 * 100}%`,
           width: `${width}%`,
           height: `${height}%`,
+          // GPU translate for whole-box MOVE. Framer composes x/y with the entrance
+          // scale into one transform matrix; left/top/width/height stay untouched.
+          x: moveX,
+          y: moveY,
         }}
         data-annotation-box="true"
         data-annotation-id={annotation.id}
@@ -537,3 +633,7 @@ export function AnnotationBox({
     </>
   );
 }
+
+// Memoize to prevent re-renders when only unrelated siblings change (selection, hover, etc.).
+// Default shallow-prop comparison is correct — no custom comparator needed.
+export const AnnotationBox = memo(AnnotationBoxInner);

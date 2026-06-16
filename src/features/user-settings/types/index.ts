@@ -17,13 +17,6 @@ export interface NotificationPreference {
   email: boolean
 }
 
-export interface UserPreferences {
-  theme: 'light' | 'dark' | 'system'
-  emailDigest: 'daily' | 'weekly' | 'never'
-  soundEnabled: boolean
-  compactMode: boolean
-}
-
 export interface Integration {
   id: string
   name: string

@@ -276,10 +276,11 @@ export function useAnnotationComments(
   // ============================================================================
 
   const annotation = getAnnotationFromCache();
-  const comments = annotation?.comments ?? [];
 
   // Calculate unread count
   const { hasUnreadComments, unreadCount } = useMemo(() => {
+    const comments = annotation?.comments ?? [];
+
     if (!localLastReadAt) {
       // If never read, all comments from others are unread
       const unread = comments.filter((c) => c.author.id !== currentUser?.id);
@@ -299,7 +300,7 @@ export function useAnnotationComments(
       hasUnreadComments: unread.length > 0,
       unreadCount: unread.length,
     };
-  }, [comments, localLastReadAt, currentUser?.id]);
+  }, [annotation?.comments, localLastReadAt, currentUser?.id]);
 
   // ============================================================================
   // ACTION HANDLERS

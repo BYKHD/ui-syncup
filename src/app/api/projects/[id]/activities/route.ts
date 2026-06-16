@@ -131,8 +131,13 @@ export async function GET(
       );
     }
 
+    // Pagination params (the service clamps limit to [1, 100])
+    const { searchParams } = request.nextUrl;
+    const page = Math.max(1, Number(searchParams.get("page")) || 1);
+    const limit = Number(searchParams.get("limit")) || 20;
+
     // Get activities
-    const result = await getProjectActivities({ projectId });
+    const result = await getProjectActivities({ projectId, page, limit });
     const activities = result.items;
 
     logger.info("api.projects.activities.success", {
@@ -150,7 +155,16 @@ export async function GET(
     }));
 
     return NextResponse.json(
-      { activities: serializedActivities },
+      {
+        activities: serializedActivities,
+        pagination: {
+          page: result.page,
+          limit: result.limit,
+          total: result.total,
+          totalPages: result.totalPages,
+          hasMore: result.page < result.totalPages,
+        },
+      },
       { status: 200 }
     );
   } catch (error) {

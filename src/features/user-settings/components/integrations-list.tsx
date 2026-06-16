@@ -135,7 +135,7 @@ export function IntegrationsList({ integrations }: IntegrationsListProps) {
         <CardHeader>
           <CardTitle>Looking for more?</CardTitle>
           <CardDescription>
-            We're always adding new integrations
+            We&apos;re always adding new integrations
           </CardDescription>
         </CardHeader>
         <CardContent>

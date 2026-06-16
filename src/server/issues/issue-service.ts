@@ -82,6 +82,13 @@ export async function getIssueById(
     .from(issueAttachments)
     .where(eq(issueAttachments.issueId, issueId));
 
+  // Parent project status — used client-side to render archived projects
+  // as read-only without a second round-trip.
+  const projectRow = await db.query.projects.findFirst({
+    where: eq(projects.id, issue.projectId),
+    columns: { status: true },
+  });
+
   return {
     ...issue,
     assignee,
@@ -92,6 +99,7 @@ export async function getIssueById(
       image: reporter.image,
     },
     attachmentCount: attachmentCountResult[0]?.count ?? 0,
+    projectStatus: projectRow?.status as "active" | "archived" | undefined,
   };
 }
 

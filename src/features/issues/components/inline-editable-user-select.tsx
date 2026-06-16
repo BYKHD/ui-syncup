@@ -67,7 +67,7 @@ export function InlineEditableUserSelect({
   users,
   onSave,
   canEdit,
-  placeholder = 'Select assignee',
+  placeholder: _placeholder = 'Select assignee',
   allowUnassigned = true,
   className,
   displayClassName
@@ -114,7 +114,7 @@ export function InlineEditableUserSelect({
     try {
       await onSave(value);
       toast.success('Undone');
-    } catch (err) {
+    } catch {
       toast.error('Failed to undo');
     }
   };

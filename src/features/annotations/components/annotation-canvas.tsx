@@ -1,15 +1,10 @@
 'use client';
 
-import { useState, useCallback, useEffect, type PointerEvent, type RefObject } from 'react';
+import { useState, useCallback, useEffect, useRef, type PointerEvent, type RefObject } from 'react';
 import type { AnnotationToolId, AnnotationPosition, AnnotationDraft } from '../types';
 import { AnnotationCommentInput } from './annotation-comment-input';
 import { cn } from '@/lib/utils';
-import {
-  calculateCommentInputPosition,
-  COMMENT_INPUT_WIDTH,
-  COMMENT_INPUT_HEIGHT,
-  PADDING,
-} from '../utils/position-comment-input';
+import { calculateCommentInputPosition } from '../utils/position-comment-input';
 
 export interface AnnotationCanvasProps {
   overlayRef: RefObject<HTMLDivElement | null>;
@@ -17,7 +12,6 @@ export interface AnnotationCanvasProps {
   editModeEnabled: boolean;
   handToolActive?: boolean;
   onDraftCreate?: (draft: AnnotationDraft) => void;
-  onDraftUpdate?: (draft: AnnotationDraft) => void;
   onDraftCommit?: (draft: AnnotationDraft, message?: string) => void;
   onDraftCancel?: () => void;
   requireCommentForPin?: boolean; // If true, pin annotations require a comment
@@ -47,7 +41,6 @@ export function AnnotationCanvas({
   editModeEnabled,
   handToolActive = false,
   onDraftCreate,
-  onDraftUpdate,
   onDraftCommit,
   onDraftCancel,
   requireCommentForPin = false,
@@ -57,19 +50,34 @@ export function AnnotationCanvas({
   const [draftState, setDraftState] = useState<DraftState | null>(null);
   const [pendingComment, setPendingComment] = useState<PendingCommentState | null>(null);
 
-  const getRelativePosition = useCallback(
-    (event: PointerEvent<HTMLDivElement>): AnnotationPosition | null => {
-      const overlay = overlayRef.current;
-      if (!overlay) return null;
+  // Overlay bounds cached once at pointerdown and reused for the whole draw.
+  // The overlay cannot resize mid-draw (pointer is captured), so calling
+  // getBoundingClientRect() on every pointermove just forces needless reflows.
+  const drawRectRef = useRef<DOMRect | null>(null);
+  // requestAnimationFrame handle used to coalesce setDraftState to <=1 per frame.
+  const rafIdRef = useRef<number | null>(null);
 
-      const rect = overlay.getBoundingClientRect();
-      const x = (event.clientX - rect.left) / rect.width;
-      const y = (event.clientY - rect.top) / rect.height;
-
+  // Compute a normalized (0-1) position from a client point against a given rect.
+  const positionFromRect = useCallback(
+    (clientX: number, clientY: number, rect: DOMRect): AnnotationPosition => {
+      const x = (clientX - rect.left) / rect.width;
+      const y = (clientY - rect.top) / rect.height;
       // Allow positions outside the image bounds (no clamping)
       return { x, y };
     },
-    [overlayRef],
+    [],
+  );
+
+  const getRelativePosition = useCallback(
+    (event: PointerEvent<HTMLDivElement>): AnnotationPosition | null => {
+      // Prefer the rect captured at pointerdown; fall back to a fresh measure
+      // (e.g. pointerup paths that can fire without a cached rect).
+      const rect = drawRectRef.current ?? overlayRef.current?.getBoundingClientRect();
+      if (!rect) return null;
+
+      return positionFromRect(event.clientX, event.clientY, rect);
+    },
+    [overlayRef, positionFromRect],
   );
 
   const calculateSmartPosition = useCallback(
@@ -205,8 +213,17 @@ export function AnnotationCanvas({
       event.preventDefault();
       event.stopPropagation();
 
+      // Cache the overlay bounds for the duration of this draw. It cannot
+      // resize while the pointer is captured, so we avoid a getBoundingClientRect
+      // (forced reflow) on every pointermove.
+      const overlay = overlayRef.current;
+      drawRectRef.current = overlay ? overlay.getBoundingClientRect() : null;
+
       const position = getRelativePosition(event);
-      if (!position) return;
+      if (!position) {
+        drawRectRef.current = null;
+        return;
+      }
 
       const draft = createDraft(activeTool, position);
 
@@ -223,7 +240,7 @@ export function AnnotationCanvas({
       // Capture pointer for smooth dragging
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [editModeEnabled, handToolActive, pendingComment, activeTool, getRelativePosition, createDraft, onDraftCreate],
+    [editModeEnabled, handToolActive, pendingComment, activeTool, overlayRef, getRelativePosition, createDraft, onDraftCreate],
   );
 
   const handlePointerMove = useCallback(
@@ -236,15 +253,19 @@ export function AnnotationCanvas({
       const position = getRelativePosition(event);
       if (!position) return;
 
-      setDraftState((prev) => {
-        if (!prev) return null;
-        return { ...prev, currentPosition: position };
+      // Coalesce preview updates to at most one per animation frame. Pointermove
+      // can fire far more often than the display refreshes; without this we run a
+      // setState (and the resulting render) per event for zero extra visual fidelity.
+      if (rafIdRef.current !== null) return;
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null;
+        setDraftState((prev) => {
+          if (!prev) return null;
+          return { ...prev, currentPosition: position };
+        });
       });
-
-      const updatedDraft = updateDraft(draftState, position);
-      onDraftUpdate?.(updatedDraft);
     },
-    [draftState, getRelativePosition, updateDraft, onDraftUpdate],
+    [draftState, getRelativePosition],
   );
 
   const handlePointerUp = useCallback(
@@ -253,11 +274,21 @@ export function AnnotationCanvas({
 
       event.preventDefault();
 
+      // Cancel any preview frame still queued from the last pointermove so it
+      // can't run after we've cleared draftState below.
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
         event.currentTarget.releasePointerCapture(event.pointerId);
       }
 
+      // Resolve the final position against the rect captured at pointerdown,
+      // then release the cached rect so the next draw re-measures.
       const position = getRelativePosition(event);
+      drawRectRef.current = null;
       if (!position) {
         onDraftCancel?.();
         setDraftState(null);
@@ -345,6 +376,16 @@ export function AnnotationCanvas({
       setPendingComment(null);
     }
   }, [pendingComment, onDraftCancel]);
+
+  // Cancel any queued preview frame on unmount to avoid a setState after teardown.
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+    };
+  }, []);
 
   // Click outside to dismiss
   useEffect(() => {

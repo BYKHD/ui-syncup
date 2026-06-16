@@ -99,8 +99,7 @@ export const UpdateProjectBodySchema = z.object({
   description: z.string().max(500).nullable().optional(),
   icon: z.string().nullable().optional(),
   visibility: ProjectVisibilitySchema.optional(),
-  status: ProjectStatusSchema.optional(),
-})
+}).strict()
 
 export const UpdateMemberRoleBodySchema = z.object({
   role: ProjectRoleSchema,
@@ -125,6 +124,14 @@ export const GetProjectResponseSchema = ProjectWithStatsSchema
 export const CreateProjectResponseSchema = ProjectSchema
 
 export const UpdateProjectResponseSchema = ProjectSchema
+
+export const ArchiveProjectResponseSchema = z.object({
+  project: ProjectSchema,
+})
+
+export const UnarchiveProjectResponseSchema = z.object({
+  project: ProjectSchema,
+})
 
 export const GetProjectMembersResponseSchema = z.object({
   members: z.array(ProjectMemberSchema),
@@ -230,6 +237,8 @@ export const ProjectActivityTypeSchema = z.enum([
   'member_role_changed',
   'member_added',
   'member_removed',
+  'project_archived',
+  'project_unarchived',
 ])
 
 export const ProjectActivitySchema = z.object({
@@ -247,8 +256,18 @@ export const ProjectActivitySchema = z.object({
   }).nullable(),
 })
 
+export const ProjectActivityPaginationSchema = z.object({
+  // Coerce numeric fields — count(*) can arrive as a string from the pg driver.
+  page: z.coerce.number(),
+  limit: z.coerce.number(),
+  total: z.coerce.number(),
+  totalPages: z.coerce.number(),
+  hasMore: z.boolean(),
+})
+
 export const ListProjectActivitiesResponseSchema = z.object({
   activities: z.array(ProjectActivitySchema),
+  pagination: ProjectActivityPaginationSchema.optional(),
 })
 
 // ============================================================================
@@ -262,6 +281,8 @@ export type CreateProjectBody = z.infer<typeof CreateProjectBodySchema>
 export type CreateProjectResponse = z.infer<typeof CreateProjectResponseSchema>
 export type UpdateProjectBody = z.infer<typeof UpdateProjectBodySchema>
 export type UpdateProjectResponse = z.infer<typeof UpdateProjectResponseSchema>
+export type ArchiveProjectResponse = z.infer<typeof ArchiveProjectResponseSchema>
+export type UnarchiveProjectResponse = z.infer<typeof UnarchiveProjectResponseSchema>
 export type GetProjectMembersResponse = z.infer<typeof GetProjectMembersResponseSchema>
 export type UpdateMemberRoleBody = z.infer<typeof UpdateMemberRoleBodySchema>
 export type UpdateMemberRoleResponse = z.infer<typeof UpdateMemberRoleResponseSchema>
@@ -283,6 +304,7 @@ export type ResendInvitationResponse = z.infer<typeof ResendInvitationResponseSc
 // Activity type exports
 export type ProjectActivityType = z.infer<typeof ProjectActivityTypeSchema>
 export type ProjectActivity = z.infer<typeof ProjectActivitySchema>
+export type ProjectActivityPagination = z.infer<typeof ProjectActivityPaginationSchema>
 export type ListProjectActivitiesResponse = z.infer<typeof ListProjectActivitiesResponseSchema>
 
 // ============================================================================

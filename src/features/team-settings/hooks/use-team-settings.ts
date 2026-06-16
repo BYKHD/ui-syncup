@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import type { Team } from "@/features/teams/api";
+import type { Team, UpdateTeamInput } from "@/features/teams/api";
 import { useUpdateTeam } from "@/features/teams";
 import type { TeamGeneralFormData } from "../types";
 import { useMediaUpload } from "@/hooks/use-media-upload";
@@ -12,6 +12,10 @@ import { useMediaUpload } from "@/hooks/use-media-upload";
 type UseTeamSettingsOptions = {
   initialTeam: Team;
   onSuccess?: (updatedTeam: Team) => void;
+};
+
+type TeamSettingsUpdateInput = Omit<UpdateTeamInput, "image"> & {
+  image?: string | null;
 };
 
 export function useTeamSettings(options: UseTeamSettingsOptions) {
@@ -80,7 +84,7 @@ export function useTeamSettings(options: UseTeamSettingsOptions) {
   };
 
   const handleSubmit = form.handleSubmit((data: TeamGeneralFormData) => {
-    const input: any = { // UpdateTeamInput
+    const input: TeamSettingsUpdateInput = {
       name: data.name,
     };
 
@@ -94,7 +98,7 @@ export function useTeamSettings(options: UseTeamSettingsOptions) {
     updateTeam(
       {
         teamId: currentTeam.id,
-        input,
+        input: input as UpdateTeamInput,
       },
       {
         onSuccess: async (response) => {
@@ -146,4 +150,3 @@ export function useTeamSettings(options: UseTeamSettingsOptions) {
     handleSubmit,
   };
 }
-

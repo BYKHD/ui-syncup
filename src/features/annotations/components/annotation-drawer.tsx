@@ -146,7 +146,7 @@ export function AnnotationDrawer({
         return updatedState;
       });
     },
-    [draftId, enabled, onDraftChange, overlayRef],
+    [enabled, onDraftChange, overlayRef],
   );
 
   const handlePointerUp = useCallback(

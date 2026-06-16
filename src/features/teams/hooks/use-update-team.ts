@@ -32,7 +32,7 @@ export function useUpdateTeam(
 
   return useMutation({
     mutationFn: ({ teamId, input }: UpdateTeamVariables) => updateTeam(teamId, input),
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables, onMutateResult, context) => {
       // Invalidate specific team query
       queryClient.invalidateQueries({ queryKey: [TEAM_QUERY_KEY, variables.teamId] });
       
@@ -40,7 +40,7 @@ export function useUpdateTeam(
       queryClient.invalidateQueries({ queryKey: [TEAMS_QUERY_KEY] });
       
       // Call user's onSuccess if provided
-      options?.onSuccess?.(data, variables, context, undefined as any);
+      options?.onSuccess?.(data, variables, onMutateResult, context);
     },
     ...options,
   });

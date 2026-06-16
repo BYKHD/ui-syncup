@@ -19,10 +19,7 @@ import {
 } from "@/server/projects/project-service";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
-import type {
-  ProjectStatus,
-  ProjectVisibility,
-} from "@/server/projects/types";
+import type { ProjectVisibility } from "@/server/projects/types";
 
 /**
  * Zod schema for project update
@@ -32,8 +29,7 @@ const UpdateProjectSchema = z.object({
   description: z.string().max(500).optional().nullable(),
   icon: z.string().max(255).optional().nullable(),
   visibility: z.enum(["public", "private"]).optional(),
-  status: z.enum(["active", "archived"]).optional(),
-});
+}).strict();
 
 /**
  * GET /api/projects/[id]
@@ -185,8 +181,7 @@ export async function GET(
  *   "name": "Updated Name",
  *   "description": "Updated description",
  *   "icon": "icon-url",
- *   "visibility": "public",
- *   "status": "archived"
+ *   "visibility": "public"
  * }
  * 
  * Success response (200):
@@ -273,7 +268,7 @@ export async function PATCH(
     }
 
     // Update project
-    const { name, description, icon, visibility, status } = validation.data;
+    const { name, description, icon, visibility } = validation.data;
 
     try {
       const project = await updateProject(projectId, {
@@ -281,7 +276,6 @@ export async function PATCH(
         description,
         icon,
         visibility: visibility as ProjectVisibility | undefined,
-        status: status as ProjectStatus | undefined,
       });
 
       logger.info("api.projects.update.success", {

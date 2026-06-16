@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { toast } from "sonner";
+import type { ErrorResponse } from "../api/types";
 
 interface ResendVerificationRequest {
   email: string;
@@ -12,6 +13,12 @@ interface ResendVerificationRequest {
 interface ResendVerificationResponse {
   message: string;
 }
+
+type ResendVerificationErrorResponse = ErrorResponse & {
+  error: ErrorResponse["error"] & {
+    retryAfter?: number;
+  };
+};
 
 /**
  * Resend verification email API call
@@ -70,7 +77,7 @@ export function useResendVerification() {
     },
     onError: (error: Error) => {
       if (error instanceof ApiError) {
-        const errorPayload = error.payload as any;
+        const errorPayload = error.payload as ResendVerificationErrorResponse | null;
 
         // Handle rate limit errors (429)
         if (error.status === 429) {

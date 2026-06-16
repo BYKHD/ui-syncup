@@ -21,7 +21,13 @@ Issue tracking and details: create, view, update status, delete, attach images, 
 
 ## Hooks
 
-`use-issue-details`, `use-issue-activities`, `use-issue-update`, `use-issue-delete`, `use-issue-filters`, `use-create-issue`, `use-canvas-transform`, `use-elastic-scroll`, `use-keyboard-shortcuts`.
+`use-issue-details`, `use-issue-activities`, `use-issue-update`, `use-issue-delete`, `use-issue-filters`, `use-create-issue`, `use-canvas-transform`, `use-elastic-scroll`, `use-keyboard-shortcuts`, `use-issue-permissions`.
+
+### Permissions
+
+The GET `/api/issues/[issueId]` endpoint now returns a `permissions: string[]` field alongside the issue — the viewer's resolved `Permission` strings for the issue's project, derived server-side via `getUserPermissions`. `use-issue-details` surfaces this as `permissions: string[] | undefined`. `use-issue-permissions({ issueId })` consumes it and maps the strings to the `IssuePermissions` shape used by UI components (e.g. `canEdit`, `canDelete`, `canComment`).
+
+`getUserPermissions` in `src/server/auth/rbac.ts` now applies the same archive short-circuit as `hasPermission`: when `isProjectArchived` is true, all `ARCHIVE_BLOCKED_PERMISSIONS` are stripped from the returned set, so archived-project owners receive view-only strings from the server. The client-side archive override in `issue-details-screen.tsx` remains as a defence-in-depth layer.
 
 ## Workflow
 

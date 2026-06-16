@@ -1,9 +1,10 @@
 'use client';
 
-import { motion } from 'motion/react';
+import { motion, useTransform } from 'motion/react';
 import type { PointerEvent, RefObject } from 'react';
-import { useRef, useState, useEffect } from 'react';
+import { memo, useRef, useState, useEffect } from 'react';
 import type { AttachmentAnnotation, AnnotationPosition } from '../types';
+import { useCanvasTransientScale } from './annotation-scale-context';
 import { cn } from '@/lib/utils';
 import { useLongPress } from '@/hooks/use-long-press';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -47,7 +48,7 @@ export interface AnnotationPinProps<A extends AttachmentAnnotation = AttachmentA
   onHoverEnd?: () => void;
 }
 
-export function AnnotationPin<A extends AttachmentAnnotation>({
+function AnnotationPinInner<A extends AttachmentAnnotation>({
   annotation,
   overlayRef,
   isActive = false,
@@ -56,7 +57,7 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   isSaving = false,
   isPopoverOpen = false,
   onSelect,
-  onMove,
+  onMove: _onMove,
   onMoveComplete,
   onDragStart,
   onDragEnd,
@@ -66,10 +67,24 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   onHoverEnd,
 }: AnnotationPinProps<A>) {
   const isMobile = useIsMobile();
+  // Counter-scale: cancel ONLY the transform-layer transient scale so the pin stays a
+  // constant on-screen size during zoom gestures. 1 at rest (and with no provider).
+  const transientScale = useCanvasTransientScale();
+  const counterScale = useTransform(transientScale, (s) => (s === 0 ? 1 : 1 / s));
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
   const lastPositionRef = useRef<AnnotationPosition | null>(null);
-  
+
+  // Cached overlay rect, snapshotted at pointerdown to avoid a forced reflow
+  // (getBoundingClientRect) on every pointermove during a drag.
+  const overlayRectRef = useRef<DOMRect | null>(null);
+
+  // Coalesce setDragOffset to one update per animation frame. We store the
+  // latest computed offset and schedule a single rAF that flushes it, so the
+  // rendered position always reflects the most recent pointer position.
+  const pendingDragOffsetRef = useRef<{ x: number; y: number } | null>(null);
+  const rafIdRef = useRef<number | null>(null);
+
   // Track the effective base position for drag calculations
   // This is annotation position + any uncommitted offset from previous drag
   const effectiveBaseRef = useRef<{ x: number; y: number }>({ x: annotation.x, y: annotation.y });
@@ -84,11 +99,20 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
       // When props update (save completed), sync effective base to new props
       effectiveBaseRef.current = { x: annotation.x, y: annotation.y };
       // Clear any lingering offset since props now reflect the committed position
-      if (dragOffset !== null) {
-        setDragOffset(null);
-      }
+      setDragOffset((currentOffset) => (currentOffset === null ? currentOffset : null));
     }
   }, [annotation.x, annotation.y]);
+
+  // Cancel any pending coalesced drag frame if the pin unmounts mid-gesture,
+  // so the rAF callback never fires setDragOffset on an unmounted component.
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+    };
+  }, []);
 
   // Context menu state (desktop)
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
@@ -120,7 +144,7 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
 
     // Call long-press handler on mobile
     if (isMobile && longPressHandlers.onPointerDown) {
-      longPressHandlers.onPointerDown(event as any);
+      longPressHandlers.onPointerDown(event);
     }
 
     // Always allow selection, even in non-interactive (view) mode
@@ -132,7 +156,12 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     event.currentTarget.setPointerCapture(event.pointerId);
     dragStartRef.current = { x: event.clientX, y: event.clientY };
     isDraggingRef.current = false;
-    
+
+    // Snapshot the overlay rect once at the start of the gesture. Reading it on
+    // every pointermove forces a layout reflow; the overlay does not resize
+    // mid-drag, so a single read is safe and removes that per-event cost.
+    overlayRectRef.current = overlayRef.current?.getBoundingClientRect() ?? null;
+
     // IMPORTANT: If there's an existing drag offset (from a previous drag that's still saving),
     // "bake" it into the effective base position. This prevents snap-back when starting
     // a new drag before the previous save completes and props have updated.
@@ -152,7 +181,7 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
   const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
     // Call long-press handler on mobile
     if (isMobile && longPressHandlers.onPointerMove) {
-      longPressHandlers.onPointerMove(event as any);
+      longPressHandlers.onPointerMove(event);
     }
 
     if (!interactive) return;
@@ -173,31 +202,46 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     }
 
     event.preventDefault();
-    const overlay = overlayRef.current;
-    if (!overlay) return;
-    const rect = overlay.getBoundingClientRect();
+    // Use the rect snapshotted at pointerdown; fall back to a live read only if
+    // the cache is somehow empty (e.g. capture without a preceding down).
+    const rect = overlayRectRef.current ?? overlayRef.current?.getBoundingClientRect();
+    if (!rect) return;
     const x = (event.clientX - rect.left) / rect.width;
     const y = (event.clientY - rect.top) / rect.height;
     const clampedX = Math.min(Math.max(x, 0), 1);
     const clampedY = Math.min(Math.max(y, 0), 1);
     const position = { x: clampedX, y: clampedY };
 
-    // Store last position for drag completion callback
+    // Store last position for drag completion callback. This MUST stay synchronous
+    // (not deferred to the rAF) so the committed value in handlePointerUp is never
+    // a stale frame.
     lastPositionRef.current = position;
-    
+
     // Calculate offset relative to EFFECTIVE BASE (not stale props)
     // This ensures smooth drag even when props haven't updated from previous save
     const base = effectiveBaseRef.current;
-    setDragOffset({
+    // Record the latest offset, then coalesce: only one setDragOffset per frame.
+    // The rAF reads the latest ref value, so the rendered position is always the
+    // most recent pointer position (latest-value, not skip-and-drop).
+    pendingDragOffsetRef.current = {
       x: clampedX - base.x,
       y: clampedY - base.y,
-    });
+    };
+    if (rafIdRef.current === null) {
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null;
+        const next = pendingDragOffsetRef.current;
+        if (next !== null) {
+          setDragOffset(next);
+        }
+      });
+    }
   };
 
   const handlePointerUp = (event: PointerEvent<HTMLButtonElement>) => {
     // Call long-press handler on mobile
     if (isMobile && longPressHandlers.onPointerUp) {
-      longPressHandlers.onPointerUp(event as any);
+      longPressHandlers.onPointerUp(event);
     }
 
     if (!interactive) return;
@@ -210,6 +254,18 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
       // Call onMoveComplete for final state update and history (onMove is for live updates during drag)
       onMoveComplete?.(annotation.id, lastPositionRef.current);
     }
+
+    // Cancel any pending coalesced frame. We read lastPositionRef above first, so
+    // the committed coordinate is unaffected by dropping the trailing frame; the
+    // final rendered offset is then driven by the useEffect once props update.
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+    pendingDragOffsetRef.current = null;
+
+    // Drop the cached overlay rect now that the gesture is over.
+    overlayRectRef.current = null;
 
     // Don't clear dragOffset here - let useEffect clear it when annotation.x/y updates
     // This prevents flicker between drop and state update
@@ -266,31 +322,45 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
 
   return (
     <>
-      <motion.button
-        type="button"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onContextMenu={handleContextMenu}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        className={getAnnotationPinClassName({ isActive: isActive || isPopoverOpen, interactive, isSaving })}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+      {/* Counter-scale anchor wrapper. Zero-size, anchored at the pin's (x,y); scales
+          about its origin (0 0) by 1/transientScale so the inner button stays a constant
+          on-screen size during zoom. The button keeps its exact original markup, classes,
+          centering and entrance, sitting at the wrapper origin — so its on-screen anchor
+          and appearance are identical to before (counterScale is 1 at rest / no provider). */}
+      <motion.span
+        className="absolute"
         style={{
-          left: dragOffset 
-            ? `${(effectiveBaseRef.current.x + dragOffset.x) * 100}%` 
+          left: dragOffset
+            ? `${(effectiveBaseRef.current.x + dragOffset.x) * 100}%`
             : `${annotation.x * 100}%`,
-          top: dragOffset 
-            ? `${(effectiveBaseRef.current.y + dragOffset.y) * 100}%` 
+          top: dragOffset
+            ? `${(effectiveBaseRef.current.y + dragOffset.y) * 100}%`
             : `${annotation.y * 100}%`,
+          width: 0,
+          height: 0,
+          scale: counterScale,
+          transformOrigin: '0 0',
         }}
-        aria-label={`Annotation ${annotation.label}`}
-        data-annotation-pin="true"
       >
-        {annotation.label}
-      </motion.button>
+        <motion.button
+          type="button"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onContextMenu={handleContextMenu}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          className={getAnnotationPinClassName({ isActive: isActive || isPopoverOpen, interactive, isSaving })}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          style={{ left: 0, top: 0 }}
+          aria-label={`Annotation ${annotation.label}`}
+          data-annotation-pin="true"
+        >
+          {annotation.label}
+        </motion.button>
+      </motion.span>
 
       {/* Desktop context menu */}
       {!isMobile && (
@@ -316,3 +386,8 @@ export function AnnotationPin<A extends AttachmentAnnotation>({
     </>
   );
 }
+
+// React.memo erases generic type parameters, so we re-export with a cast that
+// restores the original generic signature while keeping the memoised component.
+// Default shallow-prop comparison is correct here (no custom comparator needed).
+export const AnnotationPin = memo(AnnotationPinInner) as typeof AnnotationPinInner;

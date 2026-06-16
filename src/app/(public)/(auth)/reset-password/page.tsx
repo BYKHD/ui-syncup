@@ -17,7 +17,7 @@ export default async function ResetPasswordPage({
   
   try {
     session = await getSession();
-  } catch (error) {
+  } catch {
     // Treat any session validation error as no session
     session = null;
   }

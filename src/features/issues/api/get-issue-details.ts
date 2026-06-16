@@ -12,6 +12,7 @@ export interface GetIssueDetailsParams {
 
 export interface GetIssueDetailsResponse {
   issue: IssueDetailData;
+  permissions: string[];
 }
 
 /**

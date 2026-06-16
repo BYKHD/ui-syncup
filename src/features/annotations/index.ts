@@ -27,6 +27,8 @@ export type { AnnotationThreadPanelProps } from './components/annotation-thread-
 export { KeyboardShortcutsModal } from './components/keyboard-shortcuts-modal';
 export type { KeyboardShortcutsModalProps } from './components/keyboard-shortcuts-modal';
 export { AnnotationPopover } from './components/annotation-popover';
+export { CanvasScaleProvider, useCanvasTransientScale } from './components/annotation-scale-context';
+export type { CanvasScaleContextValue, CanvasScaleProviderProps } from './components/annotation-scale-context';
 
 
 // Types

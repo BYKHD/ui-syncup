@@ -3,7 +3,7 @@
  * Current user leaves a project
  */
 
-import { LeaveMemberResponseSchema, type LeaveMemberResponse } from './types'
+import type { LeaveMemberResponse } from './types'
 
 // ============================================================================
 // API CALLER

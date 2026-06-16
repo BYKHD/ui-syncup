@@ -24,7 +24,10 @@ interface ProvidersResponse {
 
 export interface SocialLoginButtonsProps {
   /**
-   * URL to redirect to after successful authentication
+   * URL to redirect to after successful authentication.
+   * Defaults to "/" so the redirect routes through `app/page.tsx`, which
+   * resolves the user's landing-view preference. Pass an explicit path
+   * (e.g. an invitation deep-link) to override.
    */
   redirectTo?: string;
   /**
@@ -62,7 +65,7 @@ export interface SocialLoginButtonsProps {
  * ```
  */
 export function SocialLoginButtons({
-  redirectTo = "/projects",
+  redirectTo = "/",
   onError,
   disabled = false,
   layout = "vertical",

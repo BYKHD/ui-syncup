@@ -86,13 +86,15 @@ describe("Project Service - Access Control Logic Properties", () => {
     fc.assert(
       fc.property(
         fc.constantFrom("public", "private"),
+        fc.constantFrom("active", "archived"),
         fc.boolean(), // Is user already a member?
-        (visibility, isMember) => {
-          // canJoin should be true only if project is public AND user is not a member
-          const expectedCanJoin = visibility === "public" && !isMember;
+        (visibility, status, isMember) => {
+          // canJoin should be true only for active public projects where the user is not a member
+          const expectedCanJoin =
+            status === "active" && visibility === "public" && !isMember;
 
           // Verify the logic
-          if (visibility === "public" && !isMember) {
+          if (status === "active" && visibility === "public" && !isMember) {
             expect(expectedCanJoin).toBe(true);
           } else {
             expect(expectedCanJoin).toBe(false);
@@ -106,6 +108,11 @@ describe("Project Service - Access Control Logic Properties", () => {
 
           if (isMember) {
             // Already a member, can't join again
+            expect(expectedCanJoin).toBe(false);
+          }
+
+          if (status === "archived") {
+            // Archived projects cannot be joined
             expect(expectedCanJoin).toBe(false);
           }
         }

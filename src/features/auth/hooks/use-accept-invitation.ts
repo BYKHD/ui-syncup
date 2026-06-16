@@ -126,7 +126,7 @@ export function useAcceptInvitation(token: string): UseAcceptInvitationReturn {
           throw new Error(data.error || 'Failed to accept invitation');
         }
 
-        const { teamSlug } = await acceptResponse.json();
+        const { teamSlug: _teamSlug } = await acceptResponse.json();
 
         toast.success(`Welcome to ${invitation?.teamName}!`);
         router.push(`/projects`);

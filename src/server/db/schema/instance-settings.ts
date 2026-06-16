@@ -29,8 +29,7 @@ export const instanceSettings = pgTable("instance_settings", {
   
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-}, (_table) => ({
+}, () => ({
   // Singleton constraint: ensures only one row can exist
   singletonIdx: uniqueIndex("instance_settings_singleton").on(sql`(TRUE)`),
 }));

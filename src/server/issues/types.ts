@@ -44,6 +44,12 @@ export interface IssueWithDetails extends Issue {
     image: string | null;
   };
   attachmentCount?: number;
+  /**
+   * Status of the parent project. Surfaced so the client can render
+   * archived projects as read-only without a second round-trip. Optional
+   * because not every code path that returns IssueWithDetails fetches it.
+   */
+  projectStatus?: "active" | "archived";
 }
 
 /**

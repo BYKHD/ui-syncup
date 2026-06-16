@@ -1,7 +1,7 @@
 ---
 title: Wiki Log
 type: log
-last_updated: 2026-05-07
+last_updated: 2026-05-27
 ---
 
 # Wiki Log
@@ -132,6 +132,12 @@ Append-only. Newest entries at the bottom. Each entry starts with `## [YYYY-MM-D
 - Added coverage that non-managers do not see pending access requests even when request data exists.
 - Focused dialog tests and TypeScript typecheck are clean.
 
+## [2026-05-26] add | archive-project feature shipped
+
+- Added owner-only project archive/unarchive workflow with transactional service functions, archive activity events, API route coverage, frontend actions, read-only archived detail banner, and active-by-default project list filtering.
+- Local Postgres-dependent migration/manual UI smoke was blocked because `localhost:5432` was not reachable in this environment; focused PGlite route/service/component tests and TypeScript verification were used for code validation.
+- See `docs/superpowers/specs/2026-05-26-archive-project-design.md`.
+
 ## [2026-05-07] add | concepts/access-requests
 
 - Project-scoped request-to-join feature: replaces the dead-end "no permission" error on shared issue links with an in-place access-request panel.
@@ -207,3 +213,125 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - Added `getIssueByRef(issueRef, userId)` so `/issue/[issueKey]` accepts UUIDs directly and disambiguates legacy issue keys by the first candidate the user can view.
 - Switched project issue rows, dashboard issue rows, and issue notification target URLs to prefer `issues.id`, while preserving legacy `issue_key` display and fallback links.
 - Added focused PGlite regression coverage for duplicate `PRJ-1` issues across teams.
+
+## [2026-05-26] fix | issue list drops status row border color
+
+- `IssuesList` no longer applies `statusColors.rowBorder` to issue rows, while preserving status-aware hover background styling.
+- Added focused component coverage for the row class contract.
+
+## [2026-05-26] fix | project archive confetti visibility
+
+- Delayed the project detail refresh callback until the `canvas-confetti` animation promise settles, so archiving a completed project does not immediately remove the body-mounted confetti canvas.
+- Added focused hook coverage for the archive success callback order.
+
+## [2026-05-26] query | project list card archive state
+
+- Confirmed `ProjectCard` derives archived list-card UI from `project.status === "archived"` and does not own archive/unarchive state locally.
+
+## [2026-05-26] fix | project list card archived folder background
+
+- Removed the archived-state muted override from the `ProjectCard` folder panel so archived cards keep the normal `bg-card` panel background while retaining the archived badge and outer card treatment.
+- Added focused component coverage for the archived folder-panel class contract.
+
+## [2026-05-26] fix | eslint JSX text and decorative image warnings
+
+- Replaced literal JSX text-node quote characters with HTML entities in issue, project, team-settings, and user-settings UI components.
+- Added explicit empty `alt` props to decorative issue attachment tab/image icons targeted by the a11y lint rule.
+
+## [2026-05-26] fix | eslint no-unused-vars warnings
+
+- Removed dead type/icon imports and prefixed intentionally retained unused bindings in annotations, issues canvas, and project activity components.
+- `bun run lint 2>&1 | grep 'no-unused-vars'` now returns no output; remaining lint warnings are from other rules.
+
+## [2026-05-27] feat | archive write-freeze on issues, annotations, comments
+
+- Added [`isProjectArchived`](../../src/server/projects/archive-status.ts) as a leaf module (kept out of `project-service.ts` to avoid a cycle with `rbac.ts`).
+- Gated `hasPermission` in [src/server/auth/rbac.ts](../../src/server/auth/rbac.ts): issue + annotation write permissions short-circuit to `false` when the project is archived. `project:archive` and reads stay granted so owners can unarchive.
+- Gated `getAnnotationPermissions` in [src/server/annotations/permission-utils.ts](../../src/server/annotations/permission-utils.ts): zeros out all write flags on archived projects while keeping `canView`.
+- Strict freeze (no role bypass): TEAM_OWNER edits also blocked — to modify, unarchive first.
+- Updated [[features/projects]] and [[concepts/issue-workflow]]; new tests in [`archive-permissions.integration.test.ts`](../../src/server/projects/__tests__/archive-permissions.integration.test.ts) (4/4 passing; full related suite 32/32 passing; `tsc --noEmit` clean).
+
+## [2026-05-27] feat | archive read-only UI parity for issues + annotations
+
+- Server: `getIssueById` ([src/server/issues/issue-service.ts](../../src/server/issues/issue-service.ts)) now returns `projectStatus` on `IssueWithDetails`; surfaces through `IssueDetailData` ([src/features/issues/types/issue.ts](../../src/features/issues/types/issue.ts)) so the client has archive state without a second round-trip.
+- Issue UI: [issue-details-screen.tsx](../../src/features/issues/screens/issue-details-screen.tsx) forces `IssuePermissions` to all-false when `projectStatus === 'archived'`. Existing `InlineEditable*` + `MetadataSection` already render read-only when `canEdit=false`, so the viewer-like look is automatic.
+- Annotation UI: [`useAnnotationPermissions`](../../src/features/annotations/hooks/use-annotation-permissions.ts) gains an `isArchived` option → returns `READ_ONLY_PERMISSIONS`. [responsive-issue-layout.tsx](../../src/features/issues/components/responsive-issue-layout.tsx) threads `issueData.projectStatus === 'archived'` through `IssueAttachmentsView` → `AnnotatedAttachmentView`.
+- Friendlier toasts on handler short-circuit: "This project is archived. Unarchive to edit." instead of generic "Update failed".
+- New test: Property 16.8 in [`use-annotation-permissions.property.test.tsx`](../../src/features/annotations/hooks/__tests__/use-annotation-permissions.property.test.tsx) (12/12 passing; tsc clean).
+- Caveat (not addressed here): the broader `useIssuePermissions` hook in `issue-details-screen.tsx:101` is still a TODO — non-archive role gating still relies on server 403s. Tracked as a follow-up.
+
+## [2026-05-27] feat | Wire real RBAC permissions to issue-details-screen (close the default-true TODO)
+
+- `getUserPermissions` in `src/server/auth/rbac.ts` now strips `ARCHIVE_BLOCKED_PERMISSIONS` on archived projects, mirroring `hasPermission`.
+- `GET /api/issues/[issueId]` response now includes `permissions: string[]` — the viewer's resolved permission set for the issue's project.
+- `use-issue-details` surfaces `permissions: string[] | undefined`; `use-issue-permissions({ issueId })` maps strings to `IssuePermissions` flags.
+- `issue-details-screen.tsx`: replaced the `canEdit: true` defaults with `useIssuePermissions`; archive override kept for defence-in-depth.
+- Tests: `rbac.test.ts` (4 new integration cases for archive gating), `hooks/__tests__/use-issue-permissions.test.tsx` (5 unit cases), route mock updated.
+- Affected files: `rbac.ts`, `route.ts` (GET), `get-issue-details.ts`, `use-issue-details.ts`, `use-issue-permissions.ts` (new), `hooks/index.ts`, `issue-details-screen.tsx`.
+
+## [2026-06-15] perf | annotations editing/viewing smoothness (Tier 1)
+
+- Reviewed `src/features/annotations` for drag/draw/zoom render-budget issues; fixed the top three. Synthesis filed as [[concepts/annotations-canvas-performance]].
+- **#1 draw re-render storm** — `annotation-canvas.tsx` dropped a dead per-pointermove `onDraftUpdate`→`setCurrentDraft` path (the value was never read by [annotated-attachment-view.tsx](../../src/features/annotations/components/annotated-attachment-view.tsx)); added a pointerdown rect-cache + rAF-coalesced preview. Removed the now-unused `onDraftUpdate` prop.
+- **#2 drag GPU path** — `annotation-box.tsx` whole-box MOVE now uses framer `x/y` motion values (no React render per frame); resize stays width/height but rAF-coalesced (scale would distort border/handles); rect cached at pointerdown. `annotation-pin.tsx` kept conservative (rect-cache + rAF, render formula byte-identical) to avoid moving existing pins.
+- **#3 zoom GPU path** — `centered-canvas-view.tsx` (features/issues) wheel zoom drives a transient `scale` motion value + pan on the compositor, committing `canvasState.zoom` ~120ms after the gesture (commit values identical to old per-event math). Pins counter-scale `1/transientScale` via new [annotation-scale-context.tsx](../../src/features/annotations/components/annotation-scale-context.tsx) (`CanvasScaleProvider`/`useCanvasTransientScale`). Compare mode (`hideZoomControls`) kept on the old per-event path for lockstep.
+- Safety: `CanvasViewState` is never persisted; annotation coords normalized 0–1; committed values unchanged → existing annotations untouched. `tsc` clean, eslint 0 errors (2 pre-existing `react-hooks/refs` warnings), annotations suite 8/8, react-doctor 73/100 (no regression).
+- Deferred / discovered (not changed): box-chrome counter-scale (box rect should scale with image, only border/handles need constant size); a **pre-existing touch-pinch bug** (`touchmove`/`touchend` gated on `isDragging`, which a 2-finger touch clears — desktop/trackpad via `ctrl+wheel` unaffected); a likely **~12px pin centering offset** (framer-motion transform overrides Tailwind `-translate-*`). Live in-browser zoom verification still pending.
+
+## [2026-06-15] perf | annotations Tier 2/3 — memoization + callback stability + sync correctness
+
+- Subagent-driven (sonnet executors, main-agent review). Continues the Tier 1 work; patterns in [[concepts/annotations-canvas-performance]].
+- **T3 stable callbacks**: `setDragging` in [use-annotation-integration.ts](../../src/features/annotations/hooks/use-annotation-integration.ts) is now `useCallback`; `onDragStart/onDragEnd` and `handleAnnotationEdit/handleAnnotationDelete` in [annotated-attachment-view.tsx](../../src/features/annotations/components/annotated-attachment-view.tsx) made identity-stable by reading live values through refs synced each render.
+- **T2 React.memo**: `AnnotationPin`/`AnnotationBox` wrapped in `memo` (generic preserved via `as typeof Inner`). With stable callbacks, selection/hover/post-commit re-render is O(1) not O(N) markers. (Local-mode move handlers still churn — transient upload-preview path, low N.)
+- **T3 popover stale-ref**: [use-annotation-popover.ts](../../src/features/annotations/hooks/use-annotation-popover.ts) takes `isDraggingRef` (RefObject) read live; handlers stay stable so the memo holds. Fixes the popover opening mid-drag.
+- **T3 sync correctness**: the partial-sync dirty-check in the integration hook now compares `shape` via `shapesAreEqual` (was id/x/y only → a box whose geometry changed but center stayed put was missed).
+- Skipped: 200ms cleanup-interval gating (marginal CPU vs. risk of leaking `debouncing` states). **Dropped (won't-do): Framer `LazyMotion` bundle trim** — needs an app-level provider + risks silent animation regressions only catchable by live testing.
+- Render/correctness-only; existing annotations untouched. `tsc` clean, eslint 0 errors, annotations suite 8/8.
+
+## [2026-06-15] fix | touch pinch-to-zoom on touchscreens (centered-canvas-view)
+
+- Fixed the pre-existing touch-pinch bug flagged in the two entries above. Root cause confirmed: in [centered-canvas-view.tsx](../../src/features/issues/components/centered-canvas-view.tsx) the document `touchmove`/`touchend` listeners were attached only while `isDragging`, but `handleTouchStart` sets `isDragging=false` on a 2-finger touch (and a 1→2-finger transition detaches them), so the pinch branch of `handleTouchMove` never ran. Desktop/Mac-trackpad zoom was never affected (arrives as `ctrl+wheel` → `handleWheel`).
+- **Fix (single file):** new `isPinching` state; touch listeners now gated on `isDragging || isPinching` (mouse listeners stay `isDragging`-only) and `touchcancel` added for OS-interrupted gestures. Pinch routed through the **same transient-scale model** as wheel: drive `transientScale` (= `newZoom/startZoom`) + pan on the compositor during the gesture, commit `canvasState.zoom` on `touchend` (no debounce — touch has a native gesture-end). Compare mode (`hideZoomControls`) keeps its per-event commit for pane lockstep. Pins stay constant-size via the existing `CanvasScaleProvider` counter-scale.
+- **Why not JSX `onTouchMove`** (the other option considered): React registers `touchmove` as a **passive** listener, so the handler's `event.preventDefault()` (blocks native browser pinch/scroll) would no-op. Kept the native `{ passive: false }` listener in the effect.
+- `startPan` left on committed `canvasState.pan` (not live `visualPan`) to stay consistent with the `!isDragging` sync effect; no-op 2-finger taps skip the commit (matches prior behavior).
+- Verified: `tsc --noEmit` clean, `eslint` 0 issues on the file (Node 22). **Live multi-touch verification still pending** — needs the running app + a seeded image attachment; Playwright multi-touch pinch emulation is unreliable, so a real touchscreen/tablet pass is the recommended check. Updated [[concepts/annotations-canvas-performance]] (moved the bug from Known issues → Fixed; documented the pinch path).
+
+## [2026-06-15] ui | projects detail — Recent Activity moved to header-triggered drawer
+
+- **Problem:** `ProjectActivityFeed` was pinned full-width at the bottom of [project-detail-screen.tsx](../../src/features/projects/screens/project-detail-screen.tsx), below a potentially long issues list, so it was buried. User chose a collapsible drawer over a sidebar/tabs.
+- **Change:** Activity now opens in a right-side `Sheet` triggered by an "Activity" button (`RiHistoryLine`) in the header action row, rendered inside [project-actions.tsx](../../src/features/projects/components/project-actions.tsx). New self-contained [project-activity-drawer.tsx](../../src/features/projects/components/project-activity-drawer.tsx) (owns open state, needs only `projectId`) — no render-prop plumbing through the screen/header, unlike the issue/member/settings dialogs (those need screen-owned form state; activity does not).
+- **Refactor:** [project-detail-activity-feed.tsx](../../src/features/projects/components/project-detail-activity-feed.tsx) split into `ProjectActivityList` (bare loading/empty/list, no Card) + `ProjectActivityFeed` (thin Card wrapper kept for the existing test + barrel export). Drawer renders the bare list inside a `ScrollArea`; the `Sheet` owns the "Recent Activity" title (no double-title / card-in-sheet).
+- Trigger is unconditional (any project viewer, archived or not) → preserves prior visibility; no access-control change.
+- Verified (Node 22): `tsc --noEmit` clean, eslint 0 issues on touched files, `project-detail-activity-feed` suite 3/3. Live visual pass not yet run.
+
+## [2026-06-15] ui | projects activity drawer — moved to More menu + paginated (25/page, load more)
+
+- Follow-up to the activity-drawer entry above, after user testing. Two changes:
+- **Trigger relocated:** the standalone header "Activity" button is gone; activity now opens from an "Activity" item (`RiHistoryLine`) in the "More actions" dropdown ([project-actions.tsx](../../src/features/projects/components/project-actions.tsx)), placed in the top/view group next to Members. `ProjectActivityDrawer` is now **controlled** (`open`/`onOpenChange`) instead of self-triggering. **Consequence:** the dropdown only renders when `hasSecondaryActions` (i.e. members), so public **non-members no longer reach the activity log** — acceptable since activity is membership-oriented; revisit if non-member access is wanted.
+- **Pagination (25/page, "Load more"):** completed the half-built server pagination. The service ([activity-service.ts](../../src/server/projects/activity-service.ts)) already supported `page`/`limit` (default 20, max 100) but the route called it with no args and **stripped the pagination metadata**. Route now reads `?page`/`?limit` and returns `{ activities, pagination: { page, limit, total, totalPages, hasMore } }` (additive). Client caller `getProjectActivities(projectId, { page, limit })` builds the query string. New `useProjectActivitiesInfinite` hook (`useInfiniteQuery`, pageSize 25) flattens + **de-dupes pages by id** (offset pagination can re-include a shifted row). Response schema gained an optional `pagination` field — kept optional so the legacy `useProjectActivities` parse and its test stay green.
+- **Component split:** [project-detail-activity-feed.tsx](../../src/features/projects/components/project-detail-activity-feed.tsx) now exports `ProjectActivitySkeleton` / `ProjectActivityEmpty` / `ProjectActivityItems` (pure) reused by both the Card feed and the drawer. Drawer gates its skeleton on `isPending` (not `isLoading`) to avoid an empty-state flash on first open.
+- **Test gotcha:** the drawer's data-fetching body is a child of `SheetContent`, so the `useInfiniteQuery` call only mounts when the sheet opens. This keeps `ProjectActions` renderable without a `QueryClientProvider` (its test mocks only `useJoinProject`) and preserves the sheet's slide-out animation. New [project-activity-drawer.test.tsx](../../src/features/projects/components/__tests__/project-activity-drawer.test.tsx) mocks the hook (local `ResizeObserver` polyfill for Radix ScrollArea).
+- Verified (Node 22): `tsc` clean, eslint 0 issues, projects component tests 27/27 (5 new). Live visual pass of load-more not yet run.
+
+## [2026-06-15] fix | activity drawer stuck loading — count(*) bigint serialized as string
+
+- **Symptom:** after wiring activity pagination, the drawer was stuck on the loading skeleton (then fell through to a misleading empty state).
+- **Root cause:** the new route response sends `pagination.total` across the Zod boundary for the first time. `getProjectActivities` ([activity-service.ts](../../src/server/projects/activity-service.ts)) built `total` from `count(*) over()` with **no coercion** — and **postgres.js returns bigint/`int8` as a string** at runtime (the `sql<number>` annotation is a compile-time lie). So `total` was `"30"`, which `ProjectActivityPaginationSchema`'s `z.number()` rejected → `getProjectActivities` caller threw → React Query retried then errored → skeleton during retries, empty after. The bug was latent before because `total` was only used in `Math.ceil(total/limit)` (coerced by division) and never serialized.
+- **Confirmation:** [team-service.ts](../../src/server/teams/team-service.ts) and [resource-limits.ts](../../src/server/teams/resource-limits.ts) already coerce the same `count(*)` with `parseInt(String(...count ?? '0'), 10)` — the codebase had already learned this; activity-service hadn't.
+- **Fix (defense in depth):** (1) coerce at source — `total = parseInt(String(rows[0]?.totalCount ?? "0"), 10)`; (2) harden the boundary — `ProjectActivityPaginationSchema` numeric fields use `z.coerce.number()`; (3) the drawer now renders a real **error state** (`ProjectActivityError`) so a failed fetch never reads as "No recent activity" or perpetual loading.
+- **Gotcha for future work:** any `sql<number>`count(*)`` result must be coerced before it crosses a typed/Zod boundary — postgres.js hands back a string. Tests using the PGlite test DB will NOT catch this (different driver), so server→schema parse paths need explicit coverage or boundary coercion.
+- Verified (Node 22): `tsc` clean, eslint 0 issues, projects activity tests + activity-logging integration 32/32 (added an error-state test).
+
+## [2026-06-16] fix | post-auth entry points honor the landing-view preference
+
+- Four post-auth entry points hardcoded `/projects`, bypassing the `landing_view` cookie preference (reader/resolver in [landing-view.ts](../../src/server/preferences/landing-view.ts)). Now routed through the resolver:
+  - **Server guards** ([sign-in/page.tsx](../../src/app/(public)/(auth)/sign-in/page.tsx), [sign-up/page.tsx](../../src/app/(public)/(auth)/sign-up/page.tsx)): the already-authenticated guard now does `getLandingView()` + `resolveLandingPath()` instead of `redirect("/projects")`, mirroring [app/page.tsx](../../src/app/page.tsx).
+  - **OAuth defaults** ([social-login-buttons.tsx](../../src/features/auth/components/social-login-buttons.tsx), [use-sign-up.ts](../../src/features/auth/hooks/use-sign-up.ts)): default `callbackURL`/`redirectTo` changed `"/projects"` → `"/"` so the redirect routes through `app/page.tsx`, which resolves the cookie. An explicit invitation `callbackUrl` still takes precedence (deep-links preserved).
+- **Non-obvious finding — the live OAuth path is `SocialLoginButtons`, not the hooks.** Both `useSignIn().handleOAuthSignIn` and `useSignUp().handleOAuthSignIn` are **dead code**: [sign-in-form.tsx](../../src/features/auth/components/sign-in-form.tsx) receives the handler as `onOAuthSignIn` then discards it (`_onOAuthSignIn`) and renders `<SocialLoginButtons redirectTo={callbackUrl}>`; [sign-up-form.tsx](../../src/features/auth/components/sign-up-form.tsx) never destructures it and renders `<SocialLoginButtons>` with **no** `redirectTo`. Consequence: the `invitation_callback_url` localStorage persistence inside those hooks never runs on the live OAuth path, so the "interacts with localStorage" concern doesn't apply to the live fix. Item 3 (`SocialLoginButtons` default) is the only change with live effect; the `use-sign-up.ts` change is consistency-only. Sign-up OAuth also never threads an invitation `callbackUrl` to `SocialLoginButtons` (pre-existing gap, left as-is).
+- TDD: each change driven by a failing test first — new page-guard tests ([sign-in](../../src/app/(public)/(auth)/sign-in/page.test.tsx), [sign-up](../../src/app/(public)/(auth)/sign-up/page.test.tsx)) modeled on [page.test.tsx](../../src/app/page.test.tsx); new `callbackURL` assertions in [social-login-buttons.test.tsx](../../src/features/auth/components/__tests__/social-login-buttons.test.tsx); new [use-sign-up.test.tsx](../../src/features/auth/hooks/__tests__/use-sign-up.test.tsx).
+- Verified (Node 22): `tsc --noEmit` clean; `src/features/auth` 37/37; `src/app/(public)/(auth)` 9/9.
+
+## [2026-06-16] release | PR into develop (beta channel) for the activity-drawer + landing-view work
+
+- Committed the activity-drawer/pagination and post-auth landing-view work and opened a PR `feature/perfermance-improve` → `develop`. Scoped re-verification before commit (Node 22): the 5 new/changed test files pass 28/28.
+- **Version gotcha (semantic-release):** `develop` is the **beta** prerelease branch in [.releaserc.json](../../.releaserc.json) (`prerelease: "beta"`). On merge, `semantic-release` computes the version from conventional commits since the last tag `v0.9.3-beta.1` — and the range contains 5 unreleased `feat(preferences):` commits → a **minor** bump → next beta is **`0.10.0-beta.1`**, *not* `0.9.3-beta.2`. A patch-only range (no `feat`) would have produced `0.9.3-beta.2`. `package.json` / `cli/package.json` / `CHANGELOG.md` are owned by `@semantic-release/{npm,git,changelog}` — never hand-edit them; the release commit is `chore(release): <v> [skip ci]`.

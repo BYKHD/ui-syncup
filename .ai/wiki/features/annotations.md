@@ -2,7 +2,7 @@
 title: Feature — annotations
 type: feature
 tags: [feature, annotations, canvas]
-last_updated: 2026-05-01
+last_updated: 2026-06-15
 sources: [sources/steering-product, sources/steering-structure]
 ---
 
@@ -17,7 +17,7 @@ Lets users place pins or draw boxes on top of an image attachment, attach a thre
 ## Code map (`src/features/annotations/`)
 
 - **api/** — `annotations-api.ts`, `comments-api.ts`, `save-annotation.ts`, `schemas.ts`
-- **components/** — `AnnotationLayer`, `AnnotationPin`, `AnnotationBox`, `AnnotationCanvas`, `AnnotationToolbar`, `AnnotationDrawer`, `AnnotationCommentInput`, `AnnotationAnnotationsPanel`, `AnnotationThreadPanel`, `AnnotationThreadPreview`, `AnnotatedAttachmentView`, `AnnotationPopover`, `KeyboardShortcutsModal`
+- **components/** — `AnnotationLayer`, `AnnotationPin`, `AnnotationBox`, `AnnotationCanvas`, `AnnotationToolbar`, `AnnotationDrawer`, `AnnotationCommentInput`, `AnnotationAnnotationsPanel`, `AnnotationThreadPanel`, `AnnotationThreadPreview`, `AnnotatedAttachmentView`, `AnnotationPopover`, `KeyboardShortcutsModal`, `CanvasScaleProvider`/`useCanvasTransientScale` (`annotation-scale-context`, canvas zoom counter-scale)
 - **hooks/** — `useAnnotationTools`, `useAnnotationDrafts`, `useAnnotationsWithHistory`, `useAnnotationSave`, `useAnnotationEditState`, `useAnnotationIntegration`, `useAnnotationComments`, `useAnnotationPermissions`, `useAnnotationBatchSave`, `useAutoSave`, `useAnnotationPopover`, `useAnnotationHistoryTracker`
 - **types/** — `AnnotationAuthor`, `AnnotationComment`, `AnnotationPosition`, `AnnotationThread`, `AnnotationDraft`, `AnnotationShape`, `AnnotationSnapshot`, `AnnotationPermissions`, `ANNOTATION_TOOL_IDS`
 - **utils/** — `mapAttachmentsToAnnotationThreads`, history manager (`createHistoryEntry`, `createSnapshot`, `addToHistory`, `shapesAreEqual`)
@@ -27,5 +27,5 @@ Lets users place pins or draw boxes on top of an image attachment, attach a thre
 ## Related
 
 - Entities: [[entities/annotation]], [[entities/issue]], [[entities/user]]
-- Concepts: [[concepts/rbac-roles]] (permission gating via `useAnnotationPermissions`)
+- Concepts: [[concepts/rbac-roles]] (permission gating via `useAnnotationPermissions`), [[concepts/annotations-canvas-performance]] (drag/draw/zoom smoothness)
 - Features: [[features/issues]]

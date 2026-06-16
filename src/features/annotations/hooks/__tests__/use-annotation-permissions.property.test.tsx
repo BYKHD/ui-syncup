@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { renderHook, cleanup, waitFor } from '@testing-library/react';
+import { renderHook, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as fc from 'fast-check';
 import React from 'react';
@@ -489,5 +489,56 @@ describe('useAnnotationPermissions - Property Tests (Property 16)', () => {
       }),
       { numRuns: 50 }
     );
+  });
+
+  /**
+   * Property 16.8: isArchived option forces READ_ONLY_PERMISSIONS for any
+   * role with a valid session. Mirrors the server-side gate in
+   * `getAnnotationPermissions` so the UI matches the server.
+   *
+   * Concrete (non-property) test — the property would always reduce to
+   * the same constants, so iterating user roles adds no signal.
+   */
+  it('Property 16.8: isArchived forces read-only regardless of role', () => {
+    const editorUser: MockUser = {
+      id: 'u-editor',
+      email: 'editor@test.com',
+      name: 'Editor',
+      emailVerified: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      roles: [
+        {
+          id: 'r1',
+          userId: 'u-editor',
+          role: 'TEAM_EDITOR',
+          resourceType: 'team',
+          resourceId: 't1',
+          createdAt: new Date().toISOString(),
+        },
+      ],
+    };
+
+    setMockSession(editorUser);
+
+    const { result } = renderHook(
+      () =>
+        useAnnotationPermissions({
+          projectId: 'p1',
+          teamId: 't1',
+          isArchived: true,
+        }),
+      { wrapper: createWrapper(queryClient) }
+    );
+
+    expect(result.current.permissions.canView).toBe(true);
+    expect(result.current.permissions.canCreate).toBe(false);
+    expect(result.current.permissions.canEdit).toBe(false);
+    expect(result.current.permissions.canEditAll).toBe(false);
+    expect(result.current.permissions.canDelete).toBe(false);
+    expect(result.current.permissions.canDeleteAll).toBe(false);
+    expect(result.current.permissions.canComment).toBe(false);
+
+    cleanup();
   });
 });

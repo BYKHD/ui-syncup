@@ -157,8 +157,7 @@ export const UpdateProjectBodySchema = z.object({
   description: z.string().max(500).nullable().optional(),
   icon: z.string().max(255).nullable().optional(),
   visibility: ProjectVisibilitySchema.optional(),
-  status: ProjectStatusSchema.optional(),
-});
+}).strict();
 
 /**
  * Request body for updating member role
