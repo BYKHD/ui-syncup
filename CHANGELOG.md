@@ -1,3 +1,10 @@
+## [0.9.4-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.9.3...v0.9.4-beta.1) (2026-06-23)
+
+
+### Bug Fixes
+
+* login problems ([504c5d2](https://github.com/BYKHD/ui-syncup/commit/504c5d25d5371ddfee1fc8eca5daf21dd51a1c52))
+
 ## [0.9.3](https://github.com/BYKHD/ui-syncup/compare/v0.9.2...v0.9.3) (2026-06-16)
 
 
