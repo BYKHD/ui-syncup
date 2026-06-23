@@ -253,6 +253,22 @@ describe('Cookie Management - Property-Based Tests', () => {
     expect(sessionToken).toBe('mock-session-token');
   });
 
+  // Behind HTTPS better-auth prefixes its cookie with `__Secure-`; the helper
+  // must still find it (regression: prod login bounced back to /sign-in).
+  test('Integration: getSessionCookie reads the __Secure- better-auth cookie', async () => {
+    const { cookies } = await import('next/headers');
+    (cookies as unknown as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+      get: (name: string) =>
+        name === '__Secure-better-auth.session_token'
+          ? { value: 'secure-better-auth-token' }
+          : undefined,
+      set: vi.fn(),
+    });
+
+    const sessionToken = await getSessionCookie();
+    expect(sessionToken).toBe('secure-better-auth-token');
+  });
+
   /**
    * Property: Cookie attributes are URL-encoded safe
    * 

@@ -24,6 +24,9 @@ import { isProduction } from '@/lib/env';
  */
 const SESSION_COOKIE_NAME = 'session_token';
 const BETTER_AUTH_COOKIE_NAME = 'better-auth.session_token';
+// Behind HTTPS better-auth marks cookies secure and prefixes them with
+// `__Secure-`, so the session cookie is named `__Secure-better-auth.session_token`.
+const BETTER_AUTH_SECURE_COOKIE_NAME = '__Secure-better-auth.session_token';
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
 
 /**
@@ -102,9 +105,11 @@ export async function getSessionCookie(): Promise<string | null> {
     return sessionCookie.value;
   }
   
-  // If not found, check for better-auth session cookie (used for OAuth)
-  // better-auth might verify prefixes, but we just need the token value for validation
-  const betterAuthCookie = cookieStore.get(BETTER_AUTH_COOKIE_NAME);
+  // If not found, check for the better-auth session cookie (used for OAuth and
+  // email/password). In production it carries the `__Secure-` prefix.
+  const betterAuthCookie =
+    cookieStore.get(BETTER_AUTH_COOKIE_NAME) ??
+    cookieStore.get(BETTER_AUTH_SECURE_COOKIE_NAME);
   return betterAuthCookie?.value ?? null;
 }
 
