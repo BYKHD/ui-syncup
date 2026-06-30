@@ -1,3 +1,10 @@
+## [0.9.5-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.9.4...v0.9.5-beta.1) (2026-06-30)
+
+
+### Bug Fixes
+
+* rerelease ([fd8bed7](https://github.com/BYKHD/ui-syncup/commit/fd8bed7ec2e4a2570eaa7e2bc7d9dd92be660a0e))
+
 ## [0.9.4](https://github.com/BYKHD/ui-syncup/compare/v0.9.3...v0.9.4) (2026-06-23)
 
 
