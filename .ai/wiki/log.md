@@ -353,3 +353,10 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - Wired it into `AnnotationPopover`'s `ExpandedContent` (preview stays read-only), gated by the same `permissions.canEditAll || (canEdit && isOwn)` rule. Note: the canvas already has a separate description editor (`annotated-attachment-view.tsx` → `useAnnotationEditState` + `AnnotationCommentInput`); the popover edit is an additional on-canvas affordance, not the only one.
 - Dropped a prop→state sync `useEffect` (seed `value` on edit-start instead) — kills the `react-hooks/set-state-in-effect` warning.
 - Test: `components/__tests__/editable-description.test.tsx` (read-only gate + save-guard: trims, skips unchanged). 3/3 pass; hook test still 2/2.
+
+## [2026-06-30] feat | desktop comment edit/delete in annotation popover
+- Gap found: `annotation-layer.tsx` mounts `AnnotationThreadPanel` (editable `CommentCard`) ONLY on mobile; desktop gets `AnnotationPopover`, whose `CommentItem` was read-only. So desktop had no way to edit/delete a comment. (The panel's desktop `border-l` branch exists but is never mounted — effectively dead.)
+- Fix: made the popover's `CommentItem` author-gated editable (inline edit + delete icon buttons revealed on hover; Esc/⌘Enter `stopPropagation` so it doesn't trip the popover's Esc-to-close). Inline buttons (not a Radix dropdown) deliberately — a portaled menu would land outside `popoverRef` and trigger the click-outside close.
+- Virtualized list (`useVirtualizer`, ≥10 comments) now uses `measureElement` so an expanded edit row isn't clipped by the fixed 72px estimate. Removed CommentItem's dead `style` prop.
+- `ExpandedContent` pulls existing `updateComment`/`deleteComment` from `useAnnotationComments`; own-only gate (matches panel). Test: `annotation-popover-comment-item.test.tsx` (author gate + save-guard + delete), 4/4.
+- Known redundancy (follow-up): inline-edit state logic now in 3 spots (CommentCard, EditableDescription, popover CommentItem) — a small `useInlineEdit` hook would DRY them; deferred to avoid churning shipped/tested components in a feature commit.

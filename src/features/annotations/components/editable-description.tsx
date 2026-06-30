@@ -40,7 +40,9 @@ export function EditableDescription({
   readOnlyEmptyLabel = 'Annotation thread',
 }: EditableDescriptionProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [value, setValue] = useState(description);
+  // Seeded on edit-start (startEditing); the draft never renders before then,
+  // so init empty rather than deriving state from the description prop.
+  const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const compact = size === 'compact';
