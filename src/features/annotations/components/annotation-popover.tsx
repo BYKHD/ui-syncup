@@ -527,6 +527,10 @@ export function AnnotationPopover<T extends AnnotationAuthor = AnnotationAuthor>
       // Don't close if clicking inside the popover
       if (popoverRef.current?.contains(target)) return;
 
+      // Don't close if clicking inside a portaled dropdown menu (comment
+      // actions render in a portal outside popoverRef).
+      if (target.closest('[role="menu"]')) return;
+
       // Don't close if clicking on annotation elements
       if (target.closest('[data-annotation-pin]') || target.closest('[data-annotation-box]')) return;
 
@@ -550,6 +554,9 @@ export function AnnotationPopover<T extends AnnotationAuthor = AnnotationAuthor>
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // Let an open dropdown menu (comment actions) consume Esc first —
+        // it's still in the DOM during this dispatch.
+        if (document.querySelector('[role="menu"]')) return;
         onClose();
       }
     };

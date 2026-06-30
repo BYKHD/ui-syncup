@@ -367,3 +367,9 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - Author-gated via `canModify` (own-only), same as before. Virtualized-list `measureElement` retained for dynamic edit-row heights.
 - Note: `annotation-thread-preview.tsx` still has its own read-only `CommentCard` (preview/glance, no editing) — left as-is, out of the edit-consistency scope.
 - Tests: replaced popover CommentItem test with `editable-comment.test.tsx` (author gate incl. no click-to-edit for non-owners, click-message-to-edit, save-guard, delete). 18/18 annotation tests pass; typecheck clean.
+
+## [2026-06-30] change | comment edit/delete moved into ⋯ kebab menu
+- Per request, the inline pencil/trash icons on `EditableComment` are now a single ⋯ kebab (`DropdownMenu`) with Edit + Delete items, on BOTH surfaces (shared component). The kebab is the single edit path — click-to-edit on the message was dropped (it tripped `click-events-have-key-events` / `no-noninteractive-element-interactions` a11y rules on the `<p>`, is redundant now the menu has Edit, and removing it restores text selection).
+- Popover gotcha handled: the Radix dropdown portals OUTSIDE `popoverRef`, so `AnnotationPopover`'s click-outside handler now ignores `[role="menu"]` targets, and its Esc handler defers to an open menu (`document.querySelector('[role="menu"]')`). `modal={false}` on the menu avoids pointer-events lockup.
+- Test (`editable-comment.test.tsx`): Radix-in-jsdom polyfills (scrollIntoView/pointer-capture); edit/delete/save-guard driven via the menu, author-gate asserts no ⋯ for non-owners. 18/18 annotation tests pass.
+- Descriptions unchanged (click-to-edit + hover pencil; no delete, so no kebab).

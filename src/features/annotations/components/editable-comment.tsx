@@ -14,7 +14,13 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Pencil, Trash2, Loader2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useInlineEdit } from '../hooks/use-inline-edit';
@@ -69,15 +75,10 @@ export function EditableComment({
   const isOptimistic = comment.id.startsWith('optimistic_');
   const showActions = canModify && !isOptimistic && !isEditing;
 
-  // Click the message to edit — unless the user is selecting text.
-  const handleMessageClick = () => {
-    if (canModify && !window.getSelection()?.toString()) start();
-  };
-
   return (
     <div
       className={cn(
-        'group flex rounded-lg bg-muted/30 transition-opacity',
+        'flex rounded-lg bg-muted/30 transition-opacity',
         compact ? 'gap-2 p-2' : 'gap-3 p-3',
         isOptimistic && 'opacity-60',
         isDeleting && 'opacity-40'
@@ -98,28 +99,32 @@ export function EditableComment({
             </span>
           </div>
           {showActions && (
-            <div className="flex items-center gap-0.5 shrink-0 opacity-60 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-              <Button
-                variant="ghost"
-                size="icon"
-                className={compact ? 'h-5 w-5' : 'h-6 w-6'}
-                onClick={start}
-                disabled={isUpdating}
-                aria-label="Edit comment"
-              >
-                <Pencil className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn('text-destructive', compact ? 'h-5 w-5' : 'h-6 w-6')}
-                onClick={() => onDelete(comment.id)}
-                disabled={isDeleting}
-                aria-label="Delete comment"
-              >
-                <Trash2 className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
-              </Button>
-            </div>
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn('shrink-0', compact ? 'h-5 w-5' : 'h-6 w-6')}
+                  aria-label="Comment actions"
+                >
+                  <MoreHorizontal className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32">
+                <DropdownMenuItem onClick={start} disabled={isUpdating}>
+                  <Pencil className="h-3.5 w-3.5 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onDelete(comment.id)}
+                  className="text-destructive"
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
         {isEditing ? (
@@ -155,12 +160,9 @@ export function EditableComment({
           </div>
         ) : (
           <p
-            onClick={handleMessageClick}
-            title={canModify ? 'Click to edit' : undefined}
             className={cn(
               'text-foreground/90 whitespace-pre-wrap break-words',
-              compact ? 'text-xs line-clamp-3' : 'text-sm',
-              canModify && 'cursor-pointer'
+              compact ? 'text-xs line-clamp-3' : 'text-sm'
             )}
           >
             {comment.message}
