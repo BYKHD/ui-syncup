@@ -12,8 +12,10 @@ import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { AnnotationThread, AnnotationComment, AnnotationAuthor } from '../types';
 import { useAnnotationComments } from '../hooks/use-annotation-comments';
+import { useCanPerformAnnotationAction } from '../hooks/use-annotation-permissions';
 import { useSession } from '@/features/auth/hooks/use-session';
 import type { PopoverMode } from '../hooks/use-annotation-popover';
+import { EditableDescription } from './editable-description';
 
 
 const PREVIEW_WIDTH = 240;
@@ -302,12 +304,19 @@ function ExpandedContent<T extends AnnotationAuthor = AnnotationAuthor>({
   const {
     addComment,
     isAddingComment,
+    updateDescription,
+    isUpdatingDescription,
   } = useAnnotationComments({
     issueId,
     attachmentId,
     annotationId: annotation.id,
     currentUser: user ? { id: user.id, name: user.name || 'You' } : undefined,
   });
+
+  // Description is editable for owners (own) and editors (any) — same
+  // `annotation:update` gate as the thread panel.
+  const isOwnAnnotation = annotation.author.id === user?.id;
+  const canEditDescription = useCanPerformAnnotationAction('edit', isOwnAnnotation);
 
   const handleSubmit = useCallback(async () => {
     if (!newComment.trim() || isAddingComment) return;
@@ -330,18 +339,25 @@ function ExpandedContent<T extends AnnotationAuthor = AnnotationAuthor>({
     <div className="flex flex-col max-h-[360px]">
       {/* Header */}
       <div className="flex items-start justify-between gap-2 pb-2 border-b">
-        <div className="flex items-start gap-2 min-w-0">
+        <div className="flex min-w-0 flex-1 items-start gap-2">
           <Avatar className="h-6 w-6 shrink-0">
             <AvatarImage src={author.avatarUrl || undefined} alt={author.name} />
             <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
           </Avatar>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium text-foreground truncate">{author.name}</span>
             </div>
-            <p className="text-xs text-foreground line-clamp-1 mt-0.5">
-              {annotation.description || 'Annotation'}
-            </p>
+            <div className="mt-0.5">
+              <EditableDescription
+                size="compact"
+                description={annotation.description ?? ''}
+                canEdit={canEditDescription}
+                onSave={updateDescription}
+                isSaving={isUpdatingDescription}
+                readOnlyEmptyLabel="Annotation"
+              />
+            </div>
             <span className="text-[10px] text-muted-foreground">
               {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
             </span>

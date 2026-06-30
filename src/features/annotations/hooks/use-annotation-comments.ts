@@ -21,6 +21,7 @@ import {
   deleteComment as apiDeleteComment,
   markAsRead as apiMarkAsRead,
 } from '../api/comments-api';
+import { updateAnnotation as apiUpdateAnnotation } from '../api/annotations-api';
 import { annotationKeys } from './use-annotation-integration';
 
 // ============================================================================
@@ -44,12 +45,14 @@ export interface UseAnnotationCommentsResult {
   isAddingComment: boolean;
   isUpdatingComment: boolean;
   isDeletingComment: boolean;
+  isUpdatingDescription: boolean;
   hasUnreadComments: boolean;
 
   // Actions
   addComment: (message: string) => Promise<void>;
   updateComment: (commentId: string, message: string) => Promise<void>;
   deleteComment: (commentId: string) => Promise<void>;
+  updateDescription: (description: string) => Promise<void>;
   markAsRead: () => Promise<void>;
 
   // Derived state
@@ -254,6 +257,42 @@ export function useAnnotationComments(
   });
 
   // ============================================================================
+  // MUTATIONS - Update Description
+  // ============================================================================
+
+  const updateDescriptionMutation = useMutation({
+    mutationFn: async (description: string) => {
+      const response = await apiUpdateAnnotation(issueId, attachmentId, annotationId, {
+        description,
+      });
+      return response.annotation;
+    },
+    onMutate: async (description) => {
+      await queryClient.cancelQueries({ queryKey });
+
+      const previousAnnotations = queryClient.getQueryData<AttachmentAnnotation[]>(queryKey);
+
+      // Optimistically update description
+      updateAnnotationInCache((ann) => ({ ...ann, description }));
+
+      return { previousAnnotations };
+    },
+    onSuccess: () => {
+      toast.success('Description updated');
+    },
+    onError: (error: Error, _description, context) => {
+      if (context?.previousAnnotations) {
+        queryClient.setQueryData(queryKey, context.previousAnnotations);
+      }
+      toast.error('Failed to update description');
+      onError?.(error);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  // ============================================================================
   // MUTATIONS - Mark as Read
   // ============================================================================
 
@@ -327,6 +366,13 @@ export function useAnnotationComments(
     [deleteCommentMutation]
   );
 
+  const updateDescription = useCallback(
+    async (description: string) => {
+      await updateDescriptionMutation.mutateAsync(description);
+    },
+    [updateDescriptionMutation]
+  );
+
   const markAsRead = useCallback(async () => {
     await markAsReadMutation.mutateAsync();
   }, [markAsReadMutation]);
@@ -340,12 +386,14 @@ export function useAnnotationComments(
     isAddingComment: addCommentMutation.isPending,
     isUpdatingComment: updateCommentMutation.isPending,
     isDeletingComment: deleteCommentMutation.isPending,
+    isUpdatingDescription: updateDescriptionMutation.isPending,
     hasUnreadComments,
 
     // Actions
     addComment,
     updateComment,
     deleteComment,
+    updateDescription,
     markAsRead,
 
     // Derived state

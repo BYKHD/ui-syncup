@@ -31,6 +31,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { useAnnotationComments } from '../hooks/use-annotation-comments';
+import { useCanPerformAnnotationAction } from '../hooks/use-annotation-permissions';
+import { EditableDescription } from './editable-description';
 import type { AnnotationComment, AttachmentAnnotation } from '../types';
 import { cn } from '@/lib/utils';
 
@@ -264,10 +266,12 @@ function ThreadContent({
     addComment,
     updateComment,
     deleteComment,
+    updateDescription,
     markAsRead,
     isAddingComment,
     isUpdatingComment,
     isDeletingComment,
+    isUpdatingDescription,
     hasUnreadComments,
   } = useAnnotationComments({
     issueId,
@@ -275,6 +279,11 @@ function ThreadContent({
     annotationId: annotation.id,
     currentUser: currentUserId ? { id: currentUserId, name: 'You' } : undefined,
   });
+
+  // Description is editable for owners (own annotations) and editors (any) —
+  // the `annotation:update` permission.
+  const isOwnAnnotation = annotation.author.id === currentUserId;
+  const canEditDescription = useCanPerformAnnotationAction('edit', isOwnAnnotation);
 
   // Sort comments chronologically (oldest first)
   const sortedComments = useMemo(
@@ -336,10 +345,13 @@ function ThreadContent({
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-white bg-annotation shadow-sm text-xs font-semibold text-annotation-foreground">
                 {annotation.label}
               </div>
-              <div className="flex flex-col items-start gap-1.5 text-xs text-muted-foreground">
-                <h3 className="text-sm font-semibold text-foreground">
-                  {annotation.description || 'Annotation thread'}
-                </h3>
+              <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5 text-xs text-muted-foreground">
+                <EditableDescription
+                  description={annotation.description ?? ''}
+                  canEdit={canEditDescription}
+                  onSave={updateDescription}
+                  isSaving={isUpdatingDescription}
+                />
                 <span>
                   {sortedComments.length} {sortedComments.length === 1 ? 'comment' : 'comments'}
                 </span>

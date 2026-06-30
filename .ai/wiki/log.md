@@ -341,3 +341,15 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - Fix: `getSessionCookie()` now also reads `__Secure-better-auth.session_token`; added regression test in `cookies.test.ts` (14/14 pass, Node 22).
 - Deploy note: running image is pinned `ghcr.io/bykhd/ui-syncup:v0.9.3`; must rebuild/republish the tag + redeploy both composes to ship — autoDeploy won't pick up code changes against a fixed tag.
 - Regression trigger pinned: bisected to v0.9.2→v0.9.3 commit `15b1696` (landing-view). `getSessionCookie()` was latently broken for the prod `__Secure-` cookie in BOTH versions; v0.9.2 dodged it by redirecting post-login to `/projects` (guarded by `(protected)/layout.tsx` → `getSession()`/`auth.api.getSession()`, which reads the prefixed cookie). v0.9.3 changed `callbackURL`/`redirectTo` to `/` to route through `app/page.tsx`'s landing-view resolver — which gates on the broken `getSessionCookie()`. Same for `sign-in`/`sign-up` "already authenticated" gates. The cookies.ts fix addresses the real root cause for all three gates.
+
+## [2026-06-30] feat | inline-edit annotation description in thread panel
+- Annotation `description` is now editable directly in `AnnotationThreadPanel`'s header (click-to-edit + hover pencil, ⌘/Ctrl+Enter saves, Esc cancels) instead of only via the canvas edit-mode popover (`useAnnotationEditState`).
+- Persistence lives in `useAnnotationComments` (new `updateDescription`/`isUpdatingDescription`) — same optimistic cache + rollback pattern as comment mutations, hitting the existing `updateAnnotation(... { description })` API. The hook is now "annotation thread mutations", not strictly comments.
+- Edit gate: `permissions.canEditAll || (permissions.canEdit && isOwn)` via `useAnnotationPermissions` (matches `annotation:update` RBAC), not the comment `isOwn`-only check. New `EditableDescription` subcomponent mirrors `CommentCard`'s edit block.
+- Test: `use-annotation-comments.update-description.test.tsx` (optimistic patch + rollback, 2/2 pass, Node 22).
+
+## [2026-06-30] refactor | extract EditableDescription; add inline edit to popover expanded view
+- Extracted the thread-panel's inline description editor into shared `components/editable-description.tsx` (`size` variant: `default` panel / `compact` popover; Esc/⌘Enter `stopPropagation` so editing inside `AnnotationPopover` doesn't trip its document-level Esc-to-close).
+- Wired it into `AnnotationPopover`'s `ExpandedContent` (preview stays read-only), gated by the same `permissions.canEditAll || (canEdit && isOwn)` rule. Note: the canvas already has a separate description editor (`annotated-attachment-view.tsx` → `useAnnotationEditState` + `AnnotationCommentInput`); the popover edit is an additional on-canvas affordance, not the only one.
+- Dropped a prop→state sync `useEffect` (seed `value` on edit-start instead) — kills the `react-hooks/set-state-in-effect` warning.
+- Test: `components/__tests__/editable-description.test.tsx` (read-only gate + save-guard: trims, skips unchanged). 3/3 pass; hook test still 2/2.
