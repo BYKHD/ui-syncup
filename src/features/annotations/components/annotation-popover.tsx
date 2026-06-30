@@ -8,12 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Send, X, Loader2, MessageSquare } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { AnnotationThread, AnnotationComment, AnnotationAuthor } from '../types';
 import { useAnnotationComments } from '../hooks/use-annotation-comments';
+import { useCanPerformAnnotationAction } from '../hooks/use-annotation-permissions';
 import { useSession } from '@/features/auth/hooks/use-session';
 import type { PopoverMode } from '../hooks/use-annotation-popover';
+import { EditableDescription } from './editable-description';
+import { EditableComment } from './editable-comment';
 
 
 const PREVIEW_WIDTH = 240;
@@ -51,14 +53,6 @@ function getInitials(name: string): string {
     .join('')
     .toUpperCase()
     .slice(0, 2);
-}
-
-function formatTimeAgo(dateString: string): string {
-  try {
-    return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-  } catch {
-    return dateString;
-  }
 }
 
 /**
@@ -169,40 +163,23 @@ function calculatePosition(
   return { placement, left, top };
 }
 
-function CommentItem<T extends AnnotationAuthor = AnnotationAuthor>({
-  comment,
-  style,
-}: {
-  comment: AnnotationComment<T>;
-  style?: React.CSSProperties;
-}) {
-  const author = comment.author;
-  const initials = getInitials(author.name);
-
-  return (
-    <div className="flex gap-2 p-2 rounded-lg bg-muted/30" style={style}>
-      <Avatar className="h-6 w-6 shrink-0">
-        <AvatarImage src={author.avatarUrl || undefined} alt={author.name} />
-        <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0 space-y-0.5">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-xs font-medium text-foreground truncate">{author.name}</span>
-          <span className="text-[10px] text-muted-foreground shrink-0">{formatTimeAgo(comment.createdAt)}</span>
-        </div>
-        <p className="text-xs text-foreground/90 whitespace-pre-wrap break-words line-clamp-3">
-          {comment.message}
-        </p>
-      </div>
-    </div>
-  );
+interface CommentListProps<T extends AnnotationAuthor = AnnotationAuthor> {
+  comments: AnnotationComment<T>[];
+  currentUserId?: string;
+  onEdit: (commentId: string, message: string) => void;
+  onDelete: (commentId: string) => void;
+  isUpdating: boolean;
+  isDeleting: boolean;
 }
 
 function VirtualizedCommentList<T extends AnnotationAuthor = AnnotationAuthor>({
   comments,
-}: {
-  comments: AnnotationComment<T>[];
-}) {
+  currentUserId,
+  onEdit,
+  onDelete,
+  isUpdating,
+  isDeleting,
+}: CommentListProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
@@ -221,20 +198,37 @@ function VirtualizedCommentList<T extends AnnotationAuthor = AnnotationAuthor>({
           position: 'relative',
         }}
       >
-        {virtualizer.getVirtualItems().map((virtualItem) => (
-          <div
-            key={virtualItem.key}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${virtualItem.start}px)`,
-            }}
-          >
-            <CommentItem comment={comments[virtualItem.index]} />
-          </div>
-        ))}
+        {virtualizer.getVirtualItems().map((virtualItem) => {
+          const comment = comments[virtualItem.index];
+          return (
+            <div
+              key={virtualItem.key}
+              data-index={virtualItem.index}
+              // Measure actual row height so an expanded edit textarea doesn't
+              // get clipped by the fixed 72px estimate.
+              ref={virtualizer.measureElement}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualItem.start}px)`,
+              }}
+            >
+              <div className="pb-2">
+                <EditableComment
+                  size="compact"
+                  comment={comment}
+                  canModify={comment.author.id === currentUserId}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  isUpdating={isUpdating}
+                  isDeleting={isDeleting}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -302,12 +296,38 @@ function ExpandedContent<T extends AnnotationAuthor = AnnotationAuthor>({
   const {
     addComment,
     isAddingComment,
+    updateComment,
+    deleteComment,
+    isUpdatingComment,
+    isDeletingComment,
+    updateDescription,
+    isUpdatingDescription,
   } = useAnnotationComments({
     issueId,
     attachmentId,
     annotationId: annotation.id,
     currentUser: user ? { id: user.id, name: user.name || 'You' } : undefined,
   });
+
+  // Description is editable for owners (own) and editors (any) — same
+  // `annotation:update` gate as the thread panel.
+  const isOwnAnnotation = annotation.author.id === user?.id;
+  const canEditDescription = useCanPerformAnnotationAction('edit', isOwnAnnotation);
+
+  // Comments are edited/deleted by their author (own-only), same as the panel.
+  const currentUserId = user?.id;
+  const handleEditComment = useCallback(
+    (commentId: string, message: string) => {
+      void updateComment(commentId, message);
+    },
+    [updateComment]
+  );
+  const handleDeleteComment = useCallback(
+    (commentId: string) => {
+      void deleteComment(commentId);
+    },
+    [deleteComment]
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!newComment.trim() || isAddingComment) return;
@@ -330,18 +350,25 @@ function ExpandedContent<T extends AnnotationAuthor = AnnotationAuthor>({
     <div className="flex flex-col max-h-[360px]">
       {/* Header */}
       <div className="flex items-start justify-between gap-2 pb-2 border-b">
-        <div className="flex items-start gap-2 min-w-0">
+        <div className="flex min-w-0 flex-1 items-start gap-2">
           <Avatar className="h-6 w-6 shrink-0">
             <AvatarImage src={author.avatarUrl || undefined} alt={author.name} />
             <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
           </Avatar>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium text-foreground truncate">{author.name}</span>
             </div>
-            <p className="text-xs text-foreground line-clamp-1 mt-0.5">
-              {annotation.description || 'Annotation'}
-            </p>
+            <div className="mt-0.5">
+              <EditableDescription
+                size="compact"
+                description={annotation.description ?? ''}
+                canEdit={canEditDescription}
+                onSave={updateDescription}
+                isSaving={isUpdatingDescription}
+                readOnlyEmptyLabel="Annotation"
+              />
+            </div>
             <span className="text-[10px] text-muted-foreground">
               {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
             </span>
@@ -362,12 +389,28 @@ function ExpandedContent<T extends AnnotationAuthor = AnnotationAuthor>({
       <div className="flex-1 min-h-0 py-2">
         {hasComments ? (
           useVirtualScroll ? (
-            <VirtualizedCommentList comments={comments} />
+            <VirtualizedCommentList
+              comments={comments}
+              currentUserId={currentUserId}
+              onEdit={handleEditComment}
+              onDelete={handleDeleteComment}
+              isUpdating={isUpdatingComment}
+              isDeleting={isDeletingComment}
+            />
           ) : (
             <ScrollArea className="h-[180px]">
               <div className="space-y-2 pr-2">
                 {comments.map((comment) => (
-                  <CommentItem key={comment.id} comment={comment} />
+                  <EditableComment
+                    key={comment.id}
+                    size="compact"
+                    comment={comment}
+                    canModify={comment.author.id === currentUserId}
+                    onEdit={handleEditComment}
+                    onDelete={handleDeleteComment}
+                    isUpdating={isUpdatingComment}
+                    isDeleting={isDeletingComment}
+                  />
                 ))}
               </div>
             </ScrollArea>
@@ -484,6 +527,10 @@ export function AnnotationPopover<T extends AnnotationAuthor = AnnotationAuthor>
       // Don't close if clicking inside the popover
       if (popoverRef.current?.contains(target)) return;
 
+      // Don't close if clicking inside a portaled dropdown menu (comment
+      // actions render in a portal outside popoverRef).
+      if (target.closest('[role="menu"]')) return;
+
       // Don't close if clicking on annotation elements
       if (target.closest('[data-annotation-pin]') || target.closest('[data-annotation-box]')) return;
 
@@ -507,6 +554,9 @@ export function AnnotationPopover<T extends AnnotationAuthor = AnnotationAuthor>
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // Let an open dropdown menu (comment actions) consume Esc first —
+        // it's still in the DOM during this dispatch.
+        if (document.querySelector('[role="menu"]')) return;
         onClose();
       }
     };

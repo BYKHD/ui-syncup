@@ -224,6 +224,9 @@ export function IssuesCreateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent
+        // ponytail: block Esc + click-outside so a stray tap can't discard the form; X/Cancel stay intentional
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
         className={cn(
           "flex flex-col gap-0 p-0 overflow-hidden",
           isMobile

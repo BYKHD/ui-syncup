@@ -341,3 +341,35 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - Fix: `getSessionCookie()` now also reads `__Secure-better-auth.session_token`; added regression test in `cookies.test.ts` (14/14 pass, Node 22).
 - Deploy note: running image is pinned `ghcr.io/bykhd/ui-syncup:v0.9.3`; must rebuild/republish the tag + redeploy both composes to ship — autoDeploy won't pick up code changes against a fixed tag.
 - Regression trigger pinned: bisected to v0.9.2→v0.9.3 commit `15b1696` (landing-view). `getSessionCookie()` was latently broken for the prod `__Secure-` cookie in BOTH versions; v0.9.2 dodged it by redirecting post-login to `/projects` (guarded by `(protected)/layout.tsx` → `getSession()`/`auth.api.getSession()`, which reads the prefixed cookie). v0.9.3 changed `callbackURL`/`redirectTo` to `/` to route through `app/page.tsx`'s landing-view resolver — which gates on the broken `getSessionCookie()`. Same for `sign-in`/`sign-up` "already authenticated" gates. The cookies.ts fix addresses the real root cause for all three gates.
+
+## [2026-06-30] feat | inline-edit annotation description in thread panel
+- Annotation `description` is now editable directly in `AnnotationThreadPanel`'s header (click-to-edit + hover pencil, ⌘/Ctrl+Enter saves, Esc cancels) instead of only via the canvas edit-mode popover (`useAnnotationEditState`).
+- Persistence lives in `useAnnotationComments` (new `updateDescription`/`isUpdatingDescription`) — same optimistic cache + rollback pattern as comment mutations, hitting the existing `updateAnnotation(... { description })` API. The hook is now "annotation thread mutations", not strictly comments.
+- Edit gate: `permissions.canEditAll || (permissions.canEdit && isOwn)` via `useAnnotationPermissions` (matches `annotation:update` RBAC), not the comment `isOwn`-only check. New `EditableDescription` subcomponent mirrors `CommentCard`'s edit block.
+- Test: `use-annotation-comments.update-description.test.tsx` (optimistic patch + rollback, 2/2 pass, Node 22).
+
+## [2026-06-30] refactor | extract EditableDescription; add inline edit to popover expanded view
+- Extracted the thread-panel's inline description editor into shared `components/editable-description.tsx` (`size` variant: `default` panel / `compact` popover; Esc/⌘Enter `stopPropagation` so editing inside `AnnotationPopover` doesn't trip its document-level Esc-to-close).
+- Wired it into `AnnotationPopover`'s `ExpandedContent` (preview stays read-only), gated by the same `permissions.canEditAll || (canEdit && isOwn)` rule. Note: the canvas already has a separate description editor (`annotated-attachment-view.tsx` → `useAnnotationEditState` + `AnnotationCommentInput`); the popover edit is an additional on-canvas affordance, not the only one.
+- Dropped a prop→state sync `useEffect` (seed `value` on edit-start instead) — kills the `react-hooks/set-state-in-effect` warning.
+- Test: `components/__tests__/editable-description.test.tsx` (read-only gate + save-guard: trims, skips unchanged). 3/3 pass; hook test still 2/2.
+
+## [2026-06-30] feat | desktop comment edit/delete in annotation popover
+- Gap found: `annotation-layer.tsx` mounts `AnnotationThreadPanel` (editable `CommentCard`) ONLY on mobile; desktop gets `AnnotationPopover`, whose `CommentItem` was read-only. So desktop had no way to edit/delete a comment. (The panel's desktop `border-l` branch exists but is never mounted — effectively dead.)
+- Fix: made the popover's `CommentItem` author-gated editable (inline edit + delete icon buttons revealed on hover; Esc/⌘Enter `stopPropagation` so it doesn't trip the popover's Esc-to-close). Inline buttons (not a Radix dropdown) deliberately — a portaled menu would land outside `popoverRef` and trigger the click-outside close.
+- Virtualized list (`useVirtualizer`, ≥10 comments) now uses `measureElement` so an expanded edit row isn't clipped by the fixed 72px estimate. Removed CommentItem's dead `style` prop.
+- `ExpandedContent` pulls existing `updateComment`/`deleteComment` from `useAnnotationComments`; own-only gate (matches panel). Test: `annotation-popover-comment-item.test.tsx` (author gate + save-guard + delete), 4/4.
+- Known redundancy (follow-up): inline-edit state logic now in 3 spots (CommentCard, EditableDescription, popover CommentItem) — a small `useInlineEdit` hook would DRY them; deferred to avoid churning shipped/tested components in a feature commit.
+
+## [2026-06-30] refactor | unify comment edit/delete affordance across panel + popover
+- UX consolidation: comments previously edited via a ⋯ kebab menu in the panel (mobile) but hover pencil/trash in the popover (desktop) — two patterns. Unified on ONE: click/tap the message to edit (skipped when text is selected) + subtle always-visible pencil/trash icons (touch-friendly, brighten on hover). Matches the description editor's click-to-edit model.
+- Code consolidation: new `useInlineEdit` hook (edit toggle, draft, save-guard, ⌘Enter/Esc + stopPropagation) now backs all three inline editors. New shared `EditableComment` (size default/compact) replaces both the panel's `CommentCard` and the popover's `CommentItem` (both deleted, along with their duplicated edit logic + dead getInitials/formatTimeAgo helpers). `EditableDescription` refactored onto the same hook.
+- Author-gated via `canModify` (own-only), same as before. Virtualized-list `measureElement` retained for dynamic edit-row heights.
+- Note: `annotation-thread-preview.tsx` still has its own read-only `CommentCard` (preview/glance, no editing) — left as-is, out of the edit-consistency scope.
+- Tests: replaced popover CommentItem test with `editable-comment.test.tsx` (author gate incl. no click-to-edit for non-owners, click-message-to-edit, save-guard, delete). 18/18 annotation tests pass; typecheck clean.
+
+## [2026-06-30] change | comment edit/delete moved into ⋯ kebab menu
+- Per request, the inline pencil/trash icons on `EditableComment` are now a single ⋯ kebab (`DropdownMenu`) with Edit + Delete items, on BOTH surfaces (shared component). The kebab is the single edit path — click-to-edit on the message was dropped (it tripped `click-events-have-key-events` / `no-noninteractive-element-interactions` a11y rules on the `<p>`, is redundant now the menu has Edit, and removing it restores text selection).
+- Popover gotcha handled: the Radix dropdown portals OUTSIDE `popoverRef`, so `AnnotationPopover`'s click-outside handler now ignores `[role="menu"]` targets, and its Esc handler defers to an open menu (`document.querySelector('[role="menu"]')`). `modal={false}` on the menu avoids pointer-events lockup.
+- Test (`editable-comment.test.tsx`): Radix-in-jsdom polyfills (scrollIntoView/pointer-capture); edit/delete/save-guard driven via the menu, author-gate asserts no ⋯ for non-owners. 18/18 annotation tests pass.
+- Descriptions unchanged (click-to-edit + hover pencil; no delete, so no kebab).

@@ -13,24 +13,19 @@
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Sheet,
   SheetContent,
 } from '@/components/ui/sheet';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Send, X, MoreHorizontal, Pencil, Trash2, Loader2 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Send, X, Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { useAnnotationComments } from '../hooks/use-annotation-comments';
+import { useCanPerformAnnotationAction } from '../hooks/use-annotation-permissions';
+import { EditableDescription } from './editable-description';
+import { EditableComment } from './editable-comment';
 import type { AnnotationComment, AttachmentAnnotation } from '../types';
 import { cn } from '@/lib/utils';
 
@@ -57,180 +52,13 @@ export interface AnnotationThreadPanelProps {
 // HELPERS
 // ============================================================================
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-function formatTimeAgo(dateString: string): string {
-  try {
-    return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-  } catch {
-    return dateString;
-  }
-}
-
 /**
  * Sort comments chronologically (oldest first)
  * Requirement 3.4: Comments displayed in ascending order by createdAt
  */
 function sortCommentsChronologically(comments: AnnotationComment[]): AnnotationComment[] {
-  return [...comments].sort((a, b) => 
+  return [...comments].sort((a, b) =>
     new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
-}
-
-// ============================================================================
-// COMMENT CARD COMPONENT
-// ============================================================================
-
-interface CommentCardProps {
-  comment: AnnotationComment;
-  isOwn: boolean;
-  canEdit: boolean;
-  canDelete: boolean;
-  onEdit: (commentId: string, message: string) => void;
-  onDelete: (commentId: string) => void;
-  isUpdating: boolean;
-  isDeleting: boolean;
-}
-
-function CommentCard({
-  comment,
-  isOwn,
-  canEdit,
-  canDelete,
-  onEdit,
-  onDelete,
-  isUpdating,
-  isDeleting,
-}: CommentCardProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(comment.message);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const author = comment.author;
-  const initials = getInitials(author.name);
-
-  const handleEdit = useCallback(() => {
-    if (editValue.trim() && editValue !== comment.message) {
-      onEdit(comment.id, editValue.trim());
-    }
-    setIsEditing(false);
-  }, [comment.id, comment.message, editValue, onEdit]);
-
-  const handleCancelEdit = useCallback(() => {
-    setEditValue(comment.message);
-    setIsEditing(false);
-  }, [comment.message]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      handleEdit();
-    } else if (e.key === 'Escape') {
-      handleCancelEdit();
-    }
-  }, [handleEdit, handleCancelEdit]);
-
-  // Focus textarea when entering edit mode
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.setSelectionRange(editValue.length, editValue.length);
-    }
-  }, [isEditing, editValue.length]);
-
-  const showActions = isOwn && (canEdit || canDelete);
-  const isOptimistic = comment.id.startsWith('optimistic_');
-
-  return (
-    <div 
-      className={cn(
-        "flex gap-3 p-3 rounded-lg bg-muted/30 transition-opacity",
-        isOptimistic && "opacity-60",
-        isDeleting && "opacity-40"
-      )}
-    >
-      <Avatar className="h-8 w-8 shrink-0">
-        <AvatarImage src={author.avatarUrl || undefined} alt={author.name} />
-        <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0 space-y-1">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-baseline gap-2 min-w-0">
-            <span className="text-sm font-medium text-foreground truncate">{author.name}</span>
-            <span className="text-xs text-muted-foreground shrink-0">
-              {formatTimeAgo(comment.createdAt)}
-            </span>
-          </div>
-          {showActions && !isOptimistic && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6">
-                  <MoreHorizontal className="h-3.5 w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-32">
-                {canEdit && (
-                  <DropdownMenuItem onClick={() => setIsEditing(true)} disabled={isUpdating}>
-                    <Pencil className="h-3.5 w-3.5 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                )}
-                {canDelete && (
-                  <DropdownMenuItem 
-                    onClick={() => onDelete(comment.id)} 
-                    className="text-destructive"
-                    disabled={isDeleting}
-                  >
-                    <Trash2 className="h-3.5 w-3.5 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-        {isEditing ? (
-          <div className="space-y-2">
-            <Textarea
-              ref={textareaRef}
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="min-h-[60px] resize-none text-sm"
-              disabled={isUpdating}
-            />
-            <div className="flex justify-end gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleCancelEdit}
-                disabled={isUpdating}
-              >
-                Cancel
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={handleEdit}
-                disabled={isUpdating || !editValue.trim()}
-              >
-                {isUpdating && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-                Save
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words">
-            {comment.message}
-          </p>
-        )}
-      </div>
-    </div>
   );
 }
 
@@ -264,10 +92,12 @@ function ThreadContent({
     addComment,
     updateComment,
     deleteComment,
+    updateDescription,
     markAsRead,
     isAddingComment,
     isUpdatingComment,
     isDeletingComment,
+    isUpdatingDescription,
     hasUnreadComments,
   } = useAnnotationComments({
     issueId,
@@ -275,6 +105,11 @@ function ThreadContent({
     annotationId: annotation.id,
     currentUser: currentUserId ? { id: currentUserId, name: 'You' } : undefined,
   });
+
+  // Description is editable for owners (own annotations) and editors (any) —
+  // the `annotation:update` permission.
+  const isOwnAnnotation = annotation.author.id === currentUserId;
+  const canEditDescription = useCanPerformAnnotationAction('edit', isOwnAnnotation);
 
   // Sort comments chronologically (oldest first)
   const sortedComments = useMemo(
@@ -336,10 +171,13 @@ function ThreadContent({
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-white bg-annotation shadow-sm text-xs font-semibold text-annotation-foreground">
                 {annotation.label}
               </div>
-              <div className="flex flex-col items-start gap-1.5 text-xs text-muted-foreground">
-                <h3 className="text-sm font-semibold text-foreground">
-                  {annotation.description || 'Annotation thread'}
-                </h3>
+              <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5 text-xs text-muted-foreground">
+                <EditableDescription
+                  description={annotation.description ?? ''}
+                  canEdit={canEditDescription}
+                  onSave={updateDescription}
+                  isSaving={isUpdatingDescription}
+                />
                 <span>
                   {sortedComments.length} {sortedComments.length === 1 ? 'comment' : 'comments'}
                 </span>
@@ -365,12 +203,10 @@ function ThreadContent({
         <div className="p-4 space-y-3">
           {sortedComments.length > 0 ? (
             sortedComments.map((comment) => (
-              <CommentCard
+              <EditableComment
                 key={comment.id}
                 comment={comment}
-                isOwn={comment.author.id === currentUserId}
-                canEdit={comment.author.id === currentUserId}
-                canDelete={comment.author.id === currentUserId}
+                canModify={comment.author.id === currentUserId}
                 onEdit={handleEditComment}
                 onDelete={handleDeleteComment}
                 isUpdating={isUpdatingComment}
