@@ -3,17 +3,17 @@
  */
 
 /**
- * Tests for the popover's CommentItem — desktop-only comment edit/delete.
- * Locks the author gate (non-owners get no edit/delete affordance) and the
- * save-guard (trims, skips unchanged).
+ * Tests for EditableComment — the comment row shared by the thread panel and
+ * the popover. Locks the author gate (non-owners get no edit/delete and no
+ * click-to-edit), the save-guard (trim + skip unchanged), and delete.
  *
- * @module features/annotations/components/__tests__/annotation-popover-comment-item.test
+ * @module features/annotations/components/__tests__/editable-comment.test
  */
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { CommentItem } from '../annotation-popover';
+import { EditableComment, type EditableCommentProps } from '../editable-comment';
 import type { AnnotationComment } from '../../types';
 
 const COMMENT: AnnotationComment = {
@@ -24,13 +24,13 @@ const COMMENT: AnnotationComment = {
   createdAt: '2024-01-01T00:00:00Z',
 };
 
-function renderItem(overrides: Partial<React.ComponentProps<typeof CommentItem>> = {}) {
+function renderItem(overrides: Partial<EditableCommentProps> = {}) {
   const onEdit = vi.fn();
   const onDelete = vi.fn();
   render(
-    <CommentItem
+    <EditableComment
       comment={COMMENT}
-      isOwn
+      canModify
       onEdit={onEdit}
       onDelete={onDelete}
       isUpdating={false}
@@ -41,14 +41,26 @@ function renderItem(overrides: Partial<React.ComponentProps<typeof CommentItem>>
   return { onEdit, onDelete };
 }
 
-describe('popover CommentItem', () => {
-  it('shows no edit/delete affordance for non-owners', () => {
-    renderItem({ isOwn: false });
+describe('EditableComment', () => {
+  it('shows no edit/delete affordance and is not click-to-edit for non-owners', async () => {
+    const user = userEvent.setup();
+    const { onEdit } = renderItem({ canModify: false });
     expect(screen.queryByRole('button', { name: /edit comment/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /delete comment/i })).toBeNull();
+
+    await user.click(screen.getByText('original'));
+    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(onEdit).not.toHaveBeenCalled();
   });
 
-  it('edits with a trimmed, changed value', async () => {
+  it('enters edit mode by clicking the message', async () => {
+    const user = userEvent.setup();
+    renderItem();
+    await user.click(screen.getByText('original'));
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+  });
+
+  it('saves a trimmed, changed value', async () => {
     const user = userEvent.setup();
     const { onEdit } = renderItem();
 

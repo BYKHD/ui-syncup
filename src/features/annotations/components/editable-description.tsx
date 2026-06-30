@@ -5,17 +5,17 @@
  *
  * Click-to-edit annotation description used in both the thread panel header
  * (`size="default"`) and the on-canvas popover's expanded view (`size="compact"`).
- * ⌘/Ctrl+Enter saves, Esc cancels. Esc/save key events stop propagation so the
- * popover's document-level Esc-to-close handler doesn't fire while editing.
+ * Shares edit-state mechanics (⌘/Ctrl+Enter save, Esc cancel, Esc stop-propagation)
+ * with comments via `useInlineEdit`.
  *
  * @module features/annotations/components/editable-description
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Pencil, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useInlineEdit } from '../hooks/use-inline-edit';
 
 export interface EditableDescriptionProps {
   description: string;
@@ -39,66 +39,21 @@ export function EditableDescription({
   emptyLabel = 'Add a description...',
   readOnlyEmptyLabel = 'Annotation thread',
 }: EditableDescriptionProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  // Seeded on edit-start (startEditing); the draft never renders before then,
-  // so init empty rather than deriving state from the description prop.
-  const [value, setValue] = useState('');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { isEditing, draft, setDraft, start, save, cancel, handleKeyDown, textareaRef } = useInlineEdit({
+    value: description,
+    onCommit: onSave,
+  });
 
   const compact = size === 'compact';
   const headingSize = compact ? 'text-xs font-medium line-clamp-1' : 'text-sm font-semibold';
-
-  const handleSave = useCallback(() => {
-    const trimmed = value.trim();
-    if (trimmed && trimmed !== description) {
-      onSave(trimmed);
-    }
-    setIsEditing(false);
-  }, [value, description, onSave]);
-
-  const handleCancel = useCallback(() => {
-    setValue(description);
-    setIsEditing(false);
-  }, [description]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-        e.stopPropagation();
-        handleSave();
-      } else if (e.key === 'Escape') {
-        // Don't let the popover's document-level Esc handler close the whole
-        // popover — Esc should only cancel this edit.
-        e.stopPropagation();
-        handleCancel();
-      }
-    },
-    [handleSave, handleCancel]
-  );
-
-  const startEditing = useCallback(() => {
-    // Seed from the current description at edit time, so external (optimistic)
-    // updates while idle are picked up without a prop→state sync effect.
-    setValue(description);
-    setIsEditing(true);
-  }, [description]);
-
-  // Focus textarea when entering edit mode
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      const end = textareaRef.current.value.length;
-      textareaRef.current.focus();
-      textareaRef.current.setSelectionRange(end, end);
-    }
-  }, [isEditing]);
 
   if (isEditing) {
     return (
       <div className="w-full space-y-2">
         <Textarea
           ref={textareaRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={emptyLabel}
           className={cn('resize-none', compact ? 'min-h-[44px] text-xs' : 'min-h-[60px] text-sm')}
@@ -109,7 +64,7 @@ export function EditableDescription({
             variant="ghost"
             size="sm"
             className={cn(compact && 'h-7 text-xs')}
-            onClick={handleCancel}
+            onClick={cancel}
             disabled={isSaving}
           >
             Cancel
@@ -117,7 +72,7 @@ export function EditableDescription({
           <Button
             size="sm"
             className={cn(compact && 'h-7 text-xs')}
-            onClick={handleSave}
+            onClick={save}
             disabled={isSaving}
           >
             {isSaving && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
@@ -139,7 +94,7 @@ export function EditableDescription({
   return (
     <button
       type="button"
-      onClick={startEditing}
+      onClick={start}
       className="group flex items-center gap-1.5 text-left"
       aria-label="Edit description"
     >

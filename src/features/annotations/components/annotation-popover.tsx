@@ -6,9 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, X, Loader2, MessageSquare, Pencil, Trash2 } from 'lucide-react';
+import { Send, X, Loader2, MessageSquare } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { AnnotationThread, AnnotationComment, AnnotationAuthor } from '../types';
 import { useAnnotationComments } from '../hooks/use-annotation-comments';
@@ -16,6 +15,7 @@ import { useCanPerformAnnotationAction } from '../hooks/use-annotation-permissio
 import { useSession } from '@/features/auth/hooks/use-session';
 import type { PopoverMode } from '../hooks/use-annotation-popover';
 import { EditableDescription } from './editable-description';
+import { EditableComment } from './editable-comment';
 
 
 const PREVIEW_WIDTH = 240;
@@ -53,14 +53,6 @@ function getInitials(name: string): string {
     .join('')
     .toUpperCase()
     .slice(0, 2);
-}
-
-function formatTimeAgo(dateString: string): string {
-  try {
-    return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-  } catch {
-    return dateString;
-  }
 }
 
 /**
@@ -171,148 +163,6 @@ function calculatePosition(
   return { placement, left, top };
 }
 
-export function CommentItem<T extends AnnotationAuthor = AnnotationAuthor>({
-  comment,
-  isOwn,
-  onEdit,
-  onDelete,
-  isUpdating,
-  isDeleting,
-}: {
-  comment: AnnotationComment<T>;
-  isOwn: boolean;
-  onEdit: (commentId: string, message: string) => void;
-  onDelete: (commentId: string) => void;
-  isUpdating: boolean;
-  isDeleting: boolean;
-}) {
-  const [isEditing, setIsEditing] = useState(false);
-  // Seeded on edit-start (startEditing); the draft never renders before then,
-  // so init empty rather than deriving state from the comment prop.
-  const [editValue, setEditValue] = useState('');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const author = comment.author;
-  const initials = getInitials(author.name);
-  const isOptimistic = comment.id.startsWith('optimistic_');
-
-  const startEditing = useCallback(() => {
-    setEditValue(comment.message);
-    setIsEditing(true);
-  }, [comment.message]);
-
-  const handleSave = useCallback(() => {
-    const trimmed = editValue.trim();
-    if (trimmed && trimmed !== comment.message) {
-      onEdit(comment.id, trimmed);
-    }
-    setIsEditing(false);
-  }, [editValue, comment.id, comment.message, onEdit]);
-
-  const handleCancel = useCallback(() => {
-    setEditValue(comment.message);
-    setIsEditing(false);
-  }, [comment.message]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-        e.stopPropagation();
-        handleSave();
-      } else if (e.key === 'Escape') {
-        // Don't let the popover's document-level Esc handler close it mid-edit.
-        e.stopPropagation();
-        handleCancel();
-      }
-    },
-    [handleSave, handleCancel]
-  );
-
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      const end = textareaRef.current.value.length;
-      textareaRef.current.focus();
-      textareaRef.current.setSelectionRange(end, end);
-    }
-  }, [isEditing]);
-
-  return (
-    <div
-      className={cn(
-        'group flex gap-2 p-2 rounded-lg bg-muted/30 transition-opacity',
-        (isOptimistic || isDeleting) && 'opacity-50'
-      )}
-    >
-      <Avatar className="h-6 w-6 shrink-0">
-        <AvatarImage src={author.avatarUrl || undefined} alt={author.name} />
-        <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0 space-y-0.5">
-        <div className="flex items-center justify-between gap-1.5">
-          <div className="flex items-baseline gap-1.5 min-w-0">
-            <span className="text-xs font-medium text-foreground truncate">{author.name}</span>
-            <span className="text-[10px] text-muted-foreground shrink-0">{formatTimeAgo(comment.createdAt)}</span>
-          </div>
-          {isOwn && !isOptimistic && !isEditing && (
-            <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5"
-                onClick={startEditing}
-                disabled={isUpdating}
-                aria-label="Edit comment"
-              >
-                <Pencil className="h-3 w-3" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5 text-destructive"
-                onClick={() => onDelete(comment.id)}
-                disabled={isDeleting}
-                aria-label="Delete comment"
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          )}
-        </div>
-        {isEditing ? (
-          <div className="space-y-1.5">
-            <Textarea
-              ref={textareaRef}
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="min-h-[44px] text-xs resize-none"
-              disabled={isUpdating}
-            />
-            <div className="flex justify-end gap-1.5">
-              <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={handleCancel} disabled={isUpdating}>
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                className="h-6 text-xs"
-                onClick={handleSave}
-                disabled={isUpdating || !editValue.trim()}
-              >
-                {isUpdating && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-                Save
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <p className="text-xs text-foreground/90 whitespace-pre-wrap break-words line-clamp-3">
-            {comment.message}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 interface CommentListProps<T extends AnnotationAuthor = AnnotationAuthor> {
   comments: AnnotationComment<T>[];
   currentUserId?: string;
@@ -366,9 +216,10 @@ function VirtualizedCommentList<T extends AnnotationAuthor = AnnotationAuthor>({
               }}
             >
               <div className="pb-2">
-                <CommentItem
+                <EditableComment
+                  size="compact"
                   comment={comment}
-                  isOwn={comment.author.id === currentUserId}
+                  canModify={comment.author.id === currentUserId}
                   onEdit={onEdit}
                   onDelete={onDelete}
                   isUpdating={isUpdating}
@@ -550,10 +401,11 @@ function ExpandedContent<T extends AnnotationAuthor = AnnotationAuthor>({
             <ScrollArea className="h-[180px]">
               <div className="space-y-2 pr-2">
                 {comments.map((comment) => (
-                  <CommentItem
+                  <EditableComment
                     key={comment.id}
+                    size="compact"
                     comment={comment}
-                    isOwn={comment.author.id === currentUserId}
+                    canModify={comment.author.id === currentUserId}
                     onEdit={handleEditComment}
                     onDelete={handleDeleteComment}
                     isUpdating={isUpdatingComment}

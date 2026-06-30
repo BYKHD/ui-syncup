@@ -360,3 +360,10 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - Virtualized list (`useVirtualizer`, ≥10 comments) now uses `measureElement` so an expanded edit row isn't clipped by the fixed 72px estimate. Removed CommentItem's dead `style` prop.
 - `ExpandedContent` pulls existing `updateComment`/`deleteComment` from `useAnnotationComments`; own-only gate (matches panel). Test: `annotation-popover-comment-item.test.tsx` (author gate + save-guard + delete), 4/4.
 - Known redundancy (follow-up): inline-edit state logic now in 3 spots (CommentCard, EditableDescription, popover CommentItem) — a small `useInlineEdit` hook would DRY them; deferred to avoid churning shipped/tested components in a feature commit.
+
+## [2026-06-30] refactor | unify comment edit/delete affordance across panel + popover
+- UX consolidation: comments previously edited via a ⋯ kebab menu in the panel (mobile) but hover pencil/trash in the popover (desktop) — two patterns. Unified on ONE: click/tap the message to edit (skipped when text is selected) + subtle always-visible pencil/trash icons (touch-friendly, brighten on hover). Matches the description editor's click-to-edit model.
+- Code consolidation: new `useInlineEdit` hook (edit toggle, draft, save-guard, ⌘Enter/Esc + stopPropagation) now backs all three inline editors. New shared `EditableComment` (size default/compact) replaces both the panel's `CommentCard` and the popover's `CommentItem` (both deleted, along with their duplicated edit logic + dead getInitials/formatTimeAgo helpers). `EditableDescription` refactored onto the same hook.
+- Author-gated via `canModify` (own-only), same as before. Virtualized-list `measureElement` retained for dynamic edit-row heights.
+- Note: `annotation-thread-preview.tsx` still has its own read-only `CommentCard` (preview/glance, no editing) — left as-is, out of the edit-consistency scope.
+- Tests: replaced popover CommentItem test with `editable-comment.test.tsx` (author gate incl. no click-to-edit for non-owners, click-message-to-edit, save-guard, delete). 18/18 annotation tests pass; typecheck clean.
