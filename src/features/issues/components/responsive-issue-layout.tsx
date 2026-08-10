@@ -104,9 +104,10 @@ export default function ResponsiveIssueLayout({
   shortcuts = [],
 }: ResponsiveIssueLayoutProps) {
   const isMobile = useIsMobile();
-  const [windowWidth, setWindowWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1024
-  );
+  // SSR-stable default, corrected on mount by the effect below. Reading `window` in a
+  // useState initializer makes the client hydrate with a different value than the server
+  // rendered (the server has no window), which React reports as a hydration mismatch.
+  const [windowWidth, setWindowWidth] = useState(1024);
   const [activeTab, setActiveTab] = useState("attachments");
   
   // Lifted state for selected attachment
@@ -170,13 +171,19 @@ export default function ResponsiveIssueLayout({
 
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
-  // Initialize panel state based on viewport width
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const width = window.innerWidth;
+  // Also SSR-stable — same hydration reason as windowWidth above.
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+
+  // Sync the real viewport once after mount. Kept separate from the resize effect below
+  // because that one re-runs on `isMobile` changes, which would re-collapse a panel the
+  // user had deliberately expanded.
+  useEffect(() => {
+    setWindowWidth(window.innerWidth);
     // Auto-collapse on initial load if viewport is 768-991px
-    return width < 992;
-  });
+    if (window.innerWidth < 992) {
+      setIsPanelCollapsed(true);
+    }
+  }, []);
   // Track window width and handle responsive behavior
   // This combines width tracking and auto-collapse logic to avoid cascading renders
   useEffect(() => {
@@ -483,7 +490,7 @@ export default function ResponsiveIssueLayout({
           marginRight: panelWidth,
         }}
         animate={{
-          marginRight: isPanelCollapsed ? 0+panelOverlap : window.innerWidth>992 ? panelWidth : 0+panelOverlap,
+          marginRight: isPanelCollapsed ? 0+panelOverlap : windowWidth>992 ? panelWidth : 0+panelOverlap,
         }}
       >
         <Suspense

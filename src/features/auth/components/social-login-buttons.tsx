@@ -131,7 +131,9 @@ export function SocialLoginButtons({
         redirectPayload.redirect === false &&
         typeof window !== "undefined"
       ) {
-        window.location.href = redirectPayload.url;
+        // assign() rather than `location.href = ...`: same navigation, but a method call
+        // instead of writing to a global, which is what react-hooks/immutability objects to.
+        window.location.assign(redirectPayload.url);
         return;
       }
 

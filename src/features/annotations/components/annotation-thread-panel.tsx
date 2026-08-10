@@ -88,6 +88,14 @@ function ThreadContent({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+  // Detected after mount, not during render: `navigator` does not exist on the server,
+  // so reading it in render throws during SSR. (`navigator.platform` is also deprecated —
+  // userAgent is the supported replacement.) Renders "Ctrl" until corrected.
+  const [isMac, setIsMac] = useState(false);
+  useEffect(() => {
+    setIsMac(/Mac|iPhone|iPad|iPod/.test(navigator.userAgent));
+  }, []);
+
   const {
     addComment,
     updateComment,
@@ -237,7 +245,7 @@ function ThreadContent({
         />
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">
-            {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'} + Enter to submit
+            {isMac ? '⌘' : 'Ctrl'} + Enter to submit
           </span>
           <Button 
             size="sm" 

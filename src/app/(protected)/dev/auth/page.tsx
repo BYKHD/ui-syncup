@@ -3,7 +3,7 @@
 // Force dynamic rendering to prevent SSR issues with auth hooks
 export const dynamic = 'force-dynamic';
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Copy, AlertTriangle, CheckCircle, XCircle, Loader2, Monitor, RefreshCw, Bell } from "lucide-react";
 import { toast } from "sonner";
 
@@ -57,6 +57,14 @@ export default function DevAuthPage() {
       toast.error(message);
     },
   });
+
+  // Read after mount rather than branching on `typeof window` during render — that
+  // branch renders "Loading..." on the server and the real value on the client, which is
+  // a hydration mismatch.
+  const [cookies, setCookies] = useState<string | null>(null);
+  useEffect(() => {
+    setCookies(document.cookie || "No cookies found");
+  }, []);
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isSendingTestNotification, setIsSendingTestNotification] = useState(false);
@@ -130,7 +138,7 @@ export default function DevAuthPage() {
             <div>
               <p className="text-sm text-muted-foreground">Cookies:</p>
               <code className="text-xs bg-muted px-2 py-1 rounded block mt-1">
-                {typeof window !== 'undefined' ? (document.cookie || 'No cookies found') : 'Loading...'}
+                {cookies ?? 'Loading...'}
               </code>
             </div>
             <Button onClick={() => invalidateSession()} variant="outline" className="w-full">

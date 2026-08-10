@@ -57,14 +57,36 @@ function getBucketName(): string {
  * virtual-hosted-style URLs so forcePathStyle must be false, otherwise
  * presigned URLs are generated in the wrong format.
  */
+/**
+ * Read a storage credential, failing closed in production.
+ *
+ * `minioadmin` is MinIO's well-known default, which local dev relies on. Falling back to
+ * it unconditionally meant a self-hosted production deploy that forgot to set these vars
+ * booted silently on the default credential instead of erroring — the app failed OPEN.
+ *
+ * The check runs inside the credential provider rather than at module load so a
+ * `next build` without runtime secrets still succeeds; a misconfigured production
+ * instance fails on its first S3 call instead.
+ */
+function requireStorageCredential(name: string, devFallback: string): string {
+  const value = process.env[name];
+  if (value) return value;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      `${name} is not set. Refusing to use the default development credential in production.`
+    );
+  }
+  return devFallback;
+}
+
 function createClient(endpoint: string | undefined): S3Client {
   return new S3Client({
     region: process.env.STORAGE_REGION ?? 'us-east-1',
     ...(endpoint ? { endpoint } : {}),
-    credentials: {
-      accessKeyId: process.env.STORAGE_ACCESS_KEY_ID ?? 'minioadmin',
-      secretAccessKey: process.env.STORAGE_SECRET_ACCESS_KEY ?? 'minioadmin',
-    },
+    credentials: async () => ({
+      accessKeyId: requireStorageCredential('STORAGE_ACCESS_KEY_ID', 'minioadmin'),
+      secretAccessKey: requireStorageCredential('STORAGE_SECRET_ACCESS_KEY', 'minioadmin'),
+    }),
     forcePathStyle: !!endpoint,
     // AWS SDK v3 >= 3.750 defaults to 'when_supported', which embeds a CRC32
     // checksum in presigned PUT URLs. Browsers cannot send the required

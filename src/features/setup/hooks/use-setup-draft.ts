@@ -22,11 +22,12 @@ export function useSetupDraft() {
   const [draft, setDraftState] = useState<SetupDraft>(readDraft);
 
   const setDraft = (update: Partial<SetupDraft>) => {
-    setDraftState(prev => {
-      const next = { ...prev, ...update };
-      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(next)); } catch { /* ignore */ }
-      return next;
-    });
+    // The localStorage write used to live inside the setState updater. Updaters must be
+    // pure — React may invoke them twice (StrictMode, concurrent rendering), which
+    // duplicated the write. Compute the next value here and keep the updater trivial.
+    const next = { ...draft, ...update };
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+    setDraftState(next);
   };
 
   const clearDraft = () => {

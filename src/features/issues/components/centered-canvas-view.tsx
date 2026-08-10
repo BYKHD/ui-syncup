@@ -323,6 +323,24 @@ function CenteredCanvasViewInner({
     }
   }, [canvasState.panX, canvasState.panY, isDragging, visualPanX, visualPanY, rawPanRef]);
 
+  // Mirror the interaction container onto the caller's ref.
+  //
+  // This used to be a merging ref callback that wrote `.current` on both refs. Writing to
+  // a ref that arrived as a prop is what react-hooks/immutability rejects, so React now
+  // owns `containerRef` directly (`ref={containerRef}`) and the caller's ref is mirrored
+  // here instead. An effect is the sanctioned place for that write.
+  //
+  // Timing is safe: the only consumer (annotated-attachment-view's click-outside effect)
+  // reads it inside its own useEffect, and React runs child effects before parent ones.
+  useEffect(() => {
+    if (!interactionLayerRef) return;
+    const ref = interactionLayerRef as MutableRefObject<HTMLDivElement | null>;
+    ref.current = containerRef.current;
+    return () => {
+      ref.current = null;
+    };
+  }, [interactionLayerRef, containerRef]);
+
   // Handle image load.
   // These MUST stay referentially stable. next/image's internal ref callback lists
   // `onError` in its useCallback deps and does `img.src = img.src` when it re-attaches
@@ -861,13 +879,7 @@ function CenteredCanvasViewInner({
       <div className="flex-1 relative overflow-hidden">
         {/* Interaction layer container */}
         <div
-          ref={(el) => {
-            // Merge refs
-            (containerRef as MutableRefObject<HTMLDivElement | null>).current = el;
-            if (interactionLayerRef) {
-              (interactionLayerRef as MutableRefObject<HTMLDivElement | null>).current = el;
-            }
-          }}
+          ref={containerRef}
           className={cn(
             "absolute inset-0",
             pointerPanEnabled ? "cursor-grab active:cursor-grabbing" : "cursor-crosshair"

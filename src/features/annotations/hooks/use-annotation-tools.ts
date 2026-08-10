@@ -77,40 +77,29 @@ export function useAnnotationTools(options: UseAnnotationToolsOptions = {}) {
     setRedoStack([]);
   }, []);
 
+  // The sibling setState and the onUndo/onRedo callback used to live INSIDE the updater.
+  // Updaters must be pure: React may invoke them twice (StrictMode, concurrent
+  // rendering), which pushed the same entry onto the opposite stack twice. Read the
+  // entry from committed state instead and keep both updaters trivial. Both callbacks
+  // run from event handlers, so React batches the two setState calls into one render
+  // and the queueMicrotask deferral is no longer needed.
   const undo = useCallback(() => {
-    setHistory((prev) => {
-      if (!prev.length) return prev;
-      const nextHistory = prev.slice(0, -1);
-      const entry = prev[prev.length - 1];
-      
-      // Move entry to redo stack
-      setRedoStack((future) => [entry, ...future]);
-      
-      // Call onUndo with the entry
-      queueMicrotask(() => {
-        onUndo?.(entry);
-      });
-      
-      return nextHistory;
-    });
-  }, [onUndo]);
+    if (!history.length) return;
+    const entry = history[history.length - 1];
+
+    setHistory((prev) => prev.slice(0, -1));
+    setRedoStack((future) => [entry, ...future]);
+    onUndo?.(entry);
+  }, [history, onUndo]);
 
   const redo = useCallback(() => {
-    setRedoStack((prev) => {
-      if (!prev.length) return prev;
-      const [entry, ...rest] = prev;
-      
-      // Move entry back to history
-      setHistory((hist) => addToHistory(hist, entry));
-      
-      // Call onRedo with the entry
-      queueMicrotask(() => {
-        onRedo?.(entry);
-      });
-      
-      return rest;
-    });
-  }, [onRedo]);
+    if (!redoStack.length) return;
+    const [entry] = redoStack;
+
+    setRedoStack((prev) => prev.slice(1));
+    setHistory((hist) => addToHistory(hist, entry));
+    onRedo?.(entry);
+  }, [redoStack, onRedo]);
 
   const resetHistory = useCallback(() => {
     setHistory([]);

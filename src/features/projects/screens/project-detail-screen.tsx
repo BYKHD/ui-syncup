@@ -66,6 +66,16 @@ export default function ProjectDetailScreen({
   // Controlled open state for the member dialog — driven by ?open=members URL param
   const [memberDialogOpen, setMemberDialogOpen] = useState(false);
 
+  // Settings dialog state - note: dialog open/close is managed by project-actions.tsx
+  // We only manage form state here.
+  // Declared above the effect that calls setSettingsFormData: it used to live further
+  // down the component, so the effect referenced the setter before its declaration.
+  const [settingsFormData, setSettingsFormData] = useState({
+    name: project.name,
+    description: project.description || "",
+    visibility: project.visibility,
+  });
+
   useEffect(() => {
     if (project) {
       addRecentProject({
@@ -104,13 +114,6 @@ export default function ProjectDetailScreen({
   const [asIsUploadProgress, setAsIsUploadProgress] = useState(0);
   const [toBeUploadProgress, setToBeUploadProgress] = useState(0);
 
-  // Settings dialog state - note: dialog open/close is managed by project-actions.tsx
-  // We only manage form state here
-  const [settingsFormData, setSettingsFormData] = useState({
-    name: project.name,
-    description: project.description || "",
-    visibility: project.visibility,
-  });
   const [settingsErrors, setSettingsErrors] = useState<Record<string, string>>(
     {}
   );

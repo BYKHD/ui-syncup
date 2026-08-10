@@ -27,6 +27,26 @@ const VIEW_MODES = [
 
 type AttachmentViewMode = (typeof VIEW_MODES)[number]['id'];
 
+/**
+ * Read an image's intrinsic size. Module scope, not inside the component: it closes over
+ * no props or state, and defining it below its own call site made it read before its
+ * declaration on every render.
+ */
+function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => {
+      resolve({ width: 0, height: 0 });
+      URL.revokeObjectURL(img.src);
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 import type { AnnotationPermissions, AttachmentAnnotation } from '@/features/annotations';
 
 interface IssueAttachmentsViewProps {
@@ -189,22 +209,6 @@ export default function IssueAttachmentsView({
       setUploadProgress(0);
     }
   }, [issueId, uploadVariant, onUploadComplete]);
-
-  // Helper to get image dimensions
-  const getImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        resolve({ width: img.naturalWidth, height: img.naturalHeight });
-        URL.revokeObjectURL(img.src);
-      };
-      img.onerror = () => {
-        resolve({ width: 0, height: 0 });
-        URL.revokeObjectURL(img.src);
-      };
-      img.src = URL.createObjectURL(file);
-    });
-  };
 
   // Error state
   if (error && onRetry) {
