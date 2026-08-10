@@ -1,3 +1,10 @@
+## [0.9.5-beta.2](https://github.com/BYKHD/ui-syncup/compare/v0.9.5-beta.1...v0.9.5-beta.2) (2026-08-10)
+
+
+### Bug Fixes
+
+* image lifecycle and upload rollback in issue creation ([#156](https://github.com/BYKHD/ui-syncup/issues/156)) ([6d961d9](https://github.com/BYKHD/ui-syncup/commit/6d961d960efde15ac8b8f608f02e83015c7ae606))
+
 ## [0.9.5-beta.1](https://github.com/BYKHD/ui-syncup/compare/v0.9.4...v0.9.5-beta.1) (2026-06-30)
 
 
