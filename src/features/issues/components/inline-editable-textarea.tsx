@@ -26,7 +26,7 @@ export function InlineEditableTextarea({
   onSave,
   canEdit,
   placeholder = 'Click to edit',
-  minLength = 20,
+  minLength = 1,
   maxLength = 5000,
   rows = 4,
   className,
@@ -64,7 +64,12 @@ export function InlineEditableTextarea({
   }, [value]);
 
   const validate = (val: string): string | null => {
-    if (val.trim().length < minLength) {
+    const trimmed = val.trim();
+    // minLength={0} means the field is optional, so only non-zero minimums imply required.
+    if (minLength > 0 && !trimmed) {
+      return 'This field cannot be empty';
+    }
+    if (trimmed.length < minLength) {
       return `Must be at least ${minLength} characters`;
     }
     if (val.length > maxLength) {

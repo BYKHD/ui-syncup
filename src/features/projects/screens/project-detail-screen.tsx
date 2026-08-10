@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { usePathname, useSearchParams } from "next/navigation";
 import { RiArchiveLine } from "@remixicon/react";
 import { IssuesCreateDialog, type ImageData } from "@/features/issues/components/issues-create-dialog";
-import { useCreateIssue, uploadAttachment } from "@/features/issues";
+import { useCreateIssue, uploadAttachment, deleteIssue } from "@/features/issues";
+import { toast } from "sonner";
 import { ProjectMemberManagerDialog } from "../components/project-member-manager-dialog";
 import { ProjectInvitationDialog } from "../components/project-invitation-dialog";
 import { ProjectSettingsDialog } from "../components/project-settings-dialog";
@@ -312,12 +313,35 @@ export default function ProjectDetailScreen({
           await Promise.all(uploadPromises);
         } catch (uploadError) {
           console.error("Failed to upload attachments:", uploadError);
+
+          // The issue already exists by this point. Returning early would leave an
+          // attachment-less orphan behind, and every retry would create another one.
+          // So roll it back and let the retry be a clean create. Safe to do: every role
+          // holding ISSUE_CREATE also holds ISSUE_DELETE (src/config/roles.ts), and the
+          // DELETE cascades to whichever attachment did land before the failure — which
+          // is also why the retry re-uploads both rather than tracking them per variant.
+          let rolledBack = true;
+          try {
+            await deleteIssue({ issueId: issue.id });
+          } catch (rollbackError) {
+            rolledBack = false;
+            console.error("Failed to roll back issue after upload failure:", rollbackError);
+          }
+
           setIsSubmittingIssue(false);
           setAsIsUploadProgress(0);
           setToBeUploadProgress(0);
-          // Don't close dialog, don't clear form data - preserve user's work
-          // Error toast will be shown by the upload failure
-          return; // Exit early, blocking issue creation
+
+          // uploadAttachment is a plain async fn, not a mutation hook — nothing else
+          // surfaces this failure, so without this the dialog just goes quiet.
+          toast.error("Failed to upload images", {
+            description: rolledBack
+              ? "The issue was not created. Your work is still here — try again."
+              : `Issue ${issue.issueKey} was created without its images. Please delete it and try again.`,
+          });
+
+          // Dialog stays open and formData is untouched so the user can retry.
+          return;
         }
       }
 

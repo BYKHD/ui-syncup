@@ -14,6 +14,12 @@ interface ImageUploadZoneProps {
   className?: string;
   progress?: number;
   isUploading?: boolean;
+  /**
+   * Whether this zone claims Ctrl/Cmd+V. The listener is on `document`, so every
+   * mounted zone would otherwise catch the same paste and fill both slots from one
+   * copy. Only one zone may have this on at a time.
+   */
+  pasteEnabled?: boolean;
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -27,6 +33,7 @@ export function ImageUploadZone({
   className,
   progress = 0,
   isUploading = false,
+  pasteEnabled = true,
 }: ImageUploadZoneProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -147,6 +154,8 @@ export function ImageUploadZone({
 
   // Clipboard paste support
   useEffect(() => {
+    if (!pasteEnabled) return;
+
     const handlePaste = (e: ClipboardEvent) => {
       if (disabled) return;
 
@@ -170,7 +179,7 @@ export function ImageUploadZone({
     return () => {
       document.removeEventListener("paste", handlePaste);
     };
-  }, [disabled, handleFileSelect]);
+  }, [disabled, handleFileSelect, pasteEnabled]);
 
   const IconComponent = config.icon;
 
