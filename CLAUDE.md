@@ -38,11 +38,7 @@ This repo uses an LLM Wiki — a persistent, interlinked knowledge base under `.
 - Find that a wiki page is wrong or outdated — fix it
 - Synthesize a novel comparison or analysis a future query would ask again — file it as a new `concepts/` page rather than letting it disappear into chat
 
-**Ingest a new source** (something new appears in `.ai/steering/`, `README.md`, etc.):
-1. Read it in full; briefly discuss takeaways with the user before writing.
-2. Write `.ai/wiki/sources/<slug>.md` — one-paragraph summary, key facts as bullets, `feeds_into` list.
-3. Update affected `features/`, `concepts/`, `entities/` pages — revise, add `[[wikilinks]]`, flag contradictions with `> [!warning] Contradiction` blocks (never silently resolve).
-4. Update [.ai/wiki/index.md](.ai/wiki/index.md) for new pages.
+**Ingest a new source** — trigger on something *appearing* in `.ai/steering/`, `README.md`, etc., not just on being asked. Follow the steps in [.ai/wiki/WIKI.md](.ai/wiki/WIKI.md) § Workflows → Ingest. Never silently resolve a contradiction between sources — flag it.
 
 **At session end:**
 - Append a dated entry to [.ai/wiki/log.md](.ai/wiki/log.md): `## [YYYY-MM-DD] <op> | <subject>` so `grep "^## \[" log.md` works.
@@ -54,11 +50,14 @@ Full schema and conventions in [.ai/wiki/WIKI.md](.ai/wiki/WIKI.md).
 ## Hard constraints (never violate)
 
 - **`bun run test` only.** Never `bun test` — Bun's native runner ignores Vitest config and can corrupt the local DB.
+- **Unit tests are `*.test.ts(x)` only.** `vitest.config.ts` lists `*.spec.ts` in `include` but then excludes it (reserved for Playwright `tests/e2e/`). A `.spec.ts` unit test silently never runs and the suite still reports green.
+- **Schema change ⇒ `bun run db:generate` before `bun run test`.** The PGlite test DB is built by replaying `drizzle/*.sql`, not the Drizzle TS schema — skip it and every DB test fails with a bogus `column "x" does not exist`.
+- **Never `bun run db:push`.** It writes the schema without recording in `drizzle.__drizzle_migrations`, so the next `db:migrate` replays `0000_init.sql` and aborts. `db:migrate:sync` will *not* rescue you — its checks are keyed to migration filenames that no longer exist. Always `db:generate` → `db:migrate`.
 - **`components/ui` and `components/shared` never import from `features/*`.** Shared UI knows nothing about features. App-shell composition that needs feature data lives in `components/layout` — the one composition layer allowed to import `features/*` (and which `features/*` may import back). See [[concepts/import-rules]].
 - **`server/*` never imported from client components.** It's server-only.
-- **Pages don't fetch.** `app/*/page.tsx` does auth/tenant gating + Zod validation, then renders one feature `Screen`. Data flows `features/api` → `features/hooks` → `features/components`.
-- **Validate every network boundary with Zod.** No untyped DTOs across the wire.
-- **Barrels use explicit named exports.** Never `export *` — it breaks tree-shaking and hides circular deps.
+- **Pages don't fetch.** `app/*/page.tsx` does auth/tenant gating + Zod validation, then renders one feature `Screen`. Data flows `features/api` → `features/hooks` → `features/components`. *Known debt (don't copy): the `team/settings` route family runs raw Drizzle, and `[projectSlug]`/`issue/[issueKey]` call `fetch` inline.*
+- **Validate every network boundary with Zod.** No untyped DTOs across the wire. *Known debt (don't copy): `features/issues/api/*` validates nothing, and `lib/api-client.ts` casts responses rather than parsing them.*
+- **Barrels use explicit named exports.** Never `export *` — it breaks tree-shaking and hides circular deps. *Known debt (don't copy): 14 barrels still use it, incl. `src/mocks/index.ts` and several `features/*/index.ts`.*
 - **Mock data lives in `src/mocks/`.** Never in `src/server/`.
 - **`docs/feature-architectures/*` and `docs/development/*` are gone.** Their content is canonical in the wiki — don't recreate those files.
 
@@ -77,23 +76,4 @@ Full schema and conventions in [.ai/wiki/WIKI.md](.ai/wiki/WIKI.md).
 - **Components**: PascalCase (`CreateIssueDialog`)
 - **Hooks**: `useX` (`useIssue`)
 - **API callers**: `verb-noun.ts` (`get-issues.ts`, `create-issue.ts`)
-- **Path alias**: `@/*` → `./src/*`
 - **New feature**: copy [`src/features/folder-scaffold-template/`](src/features/folder-scaffold-template/) and rename.
-
-## Wiki page frontmatter
-
-Every wiki page starts with:
-
-```yaml
----
-title: <Page title>
-type: source | feature | concept | entity | schema | index | log | overview
-tags: [tag1, tag2]
-last_updated: YYYY-MM-DD
-sources: [sources/steering-product]
----
-```
-
-Cross-links use Obsidian-style `[[features/issues]]`, `[[entities/team]]`. Citations are inline: `Issues use a 5-state workflow [[sources/steering-product]].`
-
-Feature pages are **maps, not re-derivations** — list filenames, screen names, public exports. Don't paste code.

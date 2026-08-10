@@ -218,7 +218,7 @@ export function MetadataSection({
           onSave={(value) => onUpdate('description', value)}
           canEdit={resolvedPermissions.canEditField('description')}
           placeholder="Enter description"
-          minLength={20}
+          minLength={1}
           maxLength={5000}
           rows={4}
           displayClassName="leading-relaxed text-muted-foreground break-words"

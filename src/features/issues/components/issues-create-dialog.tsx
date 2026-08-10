@@ -170,19 +170,11 @@ export function IssuesCreateDialog({
     }
   };
 
-  const handleAsIsImageRemove = () => {
-    if (formData.asIsImage?.preview) {
-      URL.revokeObjectURL(formData.asIsImage.preview);
-    }
-    onAsIsImageChange(null);
-  };
+  // No manual revoke here — the effect below owns blob-URL lifetime for every path
+  // (remove, replace, cancel, submit, unmount). Two owners is how the last bug happened.
+  const handleAsIsImageRemove = () => onAsIsImageChange(null);
 
-  const handleToBeImageRemove = () => {
-    if (formData.toBeImage?.preview) {
-      URL.revokeObjectURL(formData.toBeImage.preview);
-    }
-    onToBeImageChange(null);
-  };
+  const handleToBeImageRemove = () => onToBeImageChange(null);
 
   const handleAsIsAnnotationsChange = (annotations: AttachmentAnnotation[]) => {
     if (formData.asIsImage) {
@@ -208,17 +200,37 @@ export function IssuesCreateDialog({
     }
   }, [formData.description]);
 
-  // Cleanup blob URLs on unmount
+  // Single owner of blob-URL lifetime. Revokes a preview only once it has been REPLACED
+  // (removed, swapped, or wiped by cancel/submit resetting formData) — never the URL that
+  // is currently on screen.
+  //
+  // Do NOT collapse this into a cleanup with [asIsPreview, toBePreview] deps. React runs a
+  // cleanup on every dep change, so that shape revoked the still-displayed as-is URL the
+  // moment the to-be image was pasted, and the canvas died with "Failed to load image".
+  const previewsRef = useRef<{ asIs?: string; toBe?: string }>({});
+  useEffect(() => {
+    const prev = previewsRef.current;
+    if (prev.asIs && prev.asIs !== asIsPreview) {
+      URL.revokeObjectURL(prev.asIs);
+    }
+    if (prev.toBe && prev.toBe !== toBePreview) {
+      URL.revokeObjectURL(prev.toBe);
+    }
+    previewsRef.current = { asIs: asIsPreview, toBe: toBePreview };
+  }, [asIsPreview, toBePreview]);
+
+  // Whatever is still live when the dialog unmounts.
   useEffect(() => {
     return () => {
-      if (asIsPreview) {
-        URL.revokeObjectURL(asIsPreview);
+      const { asIs, toBe } = previewsRef.current;
+      if (asIs) {
+        URL.revokeObjectURL(asIs);
       }
-      if (toBePreview) {
-        URL.revokeObjectURL(toBePreview);
+      if (toBe) {
+        URL.revokeObjectURL(toBe);
       }
     };
-  }, [asIsPreview, toBePreview]);
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -447,6 +459,10 @@ export function IssuesCreateDialog({
                             onImageSelect={handleToBeImageSelect}
                             disabled={isLoadingToBe || isSubmitting}
                             error={errors.toBeImage}
+                            // Both zones listen for paste on `document`. As-is claims it first;
+                            // to-be only takes over once as-is is filled, so one Ctrl+V fills
+                            // one slot instead of both.
+                            pasteEnabled={!!formData.asIsImage}
                             className="min-h-[120px]"
                             progress={toBeUploadProgress}
                             isUploading={isSubmitting && toBeUploadProgress > 0 && toBeUploadProgress < 100}

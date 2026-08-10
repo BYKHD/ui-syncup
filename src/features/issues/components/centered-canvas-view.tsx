@@ -323,18 +323,22 @@ function CenteredCanvasViewInner({
     }
   }, [canvasState.panX, canvasState.panY, isDragging, visualPanX, visualPanY, rawPanRef]);
 
-  // Handle image load
-  const handleImageLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
+  // Handle image load.
+  // These MUST stay referentially stable. next/image's internal ref callback lists
+  // `onError` in its useCallback deps and does `img.src = img.src` when it re-attaches
+  // (a hydration workaround). An inline handler here gave it a new identity on every
+  // render, forcing the browser to re-fetch the image on every keystroke in the form.
+  const handleImageLoad = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
     const img = event.currentTarget;
     setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
     setImageLoaded(true);
     setImageError(false);
-  };
+  }, [setImageDimensions, setImageLoaded, setImageError]);
 
-  const handleImageError = () => {
+  const handleImageError = useCallback(() => {
     setImageError(true);
     setImageLoaded(false);
-  };
+  }, [setImageError, setImageLoaded]);
 
   // ============================================================================
   // EVENT HANDLERS - Unified pan/zoom at container level
