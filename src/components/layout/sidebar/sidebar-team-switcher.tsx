@@ -59,6 +59,9 @@ export function TeamSwitcher() {
 
     switchTeam(teamId, {
       onSuccess: () => {
+        // The active team changed server-side, so every tenant-scoped tree has to be
+        // rebuilt. A full reload does that; router.push would keep the old team's data.
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.assign("/projects");
       },
       onError: (error) => {

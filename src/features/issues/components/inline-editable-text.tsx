@@ -57,9 +57,14 @@ export function InlineEditableText({
     }
   }, [isEditing]);
 
-  useEffect(() => {
+  // Adjust state during render rather than in an effect — the pattern react.dev
+  // prescribes for "a prop changed, reset some state". The effect version committed a
+  // render with the stale value first, then immediately re-rendered.
+  const [lastValue, setLastValue] = useState(value);
+  if (lastValue !== value) {
+    setLastValue(value);
     setEditValue(value);
-  }, [value]);
+  }
 
   const validate = (val: string): string | null => {
     if (minLength > 0 && val.trim().length < minLength) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { useId, useMemo, useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -74,6 +74,11 @@ const menuContentVariants = {
   },
 };
 
+// Module scope so identities stay stable across renders; nothing to subscribe to.
+const subscribeToNothing = () => () => {};
+const getTrue = () => true;
+const getFalse = () => false;
+
 export function StatusSelector({
   value,
   onChange,
@@ -88,10 +93,11 @@ export function StatusSelector({
   const [open, setOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
-  const [mounted, setMounted] = useState(false);
+  // "Are we on the client yet" — gates the portal below. useSyncExternalStore gives the
+  // same answer without an effect + state round-trip: false while hydrating, true after.
+  const mounted = useSyncExternalStore(subscribeToNothing, getTrue, getFalse);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => setMounted(true), []);
 
   const currentOption =
     STATUS_OPTIONS.find((option) => option.value === value) ?? STATUS_OPTIONS[0];

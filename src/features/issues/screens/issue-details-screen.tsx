@@ -82,9 +82,13 @@ export default function IssueDetailsScreen({
       toast.success('Issue deleted successfully');
       // Redirect to project issues list
       setTimeout(() => {
+        // Full reload after a delete: the issue this screen is built around no longer
+        // exists, so the cached tree and queries referencing it must be discarded.
         if (data.projectKey) {
+           // eslint-disable-next-line @next/next/no-location-assign-relative-destination
            window.location.href = `/${data.projectKey}`;
         } else {
+           // eslint-disable-next-line @next/next/no-location-assign-relative-destination
            window.location.href = '/projects';
         }
       }, 500);
@@ -183,6 +187,8 @@ export default function IssueDetailsScreen({
             <Button
               variant="outline"
               size="sm"
+              // Error-state fallback: full reload so the failed screen's tree is dropped.
+              // eslint-disable-next-line @next/next/no-location-assign-relative-destination
               onClick={() => (window.location.href = '/issues')}
             >
               Back to Issues

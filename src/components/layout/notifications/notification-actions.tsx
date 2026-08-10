@@ -157,7 +157,9 @@ export function NotificationActions({
         const isProjectInvitation = notification.type === 'project_invitation'
         if (!isProjectInvitation && responseData.teamId) {
           // acceptInvitationById has already set the joined team as the user's
-          // active team server-side. Full-reload so /projects renders with it.
+          // active team server-side. Full-reload so /projects renders with it —
+          // router.push would keep the previous tenant's cached tree.
+          // eslint-disable-next-line @next/next/no-location-assign-relative-destination
           window.location.assign('/projects')
           return
         } else if (notification.metadata.target_url) {

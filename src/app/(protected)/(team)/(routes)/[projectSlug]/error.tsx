@@ -60,6 +60,9 @@ export default function ProjectDetailError({ error, reset }: ErrorProps) {
               Try Again
             </Button>
             <Button
+              // Full reload is the point: this is an error boundary, and router.push
+              // would navigate while keeping the broken React tree alive.
+              // eslint-disable-next-line @next/next/no-location-assign-relative-destination
               onClick={() => window.location.href = "/projects"}
               variant="outline"
               className="gap-2"

@@ -44,6 +44,9 @@ export default function IssueError({ error, reset }: IssueErrorProps) {
           </Button>
 
           <Button
+            // Full reload is the point: this is an error boundary, and router.push
+            // would navigate while keeping the broken React tree alive.
+            // eslint-disable-next-line @next/next/no-location-assign-relative-destination
             onClick={() => (window.location.href = '/issues')}
             variant="outline"
             className="flex items-center gap-2"

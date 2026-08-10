@@ -11,7 +11,7 @@
  * @module features/annotations/components/annotation-thread-panel
  */
 
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect, useSyncExternalStore } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -62,6 +62,12 @@ function sortCommentsChronologically(comments: AnnotationComment[]): AnnotationC
   );
 }
 
+// The platform never changes for the lifetime of the page, so there is nothing to
+// subscribe to — these are module scope so their identity stays stable across renders.
+const subscribeToNothing = () => () => {};
+const getIsMac = () => /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+const getIsMacServer = () => false;
+
 // ============================================================================
 // THREAD CONTENT COMPONENT
 // ============================================================================
@@ -88,13 +94,11 @@ function ThreadContent({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Detected after mount, not during render: `navigator` does not exist on the server,
-  // so reading it in render throws during SSR. (`navigator.platform` is also deprecated —
-  // userAgent is the supported replacement.) Renders "Ctrl" until corrected.
-  const [isMac, setIsMac] = useState(false);
-  useEffect(() => {
-    setIsMac(/Mac|iPhone|iPad|iPod/.test(navigator.userAgent));
-  }, []);
+  // `navigator` does not exist on the server, so this cannot be read during render.
+  // useSyncExternalStore is React's API for exactly that: it serves the server snapshot
+  // while hydrating and the real value after, with no effect and no state to sync.
+  // (`navigator.platform` is deprecated — userAgent is the supported replacement.)
+  const isMac = useSyncExternalStore(subscribeToNothing, getIsMac, getIsMacServer);
 
   const {
     addComment,

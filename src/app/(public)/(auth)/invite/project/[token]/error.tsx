@@ -37,7 +37,13 @@ export default function InvitationError({
           )}
         </CardHeader>
         <CardFooter className="flex justify-center gap-3">
-          <Button variant="outline" onClick={() => window.location.href = '/projects'}>
+          <Button
+            variant="outline"
+            // Full reload is the point: this is an error boundary, and router.push
+            // would navigate while keeping the broken React tree alive.
+            // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+            onClick={() => window.location.href = '/projects'}
+          >
             Go to Projects
           </Button>
           <Button onClick={reset}>

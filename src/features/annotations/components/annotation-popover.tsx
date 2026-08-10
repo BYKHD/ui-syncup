@@ -481,7 +481,6 @@ export function AnnotationPopover<T extends AnnotationAuthor = AnnotationAuthor>
   useLayoutEffect(() => {
     if (!open || !overlayRef.current) {
       // Intentional: synchronously clear position in layout phase to avoid flash
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPosition(null);
       return;
     }

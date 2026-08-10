@@ -3,7 +3,7 @@
 // Force dynamic rendering to prevent SSR issues with auth hooks
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Copy, AlertTriangle, CheckCircle, XCircle, Loader2, Monitor, RefreshCw, Bell } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,6 +29,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
+
+// Module scope so the identities stay stable across renders. This is a debug panel —
+// there is no cookie-change event worth subscribing to, so the snapshot is read per render.
+const subscribeToNothing = () => () => {};
+const getCookies = () => document.cookie || "No cookies found";
+const getCookiesServer = () => "Loading...";
 
 export default function DevAuthPage() {
   const { user, session, isLoading, error, invalidateSession } = useSession();
@@ -58,13 +64,10 @@ export default function DevAuthPage() {
     },
   });
 
-  // Read after mount rather than branching on `typeof window` during render — that
-  // branch renders "Loading..." on the server and the real value on the client, which is
-  // a hydration mismatch.
-  const [cookies, setCookies] = useState<string | null>(null);
-  useEffect(() => {
-    setCookies(document.cookie || "No cookies found");
-  }, []);
+  // `document` does not exist on the server, so this cannot be read during render.
+  // useSyncExternalStore serves the server snapshot while hydrating and the real value
+  // after — no effect, no state to sync, and no hydration mismatch.
+  const cookies = useSyncExternalStore(subscribeToNothing, getCookies, getCookiesServer);
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isSendingTestNotification, setIsSendingTestNotification] = useState(false);
@@ -138,7 +141,7 @@ export default function DevAuthPage() {
             <div>
               <p className="text-sm text-muted-foreground">Cookies:</p>
               <code className="text-xs bg-muted px-2 py-1 rounded block mt-1">
-                {cookies ?? 'Loading...'}
+                {cookies}
               </code>
             </div>
             <Button onClick={() => invalidateSession()} variant="outline" className="w-full">
