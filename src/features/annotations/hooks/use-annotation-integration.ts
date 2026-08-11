@@ -118,8 +118,12 @@ function useDebouncedCallback<T extends (...args: never[]) => void>(
   const callbackRef = useRef(callback);
   const pendingArgsRef = useRef<Parameters<T> | null>(null);
   
-  // Keep callback ref updated
-  callbackRef.current = callback;
+  // Keep callback ref updated. Written in an effect rather than during render: a
+  // render-phase ref write is not safe under concurrent rendering, where a render may be
+  // thrown away. Every reader is inside the debounce timer, which fires after commit.
+  useEffect(() => {
+    callbackRef.current = callback;
+  });
 
   const cancel = useCallback(() => {
     if (timeoutRef.current) {
@@ -622,8 +626,12 @@ export function useAnnotationIntegration(
     },
   });
 
-  // Connect pushHistory to ref after tools is initialized
-  pushHistoryRef.current = tools.pushHistory;
+  // Connect pushHistory to ref after tools is initialized. In an effect, not during
+  // render — the only reader is inside a callback, so it cannot run before the first
+  // effect flush.
+  useEffect(() => {
+    pushHistoryRef.current = tools.pushHistory;
+  }, [tools.pushHistory]);
 
   // ============================================================================
   // MUTATIONS - Create
@@ -746,8 +754,11 @@ export function useAnnotationIntegration(
     500 // 500ms debounce
   );
 
-  // Connect ref after debouncedUpdate is defined (allows undo/redo to trigger saves)
-  debouncedUpdateRef.current = debouncedUpdate;
+  // Connect ref after debouncedUpdate is defined (allows undo/redo to trigger saves).
+  // In an effect, not during render — every reader is inside a callback.
+  useEffect(() => {
+    debouncedUpdateRef.current = debouncedUpdate;
+  }, [debouncedUpdate]);
 
   // ============================================================================
   // MUTATIONS - Delete

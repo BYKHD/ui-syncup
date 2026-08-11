@@ -13,6 +13,13 @@ import { AnnotationActionSheet } from './annotation-action-sheet';
 
 const PIN_DRAG_THRESHOLD_PX = 4;
 
+/**
+ * A live drag: the base the gesture started from, plus the offset accumulated since.
+ * Base and offset are captured together so the rendered position stays internally
+ * consistent even if the effective base moves mid-gesture (e.g. a save lands).
+ */
+type DragOffset = { baseX: number; baseY: number; x: number; y: number };
+
 const getAnnotationPinClassName = ({
   isActive,
   interactive,
@@ -82,15 +89,21 @@ function AnnotationPinInner<A extends AttachmentAnnotation>({
   // Coalesce setDragOffset to one update per animation frame. We store the
   // latest computed offset and schedule a single rAF that flushes it, so the
   // rendered position always reflects the most recent pointer position.
-  const pendingDragOffsetRef = useRef<{ x: number; y: number } | null>(null);
+  const pendingDragOffsetRef = useRef<DragOffset | null>(null);
   const rafIdRef = useRef<number | null>(null);
 
   // Track the effective base position for drag calculations
   // This is annotation position + any uncommitted offset from previous drag
   const effectiveBaseRef = useRef<{ x: number; y: number }>({ x: annotation.x, y: annotation.y });
   
-  // Local drag offset for smooth visual updates (prevents re-renders during drag)
-  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+  // Local drag offset for smooth visual updates (prevents re-renders during drag).
+  //
+  // The base is carried IN this state rather than read from effectiveBaseRef during
+  // render. Both values are captured together in the pointer handler, so the rendered
+  // position is a pure function of state — no render-phase ref read, which is not safe
+  // under concurrent rendering (a render may be discarded and replayed). The ref is
+  // still the source of truth for handler math, where reading it is fine.
+  const [dragOffset, setDragOffset] = useState<DragOffset | null>(null);
   
   // Update the effective base when props change (i.e., when save completes)
   // BUT only if not currently dragging - otherwise we'd jump mid-drag
@@ -224,6 +237,8 @@ function AnnotationPinInner<A extends AttachmentAnnotation>({
     // The rAF reads the latest ref value, so the rendered position is always the
     // most recent pointer position (latest-value, not skip-and-drop).
     pendingDragOffsetRef.current = {
+      baseX: base.x,
+      baseY: base.y,
       x: clampedX - base.x,
       y: clampedY - base.y,
     };
@@ -331,10 +346,10 @@ function AnnotationPinInner<A extends AttachmentAnnotation>({
         className="absolute"
         style={{
           left: dragOffset
-            ? `${(effectiveBaseRef.current.x + dragOffset.x) * 100}%`
+            ? `${(dragOffset.baseX + dragOffset.x) * 100}%`
             : `${annotation.x * 100}%`,
           top: dragOffset
-            ? `${(effectiveBaseRef.current.y + dragOffset.y) * 100}%`
+            ? `${(dragOffset.baseY + dragOffset.y) * 100}%`
             : `${annotation.y * 100}%`,
           width: 0,
           height: 0,

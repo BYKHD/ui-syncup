@@ -49,6 +49,10 @@ export function useAnnotationBatchSave(
   const [isSaving, setIsSaving] = useState(false);
   const queueRef = useRef<Map<string, AnnotationShape>>(new Map());
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Mirrors queueRef.current.size as state. It used to be read off the ref during
+  // render, which meant the number only refreshed when something else happened to
+  // re-render the consumer — the queue itself never triggers one.
+  const [pendingCount, setPendingCount] = useState(0);
 
   const flush = useCallback(async () => {
     if (timeoutRef.current) {
@@ -63,6 +67,7 @@ export function useAnnotationBatchSave(
     if (items.length === 0) return;
 
     queueRef.current.clear();
+    setPendingCount(0);
     setIsSaving(true);
 
     try {
@@ -79,6 +84,7 @@ export function useAnnotationBatchSave(
     (annotationId: string, shape: AnnotationShape) => {
       // Replace existing update for same annotation (latest wins)
       queueRef.current.set(annotationId, shape);
+      setPendingCount(queueRef.current.size);
 
       // Reset debounce timer
       if (timeoutRef.current) {
@@ -97,11 +103,12 @@ export function useAnnotationBatchSave(
       timeoutRef.current = null;
     }
     queueRef.current.clear();
+    setPendingCount(0);
   }, []);
 
   return {
     queueUpdate,
-    pendingCount: queueRef.current.size,
+    pendingCount,
     isSaving,
     flush,
     clear,

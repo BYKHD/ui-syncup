@@ -139,9 +139,14 @@ function AnnotationBoxInner({
   });
   
   // Local visual offset for smooth rendering (supports both move and resize)
-  const [visualDelta, setVisualDelta] = useState<{ 
-    startDx: number; startDy: number; 
-    endDx: number; endDy: number 
+  // The base is carried IN this state rather than read off effectiveBaseRef during
+  // render, so the rendered geometry is a pure function of state. A render-phase ref
+  // read is not safe under concurrent rendering, where a render may be discarded and
+  // replayed. effectiveBaseRef remains the source of truth for the pointer handlers.
+  const [visualDelta, setVisualDelta] = useState<{
+    base: { start: AnnotationPosition; end: AnnotationPosition };
+    startDx: number; startDy: number;
+    endDx: number; endDy: number
   } | null>(null);
   
   // Update effective base when props change (i.e., when save completes)
@@ -178,14 +183,14 @@ function AnnotationBoxInner({
   // Action sheet state (mobile)
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
 
-  // Calculate effective positions with visual delta for smooth updates during drag
-  // Use effectiveBaseRef (not stale props) to prevent snap-back
-  const base = effectiveBaseRef.current;
-  const effectiveStart = visualDelta 
-    ? { x: base.start.x + visualDelta.startDx, y: base.start.y + visualDelta.startDy }
+  // Calculate effective positions with visual delta for smooth updates during drag.
+  // The base travels with the delta (captured together when the resize frame commits),
+  // which is what prevents snap-back without reading a ref during render.
+  const effectiveStart = visualDelta
+    ? { x: visualDelta.base.start.x + visualDelta.startDx, y: visualDelta.base.start.y + visualDelta.startDy }
     : annotation.start;
-  const effectiveEnd = visualDelta 
-    ? { x: base.end.x + visualDelta.endDx, y: base.end.y + visualDelta.endDy }
+  const effectiveEnd = visualDelta
+    ? { x: visualDelta.base.end.x + visualDelta.endDx, y: visualDelta.base.end.y + visualDelta.endDy }
     : annotation.end;
 
   const x1 = Math.min(effectiveStart.x, effectiveEnd.x);
@@ -417,6 +422,12 @@ function AnnotationBoxInner({
               pendingResizePositionRef.current = null;
               if (!pending) return;
               setVisualDelta({
+                // Cloned: effectiveBaseRef.current is mutated in place elsewhere, so
+                // storing the object itself would let those writes leak into state.
+                base: {
+                  start: { ...effectiveBaseRef.current.start },
+                  end: { ...effectiveBaseRef.current.end },
+                },
                 startDx: pending.start.x - annotation.start.x,
                 startDy: pending.start.y - annotation.start.y,
                 endDx: pending.end.x - annotation.end.x,

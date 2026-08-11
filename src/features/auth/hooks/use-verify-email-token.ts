@@ -101,7 +101,12 @@ export function useVerifyEmailToken(options: UseVerifyEmailTokenOptions = {}) {
     },
   });
   const mutationRef = useRef(mutation);
-  mutationRef.current = mutation;
+  // Synced in an effect, not during render: a render-phase ref write is not safe under
+  // concurrent rendering (a render can be discarded). Declared before the effect that
+  // reads it, so it is always the first to run on any given commit.
+  useEffect(() => {
+    mutationRef.current = mutation;
+  });
 
   // Auto-verify on mount if token is provided
   useEffect(() => {

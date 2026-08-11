@@ -201,7 +201,10 @@ export function AnnotationDrawer({
   }, [activeTool, enabled, resetDrawing]);
 
   const draftPreview = useMemo(() => {
-    if (!drawingState || !overlayRef.current) return null;
+    // The `overlayRef.current` guard that used to be here was redundant: drawingState is
+    // only ever set by handlePointerDown, which already bails when the overlay is null.
+    // The preview below is pure percentages, so it never dereferences the ref.
+    if (!drawingState) return null;
 
     const start = drawingState.start;
     const current = drawingState.current;
@@ -221,7 +224,7 @@ export function AnnotationDrawer({
         }}
       />
     );
-  }, [drawingState, overlayRef]);
+  }, [drawingState]);
 
   return (
     <div className={cn('absolute inset-0 z-30', enabled ? 'pointer-events-none' : 'pointer-events-none')}>
