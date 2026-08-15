@@ -167,28 +167,54 @@ describe('Password Hashing - Property-Based Tests', () => {
   });
 
   /**
-   * Security property: Timing attack resistance
-   * 
-   * Verification should take similar time regardless of password correctness.
-   * This is a basic check - true timing attack resistance requires more sophisticated testing.
+   * Security property: verification cost does not depend on password correctness.
+   *
+   * A wrong password must not be rejected faster than a correct one is accepted —
+   * otherwise response time leaks whether a guess was right. Argon2id gives us this
+   * for free today because both paths run the full KDF; the test exists to catch a
+   * future short-circuit (a length compare, a prefix match, a negative cache) being
+   * added to verifyPassword.
+   *
+   * On measurement: this compares MEDIANS of interleaved samples with a RATIO
+   * tolerance. The previous version took one sample of each and asserted
+   * |t1 - t2| < 100ms, which failed intermittently under the full suite's parallel
+   * workers (observed 117ms and 292ms) purely from scheduler noise — a single
+   * wall-clock sample on a loaded machine measures the scheduler, not the KDF.
    */
-  test('Property: Verification time is consistent', async () => {
+  test('Property: verification cost does not depend on password correctness', async () => {
     const password = 'TestPassword123!';
     const hash = await hashPassword(password);
 
-    // Measure time for correct password
-    const start1 = Date.now();
-    await verifyPassword(password, hash);
-    const time1 = Date.now() - start1;
+    const SAMPLES = 7; // odd, so the median is a real observation rather than a mean
+    const correctTimes: number[] = [];
+    const wrongTimes: number[] = [];
 
-    // Measure time for incorrect password
-    const start2 = Date.now();
-    await verifyPassword('WrongPassword123!', hash);
-    const time2 = Date.now() - start2;
+    // Interleaved, so any drift in machine load over the run hits both series equally.
+    for (let i = 0; i < SAMPLES; i++) {
+      const startCorrect = performance.now();
+      await verifyPassword(password, hash);
+      correctTimes.push(performance.now() - startCorrect);
 
-    // Times should be within reasonable range (within 100ms of each other)
-    // This is a loose check since we can't guarantee exact timing
-    const timeDiff = Math.abs(time1 - time2);
-    expect(timeDiff).toBeLessThan(100);
-  });
+      const startWrong = performance.now();
+      await verifyPassword('WrongPassword123!', hash);
+      wrongTimes.push(performance.now() - startWrong);
+    }
+
+    const median = (xs: number[]) =>
+      [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+    const correctMedian = median(correctTimes);
+    const wrongMedian = median(wrongTimes);
+
+    // 1. Neither path short-circuits. Argon2id at 64 MiB / t=3 cannot complete in
+    //    single-digit milliseconds, so a cheap pre-check would surface here. Load only
+    //    ever makes work slower, which makes this bound immune to scheduler noise.
+    expect(correctMedian).toBeGreaterThan(5);
+    expect(wrongMedian).toBeGreaterThan(5);
+
+    // 2. Both paths cost the same order of magnitude. A genuine short-circuit gives a
+    //    10-100x gap; noise on a median of 7 interleaved samples does not approach 3x.
+    const ratio =
+      Math.max(correctMedian, wrongMedian) / Math.min(correctMedian, wrongMedian);
+    expect(ratio).toBeLessThan(3);
+  }, 30000);
 });
