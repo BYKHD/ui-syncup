@@ -457,3 +457,8 @@ Touched: `src/server/projects/project-service.ts`, `src/server/projects/index.ts
 - **Proved non-vacuous before trusting it**: replayed the assertions against a deliberately short-circuiting fake (`if (pw.length !== correct.length) return false`). Correct impl → ratio 1.00, passes. Short-circuited → wrong-path median 0.0ms, ratio 39742x, fails both assertions.
 - Verified over **3 full-suite runs** (the condition that used to trip it): `password.test.ts` passed 3/3, plus 3/3 in isolation.
 - > [!warning] **Two OTHER flaky tests found while verifying.** Across those 3 runs the deterministic failure set is exactly **13** files; `scripts/__tests__/migrate.integration.test.ts` and `src/server/annotations/__tests__/sanitize.property.test.ts` each failed **1 of 3** runs. Neither is touched by this change. When judging "did I break the suite", the honest baseline on `develop` is 13 deterministic failures plus up to 2 flaky ones.
+
+## [2026-08-15] fix | annotation overlap click-through
+
+- Bug: small annotation under a bigger box was unclickable. Root cause: box hit area is its entire `inset-0` interior + stacking was raw DOM order with no z-index, so the top box swallowed all pointer events.
+- Fix: area-based z-index on boxes (smaller → higher), active box on top, pins above all boxes. See [[features/annotations]] § Constraints.

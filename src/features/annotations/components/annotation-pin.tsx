@@ -353,6 +353,9 @@ function AnnotationPinInner<A extends AttachmentAnnotation>({
             : `${annotation.y * 100}%`,
           width: 0,
           height: 0,
+          // Above all boxes (their z tops out at 2000) — a pin's tiny hit area must
+          // never be occluded by a box interior covering the same spot.
+          zIndex: 2001,
           scale: counterScale,
           transformOrigin: '0 0',
         }}

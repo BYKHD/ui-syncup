@@ -548,6 +548,11 @@ function AnnotationBoxInner({
           top: `${y1 * 100}%`,
           width: `${width}%`,
           height: `${height}%`,
+          // Smaller boxes stack above bigger ones so a box nested inside (or under)
+          // a larger one stays clickable — the hit area is the whole interior, so
+          // without this the top box swallows every pointer event. Active box goes
+          // above everything so its resize handles stay grabbable. Pins sit at 2001.
+          zIndex: isActive ? 2000 : 1000 - Math.round((width * height) / 10),
           // GPU translate for whole-box MOVE. Framer composes x/y with the entrance
           // scale into one transform matrix; left/top/width/height stay untouched.
           x: moveX,

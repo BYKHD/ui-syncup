@@ -24,6 +24,10 @@ Lets users place pins or draw boxes on top of an image attachment, attach a thre
 - **docs/** — feature-local docs (Phase 4 integration notes etc.)
 - **examples/** — usage examples
 
+## Constraints
+
+- **Box hit area is the whole interior, not the border.** `annotation-box.tsx`'s "Box Border" div is `absolute inset-0` with the pointer handlers (and `stopPropagation` on pointerdown). Overlapping boxes therefore depend on z-index for clickability: boxes get `zIndex = 1000 - area/10` (smaller area → higher z), the active box gets `2000`, pins sit at `2001`. Without this, a bigger box fully occludes any smaller annotation beneath it. Locked by `__tests__/annotation-box.test.tsx`.
+
 ## Related
 
 - Entities: [[entities/annotation]], [[entities/issue]], [[entities/user]]
