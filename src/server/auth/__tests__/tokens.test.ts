@@ -63,6 +63,11 @@ afterEach(async () => {
   testUserIds.length = 0;
 });
 
+// 30s to match PROPERTY_CONFIG's stated intent. fast-check was already given a 30s
+// budget above, but no test here set a vitest timeout, so vitest's 5s default was
+// killing them first — the two numbers disagreed. All 14 tests in this file run 100
+// property iterations over token crypto, which fits in 5s on an idle machine but not
+// when the full suite runs it alongside 130+ other files.
 describe('Token Generation and Verification - Property-Based Tests', () => {
   /**
    * Feature: authentication-system, Property 3: Registration creates verification token
@@ -471,4 +476,4 @@ describe('Token Generation and Verification - Property-Based Tests', () => {
       PROPERTY_CONFIG
     );
   });
-});
+}, 30000);

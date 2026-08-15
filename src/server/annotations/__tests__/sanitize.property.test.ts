@@ -99,9 +99,21 @@ const eventHandlerArb = fc.tuple(
 ).map(([handler, value]) => `${handler}="${value}"`);
 
 /**
- * Safe text that should pass through unchanged
+ * Safe text that should pass through unchanged.
+ *
+ * The character class includes `\s`, so this generator can emit whitespace-only
+ * strings. That is not "safe text" for our purposes: once the XSS payload is
+ * stripped from mixed content, whitespace-only fragments leave nothing to preserve,
+ * and the mixed-content property below asserts the output is non-empty. That made
+ * the suite fail roughly one run in three — fast-check seed 1507653494,
+ * counterexample `"  <form action=\"javascript:alert(1)\">  "`.
+ *
+ * The sanitizer was correct in that case; the generator was violating the
+ * property's own premise. Require at least one character that survives trimming.
  */
-const safeTextArb = fc.stringMatching(/^[a-zA-Z0-9\s.,!?'-]{1,100}$/);
+const safeTextArb = fc
+  .stringMatching(/^[a-zA-Z0-9\s.,!?'-]{1,100}$/)
+  .filter((s) => s.trim().length > 0);
 
 /**
  * Mixed content with XSS payloads and safe text

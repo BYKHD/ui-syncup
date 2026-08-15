@@ -147,9 +147,14 @@ async function getTableCount(client: PGlite): Promise<number> {
 describe('Migration Runner - Integration Tests', () => {
   let testDb: TestDbContext;
 
+  // 30s rather than vitest's 10s default. createTestDatabase() spins up a PGlite
+  // instance and replays the migration SQL; that fits comfortably in 10s on an idle
+  // machine but not when the full suite is running it alongside 130+ other files, where
+  // it intermittently blew the hook timeout. The timeout only bites when exceeded, so a
+  // generous value costs nothing on a fast run.
   beforeEach(async () => {
     testDb = await createTestDatabase();
-  });
+  }, 30000);
 
   afterEach(async () => {
     await testDb.cleanup();
