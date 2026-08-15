@@ -10,6 +10,7 @@ import {
   useRef,
   useCallback,
   useEffect,
+  useMemo,
 } from "react";
 import Image from "next/image";
 import { motion, useMotionValue, animate, type MotionValue } from "motion/react";
@@ -255,9 +256,14 @@ function CenteredCanvasViewInner({
   // Video playback - delegate to VideoPlayer (no pan/zoom for video)
   const isVideo = attachment.fileType.startsWith('video/');
 
-  // Calculate display size based on zoom
-  const calculateDisplaySize = useCallback(() => {
-    if (!containerRef.current || !imageLoaded || imageDimensions.width === 0) {
+  // Calculate display size based on zoom.
+  //
+  // The `!containerRef.current` guard that used to be here was redundant — the result is
+  // computed purely from imageDimensions and zoom, and the container is guaranteed
+  // mounted whenever imageLoaded is true (the image lives inside it). Dropping it makes
+  // this pure, so it can be a useMemo consumed during render instead of a ref read.
+  const displaySize = useMemo(() => {
+    if (!imageLoaded || imageDimensions.width === 0) {
       return { width: 0, height: 0, scale: 1 };
     }
 
@@ -269,9 +275,7 @@ function CenteredCanvasViewInner({
       height: imageDimensions.height * scale,
       scale,
     };
-  }, [containerRef, imageDimensions, canvasState.zoom, imageLoaded]);
-
-  const displaySize = calculateDisplaySize();
+  }, [imageDimensions, canvasState.zoom, imageLoaded]);
 
   // Calculate the zoom level that would fit the image to the container
   const calculateFitZoom = useCallback((ignoreConstraints = false) => {

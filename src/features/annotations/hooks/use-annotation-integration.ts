@@ -99,9 +99,15 @@ export interface UseAnnotationIntegrationResult {
 // DEBOUNCE HELPER WITH FLUSH/CANCEL
 // ============================================================================
 
+/**
+ * A plain object rather than a callable with properties bolted on via Object.assign.
+ * Building that composite inside a useMemo meant placing ref-reading closures into an
+ * object during render, which the React Compiler (correctly, if conservatively) rejects.
+ * An object literal of already-stable callbacks has no such problem.
+ */
 interface DebouncedCallback<T extends (...args: never[]) => void> {
   /** Call the debounced function */
-  (...args: Parameters<T>): void;
+  run: (...args: Parameters<T>) => void;
   /** Immediately execute with the last pending args (if any) */
   flush: () => void;
   /** Cancel any pending execution */
@@ -173,13 +179,10 @@ function useDebouncedCallback<T extends (...args: never[]) => void>(
     };
   }, []);
 
-  // Create stable result object with methods attached using Object.assign
-  // This creates a new function object rather than mutating the original
+  // debouncedFn is a stable useCallback and flush/cancel/isPending have empty dep arrays,
+  // so this identity changes only when `delay` does.
   return useMemo(
-    () => Object.assign(
-      (...args: Parameters<T>) => debouncedFn(...args),
-      { flush, cancel, isPending }
-    ) as DebouncedCallback<T>,
+    () => ({ run: debouncedFn, flush, cancel, isPending }),
     [debouncedFn, flush, cancel, isPending]
   );
 }
@@ -221,8 +224,10 @@ export function useAnnotationIntegration(
   const { issueId, attachmentId, enabled = true, onError } = options;
   const queryClient = useQueryClient();
 
-  // Track current selected annotation for keyboard shortcuts
-  const selectedAnnotationRef = useRef<string | null>(null);
+  // NOTE: there used to be a `selectedAnnotationRef` here, "to track the current
+  // selected annotation for keyboard shortcuts". It was never assigned anywhere in the
+  // codebase, so it always read null — see the activeAnnotationId note on
+  // useAnnotationTools below.
 
   // ============================================================================
   // LOCAL-FIRST AUTOSAVE STATE - Unified State Machine (Phase 1)
@@ -556,7 +561,7 @@ export function useAnnotationIntegration(
       const nextClientRevision = (clientRevisionByIdRef.current.get(entry.annotationId) ?? 0) + 1;
       clientRevisionByIdRef.current.set(entry.annotationId, nextClientRevision);
       pendingRevisionByIdRef.current.set(entry.annotationId, nextClientRevision);
-      debouncedUpdateRef.current?.(entry.annotationId, prevShape, nextClientRevision);
+      debouncedUpdateRef.current?.run(entry.annotationId, prevShape, nextClientRevision);
     }
   }, [applyUndo, queryClient, queryKey, issueId, attachmentId]);
 
@@ -611,14 +616,22 @@ export function useAnnotationIntegration(
       const nextClientRevision = (clientRevisionByIdRef.current.get(entry.annotationId) ?? 0) + 1;
       clientRevisionByIdRef.current.set(entry.annotationId, nextClientRevision);
       pendingRevisionByIdRef.current.set(entry.annotationId, nextClientRevision);
-      debouncedUpdateRef.current?.(entry.annotationId, newShape, nextClientRevision);
+      debouncedUpdateRef.current?.run(entry.annotationId, newShape, nextClientRevision);
     }
   }, [applyRedo, queryClient, queryKey, issueId, attachmentId]);
 
   const tools = useAnnotationTools({
     initialEditMode: false,
     enableKeyboardShortcuts: true,
-    activeAnnotationId: selectedAnnotationRef.current,
+    // Always null, preserving the previous behaviour exactly: the ref this used to read
+    // was never written to.
+    //
+    // KNOWN BUG (pre-existing, deliberately not fixed here): useAnnotationTools gates its
+    // Enter-to-edit and Delete/Backspace-to-delete shortcuts on this value being truthy,
+    // so those shortcuts have never fired. Fixing it means adding a selection option to
+    // UseAnnotationIntegrationOptions and threading activeAnnotationId in from
+    // AnnotatedAttachmentView — a behaviour change, not a refactor.
+    activeAnnotationId: null,
     onUndo: enhancedApplyUndo,
     onRedo: enhancedApplyRedo,
     onDelete: (annotationId: string) => {
@@ -846,7 +859,7 @@ export function useAnnotationIntegration(
 
       // Debounced API update with clientRevision
       const newShape: AnnotationShape = { type: 'pin', position };
-      debouncedUpdate(annotationId, newShape, nextClientRevision);
+      debouncedUpdate.run(annotationId, newShape, nextClientRevision);
     },
     [localHandleMove, debouncedUpdate, setStateDebouncing, setStateSaving]
   );
@@ -867,7 +880,7 @@ export function useAnnotationIntegration(
 
       // Debounced API update with clientRevision
       const newShape: AnnotationShape = { type: 'box', start, end };
-      debouncedUpdate(annotationId, newShape, nextClientRevision);
+      debouncedUpdate.run(annotationId, newShape, nextClientRevision);
     },
     [localHandleBoxMove, debouncedUpdate, setStateDebouncing, setStateSaving]
   );
