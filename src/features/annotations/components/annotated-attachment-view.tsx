@@ -321,8 +321,12 @@ export function AnnotatedAttachmentView({
   // hold — the memo never sees a new function reference for onDragStart/onDragEnd.
   const setDraggingImpl = localMode ? undefined : apiSetDragging;
   const setDraggingRef = useRef(setDraggingImpl);
-  // eslint-disable-next-line react-hooks/refs
-  setDraggingRef.current = setDraggingImpl;
+  // Synced in an effect, not during render: React can replay or discard a render, so a
+  // render-phase write can leak from work that never commits. Both readers are pointer
+  // event handlers, which cannot run before the first effect flush.
+  useEffect(() => {
+    setDraggingRef.current = setDraggingImpl;
+  });
 
   const handleDragStart = useCallback((annotationId: string) => {
     setDraggingRef.current?.(annotationId, true);
@@ -352,8 +356,9 @@ export function AnnotatedAttachmentView({
   // Refs for values read by stable callbacks below. Written on every render so the
   // callback always sees the latest value without being in the dep array.
   const currentAnnotationsRef = useRef(currentAnnotations);
-  // eslint-disable-next-line react-hooks/refs
-  currentAnnotationsRef.current = currentAnnotations;
+  useEffect(() => {
+    currentAnnotationsRef.current = currentAnnotations;
+  });
 
   // openEdit identity is stable (from useAnnotationEditState), no ref needed.
 
@@ -410,20 +415,21 @@ export function AnnotatedAttachmentView({
   // Refs for all values read by handleAnnotationDelete so the callback has a stable
   // identity (empty deps). Written on every render to stay fresh (no stale closures).
   const permissionsRef = useRef(permissions);
-  // eslint-disable-next-line react-hooks/refs
-  permissionsRef.current = permissions;
   const userIdRef = useRef(userId);
-  // eslint-disable-next-line react-hooks/refs
-  userIdRef.current = userId;
   const activeAnnotationIdRef = useRef(activeAnnotationId);
-  // eslint-disable-next-line react-hooks/refs
-  activeAnnotationIdRef.current = activeAnnotationId;
   const handleAnnotationSelectRef = useRef(handleAnnotationSelect);
-  // eslint-disable-next-line react-hooks/refs
-  handleAnnotationSelectRef.current = handleAnnotationSelect;
   const deleteAnnotationRef = useRef(deleteAnnotation);
-  // eslint-disable-next-line react-hooks/refs
-  deleteAnnotationRef.current = deleteAnnotation;
+
+  // One sync after every commit. These were written during render, which React rejects:
+  // a render can be replayed or thrown away, so the write can leak from UI that never
+  // commits. The sole reader is handleAnnotationDelete, invoked from a user action.
+  useEffect(() => {
+    permissionsRef.current = permissions;
+    userIdRef.current = userId;
+    activeAnnotationIdRef.current = activeAnnotationId;
+    handleAnnotationSelectRef.current = handleAnnotationSelect;
+    deleteAnnotationRef.current = deleteAnnotation;
+  });
 
   const handleAnnotationDelete = useCallback(
     async (annotationId: string) => {

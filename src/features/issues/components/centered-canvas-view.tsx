@@ -128,10 +128,14 @@ export function CenteredCanvasView({
 
   // Reset image state when the URL changes (e.g. React Query refetches a fresh
   // presigned URL after a stale one caused a load failure).
+  // The previous URL is held in state, not a ref. This is the react.dev "adjust state
+  // when a prop changes" pattern, and it has to be state: a render-phase ref write can
+  // leak from a render React replays or discards, whereas setState during render is
+  // explicitly supported here and re-runs the component before anything commits.
   const displayUrl = attachment?.downloadUrl ?? attachment?.url;
-  const prevDisplayUrlRef = useRef(displayUrl);
-  if (prevDisplayUrlRef.current !== displayUrl) {
-    prevDisplayUrlRef.current = displayUrl;
+  const [prevDisplayUrl, setPrevDisplayUrl] = useState(displayUrl);
+  if (prevDisplayUrl !== displayUrl) {
+    setPrevDisplayUrl(displayUrl);
     if (imageError) {
       setImageError(false);
       setImageLoaded(false);
